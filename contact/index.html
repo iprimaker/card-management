@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>お問い合わせ｜カードアルバム</title>
+    <link rel="icon" href="../assets/favicon.svg" />
+    <link rel="stylesheet" href="../assets/style.css" />
+    <link rel="stylesheet" href="./contact.css" />
+    <script defer src="../assets/config.js"></script>
+    <script defer src="../assets/site-info.js"></script>
+    <script defer src="./contact.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="wordmark" href="../">カードアルバム</a
+      ><a class="back-link" href="../">アルバムへ戻る</a>
+    </header>
+    <main class="contact-main">
+      <section id="contact-panel" class="contact-panel">
+        <span class="eyebrow">CONTACT</span>
+        <h1>お問い合わせ</h1>
+        <p class="muted">
+          カード情報の修正やアカウントの削除申請も、こちらからお送りください。
+        </p>
+        <form id="contact-form">
+          <label
+            >メールアドレス<input
+              id="contact-email"
+              type="email"
+              autocomplete="email"
+              maxlength="254"
+              required
+            /><small>連絡を受け取れるアドレスを入力してください。</small></label
+          ><label
+            >お名前・ニックネーム <small>任意</small
+            ><input
+              id="contact-name"
+              type="text"
+              autocomplete="name"
+              maxlength="40" /></label
+          ><label
+            >お問い合わせの種類<select id="contact-category">
+              <option value="question">使い方について</option>
+              <option value="correction">カード情報の修正</option>
+              <option value="deletion">アカウント・登録情報の削除申請</option>
+              <option value="other">その他</option>
+            </select></label
+          ><label
+            >お問い合わせ内容<textarea
+              id="contact-message"
+              minlength="10"
+              maxlength="3000"
+              rows="8"
+              required
+              placeholder="対象のカードコードや、起きている状況などをご記入ください。"
+            ></textarea
+            ><small
+              >10〜3,000文字。パスワードや確認メールのURLは記載しないでください。</small
+            ></label
+          ><label class="contact-honeypot" aria-hidden="true"
+            >Website<input
+              id="contact-website"
+              tabindex="-1"
+              autocomplete="off" /></label
+          ><label class="consent"
+            ><input id="contact-consent" type="checkbox" required /><span
+              >プライバシーポリシーを確認し、入力内容の取り扱いに同意します。<button
+                type="button"
+                data-info="privacy"
+                class="text-button"
+              >
+                内容を確認
+              </button></span
+            ></label
+          >
+          <p id="contact-error" role="status"></p>
+          <button id="contact-submit" class="primary" type="submit">
+            送信する
+          </button>
+        </form>
+        <p class="muted">
+          削除申請は本人確認のうえ対応します。フォームを送信しただけではアカウントは削除されません。
+        </p>
+      </section>
+      <section id="contact-complete" class="contact-panel" hidden>
+        <span class="confirmation-icon" aria-hidden="true">✓</span>
+        <h1>送信しました</h1>
+        <p>お問い合わせを受け付けました。</p>
+        <p class="muted">受付番号</p>
+        <p id="contact-reference" class="contact-reference"></p>
+        <a class="contact-return" href="../">アルバムへ戻る</a>
+      </section>
+    </main>
+    <footer>
+      <div class="footer-links">
+        <button data-info="terms">利用規約</button
+        ><button data-info="privacy">プライバシーポリシー</button
+        ><button data-info="about">このサイトについて</button>
+      </div>
+    </footer>
+    <dialog id="info-dialog" aria-labelledby="info-title">
+      <div class="modal-top">
+        <h2 id="info-title"></h2>
+        <button id="legal-close" aria-label="閉じる">×</button>
+      </div>
+      <div id="info-body" class="legal-body"></div>
+    </dialog>
+  </body>
+</html>
