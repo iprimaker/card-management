@@ -13,7 +13,7 @@
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
     <script defer src="./assets/site-info.js"></script>
-    <script defer src="./assets/app.js"></script>
+    <script defer src="./assets/app-title-fix.js"></script>
   </head>
   <body>
     <header>
@@ -129,10 +129,10 @@
           <button data-game="aikatsu" class="album aikatsu">
             <div class="album-images" id="aikatsu-art"></div>
             <span>アイカツ！アンコール</span
-            ></button
+            ><small>コーデをあつめる</small></button
           ><button data-game="aipri" class="album aipri">
             <div class="album-images" id="aipri-art"></div>
-            <span>アイプリ</span>
+            <span>アイプリ</span><small>ひみつも、おねがいも。</small>
           </button>
         </div>
       </section>
@@ -140,7 +140,7 @@
         <div class="collection-title">
           <div>
             <span class="eyebrow">CARD COLLECTION</span>
-            <h1 id="game-title"></h1>
+            <h1 id="game-title">おねがいアイプリ</h1>
           </div>
           <span class="pill" id="total"></span>
         </div>
