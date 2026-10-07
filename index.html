@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="アイカツ！アンコールとアイプリのカードを探して、あつめたカードを記録。"
+    />
+    <title>カードアルバム</title>
+    <link rel="icon" href="./assets/favicon.svg" />
+    <link rel="stylesheet" href="./assets/style.css" />
+    <script defer src="./assets/vendor/supabase.js"></script>
+    <script defer src="./assets/config.js"></script>
+    <script defer src="./assets/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="wordmark" href="./" aria-label="カードアルバムのトップへ">
+        <img id="header-card" class="header-card" alt="" hidden />
+        <span id="header-title">カードアルバム</span>
+      </a>
+      <button
+        id="menu-toggle"
+        class="menu-toggle"
+        aria-label="メニューを開く"
+        aria-controls="nav"
+        aria-expanded="false"
+        hidden
+      >
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="nav" aria-label="アルバムの操作" hidden>
+        <div
+          id="game-switch"
+          class="game-switch"
+          role="group"
+          aria-label="作品を切り替える"
+        >
+          <span class="game-switch-slider" aria-hidden="true"></span>
+          <button data-game="aikatsu" aria-pressed="false">アイカツ！</button>
+          <button data-game="aipri" aria-pressed="false">アイプリ</button>
+        </div>
+        <button id="edit-nickname">ニックネームを変更</button>
+        <button id="logout">ログアウト</button>
+      </nav>
+    </header>
+    <main>
+      <section id="auth" class="auth">
+        <div class="intro">
+          <span class="eyebrow">MY CARD ALBUM</span>
+          <h1>好きなカードを、<br />一枚ずつ。</h1>
+          <p>
+            アイカツ！アンコールとアイプリの<br />コレクションを、いつでも手元に。
+          </p>
+          <div class="mini-gallery" id="auth-art"></div>
+        </div>
+        <div class="auth-panel">
+          <h2>カードアルバムへようこそ</h2>
+          <div class="tabs">
+            <button id="login-tab" class="active">ログイン</button
+            ><button id="signup-tab">新規登録</button>
+          </div>
+          <form id="auth-form">
+            <label id="nickname-field" hidden
+              >ニックネーム<input
+                id="nickname"
+                type="text"
+                autocomplete="nickname"
+                maxlength="20"
+                placeholder="アルバムに表示する名前"
+              /><small>20文字以内</small></label
+            ><label
+              >メールアドレス<input
+                id="email"
+                type="email"
+                autocomplete="email"
+                required /></label
+            ><label
+              >パスワード<input
+                id="password"
+                type="password"
+                minlength="8"
+                autocomplete="current-password"
+                required
+              /><small>8文字以上</small></label
+            ><button class="primary" id="auth-submit" type="submit">
+              ログイン
+            </button>
+          </form>
+          <button id="forgot" class="text-button">パスワードを忘れた方</button
+          ><button id="resend" class="text-button">確認メールを再送する</button>
+          <p id="auth-message" role="status"></p>
+          <form id="password-form" hidden>
+            <label
+              >新しいパスワード<input
+                id="new-password"
+                type="password"
+                minlength="8"
+                autocomplete="new-password"
+                required /></label
+            ><button class="primary">パスワードを変更</button>
+          </form>
+        </div>
+      </section>
+      <section id="auth-result" class="auth-result" hidden>
+        <div class="auth-panel">
+          <span
+            id="auth-result-icon"
+            class="confirmation-icon"
+            aria-hidden="true"
+            >✓</span
+          >
+          <h1 id="auth-result-title">登録できました</h1>
+          <p id="auth-result-text" role="status"></p>
+          <button id="auth-result-next" class="primary">アルバムを選ぶ</button>
+        </div>
+      </section>
+      <section id="selection" hidden>
+        <div class="selection-title">
+          <span class="eyebrow">MY ALBUMS</span>
+          <h1>どのアルバムを開く？</h1>
+          <p id="account"></p>
+        </div>
+        <div class="album-options">
+          <button data-game="aikatsu" class="album aikatsu">
+            <div class="album-images" id="aikatsu-art"></div>
+            <span>アイカツ！アンコール</span
+            ><small>コーデをあつめる</small></button
+          ><button data-game="aipri" class="album aipri">
+            <div class="album-images" id="aipri-art"></div>
+            <span>アイプリ</span><small>ひみつも、おねがいも。</small>
+          </button>
+        </div>
+      </section>
+      <section id="collection" hidden>
+        <div class="collection-title">
+          <div>
+            <span class="eyebrow">CARD COLLECTION</span>
+            <h1 id="game-title"></h1>
+          </div>
+          <span class="pill" id="total"></span>
+        </div>
+        <div
+          id="aipri-families"
+          class="family-tabs"
+          role="group"
+          aria-label="アイプリの種類"
+          hidden
+        >
+          <button data-family="おねがい" aria-pressed="true" class="active">
+            おねがいのアイプリ</button
+          ><button data-family="ひみつ" aria-pressed="false">
+            ひみつのアイプリ
+          </button>
+        </div>
+        <div class="progress-card">
+          <div>
+            <span>アルバムの取得率</span><strong id="percent">0%</strong>
+          </div>
+          <div class="progress-track"><span id="progress-bar"></span></div>
+          <p id="progress-count"></p>
+        </div>
+        <div class="filter-panel">
+          <label class="search-label"
+            >フリーワード検索<input
+              id="query"
+              type="search"
+              placeholder="カード名・コードなど"
+          /></label>
+          <div id="filters" class="filter-grid"></div>
+          <div class="filter-footer">
+            <div class="owned-tabs" role="group" aria-label="所持状態">
+              <button class="active" data-owned="all">すべて</button
+              ><button data-owned="yes">持っている</button
+              ><button data-owned="no">持っていない</button>
+            </div>
+            <button id="reset" class="text-button">絞り込みを解除</button>
+          </div>
+        </div>
+        <div class="results-heading">
+          <h2 id="result-count"></h2>
+          <span id="filtered-rate"></span>
+        </div>
+        <div id="cards" class="card-grid"></div>
+        <p id="empty" hidden>
+          見つかりませんでした。条件を変えて探してみてください。
+        </p>
+        <div class="pagination">
+          <button id="prev">前のページ</button><span id="page-info"></span
+          ><button id="next">次のページ</button>
+        </div>
+        <div class="collection-status" aria-label="カード情報の更新状況">
+          <div id="sync-indicator" class="sync-indicator">
+            <span class="sync-spinner" aria-hidden="true" hidden></span>
+            <p id="sync-status" class="muted" role="status"></p>
+          </div>
+          <p id="data-warning" class="notice" hidden></p>
+        </div>
+      </section>
+    </main>
+    <footer>
+      非公式の個人用カード管理サイト ·
+      画像・カード情報は各公式サイトに帰属します。
+      <div>
+        <a
+          href="https://dcd.aikatsu.com/encore/cardlist/"
+          target="_blank"
+          rel="noopener"
+          >アイカツ！公式</a
+        ><a href="https://aipri.jp/card/oa4.html" target="_blank" rel="noopener"
+          >アイプリ公式</a
+        >
+      </div>
+    </footer>
+    <dialog id="nickname-dialog" aria-labelledby="nickname-heading">
+      <form id="nickname-form">
+        <h2 id="nickname-heading">アルバムの名前</h2>
+        <label
+          >ニックネーム<input
+            id="profile-nickname"
+            type="text"
+            autocomplete="nickname"
+            maxlength="20"
+            required
+        /></label>
+        <p id="nickname-message" role="status"></p>
+        <div class="nickname-actions">
+          <button id="nickname-cancel" type="button">閉じる</button
+          ><button id="nickname-save" class="primary" type="submit">
+            保存する
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="detail">
+      <div class="modal-top">
+        <span id="modal-code"></span
+        ><button id="close" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="viewer">
+          <button id="flip-prev" aria-label="表面・裏面を切り替える">‹</button>
+          <div>
+            <img id="modal-image" alt="" />
+            <p id="image-failure" hidden>画像を読み込めませんでした。</p>
+            <span id="side-label"></span>
+          </div>
+          <button id="flip-next" aria-label="表面・裏面を切り替える">›</button>
+        </div>
+        <div class="modal-info">
+          <span id="modal-rarity" class="pill"></span>
+          <h2 id="modal-name"></h2>
+          <dl id="modal-fields"></dl>
+          <p id="metadata-note" class="muted"></p>
+          <button id="modal-owned" class="primary"></button
+          ><a id="modal-source" target="_blank" rel="noopener"
+            >公式カードリスト</a
+          >
+        </div>
+      </div>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+  </body>
+</html>
