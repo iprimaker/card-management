@@ -1,3 +1,4 @@
+let cameraController = null;
 const $ = (id) => document.getElementById(id),
   esc = (s) =>
     String(s ?? "").replace(
@@ -144,6 +145,7 @@ function screen(id) {
     $(s).hidden = s !== id;
   $("nav").hidden = !session;
   $("menu-toggle").hidden = !session;
+  cameraController?.updateAccess();
   closeMenu();
   updateHeader();
 }
@@ -350,6 +352,14 @@ function applyPersonalMetadata() {
     }
     const forced = adminOverrides.get(c.id);
     if (forced) Object.assign(c, forced);
+    if (c.game === "aipri" && c.family === "ひみつ") {
+      const serial = String(c.code || "")
+        .normalize("NFKC")
+        .trim()
+        .toUpperCase();
+      if (serial.endsWith("P")) c.rarity = "パラレル";
+      else if (serial.includes("M")) c.rarity = "ミラクル";
+    }
   }
 }
 async function loadPersonalMetadata() {
@@ -601,7 +611,7 @@ function showSide() {
   $("image-failure").hidden = !!url;
   $("image-failure").textContent = url
     ? "画像を読み込めませんでした。"
-    : "裏面画像は公式ページに掲載されていません。";
+    : "裏面画像は未登録です。";
   $("modal-image").src = url || "";
   $("modal-image").alt = `${name(c)} ${side ? "裏面" : "表面"}`;
   $("side-label").textContent = side ? "裏面" : "表面";
@@ -1000,6 +1010,7 @@ function needsOCR(c) {
 function scheduleOCR() {
   if (
     ocrRunning ||
+    $("camera-dialog")?.open ||
     !window.APP_CONFIG.browserOCR ||
     !session ||
     !game ||
@@ -1256,3 +1267,87 @@ document.querySelectorAll("[data-info]").forEach(
       $("info-dialog").showModal();
     }),
 );
+
+cameraController = window.CardCamera.init({
+  account: () => session?.user || null,
+  cards: () => catalog.cards,
+  isOwned: (id) => owned.has(id),
+  notify: toast,
+  canAutoRegister: () => ownershipReady && catalog.source === "live",
+  recognize: async (canvas) => {
+    if (ocrRunning)
+      throw Error(
+        "カード情報を読み取り中です。少し待ってから、もう一度照合してください。",
+      );
+    ocrRunning = true;
+    try {
+      const worker = await getOCRWorker();
+      const full = await worker.recognize(canvas);
+      const crop = document.createElement("canvas");
+      crop.width = Math.min(2400, canvas.width * 2);
+      crop.height = Math.round(
+        (crop.width * canvas.height * 0.32) / canvas.width,
+      );
+      const ctx = crop.getContext("2d");
+      ctx.drawImage(
+        canvas,
+        0,
+        canvas.height * 0.68,
+        canvas.width,
+        canvas.height * 0.32,
+        0,
+        0,
+        crop.width,
+        crop.height,
+      );
+      const code = await worker.recognize(crop);
+      const first = window.CardCamera.matchCards(full.data.text, catalog.cards);
+      const second = window.CardCamera.matchCards(
+        code.data.text,
+        catalog.cards,
+      );
+      const confirmed =
+        first.byCode &&
+        second.byCode &&
+        first.cards.length === 1 &&
+        second.cards.length === 1 &&
+        first.cards[0].id === second.cards[0].id;
+      return {
+        text: `${full.data.text}\n${code.data.text}`,
+        autoText:
+          confirmed && full.data.confidence >= 85 && code.data.confidence >= 85
+            ? full.data.text
+            : "",
+      };
+    } finally {
+      ocrRunning = false;
+    }
+  },
+  register: async (id, uid) => {
+    if (!session || session.user.id !== uid)
+      throw Error("ログインし直してください。");
+    if (!ownershipReady)
+      throw Error("所持データを読み込み中です。少し待ってからお試しください。");
+    if (!catalog.cards.some((card) => card.id === id))
+      throw Error("カード情報を確認できませんでした。");
+    if (owned.has(id)) return;
+    if (saving.has(id)) throw Error("このカードは保存中です。");
+    saving.add(id);
+    try {
+      const result = await db
+        .from("card_ownership")
+        .upsert(
+          { user_id: uid, card_id: id },
+          { onConflict: "user_id,card_id", ignoreDuplicates: true },
+        );
+      if (result.error)
+        throw Error("保存できませんでした。" + translatedError(result.error));
+      if (session?.user.id === uid) {
+        owned.add(id);
+        render();
+      }
+    } finally {
+      saving.delete(id);
+    }
+  },
+});
