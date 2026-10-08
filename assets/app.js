@@ -428,7 +428,11 @@ function albumCards() {
 function fillFilters() {
   const cards = albumCards();
   $("game-title").textContent =
-    game === "aikatsu" ? "アイカツ！アンコール" : aipriFamily + "のアイプリ";
+    game === "aikatsu"
+      ? "アイカツ！アンコール"
+      : aipriFamily === "おねがい"
+        ? "おねがいアイプリ"
+        : "ひみつのアイプリ";
   document.querySelectorAll("[data-family]").forEach((b) => {
     b.classList.toggle("active", b.dataset.family === aipriFamily);
     b.setAttribute("aria-pressed", String(b.dataset.family === aipriFamily));
