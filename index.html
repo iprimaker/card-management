@@ -10,10 +10,12 @@
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
     <link rel="stylesheet" href="./assets/style.css" />
+    <link rel="stylesheet" href="./assets/card-camera.css?v=20261008-camera" />
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
     <script defer src="./assets/site-info.js"></script>
-    <script defer src="./assets/app-title-fix.js"></script>
+    <script defer src="./assets/card-camera.js?v=20261008-camera"></script>
+    <script defer src="./assets/app-title-fix.js?v=20261008-camera"></script>
   </head>
   <body>
     <header>
@@ -21,6 +23,9 @@
         <img id="header-card" class="header-card" alt="" hidden />
         <span id="header-title">カードアルバム</span>
       </a>
+      <button id="camera-add" class="camera-header-button" type="button" hidden>
+        カメラで追加
+      </button>
       <button
         id="menu-toggle"
         class="menu-toggle"
@@ -129,10 +134,10 @@
           <button data-game="aikatsu" class="album aikatsu">
             <div class="album-images" id="aikatsu-art"></div>
             <span>アイカツ！アンコール</span
-            ></button
+            ><small>コーデをあつめる</small></button
           ><button data-game="aipri" class="album aipri">
             <div class="album-images" id="aipri-art"></div>
-            <span>アイプリ</span>
+            <span>アイプリ</span><small>ひみつも、おねがいも。</small>
           </button>
         </div>
       </section>
@@ -285,5 +290,75 @@
       </div>
     </dialog>
     <div id="toast" role="status" hidden></div>
+    <dialog
+      id="camera-dialog"
+      class="camera-dialog"
+      aria-labelledby="camera-title"
+    >
+      <aside
+        id="camera-toast"
+        class="camera-toast"
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        <img id="camera-toast-image" alt="登録したカードの表面" />
+        <div>
+          <strong id="camera-toast-code"></strong
+          ><span id="camera-toast-name"></span><span>登録しました</span>
+        </div>
+      </aside>
+      <div class="camera-heading">
+        <h2 id="camera-title">カメラでカードを追加</h2>
+        <button
+          id="camera-close"
+          type="button"
+          aria-label="カメラ登録を終了する"
+        >
+          終了
+        </button>
+      </div>
+      <p class="camera-help">カード表面を撮影して、所持カードに登録します。</p>
+      <div class="camera-view">
+        <video id="camera-video" autoplay muted playsinline hidden></video>
+        <img id="camera-photo" alt="撮影したカード" hidden />
+      </div>
+      <div class="camera-actions">
+        <button id="camera-start" type="button">カメラを起動</button>
+        <button id="camera-capture" type="button" class="primary" hidden>
+          撮影して照合
+        </button>
+        <label class="camera-upload"
+          >写真を撮影・選択<input
+            id="camera-file"
+            type="file"
+            accept="image/*"
+            capture="environment"
+        /></label>
+        <button id="camera-read" type="button" disabled>もう一度照合</button>
+        <button id="camera-next" type="button">次のカードへ</button>
+      </div>
+      <p
+        id="camera-status"
+        class="camera-status"
+        role="status"
+        aria-live="polite"
+      ></p>
+      <label class="camera-manual-label" for="camera-manual"
+        >コードで探す</label
+      >
+      <input
+        id="camera-manual"
+        class="camera-manual"
+        type="search"
+        placeholder="例：E1-01 ／ AP1-001P"
+        autocomplete="off"
+        autocapitalize="characters"
+      />
+      <div id="camera-candidates" class="camera-candidates"></div>
+      <p class="camera-help">
+        コードを明確に読み取れたカードは自動登録します。候補が複数ある場合は種類を確認してください。撮影画像はサーバーに送信しません。
+      </p>
+    </dialog>
   </body>
 </html>
