@@ -10,12 +10,13 @@
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
     <link rel="stylesheet" href="./assets/style.css" />
-    <link rel="stylesheet" href="./assets/card-camera.css?v=20261008-camera" />
+    <link rel="stylesheet" href="./assets/card-camera.css?v=20261009-visual" />
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
     <script defer src="./assets/site-info.js"></script>
-    <script defer src="./assets/card-camera.js?v=20261008-camera"></script>
-    <script defer src="./assets/app-title-fix.js?v=20261008-camera"></script>
+    <script defer src="./assets/card-visual.js?v=20261009-visual"></script>
+    <script defer src="./assets/card-camera.js?v=20261009-visual"></script>
+    <script defer src="./assets/app-title-fix.js?v=20261009-visual"></script>
   </head>
   <body>
     <header>
@@ -318,15 +319,45 @@
           終了
         </button>
       </div>
-      <p class="camera-help">カード表面を撮影して、所持カードに登録します。</p>
+      <p class="camera-help">
+        表面を枠に合わせるだけ。イラスト・衣装を自動で照合します。
+      </p>
+      <div class="camera-toolbar">
+        <label for="camera-game">照合するアルバム</label
+        ><select id="camera-game">
+          <option value="aikatsu">アイカツ！アンコール</option>
+          <option value="himitsu">ひみつのアイプリ</option>
+          <option value="onegai">おねがいアイプリ</option>
+          <option value="all">すべて</option></select
+        ><span class="camera-live-badge">自動スキャン</span>
+      </div>
       <div class="camera-view">
         <video id="camera-video" autoplay muted playsinline hidden></video>
-        <img id="camera-photo" alt="撮影したカード" hidden />
+        <div id="camera-guide" class="camera-guide" hidden>
+          <span>表面を枠に合わせて静止</span>
+        </div>
+        <div id="camera-photo-stage" class="camera-photo-stage" hidden>
+          <img id="camera-photo" alt="照合中のカード" hidden />
+          <svg
+            id="camera-crop-overlay"
+            class="camera-crop-overlay"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            hidden
+            aria-label="カードの4隅を調整"
+          >
+            <polygon points="0,0 100,0 100,100 0,100" />
+            <circle cx="0" cy="0" r="4" />
+            <circle cx="100" cy="0" r="4" />
+            <circle cx="100" cy="100" r="4" />
+            <circle cx="0" cy="100" r="4" />
+          </svg>
+        </div>
       </div>
       <div class="camera-actions">
         <button id="camera-start" type="button">カメラを起動</button>
         <button id="camera-capture" type="button" class="primary" hidden>
-          撮影して照合
+          今のカードを照合
         </button>
         <label class="camera-upload"
           >写真を撮影・選択<input
@@ -335,7 +366,12 @@
             accept="image/*"
             capture="environment"
         /></label>
-        <button id="camera-read" type="button" disabled>もう一度照合</button>
+        <button id="camera-read" type="button" disabled>
+          名前・衣装名でも照合
+        </button>
+        <button id="camera-adjust" type="button" hidden>
+          カードの4隅を調整
+        </button>
         <button id="camera-next" type="button">次のカードへ</button>
       </div>
       <p
@@ -345,13 +381,13 @@
         aria-live="polite"
       ></p>
       <label class="camera-manual-label" for="camera-manual"
-        >コードで探す</label
+        >名前・衣装名・コードで探す</label
       >
       <input
         id="camera-manual"
         class="camera-manual"
         type="search"
-        placeholder="例：E1-01 ／ AP1-001P"
+        placeholder="例：オーロラキス ／ E1-01"
         autocomplete="off"
         autocapitalize="characters"
       />
