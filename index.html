@@ -9,7 +9,10 @@
     />
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
-    <link rel="stylesheet" href="./assets/style.css?v=20261009-tag-slider" />
+    <link
+      rel="stylesheet"
+      href="./assets/style.css?v=20261010-inline-header-fix"
+    />
     <link
       rel="preload"
       href="./assets/catalog.json"
@@ -21,8 +24,75 @@
     <script defer src="./assets/site-info.js"></script>
     <script
       defer
-      src="./assets/app-title-fix.js?v=20261009-code-search"
+      src="./assets/app-title-fix.js?v=20261010-inline-header-fix"
     ></script>
+    <style id="header-tag-correction">
+      /* ヘッダー・タグ修正。既存CSSの後に読み込みます。 */
+      #nav > button#probability-back,
+      #nav > button#probability-open,
+      #nav > button#edit-nickname,
+      #nav > button#logout {
+        font-family: inherit !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
+        font-style: normal !important;
+        line-height: 1.5 !important;
+        letter-spacing: normal !important;
+        text-align: center !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 12px !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 10px !important;
+        background: transparent !important;
+        color: inherit !important;
+        text-decoration: none !important;
+        box-shadow: none !important;
+      }
+      #nav > button#probability-back:not([hidden]),
+      #nav > button#probability-open:not([hidden]),
+      #nav > button#edit-nickname:not([hidden]),
+      #nav > button#logout:not([hidden]) {
+        display: inline-flex !important;
+      }
+      #nav > button#probability-back:hover,
+      #nav > button#probability-open:hover,
+      #nav > button#edit-nickname:hover,
+      #nav > button#logout:hover {
+        background: var(--soft, #ffedf5) !important;
+        color: var(--accent, #d63e84) !important;
+      }
+      #active-filters .filter-chip {
+        display: inline-flex !important;
+        align-items: center !important;
+        height: auto !important;
+        min-height: 28px !important;
+        max-height: none !important;
+        padding: 5px 8px !important;
+        line-height: 1.65 !important;
+        overflow: visible !important;
+      }
+      #active-filters .filter-chip > span:first-child {
+        display: block !important;
+        line-height: 1.65 !important;
+        padding: 1px 0 !important;
+        overflow: visible !important;
+        max-height: none !important;
+      }
+      #active-filters .filter-chip strong {
+        line-height: inherit !important;
+      }
+      @media (max-width: 760px) {
+        #nav > button#probability-back,
+        #nav > button#probability-open,
+        #nav > button#edit-nickname,
+        #nav > button#logout {
+          width: 100% !important;
+          font-size: 13px !important;
+        }
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -51,6 +121,8 @@
           <button data-game="aikatsu" aria-pressed="false">アイカツ！</button>
           <button data-game="aipri" aria-pressed="false">アイプリ</button>
         </div>
+        <button id="probability-open" hidden>確率確認</button>
+        <button id="probability-back" hidden>アルバム表示</button>
         <button id="edit-nickname">ニックネームを変更</button>
         <button id="logout">ログアウト</button>
       </nav>
@@ -580,29 +652,47 @@
             <button id="login-tab" class="active">ログイン</button
             ><button id="signup-tab">新規登録</button>
           </div>
-          <form id="auth-form">
+          <form id="auth-form" novalidate>
             <label id="nickname-field" hidden
               >ニックネーム<input
                 id="nickname"
+                aria-describedby="nickname-error"
                 type="text"
                 autocomplete="nickname"
                 maxlength="20"
-                placeholder="アルバムに表示する名前"
-              /><small>20文字以内</small></label
+                placeholder="アルバムに表示する名前" /><small>20文字以内</small
+              ><span
+                class="field-error"
+                id="nickname-error"
+                role="alert"
+                hidden
+              ></span></label
             ><label
               >メールアドレス<input
                 id="email"
+                aria-describedby="email-error"
                 type="email"
                 autocomplete="email"
-                required /></label
+                required /><span
+                class="field-error"
+                id="email-error"
+                role="alert"
+                hidden
+              ></span></label
             ><label
               >パスワード<input
                 id="password"
+                aria-describedby="password-error"
                 type="password"
                 minlength="8"
                 autocomplete="current-password"
-                required
-              /><small>8文字以上</small></label
+                required /><small>8文字以上</small
+              ><span
+                class="field-error"
+                id="password-error"
+                role="alert"
+                hidden
+              ></span></label
             ><button class="primary" id="auth-submit" type="submit">
               ログイン
             </button>
@@ -713,9 +803,10 @@
             id="progress-details"
             class="text-button"
             aria-expanded="false"
+            aria-label="弾ごとの取得率を表示"
             aria-controls="series-progress"
           >
-            詳しく表示
+            <span class="progress-chevron" aria-hidden="true"></span>
           </button>
         </div>
         <div id="series-progress" class="series-progress" hidden></div>
@@ -760,15 +851,26 @@
         </div>
         <div class="results-heading">
           <h2 id="result-count"></h2>
-          <span id="filtered-rate"></span>
+          <div class="results-controls">
+            <span id="filtered-rate"></span
+            ><label class="display-count"
+              >表示件数<select id="page-size" aria-label="一覧の表示件数">
+                <option value="20">20枚</option>
+                <option value="50">50枚</option>
+                <option value="100">100枚</option>
+                <option value="all">すべて</option>
+              </select></label
+            >
+          </div>
         </div>
         <div id="cards" class="card-grid"></div>
         <p id="empty" hidden>
           見つかりませんでした。条件を変えて探してみてください。
         </p>
         <div class="pagination">
-          <button id="prev">前のページ</button><span id="page-info"></span
-          ><button id="next">次のページ</button>
+          <button id="prev">前のページ</button>
+          <nav id="page-numbers" aria-label="カード一覧のページ"></nav>
+          <button id="next">次のページ</button>
         </div>
         <div class="collection-status" aria-label="カード情報の更新状況">
           <div id="sync-indicator" class="sync-indicator">
@@ -778,10 +880,48 @@
           <p id="data-warning" class="notice" hidden></p>
         </div>
       </section>
+      <section id="probabilities" class="probability-page" hidden>
+        <div class="collection-title">
+          <div>
+            <span class="eyebrow">MY CARD STATS</span>
+            <h1 id="probability-title">確率確認</h1>
+          </div>
+        </div>
+        <p class="muted">
+          登録した所持枚数から計算した割合です。公式の排出確率ではありません。
+        </p>
+        <section class="probability-summary">
+          <h2>シリーズ総合</h2>
+          <p id="probability-total" class="muted"></p>
+          <div id="probability-overall" class="probability-grid"></div>
+          <p id="probability-overall-cost" class="cost-box" hidden></p>
+        </section>
+        <section class="probability-detail">
+          <div class="probability-detail-heading">
+            <h2>弾ごとの詳細</h2>
+            <label
+              ><span class="series-select-label">弾数</span
+              ><select id="probability-series"></select
+            ></label>
+          </div>
+          <p id="probability-detail-total" class="muted"></p>
+          <div id="probability-detail-cards" class="probability-grid"></div>
+          <p id="probability-detail-cost" class="cost-box" hidden></p>
+        </section>
+        <label class="cost-toggle"
+          ><input id="show-cost" type="checkbox" role="switch" /><span
+            class="switch-track"
+            aria-hidden="true"
+          ></span
+          ><span>利用金額を表示 <small>1枚100円の目安</small></span></label
+        >
+      </section>
     </main>
     <footer>
-      非公式の個人用カード管理サイト ·
-      画像・カード情報は各公式サイトに帰属します。
+      <p class="footer-note">
+        非公式の個人用カード管理サイト ·
+        画像・カード情報は各公式サイトに帰属します。
+      </p>
       <div>
         <a
           href="https://dcd.aikatsu.com/encore/cardlist/"
@@ -854,12 +994,35 @@
           <h2 id="modal-name"></h2>
           <dl id="modal-fields"></dl>
           <p id="metadata-note" class="muted" hidden></p>
-          <button id="modal-owned" class="ownership-button"></button
-          ><a id="modal-source" target="_blank" rel="noopener"
+          <button id="modal-owned" class="ownership-button" hidden></button>
+          <div id="quantity-controls" class="quantity-controls" hidden>
+            <span>所持数</span>
+            <div>
+              <button
+                id="quantity-minus"
+                type="button"
+                aria-label="所持数を1枚減らす"
+              >
+                −</button
+              ><output id="quantity-value" aria-live="polite">1枚</output
+              ><button
+                id="quantity-plus"
+                type="button"
+                aria-label="所持数を1枚増やす"
+              >
+                ＋
+              </button>
+            </div>
+          </div>
+          <a id="modal-source" target="_blank" rel="noopener"
             >公式カードリスト</a
           >
         </div>
       </div>
+      <nav class="detail-navigation" aria-label="カードの移動">
+        <button id="card-prev" type="button">← 前のカード</button
+        ><button id="card-next" type="button">次のカード →</button>
+      </nav>
     </dialog>
     <div id="toast" role="status" hidden></div>
     <script id="startup-card-data" type="application/json">
