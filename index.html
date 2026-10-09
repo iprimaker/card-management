@@ -9,11 +9,14 @@
     />
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
-    <link rel="stylesheet" href="./assets/style.css" />
+    <link rel="stylesheet" href="./assets/style.css?v=20261009-filter-chips" />
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
     <script defer src="./assets/site-info.js"></script>
-    <script defer src="./assets/app-title-fix.js?v=20261009-camera-removed"></script>
+    <script
+      defer
+      src="./assets/app-title-fix.js?v=20261009-filter-chips"
+    ></script>
   </head>
   <body>
     <header>
@@ -163,22 +166,52 @@
           </div>
           <div class="progress-track"><span id="progress-bar"></span></div>
           <p id="progress-count"></p>
+          <button
+            id="progress-details"
+            class="text-button"
+            aria-expanded="false"
+            aria-controls="series-progress"
+          >
+            詳しく表示
+          </button>
         </div>
-        <div class="filter-panel">
-          <label class="search-label"
-            >フリーワード検索<input
-              id="query"
-              type="search"
-              placeholder="カード名・コードなど"
-          /></label>
-          <div id="filters" class="filter-grid"></div>
-          <div class="filter-footer">
-            <div class="owned-tabs" role="group" aria-label="所持状態">
-              <button class="active" data-owned="all">すべて</button
-              ><button data-owned="yes">持っている</button
-              ><button data-owned="no">持っていない</button>
+        <div id="series-progress" class="series-progress" hidden></div>
+        <details id="filter-panel" class="filter-panel">
+          <summary>カードを絞り込む <span id="filter-summary"></span></summary>
+          <div class="filter-content">
+            <label class="search-label"
+              >フリーワード検索<input
+                id="query"
+                type="search"
+                placeholder="カード名・コードなど"
+              /><button
+                type="button"
+                id="clear-query"
+                class="filter-clear"
+                aria-label="フリーワード検索を解除"
+              >
+                解除
+              </button></label
+            >
+            <div id="filters" class="filter-grid"></div>
+            <div class="filter-footer">
+              <button id="reset" class="text-button">
+                すべての絞り込みを解除
+              </button>
             </div>
-            <button id="reset" class="text-button">絞り込みを解除</button>
+          </div>
+        </details>
+        <div
+          id="active-filters"
+          class="active-filters"
+          aria-label="適用中の絞り込み"
+          aria-live="polite"
+        ></div>
+        <div class="ownership-toolbar">
+          <div class="owned-tabs" role="group" aria-label="所持状態">
+            <button class="active" data-owned="all">すべて</button
+            ><button data-owned="yes">持っている</button
+            ><button data-owned="no">持っていない</button>
           </div>
         </div>
         <div class="results-heading">
@@ -277,7 +310,7 @@
           <h2 id="modal-name"></h2>
           <dl id="modal-fields"></dl>
           <p id="metadata-note" class="muted" hidden></p>
-          <button id="modal-owned" class="primary"></button
+          <button id="modal-owned" class="ownership-button"></button
           ><a id="modal-source" target="_blank" rel="noopener"
             >公式カードリスト</a
           >
