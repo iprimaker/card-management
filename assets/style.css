@@ -709,7 +709,6 @@ dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
-
 .family-tabs {
   display: flex;
   gap: 10px;
@@ -768,7 +767,6 @@ dialog::backdrop {
     font-size: 14px;
   }
 }
-
 header {
   position: relative;
 }
@@ -975,7 +973,6 @@ nav {
     animation: none;
   }
 }
-
 .card-marquee {
   width: 100%;
   overflow: hidden;
@@ -1164,7 +1161,6 @@ nav {
     mask-image: none;
   }
 }
-
 .marquee-card {
   padding: 6px;
 }
@@ -1187,7 +1183,6 @@ nav {
     height: 116px;
   }
 }
-
 /* アルバム一覧・取得率・絞り込み */
 body {
   background:
@@ -1471,7 +1466,6 @@ body {
     grid-template-columns: 1fr;
   }
 }
-
 /* 閉じている時も適用条件を表示 */
 .active-filters {
   display: flex;
@@ -1525,7 +1519,6 @@ body {
     padding: 6px 10px;
   }
 }
-
 .family-tabs button:not(.active) img {
   filter: grayscale(1);
   opacity: 0.65;
@@ -1539,7 +1532,6 @@ body {
     filter 0.2s ease,
     opacity 0.2s ease;
 }
-
 /* 適用条件タグと所持状態スライダー */
 .filter-chip {
   border-radius: 12px;
@@ -1634,7 +1626,6 @@ body {
     transition: none;
   }
 }
-
 /* 表示件数と番号付きページ移動 */
 .results-controls {
   display: flex;
@@ -1720,7 +1711,6 @@ body {
     padding: 8px 10px;
   }
 }
-
 /* 総合取得率と所持枚数 */
 #collection > .progress-card {
   position: relative;
@@ -1918,7 +1908,6 @@ body {
     flex-shrink: 0;
   }
 }
-
 /* 一覧と詳細の仕上げ */
 button:focus-visible,
 a:focus-visible {
@@ -2039,24 +2028,6 @@ select {
   background: var(--soft);
   color: var(--accent);
 }
-#probability-back {
-  display: inline-flex;
-  align-items: center;
-  color: var(--muted);
-  font-size: 0.84rem;
-  border: 1px solid var(--line);
-  border-radius: 100px;
-  padding: 9px 15px;
-  background: #fff;
-  margin-bottom: 14px;
-  transition:
-    background 0.16s ease,
-    color 0.16s ease;
-}
-#probability-back:hover {
-  background: var(--soft);
-  color: var(--accent);
-}
 .probability-grid {
   display: block;
   min-width: 0;
@@ -2166,7 +2137,6 @@ select {
     transition: none;
   }
 }
-
 /* カードの上端と操作位置を揃える */
 .card-trigger {
   display: flex;
@@ -2242,10 +2212,6 @@ select {
 .probability-detail-heading select {
   margin: 0;
   min-width: 0;
-}
-#probability-back {
-  text-decoration: none;
-  margin: 0;
 }
 .cost-toggle {
   position: relative;
@@ -2354,26 +2320,10 @@ input[aria-invalid="true"] {
 .marquee-card img {
   width: 100%;
 }
-
 /* やわらかな色とコンパクトな操作 */
 .filter-chip {
   padding-top: 4px;
   padding-bottom: 4px;
-}
-#nav > #probability-back {
-  border: 0;
-  border-radius: 10px;
-  box-shadow: none;
-  background: transparent;
-  color: inherit;
-  padding: 10px 13px;
-  font-size: inherit;
-  font-weight: 500;
-  text-decoration: none;
-}
-#nav > #probability-back:hover {
-  background: var(--soft);
-  color: var(--accent);
 }
 .detail-navigation {
   padding: 18px 0 0;
@@ -2432,5 +2382,84 @@ input[aria-invalid="true"] {
   }
   .probability-detail-heading label {
     max-width: 100%;
+  }
+}
+/* 小さな画面の操作とフッター */
+.filter-chip {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.footer-note {
+  margin: 0;
+  font-size: clamp(9px, 2.6vw, 12px);
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+@media (max-width: 760px) {
+  #detail .detail-navigation {
+    display: none;
+  }
+  .filter-chip {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  footer {
+    padding: 20px 10px;
+  }
+  footer .footer-links {
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  footer .footer-links button,
+  footer .footer-links .contact-footer-link {
+    font-size: clamp(9px, 2.6vw, 11px);
+    white-space: nowrap;
+    padding: 6px 2px;
+    line-height: 1.4;
+    margin: 0;
+  }
+}
+/* ヘッダーの操作ボタンは全て同じ文字・配置にする */
+#nav > :is(#probability-back, #probability-open, #edit-nickname, #logout) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+  padding: 8px 12px;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  text-decoration: none;
+}
+#nav
+  > :is(#probability-back, #probability-open, #edit-nickname, #logout):hover {
+  background: var(--soft);
+  color: var(--accent);
+}
+.filter-chip {
+  height: auto;
+  max-height: none;
+  line-height: 1.6;
+  overflow: visible;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.filter-chip > span:first-child {
+  line-height: 1.6;
+  padding: 1px 0;
+  overflow: visible;
+}
+@media (max-width: 700px) {
+  #nav > :is(#probability-back, #probability-open, #edit-nickname, #logout) {
+    font-size: 0.8125rem;
   }
 }
