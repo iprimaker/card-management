@@ -9,13 +9,19 @@
     />
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
-    <link rel="stylesheet" href="./assets/style.css?v=20261009-filter-chips" />
+    <link rel="stylesheet" href="./assets/style.css?v=20261009-tag-slider" />
+    <link
+      rel="preload"
+      href="./assets/catalog.json"
+      as="fetch"
+      crossorigin="anonymous"
+    />
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
     <script defer src="./assets/site-info.js"></script>
     <script
       defer
-      src="./assets/app-title-fix.js?v=20261009-filter-chips"
+      src="./assets/app-title-fix.js?v=20261009-code-search"
     ></script>
   </head>
   <body>
@@ -57,7 +63,516 @@
             class="card-marquee"
             id="auth-art"
             aria-label="カードのスライド一覧"
-          ></div>
+          >
+            <div class="marquee-track">
+              <div class="marquee-group">
+                <button
+                  class="marquee-card"
+                  data-preview="aipri:OA4-002"
+                  aria-label="ピュアハートバズリウムブルーの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_OA4-002.jpg"
+                    alt="ピュアハートバズリウムブルー"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-28_N"
+                  aria-label="ピンクブロッサムスカートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-28_N.jpg"
+                    alt="ピンクブロッサムスカート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-62_N"
+                  aria-label="パープルステージニーハイパンプスの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-62_N.jpg"
+                    alt="パープルステージニーハイパンプス"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:EP-003_N"
+                  aria-label="エメラルドコクーンワンピの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_EP-003_N.jpg"
+                    alt="エメラルドコクーンワンピ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-02_PR"
+                  aria-label="オーロラキスドレープスカートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-02_PR.jpg"
+                    alt="オーロラキスドレープスカート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:AP2-005"
+                  aria-label="ローズグランプリの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_AP2-005.jpg"
+                    alt="ローズグランプリ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:APR5-025"
+                  aria-label="アイプリバーススカーレットバタフライの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_APR5-025.jpg"
+                    alt="アイプリバーススカーレットバタフライ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:EP-018_N"
+                  aria-label="編み上げラベンダーブーツの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_EP-018_N.jpg"
+                    alt="編み上げラベンダーブーツ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:TOY-019"
+                  aria-label="ハニービービビッドピンクの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_TOY-019.jpg"
+                    alt="ハニービービビッドピンク"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:TOY-023"
+                  aria-label="パティシエはちみつパンケーキの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_TOY-023.jpg"
+                    alt="パティシエはちみつパンケーキ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:AP2-006"
+                  aria-label="ローズグランプリの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_AP2-006.jpg"
+                    alt="ローズグランプリ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-01_PR"
+                  aria-label="オーロラキスキャミソールの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-01_PR.jpg"
+                    alt="オーロラキスキャミソール"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:OA1-013"
+                  aria-label="ふわふわキャットの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_OA1-013.jpg"
+                    alt="ふわふわキャット"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-45_N"
+                  aria-label="ダイヤモンドチェックスカートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-45_N.jpg"
+                    alt="ダイヤモンドチェックスカート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-20_R"
+                  aria-label="クリアネスイエローアクセの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-20_R.jpg"
+                    alt="クリアネスイエローアクセ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:P-155"
+                  aria-label="アイプリバースポッピンハートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_P-155.jpg"
+                    alt="アイプリバースポッピンハート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-27_N"
+                  aria-label="ピンクブロッサムトップスの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-27_N.jpg"
+                    alt="ピンクブロッサムトップス"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:OA4-001"
+                  aria-label="スマイルハートバズリウムピンクの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_OA4-001.jpg"
+                    alt="スマイルハートバズリウムピンク"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aipri:APR6-013"
+                  aria-label="エターナルスぺースジャンピンロケットラブリーの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_APR6-013.jpg"
+                    alt="エターナルスぺースジャンピンロケットラブリー"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-13_R"
+                  aria-label="チャーミーリボントップスの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-13_R.jpg"
+                    alt="チャーミーリボントップス"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  />
+                </button>
+              </div>
+              <div class="marquee-group" aria-hidden="true">
+                <button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:OA4-002"
+                  aria-label="ピュアハートバズリウムブルーの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_OA4-002.jpg"
+                    alt="ピュアハートバズリウムブルー"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-28_N"
+                  aria-label="ピンクブロッサムスカートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-28_N.jpg"
+                    alt="ピンクブロッサムスカート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-62_N"
+                  aria-label="パープルステージニーハイパンプスの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-62_N.jpg"
+                    alt="パープルステージニーハイパンプス"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:EP-003_N"
+                  aria-label="エメラルドコクーンワンピの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_EP-003_N.jpg"
+                    alt="エメラルドコクーンワンピ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-02_PR"
+                  aria-label="オーロラキスドレープスカートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-02_PR.jpg"
+                    alt="オーロラキスドレープスカート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:AP2-005"
+                  aria-label="ローズグランプリの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_AP2-005.jpg"
+                    alt="ローズグランプリ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:APR5-025"
+                  aria-label="アイプリバーススカーレットバタフライの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_APR5-025.jpg"
+                    alt="アイプリバーススカーレットバタフライ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:EP-018_N"
+                  aria-label="編み上げラベンダーブーツの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_EP-018_N.jpg"
+                    alt="編み上げラベンダーブーツ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:TOY-019"
+                  aria-label="ハニービービビッドピンクの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_TOY-019.jpg"
+                    alt="ハニービービビッドピンク"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:TOY-023"
+                  aria-label="パティシエはちみつパンケーキの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_TOY-023.jpg"
+                    alt="パティシエはちみつパンケーキ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:AP2-006"
+                  aria-label="ローズグランプリの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_AP2-006.jpg"
+                    alt="ローズグランプリ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-01_PR"
+                  aria-label="オーロラキスキャミソールの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-01_PR.jpg"
+                    alt="オーロラキスキャミソール"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:OA1-013"
+                  aria-label="ふわふわキャットの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_OA1-013.jpg"
+                    alt="ふわふわキャット"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-45_N"
+                  aria-label="ダイヤモンドチェックスカートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-45_N.jpg"
+                    alt="ダイヤモンドチェックスカート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-20_R"
+                  aria-label="クリアネスイエローアクセの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-20_R.jpg"
+                    alt="クリアネスイエローアクセ"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:P-155"
+                  aria-label="アイプリバースポッピンハートの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_P-155.jpg"
+                    alt="アイプリバースポッピンハート"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-27_N"
+                  aria-label="ピンクブロッサムトップスの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-27_N.jpg"
+                    alt="ピンクブロッサムトップス"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:OA4-001"
+                  aria-label="スマイルハートバズリウムピンクの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_OA4-001.jpg"
+                    alt="スマイルハートバズリウムピンク"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aipri:APR6-013"
+                  aria-label="エターナルスぺースジャンピンロケットラブリーの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aipri_APR6-013.jpg"
+                    alt="エターナルスぺースジャンピンロケットラブリー"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  /></button
+                ><button
+                  tabindex="-1"
+                  class="marquee-card"
+                  data-preview="aikatsu:E1-13_R"
+                  aria-label="チャーミーリボントップスの詳細"
+                >
+                  <img
+                    src="./assets/startup-cards/aikatsu_E1-13_R.jpg"
+                    alt="チャーミーリボントップス"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="auth-panel">
           <h2>カードアルバムへようこそ</h2>
@@ -130,11 +645,39 @@
         </div>
         <div class="album-options">
           <button data-game="aikatsu" class="album aikatsu">
-            <div class="album-images" id="aikatsu-art"></div>
+            <div class="album-images" id="aikatsu-art">
+              <img
+                src="./assets/startup-cards/aikatsu_E1-01_PR.jpg"
+                alt="オーロラキスキャミソール"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              /><img
+                src="./assets/startup-cards/aikatsu_E1-02_PR.jpg"
+                alt="オーロラキスドレープスカート"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </div>
             <span>アイカツ！アンコール</span
             ><small>コーデをあつめる</small></button
           ><button data-game="aipri" class="album aipri">
-            <div class="album-images" id="aipri-art"></div>
+            <div class="album-images" id="aipri-art">
+              <img
+                src="./assets/startup-cards/aipri_OA4-001.jpg"
+                alt="スマイルハートバズリウムピンク"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              /><img
+                src="./assets/startup-cards/aipri_OA4-002.jpg"
+                alt="ピュアハートバズリウムブルー"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </div>
             <span>アイプリ</span><small>ひみつも、おねがいも。</small>
           </button>
         </div>
@@ -209,6 +752,7 @@
         ></div>
         <div class="ownership-toolbar">
           <div class="owned-tabs" role="group" aria-label="所持状態">
+            <span class="owned-tabs-slider" aria-hidden="true"></span>
             <button class="active" data-owned="all">すべて</button
             ><button data-owned="yes">持っている</button
             ><button data-owned="no">持っていない</button>
@@ -318,5 +862,360 @@
       </div>
     </dialog>
     <div id="toast" role="status" hidden></div>
+    <script id="startup-card-data" type="application/json">
+      [
+        {
+          "id": "aikatsu:E1-01_PR",
+          "game": "aikatsu",
+          "code": "E1-01",
+          "name": "オーロラキスキャミソール",
+          "rarity": "PR",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR_b.webp",
+          "type": ["キュート"],
+          "category": ["トップス"],
+          "brand": ["エンジェリーシュガー"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "metadataSource": "公式カード画像確認",
+          "songs": [],
+          "variant": "通常",
+          "character": "星宮いちご",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-01_PR.jpg"
+        },
+        {
+          "id": "aikatsu:E1-02_PR",
+          "game": "aikatsu",
+          "code": "E1-02",
+          "name": "オーロラキスドレープスカート",
+          "rarity": "PR",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-02_PR.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-02_PR_b.webp",
+          "type": ["キュート"],
+          "category": ["ボトムス"],
+          "brand": ["エンジェリーシュガー"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "星宮いちご",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-02_PR.jpg"
+        },
+        {
+          "id": "aikatsu:EP-003_N",
+          "game": "aikatsu",
+          "code": "EP-003",
+          "name": "エメラルドコクーンワンピ",
+          "rarity": "N",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-003_N.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-003_N_b.webp",
+          "type": ["セクシー"],
+          "category": ["トップス&ボトムス"],
+          "brand": ["スパイシーアゲハ"],
+          "series": ["プロモーションカード"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=3&sort=1",
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "紫吹蘭",
+          "previewFront": "./assets/startup-cards/aikatsu_EP-003_N.jpg"
+        },
+        {
+          "id": "aikatsu:EP-018_N",
+          "game": "aikatsu",
+          "code": "EP-018",
+          "name": "編み上げラベンダーブーツ",
+          "rarity": "N",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-018_N.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-018_N_b.webp",
+          "type": ["キュート"],
+          "category": ["シューズ"],
+          "brand": ["エンジェリーシュガー"],
+          "series": ["プロモーションカード"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=3&sort=1",
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "霧矢あおい",
+          "previewFront": "./assets/startup-cards/aikatsu_EP-018_N.jpg"
+        },
+        {
+          "id": "aikatsu:E1-28_N",
+          "game": "aikatsu",
+          "code": "E1-28",
+          "name": "ピンクブロッサムスカート",
+          "rarity": "N",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-28_N.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-28_N_b.webp",
+          "type": ["キュート"],
+          "category": ["ボトムス"],
+          "brand": ["ノーブランド"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "姫乃みえる",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-28_N.jpg"
+        },
+        {
+          "id": "aikatsu:E1-62_N",
+          "game": "aikatsu",
+          "code": "E1-62",
+          "name": "パープルステージニーハイパンプス",
+          "rarity": "N",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-62_N.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-62_N_b.webp",
+          "type": ["セクシー"],
+          "category": ["シューズ"],
+          "brand": ["ノーブランド"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "紫吹蘭",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-62_N.jpg"
+        },
+        {
+          "id": "aikatsu:E1-20_R",
+          "game": "aikatsu",
+          "code": "E1-20",
+          "name": "クリアネスイエローアクセ",
+          "rarity": "R",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-20_R.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-20_R_b.webp",
+          "type": ["キュート"],
+          "category": ["アクセサリー"],
+          "brand": ["エンジェリーシュガー"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "音城ノエル",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-20_R.jpg"
+        },
+        {
+          "id": "aikatsu:E1-45_N",
+          "game": "aikatsu",
+          "code": "E1-45",
+          "name": "ダイヤモンドチェックスカート",
+          "rarity": "N",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-45_N.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-45_N_b.webp",
+          "type": ["クール"],
+          "category": ["ボトムス"],
+          "brand": ["ノーブランド"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "真未夢メエ",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-45_N.jpg"
+        },
+        {
+          "id": "aikatsu:E1-13_R",
+          "game": "aikatsu",
+          "code": "E1-13",
+          "name": "チャーミーリボントップス",
+          "rarity": "R",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-13_R.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-13_R_b.webp",
+          "type": ["キュート"],
+          "category": ["トップス"],
+          "brand": ["メープルリボン"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "姫石らき",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-13_R.jpg"
+        },
+        {
+          "id": "aikatsu:E1-27_N",
+          "game": "aikatsu",
+          "code": "E1-27",
+          "name": "ピンクブロッサムトップス",
+          "rarity": "N",
+          "front": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-27_N.webp",
+          "back": "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-27_N_b.webp",
+          "type": ["キュート"],
+          "category": ["トップス"],
+          "brand": ["ノーブランド"],
+          "series": ["1弾"],
+          "source": "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=3&sort=1",
+          "songs": [],
+          "metadataSource": "公式カード画像確認",
+          "variant": "通常",
+          "character": "姫乃みえる",
+          "previewFront": "./assets/startup-cards/aikatsu_E1-27_N.jpg"
+        },
+        {
+          "id": "aipri:OA4-001",
+          "game": "aipri",
+          "code": "OA4-001",
+          "name": "スマイルハートバズリウムピンク",
+          "character": "いのり",
+          "rarity": "★4",
+          "family": "おねがい",
+          "series": ["【おねがいアイプリ 4だん】"],
+          "front": "https://aipri.jp/card/img/oa4/OA4-001_O.webp",
+          "back": "https://aipri.jp/card/img/oa4/OA4-001_U.webp",
+          "songs": ["ポップにいこ～ん！"],
+          "source": "https://aipri.jp/card/oa4.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_OA4-001.jpg"
+        },
+        {
+          "id": "aipri:OA4-002",
+          "game": "aipri",
+          "code": "OA4-002",
+          "name": "ピュアハートバズリウムブルー",
+          "character": "あおい",
+          "rarity": "★4",
+          "family": "おねがい",
+          "series": ["【おねがいアイプリ 4だん】"],
+          "front": "https://aipri.jp/card/img/oa4/OA4-002_O.webp",
+          "back": "https://aipri.jp/card/img/oa4/OA4-002_U.webp",
+          "songs": ["ブルーパレード"],
+          "source": "https://aipri.jp/card/oa4.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_OA4-002.jpg"
+        },
+        {
+          "id": "aipri:P-155",
+          "game": "aipri",
+          "code": "P-155",
+          "name": "アイプリバースポッピンハート",
+          "character": "ひまり",
+          "rarity": "記載なし",
+          "family": "ひみつ",
+          "series": ["メモリアルカードパック"],
+          "front": "https://aipri.jp/himitsu/card/img/memorial/P-155_O.webp",
+          "back": "https://aipri.jp/himitsu/card/img/memorial/P-155_U.webp",
+          "songs": ["P.O.P.P.Y"],
+          "source": "https://aipri.jp/himitsu/card/memorial.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_P-155.jpg"
+        },
+        {
+          "id": "aipri:TOY-023",
+          "game": "aipri",
+          "code": "TOY-023",
+          "name": "パティシエはちみつパンケーキ",
+          "character": "つむぎ",
+          "rarity": "記載なし",
+          "family": "ひみつ",
+          "series": ["スペシャルアイプリカード"],
+          "front": "https://aipri.jp/himitsu/card/img/special/TOY-023_O.webp",
+          "back": null,
+          "songs": [],
+          "source": "https://aipri.jp/himitsu/card/special.html",
+          "metadataSource": "",
+          "previewFront": "./assets/startup-cards/aipri_TOY-023.jpg"
+        },
+        {
+          "id": "aipri:TOY-019",
+          "game": "aipri",
+          "code": "TOY-019",
+          "name": "ハニービービビッドピンク",
+          "character": "ひまり",
+          "rarity": "記載なし",
+          "family": "ひみつ",
+          "series": ["ミルフィーカード"],
+          "front": "https://aipri.jp/himitsu/card/img/millefeui/TOY-019_O.webp",
+          "back": null,
+          "songs": [],
+          "source": "https://aipri.jp/himitsu/card/millefeui.html#item2",
+          "metadataSource": "",
+          "type": [],
+          "category": [],
+          "brand": [],
+          "previewFront": "./assets/startup-cards/aipri_TOY-019.jpg"
+        },
+        {
+          "id": "aipri:AP2-005",
+          "game": "aipri",
+          "code": "AP2-005",
+          "name": "ローズグランプリ",
+          "character": "サクラ",
+          "rarity": "★4",
+          "family": "ひみつ",
+          "series": ["【2だん】"],
+          "front": "https://aipri.jp/himitsu/card/img/2/AP2-005_O.webp",
+          "back": "https://aipri.jp/himitsu/card/img/2/AP2-005_U.webp",
+          "songs": ["Stand Get Up"],
+          "source": "https://aipri.jp/himitsu/card/2.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_AP2-005.jpg"
+        },
+        {
+          "id": "aipri:APR5-025",
+          "game": "aipri",
+          "code": "APR5-025",
+          "name": "アイプリバーススカーレットバタフライ",
+          "character": "サクラ",
+          "rarity": "★3",
+          "family": "ひみつ",
+          "series": ["【リング5だん】"],
+          "front": "https://aipri.jp/himitsu/card/img/ring5/APR5-025_O.webp",
+          "back": "https://aipri.jp/himitsu/card/img/ring5/APR5-025_U.webp",
+          "songs": ["シンデレラのラララ♡"],
+          "source": "https://aipri.jp/himitsu/card/ring5.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_APR5-025.jpg"
+        },
+        {
+          "id": "aipri:OA1-013",
+          "game": "aipri",
+          "code": "OA1-013",
+          "name": "ふわふわキャット",
+          "character": "いのり",
+          "rarity": "★4",
+          "family": "おねがい",
+          "series": ["【おねがいアイプリ 1だん】"],
+          "front": "https://aipri.jp/card/img/oa1/OA1-013_O.webp",
+          "back": "https://aipri.jp/card/img/oa1/OA1-013_U.webp",
+          "songs": ["トキメキ♡ジャンプ！"],
+          "source": "https://aipri.jp/card/oa1.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_OA1-013.jpg"
+        },
+        {
+          "id": "aipri:AP2-006",
+          "game": "aipri",
+          "code": "AP2-006",
+          "name": "ローズグランプリ",
+          "character": "タマキ",
+          "rarity": "★4",
+          "family": "ひみつ",
+          "series": ["【2だん】"],
+          "front": "https://aipri.jp/himitsu/card/img/2/AP2-006_O.webp",
+          "back": "https://aipri.jp/himitsu/card/img/2/AP2-006_U.webp",
+          "songs": ["Stand Get Up"],
+          "source": "https://aipri.jp/himitsu/card/2.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_AP2-006.jpg"
+        },
+        {
+          "id": "aipri:APR6-013",
+          "game": "aipri",
+          "code": "APR6-013",
+          "name": "エターナルスぺースジャンピンロケットラブリー",
+          "character": "おとめ",
+          "rarity": "★4",
+          "family": "ひみつ",
+          "series": ["【リング6だん】"],
+          "front": "https://aipri.jp/himitsu/card/img/ring6/APR6-013_O.webp",
+          "back": "https://aipri.jp/himitsu/card/img/ring6/APR6-013_U.webp",
+          "songs": ["どきどき きらめき バズリウム"],
+          "source": "https://aipri.jp/himitsu/card/ring6.html",
+          "metadataSource": "参考サイトの保存データ",
+          "previewFront": "./assets/startup-cards/aipri_APR6-013.jpg"
+        }
+      ]
+    </script>
   </body>
 </html>
