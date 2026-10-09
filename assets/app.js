@@ -13,13 +13,9 @@ const $ = (id) => document.getElementById(id),
     );
 let db,
   session,
-  catalog = {
-    cards: JSON.parse($("startup-card-data")?.textContent || "[]"),
-    source: "snapshot",
-  },
+  catalog = { cards: [] },
   game = null,
   owned = new Set(),
-  ownedCounts = new Map(),
   ownershipReady = false,
   mode = "login",
   filters = {},
@@ -52,13 +48,10 @@ function clearPendingSignup() {
 }
 const adminOverrides = new Map();
 let marqueePaused = false;
-const saving = new Set();
-let pageSize = 20;
+const saving = new Set(),
+  SIZE = 30;
 let aipriFamily = "おねがい",
   headerImageKey = "";
-const startupProbabilityRoute = location.hash.match(
-  /^#probabilities-(aikatsu|onegai|himitsu)$/,
-)?.[1];
 const callbackQuery = new URLSearchParams(location.search),
   callbackHash = new URLSearchParams(location.hash.slice(1));
 const callbackType = callbackHash.get("type") || callbackQuery.get("type");
@@ -147,13 +140,7 @@ function toast(s) {
   toastTimer = setTimeout(() => ($("toast").hidden = true), 3500);
 }
 function screen(id) {
-  for (const s of [
-    "auth",
-    "auth-result",
-    "selection",
-    "collection",
-    "probabilities",
-  ])
+  for (const s of ["auth", "auth-result", "selection", "collection"])
     $(s).hidden = s !== id;
   $("nav").hidden = !session;
   $("menu-toggle").hidden = !session;
@@ -162,10 +149,6 @@ function screen(id) {
 }
 function authMode(m) {
   mode = m;
-  for (const id of ["nickname", "email", "password"]) {
-    $(id + "-error").hidden = true;
-    $(id).removeAttribute("aria-invalid");
-  }
   $("nickname-field").hidden = m !== "signup";
   $("nickname").required = m === "signup";
   $("login-tab").classList.toggle("active", m === "login");
@@ -194,7 +177,6 @@ async function loadOwnership() {
     uid = session?.user.id;
   ownershipReady = false;
   owned = new Set();
-  ownedCounts = new Map();
   if (!uid) return;
   let all = [],
     offset = 0;
@@ -202,7 +184,7 @@ async function loadOwnership() {
     while (true) {
       const { data, error } = await db
         .from("card_ownership")
-        .select("card_id,quantity")
+        .select("card_id")
         .eq("user_id", uid)
         .order("card_id")
         .range(offset, offset + 999);
@@ -212,8 +194,7 @@ async function loadOwnership() {
       offset += 1000;
     }
     if (generation !== loadGeneration || uid !== session?.user.id) return;
-    ownedCounts = new Map(all.map((r) => [r.card_id, Number(r.quantity) || 1]));
-    owned = new Set(ownedCounts.keys());
+    owned = new Set(all.map((r) => r.card_id));
     ownershipReady = true;
   } catch (e) {
     if (generation === loadGeneration)
@@ -227,7 +208,6 @@ async function authChanged(event, next) {
   const previous = session?.user.id;
   session = next;
   updateHeader();
-  if (selected) updateModalOwnership();
   if (event === "PASSWORD_RECOVERY") {
     recovering = true;
     $("auth-form").hidden = true;
@@ -238,7 +218,6 @@ async function authChanged(event, next) {
   if (!session) {
     loadGeneration++;
     owned = new Set();
-    ownedCounts = new Map();
     ownershipReady = false;
     game = null;
     personalMetadata.clear();
@@ -261,33 +240,6 @@ async function authChanged(event, next) {
     await loadPersonalMetadata();
     if (catalogFallback) await fetchCatalog();
   }
-}
-let initialCatalogPromise;
-function loadInitialCatalog() {
-  if (initialCatalogPromise) return initialCatalogPromise;
-  initialCatalogPromise = (async () => {
-    try {
-      const response = await fetch(new URL("assets/catalog.json", siteBase));
-      if (!response.ok) throw Error("初期データを読み込めません");
-      catalogFallback = await response.json();
-      if (catalog.source !== "live") {
-        catalog = {
-          ...catalogFallback,
-          cards: catalogFallback.cards.map((c) => ({ ...c })),
-          source: "snapshot",
-        };
-        applyPersonalMetadata();
-        art();
-        if (game) {
-          fillFilters();
-          render();
-        }
-      }
-    } catch (error) {
-      console.warn("初期カードの読み込み", error.message);
-    }
-  })();
-  return initialCatalogPromise;
 }
 async function fetchCatalog() {
   if (catalogLoading) return;
@@ -398,14 +350,6 @@ function applyPersonalMetadata() {
     }
     const forced = adminOverrides.get(c.id);
     if (forced) Object.assign(c, forced);
-    if (c.game === "aipri") {
-      const serial = String(c.code || "")
-        .normalize("NFKC")
-        .trim()
-        .toUpperCase();
-      if (serial.endsWith("P")) c.rarity = "パラレル";
-      else if (serial.includes("M")) c.rarity = "ミラクル";
-    }
   }
 }
 async function loadPersonalMetadata() {
@@ -453,14 +397,11 @@ async function loadAdminOverrides() {
 function art() {
   updateHeader();
   for (const g of ["aikatsu", "aipri"])
-    if (!$(g + "-art").childElementCount)
-      $(g + "-art").innerHTML = catalog.cards
-        .filter((c) => c.game === g)
-        .slice(0, 2)
-        .map(
-          (c) => `<img src="${esc(c.front)}" alt="${esc(c.name || c.code)}">`,
-        )
-        .join("");
+    $(g + "-art").innerHTML = catalog.cards
+      .filter((c) => c.game === g)
+      .slice(0, 2)
+      .map((c) => `<img src="${esc(c.front)}" alt="${esc(c.name || c.code)}">`)
+      .join("");
   buildMarquee();
 }
 function chooseGame(g) {
@@ -475,13 +416,6 @@ function chooseGame(g) {
   $("aipri-families").hidden = g !== "aipri";
   updateHeader();
   screen("collection");
-  setLatestSeries();
-  $("filter-panel").open = false;
-  $("series-progress").hidden = true;
-  $("progress-details").setAttribute("aria-expanded", "false");
-  $("progress-details").innerHTML =
-    '<span class="progress-chevron" aria-hidden="true"></span>';
-  $("progress-details").setAttribute("aria-label", "弾ごとの取得率を表示");
   fillFilters();
   render();
   history.replaceState(null, "", "#" + g);
@@ -491,52 +425,7 @@ function albumCards() {
     (c) => c.game === game && (game !== "aipri" || c.family === aipriFamily),
   );
 }
-function seriesRank(label) {
-  const text = String(label).normalize("NFKC");
-  const number = text.match(/(\d+)\s*(?:だん|弾)/);
-  return number
-    ? (text.includes("リング") ? 1000000 : 0) + Number(number[1])
-    : -1;
-}
-function setLatestSeries() {
-  const series = [...new Set(albumCards().flatMap((c) => values(c.series)))];
-  const latest = series
-    .filter((s) => seriesRank(s) >= 0)
-    .sort((a, b) => seriesRank(b) - seriesRank(a))[0];
-  if (latest) filters.series = latest;
-}
-function renderFamilyTabs() {
-  document.querySelectorAll("[data-family]").forEach((button) => {
-    const family = button.dataset.family;
-    const candidates = catalog.cards.filter(
-      (c) => c.game === "aipri" && c.family === family && c.front,
-    );
-    const preferred =
-      candidates.find(
-        (c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001"),
-      ) || candidates[0];
-    button.innerHTML = `${preferred ? `<img src="${esc(preferred.front)}" alt="" loading="lazy">` : ""}<span><strong>${family === "おねがい" ? "おねがいアイプリ" : "ひみつのアイプリ"}</strong></span>`;
-  });
-}
-function renderSeriesProgress() {
-  const all = albumCards();
-  const series = [...new Set(all.flatMap((c) => values(c.series)))].sort(
-    (a, b) =>
-      seriesRank(b) - seriesRank(a) ||
-      a.localeCompare(b, "ja", { numeric: true }),
-  );
-  $("series-progress").innerHTML = series
-    .map((label) => {
-      const cards = all.filter((c) => values(c.series).includes(label));
-      const got = cards.filter((c) => owned.has(c.id)).length;
-      const rate = cards.length ? (got / cards.length) * 100 : 0;
-      return `<div class="progress-card progress-card-small"><div><span>${esc(label)}</span><strong>${ownershipReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${ownershipReady ? rate : 0}%"></span></div><p>${ownershipReady ? `持っている ${got}枚 ／ 持っていない ${cards.length - got}枚` : "所持データを読み込み中"}</p></div>`;
-    })
-    .join("");
-}
 function fillFilters() {
-  for (const card of catalog.cards)
-    if (card.game === "aipri") card.rarity = displayRarity(card);
   const cards = albumCards();
   $("game-title").textContent =
     game === "aikatsu"
@@ -548,28 +437,14 @@ function fillFilters() {
     b.classList.toggle("active", b.dataset.family === aipriFamily);
     b.setAttribute("aria-pressed", String(b.dataset.family === aipriFamily));
   });
-  renderFamilyTabs();
   $("filters").innerHTML = fields[game]
     .filter(([key]) => key !== "family")
     .map(([key, label]) => {
       const opts = [...new Set(cards.flatMap((c) => values(c[key])))].sort(
-        (a, b) => {
-          if (game === "aikatsu" && key === "rarity") {
-            const order = ["ER", "PR", "R", "N"];
-            return (
-              (order.includes(a) ? order.indexOf(a) : 99) -
-                (order.includes(b) ? order.indexOf(b) : 99) ||
-              a.localeCompare(b, "ja")
-            );
-          }
-          return key === "series"
-            ? seriesRank(b) - seriesRank(a) ||
-                a.localeCompare(b, "ja", { numeric: true })
-            : a.localeCompare(b, "ja", { numeric: true });
-        },
+        (a, b) => a.localeCompare(b, "ja", { numeric: true }),
       );
       if (filters[key] && !opts.includes(filters[key])) delete filters[key];
-      return `<label><span class="filter-label">${label}<button type="button" class="filter-clear" data-clear-filter="${key}" aria-label="${label}の絞り込みを解除">解除</button></span><select data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${filters[key] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
+      return `<label>${label}<select data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${filters[key] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
     })
     .join("");
 }
@@ -581,19 +456,11 @@ function chooseFamily(f) {
   ownershipFilter = "all";
   page = 1;
   $("query").value = "";
-  setLatestSeries();
   fillFilters();
   render();
 }
-function normalizeCardCode(value) {
-  return String(value || "")
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[-‐‑‒–—―−\s]/g, "");
-}
 function filtered(includeOwnership = true) {
   const q = $("query").value.normalize("NFKC").toLowerCase().trim();
-  const compactQuery = normalizeCardCode(q);
   return albumCards().filter(
     (c) =>
       (!q ||
@@ -608,8 +475,7 @@ function filtered(includeOwnership = true) {
           .join(" ")
           .normalize("NFKC")
           .toLowerCase()
-          .includes(q) ||
-        (compactQuery && normalizeCardCode(c.code).includes(compactQuery))) &&
+          .includes(q)) &&
       Object.entries(filters).every(
         ([k, v]) => !v || values(c[k]).includes(v),
       ) &&
@@ -621,65 +487,14 @@ function filtered(includeOwnership = true) {
 function name(c) {
   return c.name || "カード名未取得";
 }
-function renderActiveFilters() {
-  const active = Object.entries(filters)
-    .filter(([, value]) => value)
-    .map(([key, value]) => ({
-      key,
-      label: fields[game].find(([field]) => field === key)?.[1] || key,
-      value,
-    }));
-  const query = $("query").value.trim();
-  if (query) active.push({ key: "query", label: "検索", value: query });
-  $("active-filters").innerHTML = active.length
-    ? `<span class="active-filters-label">適用中</span>${active.map(({ key, label, value }) => `<button type="button" class="filter-chip" data-remove-condition="${esc(key)}" aria-label="${esc(label + "：" + value)}を解除"><span>${esc(label)}：<strong>${esc(value)}</strong></span><span class="filter-chip-close" aria-hidden="true">×</span></button>`).join("")}`
-    : '<span class="no-active-filters">絞り込みなし</span>';
-}
-function getPageSize(count) {
-  return pageSize === "all" ? Math.max(1, count) : pageSize;
-}
-function renderPageNumbers(total) {
-  const candidates =
-    total <= 7
-      ? Array.from({ length: total }, (_, i) => i + 1)
-      : [
-          ...new Set(
-            [1, total, page - 2, page - 1, page, page + 1, page + 2].filter(
-              (n) => n >= 1 && n <= total,
-            ),
-          ),
-        ].sort((a, b) => a - b);
-  let previous = 0;
-  $("page-numbers").innerHTML = candidates
-    .map((n) => {
-      const gap =
-        previous && n - previous > 1
-          ? '<span class="page-gap" aria-hidden="true">…</span>'
-          : "";
-      previous = n;
-      return `${gap}<button type="button" data-page="${n}" ${n === page ? 'aria-current="page"' : ""} aria-label="${n}ページ目">${n}</button>`;
-    })
-    .join("");
-}
 function render() {
   if (!game) return;
-  renderActiveFilters();
   const all = albumCards(),
     got = all.filter((c) => owned.has(c.id)).length,
     rate = all.length ? (got / all.length) * 100 : 0,
     list = filtered(),
     base = filtered(false),
     baseGot = base.filter((c) => owned.has(c.id)).length;
-  $("filter-summary").textContent =
-    Object.values(filters).filter(Boolean).length +
-    ($("query").value.trim() ? 1 : 0)
-      ? `適用中 ${Object.values(filters).filter(Boolean).length + ($("query").value.trim() ? 1 : 0)}件`
-      : "";
-  document
-    .querySelectorAll("[data-clear-filter]")
-    .forEach((b) => (b.disabled = !filters[b.dataset.clearFilter]));
-  $("clear-query").disabled = !$("query").value;
-  if (!$("series-progress").hidden) renderSeriesProgress();
   $("total").textContent = `全${all.length}枚`;
   $("percent").textContent = ownershipReady ? rate.toFixed(1) + "%" : "—";
   $("progress-bar").style.width = (ownershipReady ? rate : 0) + "%";
@@ -690,32 +505,23 @@ function render() {
   $("filtered-rate").textContent = ownershipReady
     ? `絞り込み内 ${baseGot}/${base.length}枚 · ${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%`
     : "";
-  document
-    .querySelector(".owned-tabs")
-    .style.setProperty(
-      "--owned-index",
-      String(["all", "yes", "no"].indexOf(ownershipFilter)),
-    );
   document.querySelectorAll("[data-owned]").forEach((b) => {
     b.classList.toggle("active", b.dataset.owned === ownershipFilter);
-    b.setAttribute("aria-pressed", String(b.dataset.owned === ownershipFilter));
     b.disabled = !ownershipReady;
   });
-  const size = getPageSize(list.length);
-  const pageCount = Math.max(1, Math.ceil(list.length / size));
-  page = Math.min(page, pageCount);
-  $("page-size").value = String(pageSize);
-  renderPageNumbers(pageCount);
+  page = Math.min(page, Math.max(1, Math.ceil(list.length / SIZE)));
   $("cards").innerHTML = list
-    .slice((page - 1) * size, page * size)
+    .slice((page - 1) * SIZE, page * SIZE)
     .map(
       (c) =>
-        `<article class="card ${owned.has(c.id) ? "owned" : ""}">${incompleteCard(c) ? '<span class="incomplete-badge" role="img" aria-label="未取得のカード情報があります" title="未取得のカード情報があります">!</span>' : ""}${owned.has(c.id) ? `<span class="owned-badge">所持 ${quantityOf(c.id)}枚</span>` : ""}<button class="card-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}"></span><span class="code">${esc(c.code)}</span><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+        `<article class="card ${owned.has(c.id) ? "owned" : ""}"><button class="card-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><img src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}"><span class="code">${esc(c.code)}</span><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(c.rarity || "記載なし")}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
     )
     .join("");
   $("empty").hidden = list.length > 0;
   $("prev").disabled = page === 1;
-  $("next").disabled = page * size >= list.length;
+  $("next").disabled = page * SIZE >= list.length;
+  $("page-info").textContent =
+    `${page} / ${Math.max(1, Math.ceil(list.length / SIZE))}`;
   updateSyncIndicator();
   $("sync-status").textContent = catalogLoading
     ? "カード情報を確認中"
@@ -733,72 +539,48 @@ function render() {
     ? catalog.errors[0]
     : "画像内のカード名・曲名に未取得の項目があります。新しいカードの文字読み取り結果は詳細で確認できます。";
   if (selected) updateModalOwnership();
-  if (!$("probabilities").hidden) renderProbabilities();
   scheduleOCR();
 }
-function quantityOf(id) {
-  return owned.has(id) ? ownedCounts.get(id) || 1 : 0;
-}
-async function saveQuantity(id, delta, clear = false) {
+async function toggle(id) {
   if (!session || !ownershipReady || saving.has(id)) return;
-  const uid = session.user.id;
+  const uid = session.user.id,
+    previous = owned.has(id);
   saving.add(id);
   render();
-  if (selected) updateModalOwnership();
   try {
-    const result = await db.rpc(
-      clear ? "card_album_clear_quantity" : "card_album_change_quantity",
-      clear ? { p_card_id: id } : { p_card_id: id, p_delta: delta },
-    );
+    const result = previous
+      ? await db
+          .from("card_ownership")
+          .delete()
+          .eq("user_id", uid)
+          .eq("card_id", id)
+      : await db
+          .from("card_ownership")
+          .upsert(
+            { user_id: uid, card_id: id },
+            { onConflict: "user_id,card_id", ignoreDuplicates: true },
+          );
     if (result.error) throw result.error;
-    if (session?.user.id !== uid) return;
-    const count = Number(result.data);
-    if (!Number.isInteger(count) || count < 0)
-      throw Error("所持数の応答を確認できませんでした");
-    if (count) {
-      owned.add(id);
-      ownedCounts.set(id, count);
-    } else {
-      owned.delete(id);
-      ownedCounts.delete(id);
+    if (session?.user.id === uid) {
+      previous ? owned.delete(id) : owned.add(id);
+      toast(previous ? "所持登録を解除しました" : "所持カードに登録しました");
     }
-    toast(
-      count ? `所持数を${count}枚に更新しました` : "所持登録を解除しました",
-    );
-  } catch (error) {
-    toast("保存できませんでした。" + translatedError(error));
+  } catch (e) {
+    toast("保存できませんでした。" + translatedError(e));
   } finally {
     saving.delete(id);
     render();
-    if (selected) updateModalOwnership();
   }
 }
-async function toggle(id) {
-  return saveQuantity(id, 1, owned.has(id));
-}
-let detailCardIds = [];
-function openDetail(id, trigger, navigating = false) {
-  if (!navigating) {
-    const candidates = trigger?.closest("#auth-art")
-      ? [
-          ...document.querySelectorAll(
-            ".marquee-group:first-child [data-detail]",
-          ),
-        ].map((b) => b.dataset.detail)
-      : game
-        ? filtered().map((c) => c.id)
-        : catalog.cards.map((c) => c.id);
-    detailCardIds = [...new Set(candidates)];
-    if (!detailCardIds.includes(id)) detailCardIds = [id];
-  }
+function openDetail(id, trigger) {
   selected = catalog.cards.find((c) => c.id === id);
   if (!selected) return;
-  if (!navigating) lastFocus = trigger;
+  lastFocus = trigger;
   side = 0;
   const c = selected;
   $("modal-code").textContent = c.code;
   $("modal-name").textContent = name(c);
-  $("modal-rarity").textContent = displayRarity(c);
+  $("modal-rarity").textContent = c.rarity || "記載なし";
   $("modal-fields").innerHTML = fields[c.game]
     .map(
       ([k, label]) =>
@@ -809,23 +591,9 @@ function openDetail(id, trigger, navigating = false) {
   $("modal-source").href = c.source;
   showSide();
   updateModalOwnership();
-  updateDetailNavigation();
-  if (!$("detail").open) $("detail").showModal();
+  $("detail").showModal();
   document.body.style.overflow = "hidden";
 }
-function updateDetailNavigation() {
-  document.querySelector(".detail-navigation").hidden =
-    !session || !$("auth").hidden;
-  const index = detailCardIds.indexOf(selected?.id);
-  $("card-prev").disabled = index <= 0;
-  $("card-next").disabled = index < 0 || index >= detailCardIds.length - 1;
-}
-function moveDetail(delta) {
-  const id = detailCardIds[detailCardIds.indexOf(selected?.id) + delta];
-  if (id) openDetail(id, lastFocus, true);
-}
-$("card-prev").onclick = () => moveDetail(-1);
-$("card-next").onclick = () => moveDetail(1);
 function showSide() {
   const c = selected;
   const url = side ? c.back : c.front;
@@ -833,7 +601,7 @@ function showSide() {
   $("image-failure").hidden = !!url;
   $("image-failure").textContent = url
     ? "画像を読み込めませんでした。"
-    : "裏面画像は未登録です。";
+    : "裏面画像は公式ページに掲載されていません。";
   $("modal-image").src = url || "";
   $("modal-image").alt = `${name(c)} ${side ? "裏面" : "表面"}`;
   $("side-label").textContent = side ? "裏面" : "表面";
@@ -841,26 +609,14 @@ function showSide() {
 }
 function updateModalOwnership() {
   if (!selected) return;
-  $("modal-owned").hidden = !session;
-  $("quantity-controls").hidden = !session || !owned.has(selected.id);
-  $("quantity-value").textContent = quantityOf(selected.id) + "枚";
-  $("quantity-minus").disabled = !ownershipReady || saving.has(selected.id);
-  $("quantity-plus").disabled =
-    !ownershipReady ||
-    saving.has(selected.id) ||
-    quantityOf(selected.id) >= 1000000;
   $("modal-owned").textContent = saving.has(selected.id)
     ? "保存中…"
     : owned.has(selected.id)
-      ? "✓ 持っている"
-      : "＋ 持っていない";
-  $("modal-owned").classList.toggle("is-owned", owned.has(selected.id));
-  $("modal-owned").setAttribute("aria-pressed", String(owned.has(selected.id)));
+      ? "✓ 持っている（登録を解除）"
+      : "＋ 持っているカードに登録";
   $("modal-owned").disabled = !ownershipReady || saving.has(selected.id);
 }
 async function init() {
-  const initialCards = loadInitialCatalog();
-  buildMarquee();
   try {
     const c = window.APP_CONFIG;
     db = window.supabase.createClient(c.supabaseUrl, c.supabaseKey, {
@@ -900,16 +656,7 @@ async function init() {
         "メールアドレスの確認が完了しました。カードアルバムを使い始められます。",
       );
     }
-    await initialCards;
     await fetchCatalog();
-    if (session && startupProbabilityRoute) {
-      chooseGame(startupProbabilityRoute === "aikatsu" ? "aikatsu" : "aipri");
-      if (startupProbabilityRoute !== "aikatsu")
-        chooseFamily(
-          startupProbabilityRoute === "onegai" ? "おねがい" : "ひみつ",
-        );
-      openProbabilities();
-    }
   } catch (e) {
     if (confirmationCallback || callbackError)
       authResult(
@@ -953,42 +700,8 @@ $("resend").onclick = async () => {
 };
 $("login-tab").onclick = () => authMode("login");
 $("signup-tab").onclick = () => authMode("signup");
-function validateAuthForm() {
-  let first = null;
-  for (const id of ["nickname", "email", "password"]) {
-    const input = $(id);
-    let message = "";
-    if (id === "nickname" && mode === "signup" && !input.value.trim())
-      message = "ニックネームを入力してください。";
-    if (id === "email")
-      message = !input.value.trim()
-        ? "メールアドレスを入力してください。"
-        : input.validity.typeMismatch
-          ? "メールアドレスの形式を確認してください。"
-          : "";
-    if (id === "password")
-      message = !input.value
-        ? "パスワードを入力してください。"
-        : input.value.length < 8
-          ? "パスワードは8文字以上で入力してください。"
-          : "";
-    $(id + "-error").textContent = message;
-    $(id + "-error").hidden = !message;
-    input.setAttribute("aria-invalid", String(!!message));
-    if (message && !first) first = input;
-  }
-  first?.focus();
-  return !first;
-}
-for (const id of ["nickname", "email", "password"]) {
-  $(id).addEventListener("input", () => {
-    $(id + "-error").hidden = true;
-    $(id).removeAttribute("aria-invalid");
-  });
-}
 $("auth-form").onsubmit = async (e) => {
   e.preventDefault();
-  if (!validateAuthForm()) return;
   if (!db) return;
   const email = $("email").value.trim(),
     password = $("password").value;
@@ -1082,42 +795,6 @@ $("filters").onchange = (e) => {
     render();
   }
 };
-$("filters").onclick = (e) => {
-  const button = e.target.closest("[data-clear-filter]");
-  if (!button) return;
-  delete filters[button.dataset.clearFilter];
-  page = 1;
-  fillFilters();
-  render();
-};
-$("active-filters").onclick = (event) => {
-  const button = event.target.closest("[data-remove-condition]");
-  if (!button) return;
-  const key = button.dataset.removeCondition;
-  if (key === "query") $("query").value = "";
-  else if (key === "ownership") ownershipFilter = "all";
-  else delete filters[key];
-  page = 1;
-  fillFilters();
-  render();
-};
-$("clear-query").onclick = () => {
-  $("query").value = "";
-  page = 1;
-  render();
-};
-$("progress-details").onclick = () => {
-  const expanded = $("series-progress").hidden;
-  $("series-progress").hidden = !expanded;
-  $("progress-details").setAttribute("aria-expanded", String(expanded));
-  $("progress-details").innerHTML =
-    '<span class="progress-chevron" aria-hidden="true"></span>';
-  $("progress-details").setAttribute(
-    "aria-label",
-    expanded ? "弾ごとの取得率を閉じる" : "弾ごとの取得率を表示",
-  );
-  if (expanded) renderSeriesProgress();
-};
 $("query").oninput = () => {
   page = 1;
   render();
@@ -1138,39 +815,11 @@ $("reset").onclick = () => {
   fillFilters();
   render();
 };
-$("cards").addEventListener(
-  "load",
-  (event) => {
-    const image = event.target;
-    if (!image.matches?.("img[data-card-image]")) return;
-    const id = image.closest("[data-detail]")?.dataset.detail;
-    const card = catalog.cards.find((c) => c.id === id);
-    image.parentElement.classList.toggle(
-      "landscape",
-      card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight,
-    );
-  },
-  true,
-);
 $("cards").onclick = (e) => {
   const detail = e.target.closest("[data-detail]"),
     toggleButton = e.target.closest("[data-toggle]");
   if (detail) openDetail(detail.dataset.detail, detail);
   if (toggleButton) toggle(toggleButton.dataset.toggle);
-};
-$("page-size").onchange = () => {
-  const value = $("page-size").value;
-  if (!["20", "50", "100", "all"].includes(value)) return;
-  pageSize = value === "all" ? "all" : Number(value);
-  page = 1;
-  render();
-};
-$("page-numbers").onclick = (event) => {
-  const button = event.target.closest("[data-page]");
-  if (!button) return;
-  page = Number(button.dataset.page);
-  render();
-  $("cards").scrollIntoView({ block: "start" });
 };
 $("prev").onclick = () => {
   page--;
@@ -1232,9 +881,6 @@ function closeMenu() {
   $("menu-toggle").setAttribute("aria-label", "メニューを開く");
 }
 function updateHeader() {
-  const probabilitiesOpen = !$("probabilities").hidden;
-  $("probability-open").hidden = !session || !game || probabilitiesOpen;
-  $("probability-back").hidden = !session || !game || !probabilitiesOpen;
   $("header-title").textContent = session
     ? nickname() + "のアルバム"
     : "カードアルバム";
@@ -1321,6 +967,7 @@ $("nickname-form").onsubmit = async (e) => {
 };
 
 $("resend").hidden = !pendingSignupEmail;
+init();
 
 async function getOCRWorker() {
   if (ocrWorker) return ocrWorker;
@@ -1348,9 +995,7 @@ async function getOCRWorker() {
   return ocrWorker;
 }
 function needsOCR(c) {
-  return c.game === "aikatsu"
-    ? (!c.name && !!c.front) || (!c.character && !!c.back)
-    : !c.songs?.length && !!c.back;
+  return c.game === "aikatsu" ? !c.name || !c.character : !c.songs?.length;
 }
 function scheduleOCR() {
   if (
@@ -1361,10 +1006,8 @@ function scheduleOCR() {
     catalog.source !== "live"
   )
     return;
-  const visibleCards = filtered();
-  const size = getPageSize(visibleCards.length);
-  const candidates = visibleCards
-    .slice((page - 1) * size, page * size)
+  const candidates = filtered()
+    .slice((page - 1) * SIZE, page * SIZE)
     .filter(
       (c) => needsOCR(c) && !ocrAttempted.has(session.user.id + ":" + c.id),
     )
@@ -1407,9 +1050,6 @@ function scheduleOCR() {
   }, 0);
 }
 async function readMetadataPart(c, uid, part) {
-  const imageSide =
-    c.game === "aikatsu" && part !== "character" ? "front" : "back";
-  if (!c[imageSide]) return false;
   const { data, error } = await db.auth.getSession();
   if (error || !data.session || data.session.user.id !== uid) return false;
   const endpoint = new URL(
@@ -1420,7 +1060,7 @@ async function readMetadataPart(c, uid, part) {
   endpoint.search = new URLSearchParams({
     action: "image",
     card_id: c.id,
-    side: imageSide,
+    side: c.game === "aikatsu" && part !== "character" ? "front" : "back",
   }).toString();
   const result = await fetch(endpoint, {
     headers: {
@@ -1536,7 +1176,7 @@ async function readMetadata(c, uid) {
     if (!c.name) changed = (await readMetadataPart(c, uid, "name")) || changed;
     if (!c.character && c.back)
       changed = (await readMetadataPart(c, uid, "character")) || changed;
-  } else if (!c.songs?.length && c.back)
+  } else if (!c.songs?.length)
     changed = (await readMetadataPart(c, uid, "songs")) || changed;
   return changed;
 }
@@ -1550,133 +1190,41 @@ function shuffleCards(cards) {
 }
 const marqueePools = { aikatsu: [], aipri: [] };
 const marqueePositions = { aikatsu: 0, aipri: 0 };
-const marqueePending = new Map();
-let marqueeBootstrapped = false;
-let marqueeTimer;
-function nextMarqueeCard(group) {
-  const available = catalog.cards.filter((c) => c.game === group && c.front);
-  if (!available.length) return null;
-  if (
-    marqueePools[group].length !== available.length ||
-    marqueePositions[group] >= marqueePools[group].length
-  ) {
-    marqueePools[group] = shuffleCards(available);
-    marqueePositions[group] = 0;
-  }
-  const candidate = marqueePools[group][marqueePositions[group]++];
-  return catalog.cards.find((c) => c.id === candidate.id) || candidate;
-}
-function marqueePair(index) {
-  return [...$("auth-art").querySelectorAll(".marquee-group")]
-    .map((group) => group.children[index])
-    .filter(Boolean);
-}
-function marqueeOutside(pair) {
-  const bounds = $("auth-art").getBoundingClientRect();
-  if (!bounds.width || pair.length !== 2) return false;
-  return pair.every((button) => {
-    const box = button.getBoundingClientRect();
-    return box.right <= bounds.left || box.left >= bounds.right;
-  });
-}
-function commitMarqueeCard(index, entry) {
-  if (
-    !entry.ready ||
-    marqueePaused ||
-    $("detail").open ||
-    $("auth").hidden ||
-    document.hidden
-  )
-    return false;
-  const pair = marqueePair(index);
-  if (!marqueeOutside(pair)) return false;
-  for (const button of pair) {
-    button.dataset.preview = entry.card.id;
-    button.setAttribute(
-      "aria-label",
-      (entry.card.name || entry.card.code) + "の詳細",
-    );
-    const image = button.querySelector("img");
-    image.src = entry.image.src;
-    image.alt = entry.card.name || entry.card.code;
-    image.removeAttribute("fetchpriority");
-  }
-  // このカードが画面に現れてから外へ流れるまで、再交換しない。
-  marqueePending.set(index, { shown: false });
-  return true;
-}
-function pumpMarquee() {
-  if (
-    !catalogFallback ||
-    marqueePaused ||
-    $("detail").open ||
-    $("auth").hidden ||
-    document.hidden
-  )
-    return;
-  const groups = $("auth-art").querySelectorAll(".marquee-group");
-  if (groups.length !== 2) return;
-  let loading = [...marqueePending.values()].filter(
-    (entry) => entry.image && !entry.ready,
-  ).length;
-  for (let index = 0; index < groups[0].children.length; index++) {
-    const pair = marqueePair(index);
-    let entry = marqueePending.get(index);
-    if (entry && !entry.card) {
-      if (!marqueeOutside(pair)) entry.shown = true;
-      if (entry.shown && marqueeOutside(pair)) {
-        marqueePending.delete(index);
-        entry = null;
-      } else continue;
-    }
-    if (entry) {
-      commitMarqueeCard(index, entry);
-      continue;
-    }
-    if (loading >= 6 || !marqueeOutside(pair)) continue;
-    const primary = index % 2 ? "aipri" : "aikatsu";
-    let card =
-      nextMarqueeCard(primary) ||
-      nextMarqueeCard(primary === "aipri" ? "aikatsu" : "aipri");
-    if (!card) continue;
-    if (pair[0].dataset.preview === card.id)
-      card = nextMarqueeCard(card.game) || card;
-    const image = new Image();
-    entry = { card, image, ready: false };
-    marqueePending.set(index, entry);
-    loading++;
-    image.onload = async () => {
-      try {
-        if (image.decode) await image.decode();
-      } catch {}
-      if (marqueePending.get(index) !== entry) return;
-      entry.ready = true;
-      commitMarqueeCard(index, entry);
-    };
-    image.onerror = () => {
-      if (marqueePending.get(index) === entry) marqueePending.delete(index);
-    };
-    image.src = card.front;
-  }
-}
 function buildMarquee() {
-  const groups = $("auth-art").querySelectorAll(".marquee-group");
-  if (groups.length !== 2) return;
-  if (!marqueeBootstrapped) {
-    const cards = shuffleCards([...groups[0].children]);
-    groups[0].replaceChildren(...cards);
-    groups[1].replaceChildren(
-      ...cards.map((button) => {
-        const clone = button.cloneNode(true);
-        clone.tabIndex = -1;
-        return clone;
-      }),
-    );
-    marqueeBootstrapped = true;
-    marqueeTimer = setInterval(pumpMarquee, 500);
+  if (!catalog.cards.length) return;
+  const sample = [];
+  for (const group of ["aikatsu", "aipri"]) {
+    const available = catalog.cards.filter((c) => c.game === group && c.front);
+    if (marqueePools[group].length !== available.length) {
+      marqueePools[group] = shuffleCards(available);
+      marqueePositions[group] = 0;
+    }
+    const byId = new Map(available.map((c) => [c.id, c]));
+    marqueePools[group] = marqueePools[group].map((c) => byId.get(c.id) || c);
+    if (!available.length) continue;
+    const take = catalog.cards.some((c) => c.game !== group && c.front)
+      ? 10
+      : 20;
+    for (let i = 0; i < take; i++) {
+      if (marqueePositions[group] >= available.length) {
+        marqueePools[group] = shuffleCards(available);
+        marqueePositions[group] = 0;
+      }
+      sample.push(marqueePools[group][marqueePositions[group]++]);
+    }
   }
-  // 読み込み完了時点から、画像を先読みして画面外のカードを交換する。
-  pumpMarquee();
+  const row = shuffleCards(sample)
+    .map(
+      (c) =>
+        `<button class="marquee-card" data-preview="${esc(c.id)}" aria-label="${esc(c.name || c.code)}の詳細"><img src="${esc(c.front)}" alt="${esc(c.name || c.code)}" loading="lazy"></button>`,
+    )
+    .join("");
+  $("auth-art").innerHTML =
+    `<div class="marquee-track"><div class="marquee-group">${row}</div><div class="marquee-group" aria-hidden="true">${row.replace(/<button /g, '<button tabindex="-1" ')}</div></div>`;
+  setMarqueePaused(marqueePaused);
+  $("auth-art").querySelector(".marquee-track").onanimationiteration = () => {
+    if (!marqueePaused) buildMarquee();
+  };
 }
 function setMarqueePaused(paused) {
   marqueePaused = paused;
@@ -1708,175 +1256,3 @@ document.querySelectorAll("[data-info]").forEach(
       $("info-dialog").showModal();
     }),
 );
-
-function regularSeries(card) {
-  if (
-    /^(?:EP|P)-/i.test(card.code || "") ||
-    /\/(?:special|promo)(?:[/.?]|$)/i.test(card.source || "")
-  )
-    return [];
-  return values(card.series).filter(
-    (label) =>
-      seriesRank(label) >= 0 &&
-      !/special|スペシャル|プロモ|promo|グミ|ミルフィ|メモリアル/i.test(label),
-  );
-}
-function rarityOrder(rare) {
-  const order =
-    game === "aikatsu"
-      ? ["ER", "PR", "R", "N", "パラレル"]
-      : ["パラレル", "ミラクル", "★4", "★3", "★2", "★1"];
-  return order.includes(rare) ? order.indexOf(rare) : 99;
-}
-function displayRarity(c) {
-  if (c.game === "aipri") {
-    const code = String(c.code || "")
-      .normalize("NFKC")
-      .trim()
-      .toUpperCase();
-    if (code.endsWith("P")) return "パラレル";
-    if (code.includes("M")) return "ミラクル";
-  }
-  return c.rarity || "記載なし";
-}
-function incompleteCard(c) {
-  return (
-    !c.name ||
-    !c.character ||
-    displayRarity(c) === "記載なし" ||
-    (c.game === "aipri" && !c.songs?.length)
-  );
-}
-function probabilitySummary(cards) {
-  const counts = new Map([["パラレル", 0]]);
-  for (const card of cards) {
-    const parallel =
-      card.parallel === true ||
-      card.variant === "パラレル" ||
-      card.rarity === "パラレル" ||
-      (card.game === "aipri" && /P$/i.test(card.code || "")) ||
-      /(^|:)parallel:/.test(card.id || "");
-    const rarity = parallel
-      ? "パラレル"
-      : displayRarity(card) === "記載なし"
-        ? "未分類"
-        : displayRarity(card);
-    counts.set(rarity, (counts.get(rarity) || 0) + quantityOf(card.id));
-  }
-  const total = [...counts.values()].reduce((sum, value) => sum + value, 0);
-  return {
-    total,
-    rows: [...counts]
-      .sort(
-        ([a], [b]) =>
-          rarityOrder(a) - rarityOrder(b) || a.localeCompare(b, "ja"),
-      )
-      .map(([rarity, count]) => ({
-        rarity,
-        count,
-        rate: total ? (count / total) * 100 : 0,
-      })),
-  };
-}
-function rarityColor(rarity) {
-  return (
-    {
-      ER: "#ef88b1",
-      PR: "#efb96f",
-      R: "#74c2d3",
-      N: "#a3b9c9",
-      パラレル: "#b393e7",
-      ミラクル: "#e2ba51",
-      "★4": "#78bcec",
-      "★3": "#80c79d",
-      "★2": "#f49a86",
-      "★1": "#a8b8c5",
-    }[rarity] || "#b7bbc1"
-  );
-}
-function probabilityMarkup(summary) {
-  const label = summary.total
-    ? summary.rows
-        .map((row) => `${row.rarity} ${row.rate.toFixed(1)}%`)
-        .join("、")
-    : "所持枚数が未登録です";
-  return `<div class="distribution-bar" role="img" aria-label="${esc(label)}">${summary.rows.map((row) => `<span class="distribution-segment" style="width:${row.rate}%;background:${rarityColor(row.rarity)}" title="${esc(row.rarity)} ${row.rate.toFixed(1)}%"><span class="segment-label">${row.count ? esc(row.rarity === "パラレル" ? "☆" : row.rarity === "ミラクル" ? "M" : row.rarity) : ""}</span></span>`).join("")}</div><table class="probability-table"><thead><tr><th scope="col">レアリティ</th><th scope="col">所持数</th><th scope="col">割合</th></tr></thead><tbody>${summary.rows.map((row) => `<tr><th scope="row"><span class="rarity-dot" style="background:${rarityColor(row.rarity)}" aria-hidden="true"></span>${esc(row.rarity)}</th><td>${row.count.toLocaleString("ja-JP")}枚</td><td>${summary.total ? row.rate.toFixed(1) + "%" : "—"}</td></tr>`).join("")}</tbody></table>`;
-}
-function renderProbabilities() {
-  if (!session || !game) return;
-  const cards = albumCards().filter((card) => regularSeries(card).length);
-  const series = [...new Set(cards.flatMap(regularSeries))].sort(
-    (a, b) =>
-      seriesRank(b) - seriesRank(a) ||
-      a.localeCompare(b, "ja", { numeric: true }),
-  );
-  const current = $("probability-series").value;
-  $("probability-series").innerHTML = series
-    .map((label) => `<option value="${esc(label)}">${esc(label)}</option>`)
-    .join("");
-  if (series.includes(current)) $("probability-series").value = current;
-  const label = $("probability-series").value;
-  const overall = probabilitySummary(cards);
-  const detail = probabilitySummary(
-    cards.filter((card) => regularSeries(card).includes(label)),
-  );
-  $("probability-title").textContent =
-    (game === "aikatsu"
-      ? "アイカツ！アンコール"
-      : aipriFamily === "おねがい"
-        ? "おねがいアイプリ"
-        : "ひみつのアイプリ") + "の確率確認";
-  $("probability-overall").innerHTML = probabilityMarkup(overall);
-  $("probability-detail-cards").innerHTML = probabilityMarkup(detail);
-  $("probability-total").textContent = ownershipReady
-    ? `集計した所持数 ${overall.total.toLocaleString("ja-JP")}枚`
-    : "所持データを読み込み中";
-  $("probability-detail-total").textContent = ownershipReady
-    ? `${label || "対象の弾数なし"} · 所持数 ${detail.total.toLocaleString("ja-JP")}枚`
-    : "所持データを読み込み中";
-  const showCost = $("show-cost").checked && ownershipReady;
-  $("probability-overall-cost").hidden = $("probability-detail-cost").hidden =
-    !showCost;
-  $("probability-overall-cost").textContent =
-    `シリーズ総合の利用金額目安 ${(overall.total * 100).toLocaleString("ja-JP")}円`;
-  $("probability-detail-cost").textContent =
-    `選択した弾の利用金額目安 ${(detail.total * 100).toLocaleString("ja-JP")}円`;
-}
-function openProbabilities() {
-  if (!session || !game) return;
-  closeMenu();
-  $("show-cost").checked = false;
-  $("probability-series").value = "";
-  screen("probabilities");
-  renderProbabilities();
-  history.replaceState(
-    null,
-    "",
-    "#probabilities-" +
-      (game === "aikatsu"
-        ? "aikatsu"
-        : aipriFamily === "おねがい"
-          ? "onegai"
-          : "himitsu"),
-  );
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-$("probability-open").onclick = openProbabilities;
-$("probability-back").onclick = () => {
-  screen("collection");
-  render();
-  history.replaceState(null, "", "#" + game);
-};
-$("probability-series").onchange = renderProbabilities;
-$("show-cost").onchange = renderProbabilities;
-$("quantity-plus").onclick = () => selected && saveQuantity(selected.id, 1);
-$("quantity-minus").onclick = () => selected && saveQuantity(selected.id, -1);
-document.addEventListener("click", (event) => {
-  const button = event.target.closest("dialog button");
-  if (!button || button.disabled) return;
-  button.classList.remove("tap-feedback");
-  void button.offsetWidth;
-  button.classList.add("tap-feedback");
-  setTimeout(() => button.classList.remove("tap-feedback"), 220);
-});
-init();
