@@ -3300,3 +3300,38 @@ select option {
     padding: 4px;
   }
 }
+
+/* 画像フレームに旧span用の上余白を適用しない */
+.marquee-card > .marquee-image-frame {
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+}
+@media (max-width: 760px) {
+  .results-controls #filtered-rate {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    justify-items: end;
+    justify-content: end;
+    gap: 4px 10px;
+  }
+  #filtered-rate .rate-caption {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: auto;
+    text-align: right;
+  }
+  #filtered-rate strong {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    text-align: right;
+  }
+  #filtered-rate .rate-fraction {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+    text-align: right;
+  }
+}
