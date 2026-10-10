@@ -9,10 +9,7 @@
     />
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
-    <link
-      rel="stylesheet"
-      href="./assets/style.css?v=20261010-inline-header-fix"
-    />
+    <link rel="stylesheet" href="./assets/style.css?v=20261010-eye-id" />
     <link
       rel="preload"
       href="./assets/catalog.json"
@@ -21,15 +18,13 @@
     />
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
-    <script defer src="./assets/site-info.js"></script>
-    <script
-      defer
-      src="./assets/app-title-fix.js?v=20261010-inline-header-fix"
-    ></script>
+    <script defer src="./assets/site-info.js?v=20261010-eye-id"></script>
+    <script defer src="./assets/app-title-fix.js?v=20261010-eye-id"></script>
     <style id="header-tag-correction">
       /* ヘッダー・タグ修正。既存CSSの後に読み込みます。 */
       #nav > button#probability-back,
       #nav > button#probability-open,
+      #nav > button#album-id-open,
       #nav > button#edit-nickname,
       #nav > button#logout {
         font-family: inherit !important;
@@ -52,12 +47,14 @@
       }
       #nav > button#probability-back:not([hidden]),
       #nav > button#probability-open:not([hidden]),
+      #nav > button#album-id-open:not([hidden]),
       #nav > button#edit-nickname:not([hidden]),
       #nav > button#logout:not([hidden]) {
         display: inline-flex !important;
       }
       #nav > button#probability-back:hover,
       #nav > button#probability-open:hover,
+      #nav > button#album-id-open:hover,
       #nav > button#edit-nickname:hover,
       #nav > button#logout:hover {
         background: var(--soft, #ffedf5) !important;
@@ -86,6 +83,7 @@
       @media (max-width: 760px) {
         #nav > button#probability-back,
         #nav > button#probability-open,
+        #nav > button#album-id-open,
         #nav > button#edit-nickname,
         #nav > button#logout {
           width: 100% !important;
@@ -123,6 +121,8 @@
         </div>
         <button id="probability-open" hidden>確率確認</button>
         <button id="probability-back" hidden>アルバム表示</button>
+        <button id="album-id-open" type="button">アルバムID</button>
+
         <button id="edit-nickname">ニックネームを変更</button>
         <button id="logout">ログアウト</button>
       </nav>
@@ -130,7 +130,7 @@
     <main>
       <section id="auth" class="auth">
         <div class="intro">
-          <h1>あなたのカードを<br />すべて管理。</h1>
+          <h1>あなたのカードを<br />まとめて管理。</h1>
           <div
             class="card-marquee"
             id="auth-art"
@@ -653,51 +653,154 @@
             ><button id="signup-tab">新規登録</button>
           </div>
           <form id="auth-form" novalidate>
-            <label id="nickname-field" hidden
-              >ニックネーム<input
-                id="nickname"
-                aria-describedby="nickname-error"
-                type="text"
-                autocomplete="nickname"
-                maxlength="20"
-                placeholder="アルバムに表示する名前" /><small>20文字以内</small
-              ><span
-                class="field-error"
-                id="nickname-error"
-                role="alert"
-                hidden
-              ></span></label
-            ><label
-              >メールアドレス<input
+            <label
+              ><span id="login-identifier-label">アルバムID</span
+              ><input
                 id="email"
+                type="text"
+                autocomplete="username"
+                autocapitalize="characters"
+                spellcheck="false"
+                placeholder="アルバムID"
+                maxlength="254"
                 aria-describedby="email-error"
-                type="email"
-                autocomplete="email"
                 required /><span
-                class="field-error"
                 id="email-error"
+                class="field-error"
                 role="alert"
                 hidden
-              ></span></label
-            ><label
+              ></span
+            ></label>
+            <label
               >パスワード<input
                 id="password"
-                aria-describedby="password-error"
                 type="password"
                 minlength="8"
+                maxlength="128"
                 autocomplete="current-password"
-                required /><small>8文字以上</small
-              ><span
-                class="field-error"
+                aria-describedby="password-error"
+                required /><span
                 id="password-error"
+                class="field-error"
                 role="alert"
                 hidden
-              ></span></label
-            ><button class="primary" id="auth-submit" type="submit">
+              ></span
+            ></label>
+            <button class="primary" id="auth-submit" type="submit">
               ログイン
             </button>
+            <p class="account-retention-note">
+              2か月間ログイン・利用がないアカウントは所持記録とともに自動削除します。削除されたIDは再利用できません。
+            </p>
           </form>
-          <button id="forgot" class="text-button">パスワードを忘れた方</button
+          <div id="signup-flow" hidden>
+            <ol class="signup-steps" aria-label="登録の手順">
+              <li data-signup-marker="id">ID発行</li>
+              <li data-signup-marker="password">パスワード</li>
+              <li data-signup-marker="nickname">ニックネーム</li>
+            </ol>
+            <section id="signup-id-step">
+              <h3>あなたのアルバムID</h3>
+              <p class="muted">はじめに、ログインに使うIDを発行します。</p>
+              <button id="issue-album-id" class="primary" type="button">
+                アルバムIDを発行
+              </button>
+              <div id="issued-id-panel" hidden>
+                <div class="album-id-card">
+                  <output id="issued-album-id"></output
+                  ><button id="album-id-copy" type="button">コピー</button>
+                </div>
+                <p class="id-save-note">
+                  次回ログイン時からこのIDの入力が必要になります。スクショなどで保存してください。
+                </p>
+                <p class="muted id-expiry-note">
+                  発行から24時間以内にアルバムを作成してください。作成後のIDに有効期限はありません。
+                </p>
+              </div>
+              <button
+                id="signup-password-start"
+                hidden
+                class="primary"
+                type="button"
+                disabled
+              >
+                パスワードを設定
+              </button>
+            </section>
+            <form id="signup-password-form" hidden novalidate>
+              <h3>パスワードを設定</h3>
+              <p class="signup-id-reference"></p>
+              <label
+                >パスワード<input
+                  id="signup-password"
+                  type="password"
+                  minlength="8"
+                  maxlength="128"
+                  autocomplete="new-password"
+                  required
+              /></label>
+              <label
+                >パスワード確認<input
+                  id="signup-password-confirm"
+                  type="password"
+                  maxlength="128"
+                  autocomplete="new-password"
+                  required
+              /></label>
+              <p class="muted">8〜128文字で設定してください。</p>
+              <p
+                id="signup-password-error"
+                class="field-error"
+                role="alert"
+                hidden
+              ></p>
+              <div class="signup-actions">
+                <button id="signup-back-id" type="button">戻る</button
+                ><button class="primary" type="submit">
+                  ニックネームを登録
+                </button>
+              </div>
+            </form>
+            <form id="signup-nickname-form" hidden novalidate>
+              <h3>ニックネームを登録</h3>
+              <p class="signup-id-reference"></p>
+              <label id="nickname-field"
+                >ニックネーム<input
+                  id="nickname"
+                  type="text"
+                  maxlength="20"
+                  autocomplete="nickname"
+                  placeholder="アルバムに表示する名前"
+                  aria-describedby="nickname-error" /><span
+                  id="nickname-error"
+                  class="field-error"
+                  role="alert"
+                  hidden
+                ></span
+              ></label>
+              <p class="id-save-note">
+                氏名、住所、電話番号、メールアドレスなどの個人情報は禁止です。
+              </p>
+              <label class="nickname-ack"
+                ><input
+                  id="nickname-privacy-ack"
+                  type="checkbox"
+                />個人情報を含まないことを確認しました</label
+              >
+              <div class="signup-actions">
+                <button id="signup-back-password" type="button">戻る</button
+                ><button id="album-create" class="primary" type="submit">
+                  アルバムを作成する
+                </button>
+              </div>
+            </form>
+            <p class="account-retention-note">
+              2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
+            </p>
+            <p id="signup-message" role="status" class="field-error"></p>
+          </div>
+          <button id="forgot" class="text-button" hidden>
+            パスワードを忘れた方</button
           ><button id="resend" class="text-button" hidden>
             確認メールを再送する
           </button>
@@ -732,6 +835,7 @@
           <span class="eyebrow">MY ALBUMS</span>
           <h1>どのアルバムを開く？</h1>
           <p id="account"></p>
+          <p id="account-album-id" class="account-album-id"></p>
         </div>
         <div class="album-options">
           <button data-game="aikatsu" class="album aikatsu">
@@ -750,8 +854,7 @@
                 fetchpriority="high"
               />
             </div>
-            <span>アイカツ！アンコール</span
-            ><small>コーデをあつめる</small></button
+            <span>アイカツ！アンコール</span></button
           ><button data-game="aipri" class="album aipri">
             <div class="album-images" id="aipri-art">
               <img
@@ -768,7 +871,7 @@
                 fetchpriority="high"
               />
             </div>
-            <span>アイプリ</span><small>ひみつも、おねがいも。</small>
+            <span>アイプリ</span>
           </button>
         </div>
       </section>
@@ -798,16 +901,18 @@
             <span>アルバムの取得率</span><strong id="percent">0%</strong>
           </div>
           <div class="progress-track"><span id="progress-bar"></span></div>
-          <p id="progress-count"></p>
-          <button
-            id="progress-details"
-            class="text-button"
-            aria-expanded="false"
-            aria-label="弾ごとの取得率を表示"
-            aria-controls="series-progress"
-          >
-            <span class="progress-chevron" aria-hidden="true"></span>
-          </button>
+          <div class="progress-bottom">
+            <p id="progress-count"></p>
+            <button
+              id="progress-details"
+              class="text-button"
+              aria-expanded="false"
+              aria-label="弾ごとの取得率を表示"
+              aria-controls="series-progress"
+            >
+              <span class="progress-chevron" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
         <div id="series-progress" class="series-progress" hidden></div>
         <details id="filter-panel" class="filter-panel">
@@ -1023,6 +1128,57 @@
         <button id="card-prev" type="button">← 前のカード</button
         ><button id="card-next" type="button">次のカード →</button>
       </nav>
+    </dialog>
+    <dialog id="logout-dialog" aria-labelledby="logout-title">
+      <div class="modal-top">
+        <h2 id="logout-title">ログアウトしますか？</h2>
+        <button id="logout-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <p id="logout-account" class="muted"></p>
+      <div id="logout-normal">
+        <p>
+          所持カードの記録は保存されています。またログインして続けられます。2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
+        </p>
+        <div class="account-actions">
+          <button id="logout-cancel">戻る</button
+          ><button id="logout-confirm" class="primary">ログアウト</button>
+        </div>
+        <button id="account-delete-open" class="account-delete-link">
+          アカウント情報を削除
+        </button>
+      </div>
+      <div id="account-delete-panel" hidden>
+        <p>
+          アカウント、ニックネーム、所持カード・所持数、読み取りメモを削除します。削除後は元に戻せません。削除されたアルバムIDは再利用できません。
+        </p>
+        <label
+          >確認のため「削除」と入力してください<input
+            id="account-delete-word"
+            autocomplete="off"
+            placeholder="削除"
+        /></label>
+        <div class="account-actions">
+          <button id="account-delete-back">戻る</button
+          ><button id="account-delete-confirm" class="danger-button" disabled>
+            アカウントを削除
+          </button>
+        </div>
+      </div>
+      <p id="account-action-message" role="status"></p>
+    </dialog>
+    <dialog id="album-id-dialog" aria-labelledby="album-id-title">
+      <div class="modal-top">
+        <h2 id="album-id-title">あなたのアルバムID</h2>
+        <button id="album-id-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div class="album-id-card">
+        <output id="account-id-value"></output
+        ><button id="account-id-copy" type="button">コピー</button>
+      </div>
+      <p class="id-save-note">
+        次回ログイン時からこのIDの入力が必要になります。スクショなどで保存してください。
+      </p>
+      <p id="account-id-message" role="status"></p>
     </dialog>
     <div id="toast" role="status" hidden></div>
     <script id="startup-card-data" type="application/json">
