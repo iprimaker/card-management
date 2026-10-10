@@ -1,11 +1,42 @@
+let contactSession = null;
+let contactAlbumID = "";
+const contactDB = window.supabase.createClient(
+  window.APP_CONFIG.supabaseUrl,
+  window.APP_CONFIG.supabaseKey,
+);
+async function updateContactIdentity() {
+  const { data } = await contactDB.auth.getSession();
+  contactSession = data.session;
+  contactAlbumID = "";
+  const email = document.getElementById("contact-email");
+  email.closest("label").hidden = !!contactSession;
+  email.required = !contactSession;
+  document.getElementById("contact-album-field").hidden = !contactSession;
+  document.getElementById("contact-album-id").textContent = contactSession
+    ? "確認中…"
+    : "";
+  if (contactSession) {
+    const { data: id, error } = await contactDB.rpc("card_album_my_id");
+    if (!error && typeof id === "string") contactAlbumID = id;
+    document.getElementById("contact-album-id").textContent =
+      contactAlbumID || "IDを確認できませんでした";
+  }
+}
+const contactIdentityReady = updateContactIdentity();
+contactDB.auth.onAuthStateChange(() => setTimeout(updateContactIdentity, 0));
 const $ = (id) => document.getElementById(id);
 $("contact-form").onsubmit = async (event) => {
   event.preventDefault();
   $("contact-error").textContent = "";
   $("contact-submit").disabled = true;
   try {
+    await contactIdentityReady;
+    await updateContactIdentity();
+    if (contactSession && !contactAlbumID)
+      throw Error("アルバムIDを確認できません。再ログインしてください。");
     const body = {
-      email: $("contact-email").value.trim(),
+      email: contactSession ? "" : $("contact-email").value.trim(),
+      album_id: contactAlbumID,
       name: $("contact-name").value.trim(),
       category: $("contact-category").value,
       message: $("contact-message").value.trim(),
@@ -24,6 +55,9 @@ $("contact-form").onsubmit = async (event) => {
       headers: {
         "Content-Type": "application/json",
         apikey: window.APP_CONFIG.supabaseKey,
+        ...(contactSession
+          ? { Authorization: "Bearer " + contactSession.access_token }
+          : {}),
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(20000),
