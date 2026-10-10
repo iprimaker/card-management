@@ -1,0 +1,155 @@
+/* 共通ドロップダウン。元のselectは値・フォーム送信のため保持します。 */
+.album-select {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  margin-top: 8px;
+}
+.album-select > select {
+  margin: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+.album-select-trigger {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 0;
+  padding: 9px 13px;
+  border: 1px solid var(--line, #efdce7);
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  transition:
+    background 0.16s,
+    border-color 0.16s,
+    box-shadow 0.16s;
+}
+.album-select-trigger:hover,
+.album-select-trigger[aria-expanded="true"] {
+  background: var(--soft, #ffedf5);
+  border-color: color-mix(in srgb, var(--accent, #d63e84) 26%, white);
+}
+.album-select-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent, #d63e84) 45%, white);
+  outline-offset: 2px;
+}
+.album-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.album-select-chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--muted, #77697b);
+  border-bottom: 1.5px solid var(--muted, #77697b);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.16s;
+}
+[aria-expanded="true"] > .album-select-chevron {
+  transform: translateY(2px) rotate(225deg);
+}
+.display-count .album-select {
+  width: auto;
+  flex: none;
+  margin: 0;
+}
+.display-count .album-select-trigger {
+  padding: 5px 10px;
+}
+.probability-detail-heading .album-select {
+  margin: 0;
+  flex: 1;
+}
+.album-select-menu {
+  position: fixed;
+  z-index: 10000;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border: 1px solid var(--line, #efdce7);
+  border-radius: 15px;
+  background: #fff;
+  color: #403249;
+  box-shadow:
+    0 12px 32px #4032491a,
+    0 2px 8px #40324908;
+  font: inherit;
+  animation: album-select-open 0.12s ease-out;
+  scrollbar-width: thin;
+}
+.album-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.album-select-option.is-current,
+.album-select-option[aria-selected="true"] {
+  background: var(--soft, #ffedf5);
+  color: var(--accent, #d63e84);
+}
+.album-select-option[aria-selected="true"]::after {
+  content: "";
+  width: 6px;
+  height: 10px;
+  margin-left: auto;
+  flex: none;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.album-select-option[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+.album-select-group {
+  padding: 8px 12px 4px;
+  font-size: 12px;
+  color: var(--muted, #77697b);
+}
+@keyframes album-select-open {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 760px) {
+  .album-select-trigger {
+    font-size: 16px;
+  }
+  .album-select-option {
+    min-height: 46px;
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .album-select-menu {
+    animation: none;
+  }
+  .album-select-trigger,
+  .album-select-chevron {
+    transition: none;
+  }
+}
