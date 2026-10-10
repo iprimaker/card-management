@@ -1,0 +1,1042 @@
+{
+  "checkedAt": "2026-10-07",
+  "cards": [
+    {
+      "code": "AP1-001P",
+      "name": "ポッピンハートバズリウム",
+      "character": "ひまり",
+      "series": [
+        "【1だん】"
+      ],
+      "song": "P.O.P.P.Y",
+      "wikiName": "ポッピンハートバズリウム",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027016/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000270163_8FhUrL6.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP1-002P",
+      "name": "ミラクルムーンバズリウム",
+      "character": "みつき",
+      "series": [
+        "【1だん】"
+      ],
+      "song": "シークレット・ドリーム",
+      "wikiName": "ミラクルムーンバズリウム",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027017/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000270173_0dhRKRz.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP1-003P",
+      "name": "スカーレットバタフライバズリウム",
+      "character": "サクラ",
+      "series": [
+        "【1だん】"
+      ],
+      "song": "レッツ！アイプリ",
+      "wikiName": "スカーレットバタフライバズリウム",
+      "wikiCharacter": "サクラ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027018/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000270183_a6Gn0R5.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP1-004P",
+      "name": "キューティーラビット",
+      "character": "ひまり",
+      "series": [
+        "【1だん】"
+      ],
+      "song": "P.O.P.P.Y",
+      "wikiName": "キューティーラビット",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027019/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000270193_69pGKmp.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP2-001P",
+      "name": "フラワーマーチバズリウム",
+      "character": "つむぎ",
+      "series": [
+        "【2だん】"
+      ],
+      "song": "ヒカリノコトバ",
+      "wikiName": "フラワーマーチバズリウム",
+      "wikiCharacter": "つむぎ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027993/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000279933_5NPO0cM.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP2-002P",
+      "name": "ロゼッションバズリウム",
+      "character": "タマキ",
+      "series": [
+        "【2だん】"
+      ],
+      "song": "Stand Get Up",
+      "wikiName": "ロゼッションバズリウム",
+      "wikiCharacter": "タマキ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027994/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000279943_HI2evIl.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP2-005P",
+      "name": "ローズグランプリ",
+      "character": "サクラ",
+      "series": [
+        "【2だん】"
+      ],
+      "song": "Stand Get Up",
+      "wikiName": "ローズグランプリ",
+      "wikiCharacter": "サクラ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027995/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000279953_cf100zO.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP2-009P",
+      "name": "マジシャンキャット",
+      "character": "みつき",
+      "series": [
+        "【2だん】"
+      ],
+      "song": "シークレット・ドリーム",
+      "wikiName": "マジシャンキャット",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000027996/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000279963_nEiSzbG.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP3-001P",
+      "name": "シークレットフレンズ∞バズリウムピンク",
+      "character": "ひまり",
+      "series": [
+        "【3だん】"
+      ],
+      "song": "We're The World",
+      "wikiName": "シークレットフレンズ∞バズリウムピンク",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028135/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000281353_meW9jLD.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP3-002P",
+      "name": "シークレットフレンズ∞バズリウムブルー",
+      "character": "みつき",
+      "series": [
+        "【3だん】"
+      ],
+      "song": "We're The World",
+      "wikiName": "シークレットフレンズ∞バズリウムブルー",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028136/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000281363_JDZr3si.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP3-003P",
+      "name": "シークレットフレンズ∞バズリウムイエロー",
+      "character": "つむぎ",
+      "series": [
+        "【3だん】"
+      ],
+      "song": "We're The World",
+      "wikiName": "シークレットフレンズ∞バズリウムイエロー",
+      "wikiCharacter": "つむぎ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028137/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000281373_Z3JFkUY.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP3-018P",
+      "name": "ハッピーバースデー！ひまり",
+      "character": "ひまり",
+      "series": [
+        "【3だん】"
+      ],
+      "song": "ハピハピハッピー☆マイバースデー",
+      "wikiName": "ハッピーバースデー！ひまり",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028138/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000281383_uvhkeN1.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP4-001P",
+      "name": "カルテットスターバズリウムハート",
+      "character": "サクラ",
+      "series": [
+        "【4だん】"
+      ],
+      "song": "Perfect☆STARs",
+      "wikiName": "カルテットスターバズリウムハート",
+      "wikiCharacter": "サクラ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028751/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000287513_MhypdYs.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP4-002P",
+      "name": "カルテットスターバズリウムスペード",
+      "character": "タマキ",
+      "series": [
+        "【4だん】"
+      ],
+      "song": "Perfect☆STARs",
+      "wikiName": "カルテットスターバズリウムスペード",
+      "wikiCharacter": "タマキ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028752/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000287523_KY2qnYl.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP4-003P",
+      "name": "カルテットスターバズリウムダイヤ",
+      "character": "アイリ",
+      "series": [
+        "【4だん】"
+      ],
+      "song": "Perfect☆STARs",
+      "wikiName": "カルテットスターバズリウムダイヤ",
+      "wikiCharacter": "アイリ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028753/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000287533_7mo60ev.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP4-004P",
+      "name": "カルテットスターバズリウムクラブ",
+      "character": "リンリン",
+      "series": [
+        "【4だん】"
+      ],
+      "song": "Perfect☆STARs",
+      "wikiName": "カルテットスターバズリウムクラブ",
+      "wikiCharacter": "リンリン",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000028754/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000287543_RUhvKx4.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP4-005P",
+      "name": "ラブマイミュージックバズリウム",
+      "character": "チィ",
+      "series": [
+        "【4だん】"
+      ],
+      "song": "GIRA GIRA STAR",
+      "wikiName": "ラブマイミュージックバズリウム",
+      "wikiCharacter": "チィ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000029202/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000292023_SXOcpmH.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP5-001P",
+      "name": "フラワーマーチプリンセスバズリウム",
+      "character": "つむぎ（プリンセスver.）",
+      "series": [
+        "【5だん】"
+      ],
+      "song": "きらめきのうた",
+      "wikiName": "フラワーマーチプリンセスバズリウム",
+      "wikiCharacter": "つむぎ（プリンセスver.）",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000029336/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000293363_LTNr61A.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP5-004P",
+      "name": "オーロラスノーグランプリ",
+      "character": "つむぎ（プリンセスver.）",
+      "series": [
+        "【5だん】"
+      ],
+      "song": "きらめきのうた",
+      "wikiName": "オーロラスノーグランプリ",
+      "wikiCharacter": "つむぎ（プリンセスver.）",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000029337/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000293373_ZNVkmBb.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP5-012P",
+      "name": "スペシャルクリスマスホワイト",
+      "character": "みつき",
+      "series": [
+        "【5だん】"
+      ],
+      "song": "シークレット・ドリーム",
+      "wikiName": "スペシャルクリスマスホワイト",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000029338/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000293383_83ihneM.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP5-013P",
+      "name": "ぴょんぴょんうさぎ",
+      "character": "ひまり",
+      "series": [
+        "【5だん】"
+      ],
+      "song": "パステルステップデイズ",
+      "wikiName": "ぴょんぴょんうさぎ",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000029339/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000293393_HE1YHGt.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP5-020P",
+      "name": "ハッピーバースデー！つむぎ",
+      "character": "つむぎ",
+      "series": [
+        "【5だん】"
+      ],
+      "song": "ハピハピハッピー☆マイバースデー",
+      "wikiName": "ハッピーバースデー！つむぎ",
+      "wikiCharacter": "つむぎ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000029609/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000296093_NqAYLGK.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP6-002P",
+      "name": "ダークカルテットスターバズリウムブルー",
+      "character": "ダークタマキ",
+      "series": [
+        "【6だん】"
+      ],
+      "song": "ニュースタージョーカー",
+      "wikiName": "ダークカルテットスターバズリウムブルー",
+      "wikiCharacter": "ダークタマキ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030323/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000303233_vtGR4k1.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP6-003P",
+      "name": "ダークカルテットスターバズリウムグリーン",
+      "character": "ダークアイリ",
+      "series": [
+        "【6だん】"
+      ],
+      "song": "ニュースタージョーカー",
+      "wikiName": "ダークカルテットスターバズリウムグリーン",
+      "wikiCharacter": "ダークアイリ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030324/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000303243_shawUaG.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP6-014P",
+      "name": "バレンタインレターイエロー",
+      "character": "つむぎ",
+      "series": [
+        "【6だん】"
+      ],
+      "song": "We're The World",
+      "wikiName": "バレンタインレターイエロー",
+      "wikiCharacter": "つむぎ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030325/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000303253_biK8UM1.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP6-021P",
+      "name": "ハッピーバースデー！サクラ",
+      "character": "サクラ",
+      "series": [
+        "【6だん】"
+      ],
+      "song": "ハピハピハッピー☆マイバースデー",
+      "wikiName": "ハッピーバースデー！サクラ",
+      "wikiCharacter": "サクラ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030326/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000303263_crdJfdc.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "AP6-056P",
+      "name": "プリンセスアイプリバズリウム",
+      "character": "ひまり",
+      "series": [
+        "【6だん】"
+      ],
+      "song": "きらめきのうた(シークレットフレンズ∞ver.)",
+      "wikiName": "プリンセスアイプリバズリウム",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030621/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000306213_uUf7BJB.png",
+      "backVerified": false
+    },
+    {
+      "code": "AP6-057P",
+      "name": "プリンセスアイプリバズリウム",
+      "character": "みつき",
+      "series": [
+        "【6だん】"
+      ],
+      "song": "きらめきのうた(シークレットフレンズ∞ver.)",
+      "wikiName": "プリンセスアイプリバズリウム",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030622/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/1-6弾"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000306223_aFeCXn6.png",
+      "backVerified": false
+    },
+    {
+      "code": "APR1-001P",
+      "name": "ジュエルバズリウムルビー",
+      "character": "ひまり",
+      "series": [
+        "【リング1だん】"
+      ],
+      "song": "キズナ×リンク",
+      "wikiName": "ジュエルバズリウムルビー",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030967/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000309673_gfIuGLA.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR1-002P",
+      "name": "ジュエルバズリウムサファイア",
+      "character": "みつき",
+      "series": [
+        "【リング1だん】"
+      ],
+      "song": "キズナ×リンク",
+      "wikiName": "ジュエルバズリウムサファイア",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030968/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000309683_qFPiZMe.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR1-003P",
+      "name": "ジュエルバズリウムダイヤ",
+      "character": "じゅりあ",
+      "series": [
+        "【リング1だん】"
+      ],
+      "song": "ときめきグラビティ",
+      "wikiName": "ジュエルバズリウムダイヤ",
+      "wikiCharacter": "じゅりあ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030969/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000309693_2pKGpCZ.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR1-004P",
+      "name": "ジュエルバズリウムアクアマリン",
+      "character": "える",
+      "series": [
+        "【リング1だん】"
+      ],
+      "song": "わたしの大切にしてたこと",
+      "wikiName": "ジュエルバズリウムアクアマリン",
+      "wikiCharacter": "える",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030970/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000309703_nsLxlNt.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR1-006P",
+      "name": "フレンドスターグランプリブルー",
+      "character": "みつき",
+      "series": [
+        "【リング1だん】"
+      ],
+      "song": "キズナ×リンク",
+      "wikiName": "フレンドスターグランプリブルー",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000030971/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000309713_Qqqqj54.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR2-002P",
+      "name": "スペースバズリウムスターズブルー",
+      "character": "みつき",
+      "series": [
+        "【リング2だん】"
+      ],
+      "song": "ぴかぴかマイストーリー",
+      "wikiName": "スペースバズリウムスターブルー",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000031648/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000316483_qo0eWED.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR2-003P",
+      "name": "スペースバズリウムギャラクシー",
+      "character": "すばる",
+      "series": [
+        "【リング2だん】"
+      ],
+      "song": "Piece Of Dream",
+      "wikiName": "スペースバズリウムギャラクシー",
+      "wikiCharacter": "すばる",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000031649/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000316493_4J673pp.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR2-004P",
+      "name": "スペースバズリウムプラネット",
+      "character": "おとめ",
+      "series": [
+        "【リング2だん】"
+      ],
+      "song": "ココロ・アストロノーツ",
+      "wikiName": "スペースバズリウムプラネット",
+      "wikiCharacter": "おとめ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000031650/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000316503_4Rlh382.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR2-008P",
+      "name": "エターナルジュエルラブジュリエル",
+      "character": "える",
+      "series": [
+        "【リング2だん】"
+      ],
+      "song": "ときめきグラビティ",
+      "wikiName": "エターナルジュエルラブジュリエル",
+      "wikiCharacter": "える",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000031651/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000316513_2KRRxGQ.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR2-013P",
+      "name": "プリうさおでかけ",
+      "character": "ひまり",
+      "series": [
+        "【リング2だん】"
+      ],
+      "song": "キズナ×リンク",
+      "wikiName": "プリうさおでかけ",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000031652/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000316523_f7utM78.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR3-003P",
+      "name": "アニマルバズリウムプードルイエロー",
+      "character": "つむぎ",
+      "series": [
+        "【リング3だん】"
+      ],
+      "song": "We're The World",
+      "wikiName": "アニマルバズリウムプードルイエロー",
+      "wikiCharacter": "つむぎ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000032575/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000325753_2UH1ip2.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR3-004P",
+      "name": "アニマルバズリウムパンサー",
+      "character": "チィ",
+      "series": [
+        "【リング3だん】"
+      ],
+      "song": "わいるど☆すたー(ビビ・チィ)",
+      "wikiName": "アニマルバズリウムパンサー",
+      "wikiCharacter": "チィ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000032576/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000325763_W9lZCyO.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR3-005P",
+      "name": "アニマルバズリウムタイガー",
+      "character": "ビビ",
+      "series": [
+        "【リング3だん】"
+      ],
+      "song": "わいるど☆すたー(ビビ)",
+      "wikiName": "アニマルバズリウムタイガー",
+      "wikiCharacter": "ビビ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000032577/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000325773_mBierz0.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR3-006P",
+      "name": "エターナルスペースジャンピンロケットクール",
+      "character": "すばる",
+      "series": [
+        "【リング3だん】"
+      ],
+      "song": "Piece Of Dream",
+      "wikiName": "エターナルスペースジャンピンロケットクール",
+      "wikiCharacter": "すばる",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000032578/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000325783_ugCf6rV.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR3-008P",
+      "name": "ウィッシュメロディグランプリ",
+      "character": "チィ",
+      "series": [
+        "【リング3だん】"
+      ],
+      "song": "GIRA GIRA STAR",
+      "wikiName": "ウィッシュメロディグランプリ",
+      "wikiCharacter": "チィ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000032579/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000325793_Dcgp0JV.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR3-011P",
+      "name": "おとぎばなしアラビアンナイトピンク",
+      "character": "ひまり",
+      "series": [
+        "【リング3だん】"
+      ],
+      "song": "ひみつのふふふ",
+      "wikiName": "おとぎばなしアラビアンナイトピンク",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000032580/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000325803_D210XW8.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR4-001P",
+      "name": "フラワーバズリウムコスモスピンク",
+      "character": "ひまり",
+      "series": [
+        "【リング4だん】"
+      ],
+      "song": "ミラクル☆ツインスマイル",
+      "wikiName": "フラワーバズリウムコスモスピンク",
+      "wikiCharacter": "ひまり",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000033263/hap00/page1/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000332633_IRntR0w.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR4-003P",
+      "name": "フラワーバズリウムクローバー",
+      "character": "つむぎ（プリンセスver.)",
+      "series": [
+        "【リング4だん】"
+      ],
+      "song": "ミライのプリンセス(リング・つむぎ)",
+      "wikiName": "フラワーバズリウムクローバー",
+      "wikiCharacter": "つむぎ（プリンセスver.)",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000033264/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000332643_cN8GhRy.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR4-004P",
+      "name": "フラワーバズリウムカンパニュラ",
+      "character": "リング",
+      "series": [
+        "【リング4だん】"
+      ],
+      "song": "ミライのプリンセス",
+      "wikiName": "フラワーバズリウムカンパニュラ",
+      "wikiCharacter": "リング",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000033265/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000332653_Nan8TYn.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR4-006P",
+      "name": "エターナルアニマルビビアンチィ",
+      "character": "ビビ",
+      "series": [
+        "【リング4だん】"
+      ],
+      "song": "わいるど☆すたー(ビビ・チィ)",
+      "wikiName": "エターナルアニマルビビアンチィ",
+      "wikiCharacter": "ビビ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000033266/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000332663_fGmFKJv.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR4-012P",
+      "name": "カラフルシャインパープル",
+      "character": "リング",
+      "series": [
+        "【リング4だん】"
+      ],
+      "song": "ミライのプリンセス(リング・つむぎ)",
+      "wikiName": "カラフルシャインパープル",
+      "wikiCharacter": "リング",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000033267/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000332673_2FUz4Xk.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR4-017P",
+      "name": "フラワーガーデン",
+      "character": "つむぎ",
+      "series": [
+        "【リング4だん】"
+      ],
+      "song": "We're The World",
+      "wikiName": "フラワーガーデン",
+      "wikiCharacter": "つむぎ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000033268/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000332683_PL6tS9R.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR5-002P",
+      "name": "メロディバズリウムハーモニーブルー",
+      "character": "みつき",
+      "series": [
+        "【リング5だん】"
+      ],
+      "song": "ミラクル☆ツインスマイル",
+      "wikiName": "メロディバズリウムハーモニーブルー",
+      "wikiCharacter": "みつき",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034028/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000340283_D7IhvGU.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR5-003P",
+      "name": "メロディバズリウムアンサンブルレッド",
+      "character": "サクラ",
+      "series": [
+        "【リング5だん】"
+      ],
+      "song": "ニュースタージョーカー",
+      "wikiName": "メロディバズリウムアンサンブルレッド",
+      "wikiCharacter": "サクラ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034029/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000340293_weukMpM.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR5-004P",
+      "name": "メロディバズリウムアンサンブルブルー",
+      "character": "タマキ",
+      "series": [
+        "【リング5だん】"
+      ],
+      "song": "レジェンド・ストーリー!!!!",
+      "wikiName": "メロディバズリウムアンサンブルブルー",
+      "wikiCharacter": "タマキ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034030/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000340303_AnKqeRs.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR5-005P",
+      "name": "メロディバズリウムアンサンブルグリーン",
+      "character": "アイリ",
+      "series": [
+        "【リング5だん】"
+      ],
+      "song": "ニュースタージョーカー",
+      "wikiName": "メロディバズリウムアンサンブルグリーン",
+      "wikiCharacter": "アイリ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034031/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000340313_czimBZ1.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR5-006P",
+      "name": "メロディバズリウムアンサンブルオレンジ",
+      "character": "リンリン",
+      "series": [
+        "【リング5だん】"
+      ],
+      "song": "Perfect☆STARs",
+      "wikiName": "メロディバズリウムアンサンブルオレンジ",
+      "wikiCharacter": "リンリン",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034032/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000340323_zZeUrf0.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR5-008P",
+      "name": "エターナルフラワールミナスフローラ",
+      "character": "リング",
+      "series": [
+        "【リング5だん】"
+      ],
+      "song": "ミライのプリンセス(リング・つむぎ)",
+      "wikiName": "エターナルフラワールミナスフローラ",
+      "wikiCharacter": "リング",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034033/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000340333_SzZXdeT.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR6-006P",
+      "name": "エターナルメロディカルテットスター",
+      "character": "サクラ",
+      "series": [
+        "【リング6だん】"
+      ],
+      "song": "レジェンド・ストーリー!!!!",
+      "wikiName": "エターナルメロディカルテットスター",
+      "wikiCharacter": "サクラ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034894/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000348943_xC2s1nz.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR6-010P",
+      "name": "エターナルジュエルラブジュリエル",
+      "character": "じゅりあ",
+      "series": [
+        "【リング6だん】"
+      ],
+      "song": "ときめきグラビティ",
+      "wikiName": "エターナルジュエルラブジュリエル",
+      "wikiCharacter": "じゅりあ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034895/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000348953_j6GGixV.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR6-013P",
+      "name": "エターナルスぺースジャンピンロケットラブリー",
+      "character": "おとめ",
+      "series": [
+        "【リング6だん】"
+      ],
+      "song": "どきどき きらめき バズリウム",
+      "wikiName": "エターナルスぺースジャンピンロケットラブリー",
+      "wikiCharacter": "おとめ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034896/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000348963_2EvoBY6.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR6-014P",
+      "name": "エターナルアニマルビビアンチィ",
+      "character": "チィ",
+      "series": [
+        "【リング6だん】"
+      ],
+      "song": "わいるど☆すたー(ビビ・チィ)",
+      "wikiName": "エターナルアニマルビビアンチィ",
+      "wikiCharacter": "チィ",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034897/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000348973_Sb5lODX.jpg",
+      "backVerified": false
+    },
+    {
+      "code": "APR6-018P",
+      "name": "ゆうきのブロッサムツイン　つむぎ",
+      "character": "つむぎ（プリンセスver.）",
+      "series": [
+        "【リング6だん】"
+      ],
+      "song": "ミライのプリンセス(リング・つむぎ)",
+      "wikiName": "ゆうきのブロッサムツイン　つむぎ",
+      "wikiCharacter": "つむぎ（プリンセスver.）",
+      "sources": [
+        "https://fullahead-idol.com/shopdetail/000000034898/hap00/page2/recommend/",
+        "https://wikiwiki.jp/aipri/ひみつのアイプリ/カードリスト/リング編"
+      ],
+      "front": "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000348983_EGiN3DJ.jpg",
+      "backVerified": false
+    }
+  ]
+}
