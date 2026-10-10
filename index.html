@@ -9,11 +9,11 @@
     />
     <title>カードアルバム</title>
     <link rel="icon" href="./assets/favicon.svg" />
+    <link rel="stylesheet" href="./assets/style.css?v=20261011-ui-contact" />
     <link
       rel="stylesheet"
-      href="./assets/style.css?v=20261010-security-state"
+      href="./assets/dropdowns.css?v=20261011-ui-contact"
     />
-    <link rel="stylesheet" href="./assets/dropdowns.css?v=20261010-dropdowns" />
     <link
       rel="preload"
       href="./assets/catalog.json"
@@ -22,15 +22,12 @@
     />
     <script defer src="./assets/vendor/supabase.js"></script>
     <script defer src="./assets/config.js"></script>
+    <script defer src="./assets/site-info.js?v=20261011-ui-contact"></script>
     <script
       defer
-      src="./assets/site-info.js?v=20261010-security-state"
+      src="./assets/app-title-fix.js?v=20261011-ui-contact"
     ></script>
-    <script
-      defer
-      src="./assets/app-title-fix.js?v=20261010-security-state"
-    ></script>
-    <script defer src="./assets/dropdowns.js?v=20261010-dropdowns"></script>
+    <script defer src="./assets/dropdowns.js?v=20261011-ui-contact"></script>
     <style id="header-tag-correction">
       /* ヘッダー・タグ修正。既存CSSの後に読み込みます。 */
       #nav > button#probability-back,
@@ -712,7 +709,7 @@
             </ol>
             <section id="signup-id-step">
               <h3>あなたのアルバムID</h3>
-              <p class="muted">はじめに、ログインに使うIDを発行します。</p>
+
               <button id="issue-album-id" class="primary" type="button">
                 アルバムIDを発行
               </button>
@@ -722,10 +719,10 @@
                   ><button id="album-id-copy" type="button">コピー</button>
                 </div>
                 <p class="id-save-note">
-                  次回ログイン時からこのIDの入力が必要になります。スクショなどで保存してください。
+                  ログインにはこのIDの入力が必要になります。スクショなどで保存してください。
                 </p>
                 <p class="muted id-expiry-note">
-                  発行から24時間以内にアルバムを作成してください。作成後のIDに有効期限はありません。
+                  このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。
                 </p>
               </div>
               <button
@@ -799,15 +796,12 @@
                 />個人情報を含まないことを確認しました</label
               >
               <div class="signup-actions">
-                <button id="signup-back-password" type="button">戻る</button
-                ><button id="album-create" class="primary" type="submit">
+                <button id="album-create" class="primary" type="submit">
                   アルバムを作成する
                 </button>
               </div>
             </form>
-            <p class="account-retention-note">
-              2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
-            </p>
+
             <p id="signup-message" role="status" class="field-error"></p>
           </div>
           <button id="forgot" class="text-button" hidden>
@@ -837,7 +831,15 @@
             >✓</span
           >
           <h1 id="auth-result-title">登録できました</h1>
+          <output
+            id="auth-result-album-id"
+            class="created-album-id"
+            hidden
+          ></output>
           <p id="auth-result-text" role="status"></p>
+          <p id="auth-result-retention" class="account-retention-note" hidden>
+            2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
+          </p>
           <button id="auth-result-next" class="primary">アルバムを選ぶ</button>
         </div>
       </section>
@@ -908,9 +910,7 @@
           </button>
         </div>
         <div class="progress-card">
-          <div>
-            <span>アルバムの取得率</span><strong id="percent">0%</strong>
-          </div>
+          <div><span>カードの取得率</span><strong id="percent">0%</strong></div>
           <div class="progress-track"><span id="progress-bar"></span></div>
           <div class="progress-bottom">
             <p id="progress-count"></p>
@@ -1070,7 +1070,7 @@
             ×
           </button>
         </div>
-        <p class="nickname-intro">あなたのアルバムに、好きな名前を。</p>
+
         <h2 id="nickname-heading">アルバムの名前</h2>
         <label
           >ニックネーム<input
@@ -1151,8 +1151,7 @@
           所持カードの記録は保存されています。またログインして続けられます。2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
         </p>
         <div class="account-actions">
-          <button id="logout-cancel">戻る</button
-          ><button id="logout-confirm" class="primary">ログアウト</button>
+          <button id="logout-confirm" class="primary">ログアウト</button>
         </div>
         <button id="account-delete-open" class="account-delete-link">
           アカウント情報を削除
@@ -1187,7 +1186,7 @@
         ><button id="account-id-copy" type="button">コピー</button>
       </div>
       <p class="id-save-note">
-        次回ログイン時からこのIDの入力が必要になります。スクショなどで保存してください。
+        ログインにはこのIDの入力が必要になります。スクショなどで保存してください。
       </p>
       <p id="account-id-message" role="status"></p>
     </dialog>
