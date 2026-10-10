@@ -1121,7 +1121,7 @@ $("auth-form").onsubmit = async (event) => {
 };
 function updateLoginIdentifier() {
   const isEmail = $("email").value.includes("@");
-  $("forgot").hidden = mode !== "login" || !isEmail;
+  $("forgot").hidden = mode !== "login";
   $("resend").hidden = mode !== "login" || !isEmail || !pendingSignupEmail;
 }
 $("email").addEventListener("input", updateLoginIdentifier);
@@ -1269,8 +1269,8 @@ $("account-id-copy").onclick = () => copyAlbumID(albumIdentity);
 $("forgot").onclick = async () => {
   if (!db) return;
   const email = $("email").value.trim();
-  if (!email) {
-    $("auth-message").textContent = "メールアドレスを入力してください。";
+  if (!email.includes("@")) {
+    $("id-password-help").showModal();
     return;
   }
   const { error } = await db.auth.resetPasswordForEmail(email, {
@@ -1280,6 +1280,7 @@ $("forgot").onclick = async () => {
     ? translatedError(error)
     : "パスワード再設定メールを送信しました。";
 };
+$("id-password-help-close").onclick = () => $("id-password-help").close();
 $("password-form").onsubmit = async (e) => {
   e.preventDefault();
   const { error } = await db.auth.updateUser({
@@ -1869,18 +1870,63 @@ const marqueePositions = { aikatsu: 0, aipri: 0 };
 const marqueePending = new Map();
 let marqueeBootstrapped = false;
 let marqueeTimer;
+function isOfficialMarqueeCard(card) {
+  if (!card?.front || !card.source) return false;
+  // アイプリの追加サインカードは一覧に残し、ログインの紹介には使わない。
+  if (
+    card.game === "aipri" &&
+    (/P$/i.test(card.code || "") ||
+      card.parallel === true ||
+      card.variant === "パラレル" ||
+      /サイン|パラレル/.test(card.rarity || ""))
+  )
+    return false;
+  if (
+    card.manual === true ||
+    card.unofficial === true ||
+    /非公式|推測|ネット上|追加収集/.test(card.metadataSource || "")
+  )
+    return false;
+  try {
+    const front = new URL(card.front),
+      source = new URL(card.source);
+    if (front.protocol !== "https:" || source.protocol !== "https:")
+      return false;
+    if (card.game === "aikatsu")
+      return (
+        front.hostname === "dcd.aikatsu.com" &&
+        source.hostname === "dcd.aikatsu.com" &&
+        front.pathname.startsWith("/encore/") &&
+        source.pathname.startsWith("/encore/cardlist")
+      );
+    if (card.game === "aipri")
+      return (
+        front.hostname === "aipri.jp" &&
+        source.hostname === "aipri.jp" &&
+        /^\/(?:himitsu\/)?card\//.test(front.pathname) &&
+        /^\/(?:himitsu\/)?card\//.test(source.pathname)
+      );
+  } catch {
+    return false;
+  }
+  return false;
+}
 function nextMarqueeCard(group) {
-  const available = catalog.cards.filter((c) => c.game === group && c.front);
+  const available = catalog.cards.filter(
+    (c) => c.game === group && isOfficialMarqueeCard(c),
+  );
   if (!available.length) return null;
   if (
     marqueePools[group].length !== available.length ||
+    marqueePools[group].some((c) => !available.some((a) => a.id === c.id)) ||
     marqueePositions[group] >= marqueePools[group].length
   ) {
     marqueePools[group] = shuffleCards(available);
     marqueePositions[group] = 0;
   }
   const candidate = marqueePools[group][marqueePositions[group]++];
-  return catalog.cards.find((c) => c.id === candidate.id) || candidate;
+  const current = catalog.cards.find((c) => c.id === candidate.id);
+  return current && isOfficialMarqueeCard(current) ? current : null;
 }
 function marqueePair(index) {
   return [...$("auth-art").querySelectorAll(".marquee-group")]
@@ -1898,6 +1944,9 @@ function marqueeOutside(pair) {
 function commitMarqueeCard(index, entry) {
   if (
     !entry.ready ||
+    !isOfficialMarqueeCard(
+      catalog.cards.find((c) => c.id === entry.card.id) || entry.card,
+    ) ||
     marqueePaused ||
     $("detail").open ||
     $("auth").hidden ||
@@ -1921,6 +1970,20 @@ function commitMarqueeCard(index, entry) {
         entry.card.game === "aikatsu" &&
           entry.image.naturalWidth > entry.image.naturalHeight,
       );
+    const isLandscape =
+      entry.card.game === "aikatsu" &&
+      entry.image.naturalWidth > entry.image.naturalHeight;
+    const frame = image.closest(".marquee-image-frame");
+    const width = isLandscape
+      ? entry.image.naturalHeight
+      : entry.image.naturalWidth;
+    const height = isLandscape
+      ? entry.image.naturalWidth
+      : entry.image.naturalHeight;
+    if (width && height) {
+      frame.style.aspectRatio = width + " / " + height;
+      frame.style.setProperty("--image-ratio", String(height / width));
+    }
     image.src = entry.image.src;
     image.alt = entry.card.name || entry.card.code;
     image.removeAttribute("fetchpriority");
@@ -1991,10 +2054,15 @@ function prepareMarqueeImage(image, card) {
     image.replaceWith(frame);
     frame.append(image);
   }
-  frame.classList.toggle(
-    "landscape",
-    card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight,
-  );
+  const landscape =
+    card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight;
+  frame.classList.toggle("landscape", landscape);
+  if (image.naturalWidth && image.naturalHeight) {
+    const width = landscape ? image.naturalHeight : image.naturalWidth;
+    const height = landscape ? image.naturalWidth : image.naturalHeight;
+    frame.style.aspectRatio = width + " / " + height;
+    frame.style.setProperty("--image-ratio", String(height / width));
+  }
 }
 $("auth-art").addEventListener(
   "load",
