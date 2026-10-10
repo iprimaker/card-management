@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>お問い合わせ｜カードアルバム</title>
     <link rel="icon" href="../assets/favicon.svg" />
-    <link rel="stylesheet" href="../assets/style.css" />
+    <link rel="stylesheet" href="../assets/style.css?v=20261011-ui-contact" />
     <link
       rel="stylesheet"
       href="../assets/dropdowns.css?v=20261010-dropdowns"
     />
     <script defer src="../assets/dropdowns.js?v=20261010-dropdowns"></script>
     <link rel="stylesheet" href="./contact.css" />
+    <script defer src="../assets/vendor/supabase.js"></script>
     <script defer src="../assets/config.js"></script>
-    <script defer src="../assets/site-info.js"></script>
-    <script defer src="./contact.js"></script>
+    <script defer src="../assets/site-info.js?v=20261011-ui-contact"></script>
+    <script defer src="./contact.js?v=20261011-ui-contact"></script>
   </head>
   <body>
     <header>
@@ -29,6 +30,11 @@
           カード情報の修正やサイトに関するご相談をお送りください。
         </p>
         <form id="contact-form">
+          <div id="contact-album-field" hidden>
+            <label>アルバムID</label
+            ><output id="contact-album-id" class="created-album-id"></output
+            ><small>ログイン中のアルバムIDでお問い合わせを送信します。</small>
+          </div>
           <label
             >メールアドレス<input
               id="contact-email"
