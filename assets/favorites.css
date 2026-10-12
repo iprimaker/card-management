@@ -118,3 +118,77 @@ body.game-aipri #empty { border-color: #dcebf1; background: #f9fdff; }
   #cards .favorite-button svg { width: 25px; height: 25px; }
   #empty { min-height: 125px; margin: 14px auto; padding: 18px 12px; }
 }
+
+/* コード行と星は独立した操作ボタンにし、ボタンの入れ子を避けます。 */
+#cards .card-image-trigger { flex: 0 0 auto; padding-bottom: 0; }
+#cards .card-text-trigger { padding-top: 0; }
+#cards .card-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 12px;
+  min-width: 0;
+  min-height: 33px;
+}
+#cards .card-code-link {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted, #887d85);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  line-height: 1.4;
+  cursor: pointer;
+}
+#cards .card-code-link .code { margin: 0; overflow-wrap: anywhere; }
+#cards .card-code-row .favorite-button {
+  position: static;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  margin: 0;
+}
+#sync-indicator { display: flex; align-items: center; gap: 8px; }
+#sync-status { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+#catalog-refresh {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border: 1px solid #eadde3;
+  border-radius: 999px;
+  background: #fff9fc;
+  color: #a17a8b;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+#catalog-refresh svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#catalog-refresh:disabled { opacity: .5; cursor: wait; }
+#catalog-refresh:active { background: #f7e8ef; }
+#catalog-refresh.is-refreshing svg { animation: catalog-refresh-spin 1s linear infinite; }
+body.game-aipri #catalog-refresh { color: #578fa7; border-color: #d7e9f0; background: #f6fcff; }
+body.game-aipri #album-back-to-top { color: #5897b7; border-color: #c7e2ee; background: #f0fafff5; box-shadow: 0 3px 15px #477e9c18; }
+body.game-aipri #album-back-to-top:hover { background: #e2f4fc; border-color: #a9d3e5; }
+body.game-aipri #album-back-to-top:active { background: #d2edf8; }
+@keyframes catalog-refresh-spin { to { transform: rotate(360deg); } }
+@media (hover:hover) { #catalog-refresh:hover:not(:disabled) { background: #f9edf2; } body.game-aipri #catalog-refresh:hover:not(:disabled) { background: #eaf7fd; } }
+@media (max-width: 760px) {
+  #cards .card-code-row { padding: 0 9px; }
+}
+@media (max-width: 760px) and (orientation: portrait) {
+  #cards[data-mobile-columns="3"] .card-code-row { padding: 0 6px; gap: 2px; min-height: 30px; }
+  #cards[data-mobile-columns="3"] .card-code-link { font-size: clamp(8px, 2.3vw, 10px); }
+  #cards .card-code-row .favorite-button { flex-basis: 29px; width: 29px; height: 29px; padding: 1px; }
+}
+@media (prefers-reduced-motion: reduce) { #catalog-refresh.is-refreshing svg { animation: none; } }
