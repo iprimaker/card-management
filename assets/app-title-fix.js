@@ -240,7 +240,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "./favorites.css?v=20261012-card-row-refresh",
+  "./favorites.css?v=20261012-album-news",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -545,6 +545,7 @@ function screen(id) {
   closeMenu();
   updateHeader();
   syncBackToTop();
+  if (id === "selection") loadAlbumNews();
 }
 let albumIdentity = "";
 let signupReservation = null;
@@ -741,7 +742,7 @@ async function authChanged(event, next) {
   if (recovering) return;
   recordAccountVisit();
   if (previous !== session.user.id) {
-    $("account").textContent = nickname() + " のアルバム";
+    $("account").textContent = "";
     loadAlbumIdentity().catch(() => {});
     if (!callbackPending && !authResultShowing) screen("selection");
     await Promise.all([loadOwnership(), loadPersonalMetadata(), loadFavorites()]);
@@ -1168,7 +1169,7 @@ function render() {
     .slice((page - 1) * size, page * size)
     .map(
       (c) =>
-        `<article class="card ${owned.has(c.id) ? "owned" : ""}">${owned.has(c.id) ? `<span class="owned-badge">所持 ${quantityOf(c.id)}枚</span>` : ""}<button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}"></span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+        `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}">${owned.has(c.id) ? `<span class="owned-badge">所持 ${quantityOf(c.id)}枚</span>` : ""}<button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}"></span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
     )
     .join("");
   $("empty").hidden = list.length > 0;
@@ -1984,7 +1985,7 @@ function updateHeader() {
   $("probability-open").hidden = !session || !game || probabilitiesOpen;
   $("probability-back").hidden = !session || !game || !probabilitiesOpen;
   $("header-title").textContent = session
-    ? nickname() + "のアルバム"
+    ? $("selection").hidden ? nickname() + "のアルバム" : "カードアルバム"
     : "カードアルバム";
   const selectedGame = game || "aikatsu";
   $("game-switch").classList.toggle("is-aipri", selectedGame === "aipri");
@@ -2066,7 +2067,7 @@ $("nickname-form").onsubmit = async (e) => {
     if (error) throw error;
     session = { ...session, user: data.user };
     updateHeader();
-    $("account").textContent = nickname() + " のアルバム";
+    $("account").textContent = "";
     loadAlbumIdentity().catch(() => {});
     $("nickname-dialog").close();
     toast("ニックネームを保存しました");
@@ -2630,4 +2631,34 @@ $("maintenance-refresh").onclick = async () => {
   finally { $("maintenance-refresh").disabled = false; }
 };
 
+// アルバム選択画面のお知らせ。必要時のみ取得し、5分間はメモリの結果を使います。
+let albumNewsFetchedAt = 0;
+let albumNewsFlight = null;
+const albumNewsPanel = document.createElement('div');
+albumNewsPanel.className = 'album-news';
+albumNewsPanel.innerHTML = '<section class="album-news-box"><h2><span class="news-dot"></span>お知らせ</h2><div id="album-notices"></div></section><section class="album-news-box updates"><h2><span class="news-dot"></span>更新情報</h2><div id="album-updates"></div></section>';
+$('selection').append(albumNewsPanel);
+function renderAlbumNews(rows, target) {
+  $(target).innerHTML = rows.length ? rows.map(row => `<details class="album-news-item"><summary><time datetime="${esc(row.posted_at)}">${esc(new Date(row.posted_at).toLocaleDateString('ja-JP',{timeZone:'Asia/Tokyo'}))}</time><span>${esc(row.title)}</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg></summary><p>${esc(row.body)}</p></details>`).join('') : '<p class="album-news-empty">現在、掲載情報はありません</p>';
+}
+async function loadAlbumNews() {
+  if (!db || !session || maintenanceActive || $('selection').hidden) return;
+  if (albumNewsFetchedAt && Date.now()-albumNewsFetchedAt<300000) return;
+  if (albumNewsFlight) return albumNewsFlight;
+  const flight = (async()=>{
+    for (const id of ['album-notices','album-updates']) $(id).setAttribute('aria-busy','true');
+    try {
+      const results=await Promise.all(['notice','update'].map(kind=>db.from('card_announcements').select('id,title,body,posted_at').eq('published',true).eq('kind',kind).order('posted_at',{ascending:false}).order('id',{ascending:false}).limit(5)));
+      if(results.some(r=>r.error))throw results.find(r=>r.error).error;
+      renderAlbumNews(results[0].data||[],'album-notices');renderAlbumNews(results[1].data||[],'album-updates');
+      albumNewsFetchedAt=Date.now();
+    } catch {
+      for (const id of ['album-notices','album-updates']) if(!$(id).children.length) $(id).textContent='現在、掲載情報を読み込めません。';
+    } finally {for(const id of ['album-notices','album-updates']) $(id).removeAttribute('aria-busy');}
+  })();
+  albumNewsFlight=flight;
+  try{await flight;}finally{if(albumNewsFlight===flight)albumNewsFlight=null;}
+}
+
+$('selection').append($('account-album-id'));
 init();
