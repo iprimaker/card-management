@@ -1,3 +1,52 @@
+// 認証トークンのみを保存。アルバムID・パスワードを認証代わりに保存しません。
+const albumSessionStorage = (() => {
+  const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(".")[0];
+  const baseKey = `sb-${project}-auth-token`;
+  const preferenceKey = `${baseKey}-remember`;
+  const memory = new Map();
+  function read(area, key) {
+    try { return window[area].getItem(key); }
+    catch { return memory.get(`${area}:${key}`) ?? null; }
+  }
+  function write(area, key, value) {
+    memory.set(`${area}:${key}`, value);
+    try { window[area].setItem(key, value); } catch {}
+  }
+  function remove(area, key) {
+    memory.delete(`${area}:${key}`);
+    try { window[area].removeItem(key); } catch {}
+  }
+  function remembered() {
+    const tabChoice = read("sessionStorage", preferenceKey);
+    if (tabChoice !== null) return tabChoice !== "false";
+    // 更新前から保存されているログインはそのまま引き継ぎます。
+    if (read("localStorage", baseKey)) return true;
+    return read("localStorage", preferenceKey) !== "false";
+  }
+  function choose(value) {
+    write("sessionStorage", preferenceKey, String(value));
+    write("localStorage", preferenceKey, String(value));
+  }
+  function options(remember = remembered()) {
+    const area = remember ? "localStorage" : "sessionStorage";
+    // タブ内保持の認証イベントが他タブに配信されないよう別チャンネルを使用。
+    const storageKey = remember ? baseKey : `${baseKey}-private-${crypto.randomUUID()}`;
+    const savedKey = remember ? baseKey : `${baseKey}-session`;
+    const mapKey = key => savedKey + key.slice(storageKey.length);
+    return {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey,
+      storage: {
+        getItem: key => read(area, mapKey(key)),
+        setItem: (key, value) => write(area, mapKey(key), value),
+        removeItem: key => remove(area, mapKey(key)),
+      },
+    };
+  }
+  return { remembered, choose, options };
+})();
+
 const revealStates = new WeakMap();
 function resetReveal(element, hidden) {
   const state = revealStates.get(element);
@@ -298,7 +347,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "./favorites.css?v=20261012-disclosure-animation",
+  "./favorites.css?v=20261012-ownership-overlay",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -1235,7 +1284,7 @@ function render() {
     .slice((page - 1) * size, page * size)
     .map(
       (c) =>
-        `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}">${owned.has(c.id) ? `<span class="owned-badge">${quantityOf(c.id)}枚</span>` : ""}<button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}"></span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+        `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
     )
     .join("");
   $("empty").hidden = list.length > 0;
@@ -1385,19 +1434,46 @@ function updateModalOwnership() {
   $("modal-owned").setAttribute("aria-pressed", String(owned.has(selected.id)));
   $("modal-owned").disabled = !ownershipReady || saving.has(selected.id);
 }
+let albumAuthSubscription = null;
+let albumRememberSession = albumSessionStorage.remembered();
+function configureAlbumAuth(remember = albumRememberSession) {
+  albumAuthSubscription?.unsubscribe();
+  db?.auth.stopAutoRefresh();
+  albumRememberSession = remember;
+  const c = window.APP_CONFIG;
+  const client = window.supabase.createClient(c.supabaseUrl, c.supabaseKey, {
+    auth: {
+      ...albumSessionStorage.options(remember),
+      detectSessionInUrl: true,
+      flowType: "implicit",
+    },
+    global: { fetch: window.CARD_MAINTENANCE.fetch },
+  });
+  db = client;
+  albumAuthSubscription = client.auth.onAuthStateChange((event, session) => {
+    setTimeout(() => {
+      if (db === client) authChanged(event, session);
+    }, 0);
+  }).data.subscription;
+}
+const rememberSessionLabel = document.createElement("label");
+rememberSessionLabel.className = "remember-session";
+rememberSessionLabel.innerHTML = '<input id="remember-session" type="checkbox"><span>ログイン状態を保持する</span>';
+$("auth-submit").before(rememberSessionLabel);
+$("remember-session").checked = albumRememberSession;
+$("remember-session").addEventListener("change", () => {
+  // 次のログイン・新規登録に適用。操作中のパスワードは保存しません。
+  const remember = $("remember-session").checked;
+  albumSessionStorage.choose(remember);
+  if (db && remember !== albumRememberSession) configureAlbumAuth(remember);
+});
+
 async function init() {
   const initialCards = loadInitialCatalog();
   buildMarquee();
   try {
-    const c = window.APP_CONFIG;
-    db = window.supabase.createClient(c.supabaseUrl, c.supabaseKey, {
-      auth: { detectSessionInUrl: true, flowType: "implicit" },
-      global: { fetch: window.CARD_MAINTENANCE.fetch },
-    });
+    configureAlbumAuth();
     await window.CARD_MAINTENANCE.check();
-    db.auth.onAuthStateChange((event, s) =>
-      setTimeout(() => authChanged(event, s), 0),
-    );
     if (callbackError) {
       authResult(
         false,
@@ -1569,6 +1645,9 @@ $("auth-form").onsubmit = async (event) => {
   if (!db || !validateAuthForm()) return;
   $("auth-submit").disabled = true;
   try {
+    const remember = $("remember-session").checked;
+    albumSessionStorage.choose(remember);
+    if (remember !== albumRememberSession) configureAlbumAuth(remember);
     const result = await albumAuth({
       action: $("email").value.includes("@") ? "legacy" : "login",
       album_id: $("email").value.normalize("NFKC").trim().toUpperCase(),
