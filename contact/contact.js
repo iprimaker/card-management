@@ -1,18 +1,59 @@
+// 認証トークンのみを保存。アルバムID・パスワードを認証代わりに保存しません。
+const albumSessionStorage = (() => {
+  const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(".")[0];
+  const baseKey = `sb-${project}-auth-token`;
+  const preferenceKey = `${baseKey}-remember`;
+  const memory = new Map();
+  function read(area, key) {
+    try { return window[area].getItem(key); }
+    catch { return memory.get(`${area}:${key}`) ?? null; }
+  }
+  function write(area, key, value) {
+    memory.set(`${area}:${key}`, value);
+    try { window[area].setItem(key, value); } catch {}
+  }
+  function remove(area, key) {
+    memory.delete(`${area}:${key}`);
+    try { window[area].removeItem(key); } catch {}
+  }
+  function remembered() {
+    const tabChoice = read("sessionStorage", preferenceKey);
+    if (tabChoice !== null) return tabChoice !== "false";
+    // 更新前から保存されているログインはそのまま引き継ぎます。
+    if (read("localStorage", baseKey)) return true;
+    return read("localStorage", preferenceKey) !== "false";
+  }
+  function choose(value) {
+    write("sessionStorage", preferenceKey, String(value));
+    write("localStorage", preferenceKey, String(value));
+  }
+  function options(remember = remembered()) {
+    const area = remember ? "localStorage" : "sessionStorage";
+    // タブ内保持の認証イベントが他タブに配信されないよう別チャンネルを使用。
+    const storageKey = remember ? baseKey : `${baseKey}-private-${crypto.randomUUID()}`;
+    const savedKey = remember ? baseKey : `${baseKey}-session`;
+    const mapKey = key => savedKey + key.slice(storageKey.length);
+    return {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey,
+      storage: {
+        getItem: key => read(area, mapKey(key)),
+        setItem: (key, value) => write(area, mapKey(key), value),
+        removeItem: key => remove(area, mapKey(key)),
+      },
+    };
+  }
+  return { remembered, choose, options };
+})();
+
 let contactSession = null;
 let contactAlbumID = "";
 const contactDB = window.supabase.createClient(
   window.APP_CONFIG.supabaseUrl,
   window.APP_CONFIG.supabaseKey,
-  { global: { fetch: window.CARD_MAINTENANCE.fetch } },
+  { auth: albumSessionStorage.options() },
 );
-let maintenanceRedirecting = false;
-window.CARD_MAINTENANCE.subscribe(async status => {
-  if (!status.maintenance || maintenanceRedirecting) return;
-  maintenanceRedirecting = true;
-  try { await contactDB.auth.signOut({ scope: "local" }); }
-  finally { location.replace("../index.html"); }
-});
-window.CARD_MAINTENANCE.check().catch(() => {});
 let contactIdentityGeneration = 0;
 let resolvedContactUser = null;
 async function updateContactIdentity() {
