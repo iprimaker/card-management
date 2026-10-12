@@ -1,3 +1,40 @@
+const revealStates = new WeakMap();
+function resetReveal(element, hidden) {
+  const state = revealStates.get(element);
+  state?.animation?.cancel();
+  revealStates.delete(element);
+  element.hidden = hidden;
+  if(state) {element.style.overflow=state.overflow;element.style.boxSizing=state.boxSizing;}
+}
+function animateReveal(element, expanded, completed) {
+  const previous = revealStates.get(element);
+  const fromHeight = previous?.animation ? element.getBoundingClientRect().height : expanded ? 0 : element.getBoundingClientRect().height;
+  const fromOpacity = previous?.animation ? getComputedStyle(element).opacity : expanded ? '0' : '1';
+  previous?.animation?.cancel();
+  element.hidden = false;
+  const overflow = previous?.overflow ?? element.style.overflow;
+  const boxSizing = previous?.boxSizing ?? element.style.boxSizing;
+  const state = {expanded, animation:null, overflow, boxSizing};
+  revealStates.set(element,state);
+  const finish = () => {
+    if(revealStates.get(element)!==state)return;
+    state.animation?.cancel();state.animation=null;
+    element.hidden=!expanded;
+    element.style.overflow=overflow;element.style.boxSizing=boxSizing;
+    completed?.();
+  };
+  if(!element.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {finish();return;}
+  const fullHeight = element.getBoundingClientRect().height;
+  element.style.overflow='hidden';element.style.boxSizing='border-box';
+  try {
+    state.animation = element.animate([
+      {height:fromHeight+'px',opacity:fromOpacity},
+      {height:(expanded ? fullHeight : 0)+'px',opacity:expanded?'1':'0'}
+    ],{duration:220,easing:'cubic-bezier(.2,.7,.2,1)',fill:'both'});
+    state.animation.onfinish=finish;
+  } catch {finish();}
+}
+
 // コーデ定義・APは既存の公開カタログ内から取得。追加のDB通信は行わない。
 const coordinateStylesheetURL = new URL(
   "./aikatsu-coordinates.css?v=20261012-coordinate-display",
@@ -126,6 +163,16 @@ function mountCoordinatePanel() {
   const anchor = collection.querySelector(".pagination") || $("cards");
   if (anchor) anchor.after(coordinatePanel);
   else collection.append(coordinatePanel);
+  coordinatePanel.querySelector('summary').addEventListener('click', event => {
+    event.preventDefault();
+    const body = coordinatePanel.querySelector('.coordinate-body');
+    const expanded = !(revealStates.get(body)?.expanded ?? coordinatePanel.open);
+    if (expanded) {coordinatePanel.open=true;renderCoordinates();}
+    animateReveal(body,expanded,()=>{
+      if(!expanded) coordinatePanel.open=false;
+      body.hidden=false;
+    });
+  });
   coordinatePanel.addEventListener("toggle", () => {
     if (coordinatePanel.open) renderCoordinates();
   });
@@ -198,7 +245,7 @@ function renderCoordinates() {
   ])]);
   if (key === coordinateRenderKey) return;
   coordinateRenderKey = key;
-  $("coordinate-list").innerHTML = groups.map((group) => `
+  $("coordinate-list").innerHTML = groups.map((group, groupIndex) => `
     <article class="coordinate-group ${group.complete ? "is-complete" : ""}">
       <div class="coordinate-heading"><h3>${esc(group.name)}</h3>
         <span class="coordinate-completion">${ownershipReady ? `${group.got} / ${group.total}` : "—"}${group.complete ? " 揃いました" : ""}</span></div>
@@ -207,7 +254,7 @@ function renderCoordinates() {
         ${group.members.map((card, index) => card ? `
           <button type="button" class="coordinate-card ${ownershipReady && owned.has(card.id) ? "is-owned" : "is-missing"}"
             data-coordinate-card="${esc(card.id)}" aria-label="${esc(name(card))}：${ownershipReady ? owned.has(card.id) ? "持っている" : "持っていない" : "所持状況未確認"}。詳細を開く">
-            <span class="coordinate-card-image"><img src="${esc(card.front)}" alt="${esc(name(card))}" loading="lazy" decoding="async"></span>
+            <span class="coordinate-card-image"><img src="${esc(card.front)}" alt="${esc(name(card))}" loading="${groupIndex < 6 ? 'eager' : 'lazy'}" decoding="async"></span>
           </button>` : "").join("")}
         
       </div>
@@ -251,7 +298,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "./favorites.css?v=20261012-resolution-only",
+  "./favorites.css?v=20261012-disclosure-animation",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -397,7 +444,7 @@ async function saveFavorite(id) {
     if (enabled) favorites.add(id);
     else favorites.delete(id);
     favoritesCheckedAt = Date.now();
-    if (enabled) toast("お気に入りに登録しました");
+
   } catch (error) {
     if (generation !== favoritesGeneration || uid !== session?.user.id) return;
     // タイムアウト時だけの食い違いも、1枚分の結果を確認して解消する。
@@ -919,8 +966,9 @@ function chooseGame(g) {
   updateHeader();
   screen("collection");
   setLatestSeries();
+  resetReveal($("filter-panel").querySelector(".filter-content"),false);
   $("filter-panel").open = false;
-  $("series-progress").hidden = true;
+  resetReveal($("series-progress"),true);
   $("progress-details").setAttribute("aria-expanded", "false");
   $("progress-details").innerHTML =
     '<span class="progress-chevron" aria-hidden="true"></span>';
@@ -958,7 +1006,11 @@ function renderFamilyTabs() {
       candidates.find(
         (c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001"),
       ) || candidates[0];
-    button.innerHTML = `${preferred ? `<img src="${esc(preferred.front)}" alt="" loading="lazy">` : ""}<span><strong>${family === "おねがい" ? "おねがいアイプリ" : "ひみつのアイプリ"}</strong></span>`;
+    const imageURL = preferred?.front || '';
+    const tabKey = family + '|' + imageURL;
+    if (button.dataset.imageKey === tabKey) return;
+    button.dataset.imageKey = tabKey;
+    button.innerHTML = `${imageURL ? `<span class="family-card-image" aria-hidden="true"><img src="${esc(imageURL)}" alt="" loading="eager" decoding="async"></span>` : ''}<span class="family-card-label"><strong>${family === "おねがい" ? "おねがいアイプリ" : "ひみつのアイプリ"}</strong></span>`;
   });
 }
 function renderSeriesProgress() {
@@ -1232,7 +1284,7 @@ async function saveQuantity(id, delta, clear = false) {
       owned.delete(id);
       ownedCounts.delete(id);
     }
-    if (count > 0) toast(`所持数を${count}枚に更新しました`);
+
   } catch (error) {
     toast("保存できませんでした。" + translatedError(error));
   } finally {
@@ -1858,8 +1910,7 @@ $("clear-query").onclick = () => {
   render();
 };
 $("progress-details").onclick = () => {
-  const expanded = $("series-progress").hidden;
-  $("series-progress").hidden = !expanded;
+  const expanded = !(revealStates.get($("series-progress"))?.expanded ?? !$("series-progress").hidden);
   $("progress-details").setAttribute("aria-expanded", String(expanded));
   $("progress-details").innerHTML =
     '<span class="progress-chevron" aria-hidden="true"></span>';
@@ -1868,6 +1919,7 @@ $("progress-details").onclick = () => {
     expanded ? "弾ごとの取得率を閉じる" : "弾ごとの取得率を表示",
   );
   if (expanded) renderSeriesProgress();
+  animateReveal($("series-progress"),expanded);
 };
 $("query").oninput = () => {
   page = 1;
@@ -2668,11 +2720,32 @@ $('nav').append($('game-switch'),$('probability-open'),$('probability-back'),$('
 const totalProgressCard = document.querySelector('#collection > .progress-card');
 if (totalProgressCard) {
   totalProgressCard.querySelector('div > span').textContent='総取得率';
-  totalProgressCard.append($('series-progress'));
+  totalProgressCard.insertBefore($('series-progress'),$('filtered-rate'));
 }
 // 表示上の縮小を撤回し、画像描画だけを低解像度にする補助スクリプトを読み込みます。
 const resolutionScript = document.createElement('script');
-resolutionScript.src = new URL('./image-resolution.js?v=20261012-resolution-only',document.currentScript?.src || location.href).href;
+resolutionScript.src = new URL('./image-resolution.js?v=20261012-image-visibility-fix',document.currentScript?.src || location.href).href;
 document.head.append(resolutionScript);
 
+const albumHomeLink = $('header-title').closest('a');
+if (albumHomeLink) albumHomeLink.addEventListener('click', event => {
+  if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  closeMenu();
+  if (session && !maintenanceActive) {
+    screen('selection');
+    history.replaceState(null,'',location.pathname + location.search);
+  } else screen('auth');
+});
+const animatedFilterPanel = $('filter-panel');
+animatedFilterPanel.querySelector('summary').addEventListener('click',event=>{
+  event.preventDefault();
+  const content=animatedFilterPanel.querySelector('.filter-content');
+  const expanded=!(revealStates.get(content)?.expanded ?? animatedFilterPanel.open);
+  if(expanded) animatedFilterPanel.open=true;
+  animateReveal(content,expanded,()=>{
+    if(!expanded) animatedFilterPanel.open=false;
+    content.hidden=false;
+  });
+});
 init();
