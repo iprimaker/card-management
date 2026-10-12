@@ -559,3 +559,89 @@ img[data-low-resolution="true"] { transition:none !important; }
 #cards .card { isolation:isolate; }
 #cards .card .card-image-trigger { position:relative; z-index:0; }
 #cards .card .owned-badge { z-index:5; }
+
+/* 枚数タグをCanvasと同じ画像枠内に置き、その上へ固定します。 */
+#cards .card .card-image-frame { position:relative; isolation:isolate; }
+#cards .card .card-image-frame > canvas.low-resolution-image { z-index:1 !important; }
+#cards .card .card-image-frame > .owned-badge {
+  position:absolute !important;
+  z-index:3 !important;
+  top:6px !important;
+  right:6px !important;
+  left:auto !important;
+  bottom:auto !important;
+  min-width:0 !important;
+  width:max-content;
+  max-width:calc(100% - 12px);
+  box-sizing:border-box;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  pointer-events:none;
+  opacity:1;
+}
+
+/* ログインボタン下の保持設定 */
+#auth-form .remember-session {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  gap: 9px;
+  margin: 14px 0 4px;
+  justify-self: start;
+  align-self: flex-start;
+  padding: 7px 13px;
+  border: 1px solid rgba(215, 138, 171, .15);
+  border-radius: 999px;
+  background: #fff9fc;
+  color: #796c78;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  cursor: pointer;
+}
+#auth-form .remember-session input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #ddd7dd;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color .18s ease;
+}
+#auth-form .remember-session input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(80, 55, 70, .12);
+  transition: transform .18s ease;
+}
+#auth-form .remember-session input:checked {
+  background: #d995b3;
+}
+#auth-form .remember-session input:checked::after {
+  transform: translateX(12px);
+}
+#auth-form .remember-session input:focus-visible {
+  outline: 2px solid #d78aab;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #auth-form .remember-session input,
+  #auth-form .remember-session input::after { transition: none; }
+}
