@@ -462,3 +462,100 @@ dialog :is(button[aria-label$="閉じる"],#close,#legal-close,#nickname-top-clo
 /* Canvas描画時も元のimgを残して表示寸法・縦横判定を維持します。 */
 img[data-low-resolution="true"] { opacity:0 !important; }
 canvas.low-resolution-image { pointer-events:none; }
+
+/* 展開三角を両見出しの左側へ戻します。 */
+#filter-panel > summary::after { content:none; display:none; }
+#filter-panel > summary::before { content:'▸'; flex:0 0 12px; margin-right:2px; font-size:12px; color:var(--accent); }
+#filter-panel[open] > summary::before { content:'▾'; }
+#coordinate-panel > summary { display:flex; gap:10px; }
+#coordinate-panel .coordinate-chevron { order:-1; flex:0 0 12px; margin:0 2px 0 0; transform:none; }
+#coordinate-panel .coordinate-chevron::before { content:'▸'; }
+#coordinate-panel[open] .coordinate-chevron { transform:none; }
+#coordinate-panel[open] .coordinate-chevron::before { content:'▾'; }
+#collection > .progress-card > #series-progress { margin:16px 0; padding-top:16px; }
+/* 画像の表示領域を固定し、Canvasと元画像を同じ枠に収めます。 */
+#aipri-families button { min-width:0; }
+#aipri-families button > .family-card-image { display:block; position:relative; flex:0 0 52px; width:52px; height:76px; margin:0; padding:0; overflow:hidden; border-radius:6px; background:#fff; transform:rotate(-5deg); }
+#aipri-families button .family-card-image img { display:block; width:100%; height:100%; max-width:none; min-width:0; margin:0; padding:0; border:0; border-radius:0; transform:none; object-fit:contain; filter:none !important; }
+#aipri-families button .family-card-image img:not([data-low-resolution]) { opacity:1; }
+#aipri-families button:not(.active) > .family-card-image { filter:grayscale(1); opacity:.65; }
+#aipri-families button.active > .family-card-image { filter:none; opacity:1; }
+#aipri-families button > .family-card-label { min-width:0; }
+#aipri-families .family-card-label strong { overflow-wrap:anywhere; }
+@media(max-width:600px) {
+ #aipri-families button { gap:9px; padding:10px; }
+ #aipri-families button > .family-card-image { flex-basis:40px; width:40px; height:58px; }
+ #aipri-families .family-card-label strong { font-size:clamp(11px,3vw,14px); line-height:1.5; }
+}
+
+/* 左の展開矢印を元の見出しに近い大きさに。 */
+#filter-panel > summary::before { font-size:17px; flex-basis:18px; line-height:1; }
+#coordinate-panel .coordinate-chevron { font-size:17px; flex-basis:18px; line-height:1; }
+/* 低解像度の描画レイヤーは枠内で固定。選択状態の色は枠側で適用。 */
+.family-card-image > canvas.low-resolution-image,
+.coordinate-card-image > canvas.low-resolution-image,
+.card-image-frame > canvas.low-resolution-image,
+.marquee-image-frame > canvas.low-resolution-image { inset:0 auto auto 0; width:100%; height:100%; object-fit:contain; }
+/* 隠す元画像の透明度をアニメーションさせず、Canvasの確定した描画へ切り替えます。 */
+img[data-low-resolution="true"] { transition:none !important; }
+
+/* 文字の三角を使わず、CSSのクリップ形状で描く展開矢印。 */
+#filter-panel > summary::before {
+  content:"";
+  display:block;
+  flex:0 0 16px;
+  width:16px;
+  height:16px;
+  margin-right:2px;
+  background:currentColor;
+  clip-path:polygon(22% 8%,88% 50%,22% 92%);
+  transition:transform .16s ease;
+}
+#filter-panel[open] > summary::before {
+  content:"";
+  transform:rotate(90deg);
+}
+#coordinate-panel .coordinate-chevron {
+  display:block;
+  flex:0 0 16px;
+  width:16px;
+  height:16px;
+  margin:0 2px 0 0;
+  border:0;
+  background:currentColor;
+  clip-path:polygon(22% 8%,88% 50%,22% 92%);
+  transform:none;
+  transition:transform .16s ease;
+}
+#coordinate-panel .coordinate-chevron::before,
+#coordinate-panel[open] .coordinate-chevron::before { content:none; display:none; }
+#coordinate-panel[open] .coordinate-chevron { transform:rotate(90deg); }
+@media(prefers-reduced-motion:reduce) {
+  #filter-panel > summary::before,#coordinate-panel .coordinate-chevron { transition:none; }
+}
+
+/* 16pxの矢印に丸い接合部のSVGマスクを使い、尖った角だけを和らげます。 */
+#filter-panel > summary::before,
+#coordinate-panel .coordinate-chevron {
+  clip-path:none;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 3L16 10L5 17Z' fill='black' stroke='black' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 3L16 10L5 17Z' fill='black' stroke='black' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+  -webkit-mask-size:contain;
+  mask-size:contain;
+  -webkit-mask-position:center;
+  mask-position:center;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+}
+
+/* コーデ欄はホバーで色を変えず、白を維持。選択済みの表示は維持します。 */
+#coordinate-panel > summary:hover { background:#fff; }
+#coordinate-panel .coordinate-options button:not([aria-pressed="true"]):hover { background:#fff; }
+#coordinate-panel .coordinate-options button[aria-pressed="true"]:hover { background:#fce9f2; }
+#coordinate-panel .coordinate-card:hover { background:transparent; transform:none; }
+#filter-panel > summary:hover { background:#fff; }
+
+/* Canvasをカード画像内の重なりに閉じ込め、所持枚数を常に前へ。 */
+#cards .card { isolation:isolate; }
+#cards .card .card-image-trigger { position:relative; z-index:0; }
+#cards .card .owned-badge { z-index:5; }
