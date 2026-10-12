@@ -1459,7 +1459,7 @@ function configureAlbumAuth(remember = albumRememberSession) {
 const rememberSessionLabel = document.createElement("label");
 rememberSessionLabel.className = "remember-session";
 rememberSessionLabel.innerHTML = '<input id="remember-session" type="checkbox"><span>ログイン状態を保持する</span>';
-$("auth-submit").before(rememberSessionLabel);
+$("auth-submit").after(rememberSessionLabel);
 $("remember-session").checked = albumRememberSession;
 $("remember-session").addEventListener("change", () => {
   // 次のログイン・新規登録に適用。操作中のパスワードは保存しません。
