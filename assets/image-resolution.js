@@ -24,13 +24,19 @@
     const parent=image.parentElement;
     if(!parent || image.hidden) {clear(image);return;}
     // 元画像はレイアウトと読み込みイベント、alt、縦横判定のために保持します。
+    // opacity:0から戻る途中のアニメーション値をCanvasへコピーしない。
+    const savedTransition=image.style.getPropertyValue('transition');
+    const savedTransitionPriority=image.style.getPropertyPriority('transition');
+    image.style.setProperty('transition','none','important');
     image.removeAttribute('data-low-resolution');
     const style=getComputedStyle(image);
     const properties={width:style.width,height:style.height,boxSizing:style.boxSizing,border:style.border,borderRadius:style.borderRadius,boxShadow:style.boxShadow,background:style.background,padding:style.padding,transform:style.transform,transformOrigin:style.transformOrigin,filter:style.filter,opacity:style.opacity,objectFit:style.objectFit,objectPosition:style.objectPosition,zIndex:style.zIndex};
+    if(savedTransition) image.style.setProperty('transition',savedTransition,savedTransitionPriority);
+    else image.style.removeProperty('transition');
     if(!image.getClientRects().length || image.clientWidth===0 || image.clientHeight===0 || style.display==='none') {clear(image);return;}
     if(getComputedStyle(parent).position==='static') parent.style.position='relative';
     let entry=entries.get(image);
-    if(!entry || entry.parent!==parent) {
+    if(!entry || entry.parent!==parent || !entry.canvas.isConnected) {
       clear(image);
       const canvas=document.createElement('canvas');
       canvas.className='low-resolution-image';
@@ -39,10 +45,14 @@
       image.after(canvas);
       entry={canvas,parent,src:'',width:0,height:0};entries.set(image,entry);
     }
+    const normalizedFrame = parent.matches('.family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame');
+    const rotated = normalizedFrame && image.naturalWidth > image.naturalHeight && (parent.classList.contains('landscape') || parent.classList.contains('is-landscape'));
     const ratio=MAX_EDGE/Math.max(image.naturalWidth,image.naturalHeight);
-    const width=Math.max(1,Math.round(image.naturalWidth*ratio));
-    const height=Math.max(1,Math.round(image.naturalHeight*ratio));
-    if(entry.src!==image.currentSrc || entry.width!==width || entry.height!==height) {
+    const scaledWidth=Math.max(1,Math.round(image.naturalWidth*ratio));
+    const scaledHeight=Math.max(1,Math.round(image.naturalHeight*ratio));
+    const width=rotated ? scaledHeight : scaledWidth;
+    const height=rotated ? scaledWidth : scaledHeight;
+    if(entry.src!==image.currentSrc || entry.width!==width || entry.height!==height || entry.rotated!==rotated || !entry.canvas.isConnected) {
       entry.canvas.width=width;entry.canvas.height=height;
       const context=entry.canvas.getContext('2d');
       if(!context) {clear(image);return;}
@@ -50,11 +60,25 @@
         context.imageSmoothingEnabled=true;
         context.imageSmoothingQuality='high';
         // 外部画像をCanvasへ描画するだけです。画像データを読み出しません。
-        context.drawImage(image,0,0,width,height);
+        if (rotated) {
+          context.translate(width/2,height/2);
+          context.rotate(Math.PI/2);
+          context.drawImage(image,-scaledWidth/2,-scaledHeight/2,scaledWidth,scaledHeight);
+        } else context.drawImage(image,0,0,width,height);
       } catch {clear(image);return;}
-      entry.src=image.currentSrc;entry.width=width;entry.height=height;
+      entry.src=image.currentSrc;entry.width=width;entry.height=height;entry.rotated=rotated;
     }
     Object.assign(entry.canvas.style,properties,{position:'absolute',left:image.offsetLeft+'px',top:image.offsetTop+'px',right:'auto',bottom:'auto',margin:'0',display:'block',maxWidth:'none',maxHeight:'none',pointerEvents:'none'});
+    if (normalizedFrame) {
+      // 固定枠の画像はoffsetLeftやCSS変換行列を流用せず、枠そのものに合わせます。
+      Object.assign(entry.canvas.style,{
+        left:'0px',top:'0px',right:'auto',bottom:'auto',width:'100%',height:'100%',
+        margin:'0',padding:'0',border:'0',borderRadius:'inherit',boxShadow:'none',
+        background:'transparent',transform:'none',transformOrigin:'center',objectFit:'contain',
+        objectPosition:'center',zIndex:'1'
+      });
+    }
+    if (!entry.canvas.isConnected) {clear(image);return;}
     image.setAttribute('data-low-resolution','true');
   }
   function schedule(image) {
