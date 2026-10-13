@@ -679,3 +679,54 @@ img[data-low-resolution="true"] { transition:none !important; }
   #coordinate-panel .coordinate-summary-count { font-size: 10px; }
   #filtered-rate .rate-fraction { flex-basis: 100%; text-align: right; }
 }
+
+/* アルバム選択：カードごとの枠を固定し、Canvas追加で位置が変わらないように */
+#selection .album-images { align-items: center; }
+#selection .album-images > .album-card-frame {
+  position: relative;
+  display: block;
+  flex: 0 0 40%;
+  width: 40%;
+  min-width: 0;
+  aspect-ratio: 460 / 670;
+  margin: 0;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 3px 12px #d8bbce;
+  transform: rotate(-6deg);
+  font-size: inherit;
+  line-height: 0;
+}
+#selection .album-images > .album-card-frame:nth-of-type(2) { transform: rotate(6deg); }
+#selection .album-images .album-card-frame > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  min-width: 0;
+  aspect-ratio: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+  transform: none !important;
+  object-fit: contain;
+}
+#selection .album-images .album-card-frame > canvas.low-resolution-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  transform: none !important;
+  pointer-events: none;
+}
+@media (max-width: 600px) {
+  #selection .album-images > .album-card-frame { flex-basis: 43%; width: 43%; border-width: 2px; }
+}
