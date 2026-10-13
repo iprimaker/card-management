@@ -1798,7 +1798,7 @@ $("album-id-copy").onclick = () => copyAlbumID(signupReservation?.album_id);
 $("signup-password-start").onclick = () => {
   if (signupReservation) renderSignupStep("password");
 };
-$("signup-back-id").onclick = () => renderSignupStep("id");
+$("signup-back-id")?.remove();
 
 $("signup-password-form").onsubmit = (event) => {
   event.preventDefault();
