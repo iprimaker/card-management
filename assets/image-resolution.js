@@ -6,6 +6,16 @@
   const entries = new WeakMap();
   const pending = new Set();
   let frame = null;
+  const inView = new WeakSet();
+  const visibility = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver(records => {
+      for (const record of records) {
+        if (record.isIntersecting) {
+          inView.add(record.target);
+          schedule(record.target);
+        } else inView.delete(record.target);
+      }
+    }, {rootMargin: '240px 0px'}) : null;
   function official(image) {
     try {
       const host = new URL(image.getAttribute('src') || '',location.href).hostname;
@@ -82,12 +92,26 @@
     image.setAttribute('data-low-resolution','true');
   }
   function schedule(image) {
-    if(!(image instanceof HTMLImageElement))return;
+    if (!(image instanceof HTMLImageElement) || !image.isConnected) return;
+    if (image.hidden) { clear(image); return; }
+    if (visibility && !inView.has(image)) return;
     pending.add(image);
-    if(frame!==null)return;
-    frame=requestAnimationFrame(()=>{
-      frame=null;const images=[...pending];pending.clear();
-      for(const image of images)draw(image);
+    queueFrame();
+  }
+  function queueFrame() {
+    if (frame !== null || !pending.size) return;
+    frame = requestAnimationFrame(() => {
+      frame = null;
+      const started = performance.now();
+      let count = 0;
+      // 画像を一括処理してスクロール用のフレームを塞がない。
+      for (const image of pending) {
+        pending.delete(image);
+        if (!image.isConnected || (visibility && !inView.has(image))) continue;
+        draw(image);
+        if (++count >= 2 || performance.now() - started >= 4) break;
+      }
+      queueFrame();
     });
   }
   const resize=typeof ResizeObserver==='function' ? new ResizeObserver(records=>{for(const record of records)schedule(record.target);}) : null;
@@ -95,7 +119,11 @@
   function scan(root) {
     const images=root instanceof HTMLImageElement ? [root] : root.querySelectorAll?.('img') || [];
     for(const image of images) {
-      if(!watched.has(image)) {watched.add(image);resize?.observe(image);}
+      if(!watched.has(image)) {
+        watched.add(image);
+        resize?.observe(image);
+        visibility?.observe(image);
+      }
       if(official(image))schedule(image);else clear(image);
     }
   }
@@ -104,17 +132,23 @@
   window.addEventListener('resize',()=>scan(document));
   // srcの変更時は古い表裏の描画を消し、次のloadで描画します。
   const observer=new MutationObserver(records=>{
+    const roots = new Set();
     for(const record of records) {
       if(record.type==='childList') {
         for(const node of record.removedNodes) {
           if(node.nodeType!==1)continue;
           const images=node instanceof HTMLImageElement ? [node] : node.querySelectorAll?.('img') || [];
-          for(const image of images) {resize?.unobserve(image);watched.delete(image);pending.delete(image);clear(image);}
+          for(const image of images) {resize?.unobserve(image);visibility?.unobserve(image);inView.delete(image);watched.delete(image);pending.delete(image);clear(image);}
         }
-        for(const node of record.addedNodes) if(node.nodeType===1 && !node.matches?.('canvas.low-resolution-image'))scan(node);
+        for(const node of record.addedNodes) if(node.nodeType===1 && !node.matches?.('canvas.low-resolution-image')) roots.add(node);
       } else if(record.target instanceof HTMLImageElement && record.attributeName==='src') {
         clear(record.target);schedule(record.target);
-      } else scan(record.target);
+      } else roots.add(record.target);
+    }
+    for (const root of roots) {
+      if (!root.isConnected) continue;
+      if ([...roots].some(other => other !== root && other.contains(root))) continue;
+      scan(root);
     }
   });
   observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src','class','hidden','open']});
