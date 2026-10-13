@@ -744,6 +744,7 @@ let ownershipCheckedAt = 0,
   ownershipLoadedUser = null;
 function loadOwnership(force = false) {
   const uid = session?.user.id;
+  if (saving.size) return Promise.resolve();
   if (ownershipRequest?.uid === uid) return ownershipRequest.promise;
   if (
     !force &&
@@ -832,7 +833,7 @@ async function authChanged(event, next) {
   if (maintenanceActive) next = null;
   const previous = session?.user.id;
   session = next;
-  if (previous !== session?.user.id) resetFavorites();
+  if (previous !== session?.user.id) { resetFavorites(); saving.clear(); }
   updateHeader();
   if (selected) updateModalOwnership();
   if (event === "PASSWORD_RECOVERY") {
@@ -1273,7 +1274,7 @@ function renderPageNumbers(total) {
     })
     .join("");
 }
-function render() {
+function render(keepCardNodes = false) {
   if (!game) return;
   renderActiveFilters();
   syncFavoriteFilter();
@@ -1319,13 +1320,17 @@ function render() {
   page = Math.min(page, pageCount);
   $("page-size").value = String(pageSize);
   renderPageNumbers(pageCount);
-  $("cards").innerHTML = list
+  const visibleIDs = list.slice((page - 1) * size, page * size).map(card => card.id);
+  const existingIDs = [...$("cards").querySelectorAll("[data-toggle]")].map(button => button.dataset.toggle);
+  const reuseCards = keepCardNodes === true && JSON.stringify(visibleIDs) === JSON.stringify(existingIDs);
+  if (!reuseCards) $("cards").innerHTML = list
     .slice((page - 1) * size, page * size)
     .map(
       (c) =>
-        `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady || saving.has(c.id) ? "disabled" : ""}>${saving.has(c.id) ? "保存中…" : owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+        `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady ? "disabled" : ""}>${owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
     )
     .join("");
+  else syncOwnershipCardNodes();
   $("empty").hidden = list.length > 0;
   $("prev").disabled = page === 1;
   $("next").disabled = page * size >= list.length;
@@ -1348,39 +1353,72 @@ function render() {
 function quantityOf(id) {
   return owned.has(id) ? ownedCounts.get(id) || 1 : 0;
 }
+function setLocalQuantity(id, count) {
+  if (count > 0) { owned.add(id); ownedCounts.set(id, count); }
+  else { owned.delete(id); ownedCounts.delete(id); }
+}
+function syncOwnershipCardNodes() {
+  for (const button of $("cards").querySelectorAll("[data-toggle]")) {
+    const id = button.dataset.toggle;
+    const active = owned.has(id);
+    const article = button.closest(".card");
+    article.classList.toggle("owned", active);
+    button.textContent = active ? "✓ 持っている" : "＋ 持っていない";
+    button.disabled = !ownershipReady;
+    button.setAttribute("aria-pressed", String(active));
+    button.setAttribute("aria-disabled", String(saving.has(id)));
+    const frame = article.querySelector(".card-image-frame");
+    let badge = frame.querySelector(".owned-badge");
+    if (active) {
+      if (!badge) { badge = document.createElement("span"); badge.className = "owned-badge"; frame.append(badge); }
+      badge.textContent = quantityOf(id) + "枚";
+      badge.setAttribute("aria-label", "所持枚数：" + quantityOf(id) + "枚");
+    } else badge?.remove();
+  }
+}
 async function saveQuantity(id, delta, clear = false) {
-  if (!session || !ownershipReady || saving.has(id)) return;
+  if (!session || !ownershipReady || saving.has(id) || maintenanceActive) return;
   const uid = session.user.id;
+  const generation = loadGeneration;
+  const before = quantityOf(id);
+  const predicted = clear ? 0 : Math.min(1000000, Math.max(0, before + delta));
   saving.add(id);
-  render();
-  if (selected) updateModalOwnership();
+  setLocalQuantity(id, predicted);
+  render(true);
   try {
     const result = await db.rpc(
       clear ? "card_album_clear_quantity" : "card_album_change_quantity",
       clear ? { p_card_id: id } : { p_card_id: id, p_delta: delta },
     );
+    if (session?.user.id !== uid || generation !== loadGeneration) return;
     if (result.error) throw result.error;
-    if (session?.user.id !== uid) return;
-    ownershipCheckedAt = Date.now();
     const count = Number(result.data);
-    if (!Number.isInteger(count) || count < 0)
-      throw Error("所持数の応答を確認できませんでした");
-    if (count) {
-      owned.add(id);
-      ownedCounts.set(id, count);
-    } else {
-      owned.delete(id);
-      ownedCounts.delete(id);
-    }
-
-  } catch (error) {
-    toast("保存できませんでした。" + translatedError(error));
+    if (result.data === null || !Number.isInteger(count) || count < 0 || count > 1000000)
+      throw Error("Unexpected ownership quantity");
+    setLocalQuantity(id, count);
+    ownershipCheckedAt = Date.now();
+  } catch {
+    if (session?.user.id !== uid || generation !== loadGeneration) return;
+    setLocalQuantity(id, before);
+    render(true);
+    toast("失敗しました", "error");
+    // 通信応答だけ失われた場合は、登録済みの数量を1枚分だけ確認。
+    try {
+      const check = await db.from("card_ownership").select("quantity")
+        .eq("user_id", uid).eq("card_id", id).maybeSingle();
+      if (!check.error && session?.user.id === uid && generation === loadGeneration) {
+        const count = check.data ? Number(check.data.quantity) : 0;
+        if (Number.isInteger(count) && count >= 0 && count <= 1000000) setLocalQuantity(id, count);
+      }
+    } catch {}
   } finally {
-    saving.delete(id);
-    render();
-    if (selected) updateModalOwnership();
+    if (session?.user.id === uid && generation === loadGeneration) {
+      saving.delete(id);
+      render(true);
+    }
   }
 }
+
 async function toggle(id) {
   return saveQuantity(id, 1, owned.has(id));
 }
@@ -1459,19 +1497,19 @@ function updateModalOwnership() {
   $("modal-owned").hidden = !session;
   $("quantity-controls").hidden = !session || !owned.has(selected.id);
   $("quantity-value").textContent = quantityOf(selected.id) + "枚";
-  $("quantity-minus").disabled = !ownershipReady || saving.has(selected.id);
+  $("quantity-minus").disabled = !ownershipReady;
+  $("quantity-minus").setAttribute("aria-disabled", String(saving.has(selected.id)));
   $("quantity-plus").disabled =
     !ownershipReady ||
-    saving.has(selected.id) ||
     quantityOf(selected.id) >= 1000000;
-  $("modal-owned").textContent = saving.has(selected.id)
-    ? "保存中…"
-    : owned.has(selected.id)
+  $("quantity-plus").setAttribute("aria-disabled", String(saving.has(selected.id)));
+  $("modal-owned").textContent = owned.has(selected.id)
       ? "✓ 持っている"
       : "＋ 持っていない";
   $("modal-owned").classList.toggle("is-owned", owned.has(selected.id));
   $("modal-owned").setAttribute("aria-pressed", String(owned.has(selected.id)));
-  $("modal-owned").disabled = !ownershipReady || saving.has(selected.id);
+  $("modal-owned").disabled = !ownershipReady;
+  $("modal-owned").setAttribute("aria-disabled", String(saving.has(selected.id)));
 }
 let albumAuthSubscription = null;
 let albumRememberSession = albumSessionStorage.remembered();
