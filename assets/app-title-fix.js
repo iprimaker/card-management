@@ -209,8 +209,8 @@ function mountCoordinatePanel() {
       <p id="coordinate-empty" class="coordinate-empty" hidden>該当するコーデがありません。</p>
       <p class="coordinate-footnote">合計APは各カード1枚分の合計です。ゲーム内のボーナスは含みません。</p>
     </div>`;
-  const anchor = collection.querySelector(".pagination") || $("cards");
-  if (anchor) anchor.after(coordinatePanel);
+  const anchor = $("filter-panel");
+  if (anchor) anchor.before(coordinatePanel);
   else collection.append(coordinatePanel);
   coordinatePanel.querySelector('summary').addEventListener('click', event => {
     event.preventDefault();
@@ -261,7 +261,7 @@ function renderCoordinates() {
   const all = coordinateGroups(cards, owned, ownershipReady);
   const eligible = all.filter((group) => !coordinateExcludeSingle || !isSingleFullCoordinate(group));
   $("coordinate-summary-count").textContent = ownershipReady
-    ? `${eligible.filter((group) => group.complete).length} / ${eligible.length}コーデ`
+    ? `収集済 ${eligible.filter((group) => group.complete).length} ／ 未収集 ${eligible.filter((group) => !group.complete).length}`
     : "所持データを確認中";
   if (!panel.open) return; // 畳まれた状態ではカード画像を生成・読み込みしない。
   const labels = [...new Set(all.flatMap((group) => values(group.series)))].sort((a, b) =>
@@ -399,7 +399,7 @@ function resetFavorites() {
 function favoriteButton(card) {
   const active = favoritesReady && favorites.has(card.id);
   const label = active ? "お気に入りを解除" : "お気に入りに登録";
-  return `<button type="button" class="favorite-button ${active ? "is-favorite" : ""}" data-favorite="${esc(card.id)}" aria-label="${esc(name(card) + "：" + label)}" aria-pressed="${active}" title="${label}" ${!session || !favoritesReady || favoriteSaving.has(card.id) ? "disabled" : ""}>${favoriteStar}</button>`;
+  return `<button type="button" class="favorite-button ${active ? "is-favorite" : ""}" data-favorite="${esc(card.id)}" aria-label="${esc(name(card) + "：" + label)}" aria-pressed="${active}" title="${label}" ${!session || !favoritesReady ? "disabled" : ""}>${favoriteStar}</button>`;
 }
 function favoriteFilterMarkup() {
   return `<label class="favorite-filter"><span class="filter-label">お気に入り<button type="button" class="filter-clear" data-clear-favorites aria-label="お気に入りの絞り込みを解除" ${favoriteFilter ? "" : "disabled"}>解除</button></span><select id="favorite-filter" data-favorite-filter ${favoritesReady ? "" : "disabled"}><option value="all" ${favoriteFilter ? "" : "selected"}>すべて</option><option value="only" ${favoriteFilter ? "selected" : ""}>☆ お気に入りのみ</option></select></label>`;
@@ -429,10 +429,11 @@ function updateModalFavorite() {
   if (!button) return;
   const active = selected && favoritesReady && favorites.has(selected.id);
   button.hidden = !session || !selected || !$("auth").hidden;
-  button.disabled = !favoritesReady || favoriteSaving.has(selected?.id);
+  button.disabled = !favoritesReady;
+  button.setAttribute("aria-disabled", String(favoriteSaving.has(selected?.id)));
   button.classList.toggle("is-favorite", !!active);
   button.setAttribute("aria-pressed", String(!!active));
-  button.innerHTML = favoriteStar + `<span>${favoriteSaving.has(selected?.id) ? "保存中…" : active ? "お気に入り登録済み" : "お気に入りに登録"}</span>`;
+  button.innerHTML = favoriteStar + `<span>${active ? "お気に入り登録済み" : "お気に入りに登録"}</span>`;
 }
 function loadFavorites(force = false) {
   const uid = session?.user.id;
@@ -476,27 +477,47 @@ function loadFavorites(force = false) {
   favoritesRequest = request;
   return request.promise;
 }
+function refreshFavoriteUI(id) {
+  for (const button of document.querySelectorAll("[data-favorite]")) {
+    if (button.dataset.favorite !== id) continue;
+    const active = favorites.has(id);
+    const label = active ? "お気に入りを解除" : "お気に入りに登録";
+    const card = catalog.cards.find(card => card.id === id);
+    button.classList.toggle("is-favorite", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.setAttribute("aria-label", (card ? name(card) + "：" : "") + label);
+    button.title = label;
+    button.disabled = !session || !favoritesReady;
+    button.setAttribute("aria-disabled", String(favoriteSaving.has(id)));
+  }
+  updateModalFavorite();
+  // お気に入り限定の一覧では、解除したカードもすぐに一覧へ反映。
+  if (favoriteFilter && game) render();
+}
 async function saveFavorite(id) {
   if (!session || !favoritesReady || favoriteSaving.has(id) || maintenanceActive) return;
   const uid = session.user.id;
   const generation = favoritesGeneration;
-  const enabled = !favorites.has(id);
+  const wasEnabled = favorites.has(id);
+  const enabled = !wasEnabled;
   favoritesMutation++;
   favoriteSaving.add(id);
-  render();
-  updateModalFavorite();
+  if (enabled) favorites.add(id);
+  else favorites.delete(id);
+  refreshFavoriteUI(id);
   try {
     const result = await db.rpc("card_album_set_favorite", { p_card_id: id, p_enabled: enabled });
+    if (generation !== favoritesGeneration || uid !== session?.user.id) return;
     if (result.error) throw result.error;
-    if (generation !== favoritesGeneration || uid !== session?.user.id) return;
-    if (result.data !== enabled) throw Error("お気に入りの保存結果を確認できませんでした");
-    if (enabled) favorites.add(id);
-    else favorites.delete(id);
+    if (result.data !== enabled) throw Error("Unexpected favorite state");
     favoritesCheckedAt = Date.now();
-
-  } catch (error) {
+  } catch {
     if (generation !== favoritesGeneration || uid !== session?.user.id) return;
-    // タイムアウト時だけの食い違いも、1枚分の結果を確認して解消する。
+    if (wasEnabled) favorites.add(id);
+    else favorites.delete(id);
+    refreshFavoriteUI(id);
+    toast("失敗しました", "error");
+    // 応答だけ失われた場合は、このカード1枚のDB状態を再確認。
     try {
       const check = await db.from("card_favorites").select("card_id")
         .eq("user_id", uid).eq("card_id", id).maybeSingle();
@@ -505,16 +526,11 @@ async function saveFavorite(id) {
         else favorites.delete(id);
       }
     } catch {}
-    if (generation === favoritesGeneration && uid === session?.user.id)
-      toast("保存結果を確認してください。" + translatedError(error));
   } finally {
     if (generation === favoritesGeneration && uid === session?.user.id) {
       favoritesMutation++;
       favoriteSaving.delete(id);
-      render();
-      updateModalFavorite();
-      const button = [...document.querySelectorAll("[data-favorite]")].find(node => node.dataset.favorite === id);
-      if (button && !$("detail").open) button.focus({ preventScroll: true });
+      refreshFavoriteUI(id);
     }
   }
 }
@@ -634,14 +650,19 @@ const fields = {
   ],
 };
 const values = (v) => (Array.isArray(v) ? v : v ? [v] : []);
-function toast(s) {
+function toast(s, kind = "normal") {
+  $("toast").classList.toggle("is-error", kind === "error");
   $("toast").textContent = s;
   $("toast").hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => ($("toast").hidden = true), 3500);
 }
+function randomizeAuthTheme() {
+  document.body.classList.toggle("game-aipri", crypto.getRandomValues(new Uint8Array(1))[0] < 128);
+}
 function screen(id) {
   if (maintenanceActive) id = "auth";
+  if (id === "auth" && $("auth").hidden) randomizeAuthTheme();
   for (const s of [
     "auth",
     "auth-result",
@@ -656,6 +677,7 @@ function screen(id) {
   updateHeader();
   syncBackToTop();
   if (id === "selection") loadAlbumNews();
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
 }
 let albumIdentity = "";
 let signupReservation = null;
@@ -1262,7 +1284,7 @@ function render() {
     : "所持データを読み込み中（設定が必要な場合は同梱の手順をご確認ください）";
   $("result-count").textContent = `見つかったカード ${list.length}枚`;
   $("filtered-rate").innerHTML = ownershipReady
-    ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">${baseGot} / ${base.length}枚</span>`
+    ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">取得済 ${baseGot}枚 ／ 未取得 ${base.length - baseGot}枚</span>`
     : "";
   document
     .querySelector(".owned-tabs")
@@ -2827,4 +2849,9 @@ animatedFilterPanel.querySelector('summary').addEventListener('click',event=>{
     content.hidden=false;
   });
 });
+// 配色は既存のピンク・水色をそのまま使い、起動ごとにランダムで選択。
+randomizeAuthTheme();
+$("auth").querySelectorAll(".account-retention-note").forEach(note => { note.hidden = true; });
+const confirmPasswordButton = $("signup-password-form").querySelector('button[type="submit"]');
+if (confirmPasswordButton) confirmPasswordButton.textContent = "パスワードを確定する";
 init();
