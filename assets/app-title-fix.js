@@ -349,7 +349,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "./favorites.css?v=20261013-compact-progress",
+  "./favorites.css?v=20261013-album-choice-position",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -997,6 +997,20 @@ async function loadAdminOverrides() {
   adminOverrides.clear();
   next.forEach((v, k) => adminOverrides.set(k, v));
 }
+function normalizeAlbumArt() {
+  for (const root of document.querySelectorAll("#selection .album-images")) {
+    for (const image of root.querySelectorAll("img")) {
+      if (image.parentElement.classList.contains("album-card-frame")) continue;
+      const frame = document.createElement("span");
+      frame.className = "album-card-frame";
+      image.before(frame);
+      frame.append(image);
+      const orient = () => frame.classList.toggle("is-landscape", image.naturalWidth > image.naturalHeight);
+      image.addEventListener("load", orient);
+      if (image.complete && image.naturalWidth) orient();
+    }
+  }
+}
 function art() {
   updateHeader();
   for (const g of ["aikatsu", "aipri"]) {
@@ -1022,6 +1036,7 @@ function art() {
     root.dataset.cards=picks.map(c=>c.id+"|"+c.front).join(",");
     root.innerHTML=picks.map(c=>`<img src="${esc(c.front)}" alt="${esc(c.name||c.code)}（${esc(c.character||c.code)}）" loading="eager" decoding="async">`).join("");
   }
+  normalizeAlbumArt();
   buildMarquee();
 }
 
@@ -2827,7 +2842,7 @@ if (totalProgressCard) {
 }
 // 表示上の縮小を撤回し、画像描画だけを低解像度にする補助スクリプトを読み込みます。
 const resolutionScript = document.createElement('script');
-resolutionScript.src = new URL('./image-resolution.js?v=20261013-smooth-scroll',document.currentScript?.src || location.href).href;
+resolutionScript.src = new URL('./image-resolution.js?v=20261013-album-choice-position',document.currentScript?.src || location.href).href;
 document.head.append(resolutionScript);
 
 const albumHomeLink = $('header-title').closest('a');
@@ -2852,6 +2867,7 @@ animatedFilterPanel.querySelector('summary').addEventListener('click',event=>{
   });
 });
 // 配色は既存のピンク・水色をそのまま使い、起動ごとにランダムで選択。
+normalizeAlbumArt();
 randomizeAuthTheme();
 $("auth").querySelectorAll(".account-retention-note").forEach(note => { note.hidden = true; });
 const confirmPasswordButton = $("signup-password-form").querySelector('button[type="submit"]');
