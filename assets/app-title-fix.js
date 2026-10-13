@@ -137,7 +137,9 @@ function syncBackToTop() {
   const visibleAlbum = document.querySelector(
     "#collection:not([hidden]), #probabilities:not([hidden])",
   );
-  backToTopButton.hidden = !visibleAlbum || window.scrollY < 320;
+  const hidden = !visibleAlbum || window.scrollY < 320;
+  // 同じ状態の属性を毎フレーム書き直さない。
+  if (backToTopButton.hidden !== hidden) backToTopButton.hidden = hidden;
 }
 
 function isSingleFullCoordinate(group) {
@@ -347,7 +349,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "./favorites.css?v=20261012-ownership-overlay",
+  "./favorites.css?v=20261013-compact-progress",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -2825,7 +2827,7 @@ if (totalProgressCard) {
 }
 // 表示上の縮小を撤回し、画像描画だけを低解像度にする補助スクリプトを読み込みます。
 const resolutionScript = document.createElement('script');
-resolutionScript.src = new URL('./image-resolution.js?v=20261012-image-visibility-fix',document.currentScript?.src || location.href).href;
+resolutionScript.src = new URL('./image-resolution.js?v=20261013-smooth-scroll',document.currentScript?.src || location.href).href;
 document.head.append(resolutionScript);
 
 const albumHomeLink = $('header-title').closest('a');
