@@ -55,7 +55,7 @@
       image.after(canvas);
       entry={canvas,parent,src:'',width:0,height:0};entries.set(image,entry);
     }
-    const normalizedFrame = parent.matches('.family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame,.album-card-frame');
+    const normalizedFrame = parent.matches('.family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame,.album-card-frame,.verse-full-image,.verse-family-image,.verse-nav-image,.verse-part-image-frame,.verse-collage-item');
     const rotated = normalizedFrame && image.naturalWidth > image.naturalHeight && (parent.classList.contains('landscape') || parent.classList.contains('is-landscape'));
     const ratio=MAX_EDGE/Math.max(image.naturalWidth,image.naturalHeight);
     const scaledWidth=Math.max(1,Math.round(image.naturalWidth*ratio));
