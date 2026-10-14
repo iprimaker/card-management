@@ -2,7 +2,7 @@
 // toBlob/toDataURL/保存/API/追加fetchは使用しません。CORSを変更しません。
 (() => {
   'use strict';
-  const MAX_EDGE = 640;
+  const MAX_EDGE = 560;
   const entries = new WeakMap();
   const pending = new Set();
   let frame = null;
