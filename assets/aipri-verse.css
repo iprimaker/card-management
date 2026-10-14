@@ -361,3 +361,27 @@ body.game-aipri #collection #total,#verse-total { background:#fff; color:#247ca4
  #verse-pages .verse-page-prev,#verse-pages .verse-page-next { min-height:34px; padding:6px; font-size:.7rem; }
  #verse-pages span { font-size:.7rem; }
 }
+
+/* 枚数はフルコーデ・各パーツで独立 */
+.verse-card.is-owned { background:#def3fc; border-color:#63b5d2; }
+.verse-owned.is-owned:not([data-verse-part]) { background:#a9ddef; border-color:#63b5d2; color:#246e8d; }
+.verse-coordinate.is-complete { background:#e4f5fc; border-color:#84c8df; }
+.verse-modal-favorite { padding:5px 8px; gap:5px; font-size:10px; margin-top:7px; min-height:30px; border-radius:10px; }
+.verse-modal-favorite svg { width:16px; height:16px; }
+.verse-own-control { width:100%; min-width:0; margin-top:auto; }
+.verse-quantity { display:grid; grid-template-columns:30px minmax(0,1fr) 30px; align-items:center; width:100%; margin-top:5px; padding:2px; border:1px solid #d5e8f0; border-radius:10px; background:#fff; box-sizing:border-box; }
+.verse-quantity button { min-width:0; min-height:28px; padding:0; border:0; border-radius:7px; background:transparent; color:#397f9b; font-size:17px; line-height:1; touch-action:manipulation; }
+.verse-quantity button:hover { background:#edf8fc; }
+.verse-quantity-value { min-width:0; text-align:center; font-size:11px; font-variant-numeric:tabular-nums; color:#5c8190; white-space:nowrap; }
+.verse-card-picture { position:relative; display:block; width:100%; }
+.verse-duplicate-tag { position:absolute; z-index:4; left:3px; bottom:5px; padding:3px 6px; border:1px solid #efd1d1; border-radius:7px; background:#fff0ee; color:#b87375; font-size:10px; font-weight:500; line-height:1.3; white-space:nowrap; pointer-events:none; }
+@media(max-width:600px) {
+ .verse-quantity { grid-template-columns:25px minmax(0,1fr) 25px; }
+ .verse-quantity button { min-height:26px; font-size:16px; }
+ .verse-quantity-value { font-size:10px; }
+ .verse-duplicate-tag { font-size:8px; padding:2px 4px; left:2px; bottom:4px; }
+}
+
+/* モーダルだけ、2枚以上の項目を優しい赤色に */
+#verse-detail .verse-owned.is-duplicate { background:#fde7e5; border-color:#ebc1bf; color:#b56c6f; }
+#verse-detail .verse-owned.is-duplicate:hover { background:#fbdfdc; }
