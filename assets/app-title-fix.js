@@ -2886,7 +2886,7 @@ if (totalProgressCard) {
 }
 // 表示上の縮小を撤回し、画像描画だけを低解像度にする補助スクリプトを読み込みます。
 const resolutionScript = document.createElement('script');
-resolutionScript.src = new URL('./image-resolution.js?v=20261014-verse-refinement',document.currentScript?.src || location.href).href;
+resolutionScript.src = new URL('./image-resolution.js?v=20261014-resolution-560',document.currentScript?.src || location.href).href;
 document.head.append(resolutionScript);
 
 const albumHomeLink = $('header-title').closest('a');
@@ -2934,9 +2934,9 @@ window.CARD_VERSE_HOST = {
 };
 const verseStyles = document.createElement("link");
 verseStyles.rel = "stylesheet";
-verseStyles.href = new URL("./aipri-verse.css?v=20261014-verse-pagination", document.currentScript?.src || location.href).href;
+verseStyles.href = new URL("./aipri-verse.css?v=20261014-verse-duplicates", document.currentScript?.src || location.href).href;
 document.head.append(verseStyles);
 const verseScript = document.createElement("script");
-verseScript.src = new URL("./aipri-verse.js?v=20261014-verse-pagination", document.currentScript?.src || location.href).href;
+verseScript.src = new URL("./aipri-verse.js?v=20261014-verse-duplicates", document.currentScript?.src || location.href).href;
 document.head.append(verseScript);
 init();
