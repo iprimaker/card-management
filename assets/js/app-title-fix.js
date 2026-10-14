@@ -2958,9 +2958,9 @@ window.CARD_VERSE_HOST = {
 };
 const verseStyles = document.createElement("link");
 verseStyles.rel = "stylesheet";
-verseStyles.href = new URL("../css/aipri-verse.css?v=20261014-verse-mobile-ownership", document.currentScript?.src || location.href).href;
+verseStyles.href = new URL("../css/aipri-verse.css?v=20261015-verse-instant-switch", document.currentScript?.src || location.href).href;
 document.head.append(verseStyles);
 const verseScript = document.createElement("script");
-verseScript.src = new URL("./aipri-verse.js?v=20261014-verse-mobile-ownership", document.currentScript?.src || location.href).href;
+verseScript.src = new URL("./aipri-verse.js?v=20261015-verse-instant-switch", document.currentScript?.src || location.href).href;
 document.head.append(verseScript);
 init();
