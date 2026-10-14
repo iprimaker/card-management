@@ -4,379 +4,57 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<meta content="アイカツ！アンコールとアイプリのカードを探して、あつめたカードを記録。" name="description"/>
-<title>カードアルバム</title>
-<link rel="icon" type="image/png" href="./assets/favicon.png">
-<link href="./assets/style.css?v=20261012-manual-db" rel="stylesheet"/>
-<link href="./assets/dropdowns.css?v=20261012-manual-db" rel="stylesheet"/>
-<script src="./assets/startup-cards.js?v=20261012-maintenance"></script>
-<script defer="" src="./assets/vendor/supabase.js?v=20261012-manual-db"></script>
-<script defer="" src="./assets/config.js?v=20261012-manual-db"></script>
-<script defer="" src="./assets/site-info.js?v=20261012-manual-db"></script>
-<script defer="" src="./assets/catalog-cache.js?v=20261012-manual-db"></script>
-<script defer src="./assets/maintenance.js?v=20261012-maintenance"></script>
-<script defer="" src="./assets/app-title-fix.js?v=20261012-coordinate-display"></script>
-<script defer="" src="./assets/dropdowns.js?v=20261012-manual-db"></script>
-<style id="header-tag-correction">
-      /* ヘッダー・タグ修正。既存CSSの後に読み込みます。 */
-      #nav > button#probability-back,
-      #nav > button#probability-open,
-      #nav > button#album-id-open,
-      #nav > button#edit-nickname,
-      #nav > button#logout {
-        font-family: inherit !important;
-        font-size: 14px !important;
-        font-weight: 400 !important;
-        font-style: normal !important;
-        line-height: 1.5 !important;
-        letter-spacing: normal !important;
-        text-align: center !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 8px 12px !important;
-        margin: 0 !important;
-        border: 0 !important;
-        border-radius: 10px !important;
-        background: transparent !important;
-        color: inherit !important;
-        text-decoration: none !important;
-        box-shadow: none !important;
-      }
-      #nav > button#probability-back:not([hidden]),
-      #nav > button#probability-open:not([hidden]),
-      #nav > button#album-id-open:not([hidden]),
-      #nav > button#edit-nickname:not([hidden]),
-      #nav > button#logout:not([hidden]) {
-        display: inline-flex !important;
-      }
-      #nav > button#probability-back:hover,
-      #nav > button#probability-open:hover,
-      #nav > button#album-id-open:hover,
-      #nav > button#edit-nickname:hover,
-      #nav > button#logout:hover {
-        background: var(--soft, #ffedf5) !important;
-        color: var(--accent, #d63e84) !important;
-      }
-      #active-filters .filter-chip {
-        display: inline-flex !important;
-        align-items: center !important;
-        height: auto !important;
-        min-height: 28px !important;
-        max-height: none !important;
-        padding: 5px 8px !important;
-        line-height: 1.65 !important;
-        overflow: visible !important;
-      }
-      #active-filters .filter-chip > span:first-child {
-        display: block !important;
-        line-height: 1.65 !important;
-        padding: 1px 0 !important;
-        overflow: visible !important;
-        max-height: none !important;
-      }
-      #active-filters .filter-chip strong {
-        line-height: inherit !important;
-      }
-      @media (max-width: 760px) {
-        #nav > button#probability-back,
-        #nav > button#probability-open,
-        #nav > button#album-id-open,
-        #nav > button#edit-nickname,
-        #nav > button#logout {
-          width: 100% !important;
-          font-size: 13px !important;
-        }
-      }
-    </style>
-<link href="./assets/card-columns.css?v=20261012-manual-db" rel="stylesheet"/>
-<script defer="" src="./assets/card-columns.js?v=20261012-manual-db"></script>
-<link rel="stylesheet" href="./assets/maintenance.css?v=20261012-maintenance"/>
+<title>お問い合わせ｜カードアルバム</title>
+<link href="../assets/images/favicon.svg" rel="icon"/>
+<link href="../assets/css/style.css?v=20261012-manual-db" rel="stylesheet"/>
+<link href="../assets/css/dropdowns.css?v=20261012-manual-db" rel="stylesheet"/>
+<script defer="" src="../assets/js/dropdowns.js?v=20261012-manual-db"></script>
+<link href="../assets/css/contact.css?v=20261012-manual-db" rel="stylesheet"/>
+<script defer="" src="../assets/js/vendor/supabase.js?v=20261012-manual-db"></script>
+<script defer="" src="../assets/js/config.js?v=20261012-manual-db"></script>
+<script defer="" src="../assets/js/site-info.js?v=20261012-manual-db"></script>
+<script defer src="../assets/js/maintenance.js?v=20261012-maintenance"></script>
+<script defer="" src="../assets/js/contact.js?v=20261012-maintenance"></script>
 </head>
 <body>
 <header>
-<a aria-label="カードアルバムのトップへ" class="wordmark" href="./">
-<img alt="" class="header-card" hidden="" id="header-card"/>
-<span id="header-title">カードアルバム</span>
-</a>
-<button aria-controls="nav" aria-expanded="false" aria-label="メニューを開く" class="menu-toggle" hidden="" id="menu-toggle">
-<span></span><span></span><span></span>
-</button>
-<nav aria-label="アルバムの操作" hidden="" id="nav">
-<div aria-label="作品を切り替える" class="game-switch" id="game-switch" role="group">
-<span aria-hidden="true" class="game-switch-slider"></span>
-<button aria-pressed="false" data-game="aikatsu">アイカツ！</button>
-<button aria-pressed="false" data-game="aipri">アイプリ</button>
-</div>
-<button hidden="" id="ownership-export-open" type="button">
-          所持状況を出力
-        </button>
-<button hidden="" id="probability-open">確率確認</button>
-<button hidden="" id="probability-back">アルバム表示</button>
-<button id="edit-nickname">ニックネームを変更</button>
-<button id="logout">ログアウト</button>
-</nav>
+<a class="wordmark" href="../">カードアルバム</a><a class="back-link" href="../">アルバムへ戻る</a>
 </header>
-<main>
-<section class="auth" id="auth">
-<div class="intro">
-<h1>あなたのカードを<br/>まとめて管理。</h1>
-<div aria-label="カードのスライド一覧" class="card-marquee" id="auth-art">
-<div class="marquee-track">
-<div class="marquee-group"></div>
-<div aria-hidden="true" class="marquee-group"></div>
-</div>
-</div>
-</div>
-<script>window.CARD_STARTUP_PREVIEW.paint(document.getElementById("auth-art"));</script>
-<div class="auth-panel">
-<section id="maintenance-panel" class="maintenance-panel" hidden aria-live="polite">
-<span class="maintenance-symbol" aria-hidden="true">✦</span>
-<p class="maintenance-kicker">CARD ALBUM</p>
-<h2>メンテナンス中</h2>
-<p id="maintenance-message">ただ今システムのメンテナンスをしていますので、アルバムを開けません。</p>
-<div class="maintenance-schedule"><span>メンテナンス終了予定</span><strong id="maintenance-end">未定</strong></div>
-<p class="maintenance-wait">流れてくるカードを眺めて、<br/>今しばらくお待ちください。</p>
-<button class="text-button" id="maintenance-refresh" type="button">状況を確認する</button>
-<p id="maintenance-check-message" role="status"></p>
-</section>
-<div id="auth-normal-panel">
-<h2>カードアルバムへようこそ</h2>
-<div class="tabs">
-<button class="active" id="login-tab">ログイン</button><button id="signup-tab">新規登録</button>
-</div>
-<form id="auth-form" novalidate="">
-<label><span id="login-identifier-label">アルバムID</span><input aria-describedby="email-error" autocapitalize="characters" autocomplete="username" id="email" maxlength="254" placeholder="アルバムID" required="" spellcheck="false" type="text"/><span class="field-error" hidden="" id="email-error" role="alert"></span></label>
-<label>パスワード<input aria-describedby="password-error" autocomplete="current-password" id="password" maxlength="128" minlength="8" required="" type="password"/><span class="field-error" hidden="" id="password-error" role="alert"></span></label>
-<button class="primary" id="auth-submit" type="submit">
-              ログイン
-            </button>
-<p class="account-retention-note">
-              2か月間ログイン・利用がないアカウントは所持記録とともに自動削除します。削除されたIDは再利用できません。
-            </p>
-</form>
-<div hidden="" id="signup-flow">
-<ol aria-label="登録の手順" class="signup-steps">
-<li data-signup-marker="id">ID発行</li>
-<li data-signup-marker="password">パスワード</li>
-<li data-signup-marker="nickname">ニックネーム</li>
-</ol>
-<section id="signup-id-step">
-<h3>あなたのアルバムID</h3>
-<button class="primary" id="issue-album-id" type="button">
-                アルバムIDを発行
-              </button>
-<div hidden="" id="issued-id-panel">
-<div class="album-id-card">
-<output id="issued-album-id"></output><button id="album-id-copy" type="button">コピー</button>
-</div>
-<p class="id-save-note">
-                  ログインにはこのIDの入力が必要になります。スクショなどで保存してください。
-                </p>
-<p class="muted id-expiry-note">
-                  このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。
-                </p>
-</div>
-<button class="primary" disabled="" hidden="" id="signup-password-start" type="button">
-                パスワードを設定
-              </button>
-</section>
-<form hidden="" id="signup-password-form" novalidate="">
-<h3>パスワードを設定</h3>
-<p class="signup-id-reference"></p>
-<label>パスワード<input autocomplete="new-password" id="signup-password" maxlength="128" minlength="8" required="" type="password"/></label>
-<label>パスワード確認<input autocomplete="new-password" id="signup-password-confirm" maxlength="128" required="" type="password"/></label>
-<p class="muted">8〜128文字で設定してください。</p>
-<p class="field-error" hidden="" id="signup-password-error" role="alert"></p>
-<div class="signup-actions">
-<button id="signup-back-id" type="button">戻る</button><button class="primary" type="submit">
-                  ニックネームを登録
-                </button>
-</div>
-</form>
-<form hidden="" id="signup-nickname-form" novalidate="">
-<h3>ニックネームを登録</h3>
-<p class="signup-id-reference"></p>
-<label id="nickname-field">ニックネーム<input aria-describedby="nickname-error" autocomplete="nickname" id="nickname" maxlength="16" placeholder="アルバムに表示する名前" type="text"/><span class="field-error" hidden="" id="nickname-error" role="alert"></span></label>
-<p class="id-save-note">
-                氏名、住所、電話番号、メールアドレスなどの個人情報は禁止です。
-              </p>
-<label class="nickname-ack"><input id="nickname-privacy-ack" type="checkbox"/>個人情報を含まないことを確認しました</label>
-<div class="signup-actions">
-<button class="primary" id="album-create" type="submit">
-                  アルバムを作成する
-                </button>
-</div>
-</form>
-<p class="field-error" id="signup-message" role="status"></p>
-</div>
-<button class="text-button" hidden="" id="forgot">
-            パスワードを忘れた方</button><button class="text-button" hidden="" id="resend">
-            確認メールを再送する
-          </button>
-<p id="auth-message" role="status"></p>
-<form hidden="" id="password-form">
-<label>新しいパスワード<input autocomplete="new-password" id="new-password" minlength="8" required="" type="password"/></label><button class="primary">パスワードを変更</button>
-</form>
-</div>
-</div>
-</section>
-<section class="auth-result" hidden="" id="auth-result">
-<div class="auth-panel">
-<span aria-hidden="true" class="confirmation-icon" id="auth-result-icon">✓</span>
-<h1 id="auth-result-title">登録できました</h1>
-<output class="created-album-id" hidden="" id="auth-result-album-id"></output>
-<p id="auth-result-text" role="status"></p>
-<p class="account-retention-note" hidden="" id="auth-result-retention">
-<strong>パスワードを忘れた場合、再設定やアカウントの復旧はできません。</strong><br/>
-            アルバムIDとパスワードを、安全な場所に保存してください。<br/><br/>
-            2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
-          </p>
-<button class="primary" id="auth-result-next">アルバムを選ぶ</button>
-</div>
-</section>
-<section hidden="" id="selection">
-<div class="selection-title">
-<span class="eyebrow">MY ALBUMS</span>
-<h1>どのアルバムを開く？</h1>
-<p id="account"></p>
-<p class="account-album-id" id="account-album-id"></p>
-</div>
-<div class="album-options">
-<button class="album aikatsu" data-game="aikatsu">
-<div class="album-images" id="aikatsu-art"><img src="https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR.webp" alt="オーロラキスキャミソール（星宮いちご）" loading="eager" decoding="async"><img src="https://dcd.aikatsu.com/encore/images/cardlist/card/E1-83_N.webp" alt="イエローブロッサムトップス（和央パリン）" loading="eager" decoding="async"></div>
-<span>アイカツ！アンコール</span></button><button class="album aipri" data-game="aipri">
-<div class="album-images" id="aipri-art"><img src="https://aipri.jp/card/img/oa4/OA4-001_O.webp" alt="スマイルハートバズリウムピンク（いのり）" loading="eager" decoding="async"><img src="https://aipri.jp/card/img/oa4/OA4-005_O.webp" alt="スマイルハートバズリウムレッド（ナナ）" loading="eager" decoding="async"></div>
-<span>アイプリ</span>
-</button>
-</div>
-</section>
-<section hidden="" id="collection">
-<div class="collection-title">
-<div>
-<span class="eyebrow">CARD COLLECTION</span>
-<h1 id="game-title">おねがいアイプリ</h1>
-</div>
-<span class="pill" id="total"></span>
-</div>
-<div aria-label="アイプリの種類" class="family-tabs" hidden="" id="aipri-families" role="group">
-<button aria-pressed="true" class="active" data-family="おねがい">
-            おねがいアイプリ</button><button aria-pressed="false" data-family="ひみつ">
-            ひみつのアイプリ
-          </button>
-</div>
-<div class="progress-card">
-<div><span>カードの取得率</span><strong id="percent">0%</strong></div>
-<div class="progress-track"><span id="progress-bar"></span></div>
-<div class="progress-bottom">
-<p id="progress-count"></p>
-<button aria-controls="series-progress" aria-expanded="false" aria-label="弾ごとの取得率を表示" class="text-button" id="progress-details">
-<span aria-hidden="true" class="progress-chevron"></span>
-</button>
-</div>
-<div aria-live="polite" id="filtered-rate"></div>
-</div>
-<div class="series-progress" hidden="" id="series-progress"></div>
-<details class="filter-panel" id="filter-panel">
-<summary>カードを絞り込む <span id="filter-summary"></span></summary>
-<div class="filter-content">
-<label class="search-label">フリーワード検索<input id="query" placeholder="カード名・コードなど" type="search"/><button aria-label="フリーワード検索を解除" class="filter-clear" id="clear-query" type="button">
-                解除
-              </button></label>
-<div class="filter-grid" id="filters"></div>
-<div class="filter-footer">
-<button class="text-button" id="reset">
-                すべての絞り込みを解除
-              </button>
-</div>
-</div>
-</details>
-<div aria-label="適用中の絞り込み" aria-live="polite" class="active-filters" id="active-filters"></div>
-<div class="ownership-toolbar">
-<div aria-label="所持状態" class="owned-tabs" role="group">
-<span aria-hidden="true" class="owned-tabs-slider"></span>
-<button class="active" data-owned="all">すべて</button><button data-owned="yes">持っている</button><button data-owned="no">持っていない</button>
-</div>
-</div>
-<div class="results-heading">
-<h2 id="result-count"></h2>
-<div class="results-controls card-display-toolbar">
-<label class="display-count">
-<span class="display-control-label">表示件数</span>
-<select aria-label="一覧の表示件数" id="page-size">
-<option value="20">20枚</option>
-<option value="50">50枚</option>
-<option value="100">100枚</option>
-<option value="all">すべて</option>
-</select>
-</label>
-<div aria-label="カード一覧の列数" class="mobile-column-control" role="group">
-<span class="mobile-column-label">カードの並び</span>
-<div class="mobile-column-buttons">
-<button aria-pressed="false" data-card-columns="2" type="button">
-                  2列
-                </button>
-<button aria-pressed="true" data-card-columns="3" type="button">
-                  3列
-                </button>
-</div>
-</div>
-</div>
-</div>
-<div class="card-grid" data-mobile-columns="3" id="cards"></div>
-<p hidden="" id="empty">
-          見つかりませんでした。条件を変えて探してみてください。
-        </p>
-<div class="pagination">
-<button id="prev">前のページ</button>
-<nav aria-label="カード一覧のページ" id="page-numbers"></nav>
-<button id="next">次のページ</button>
-</div>
-<div aria-label="カード情報の更新状況" class="collection-status">
-<div class="sync-indicator" id="sync-indicator">
-<span aria-hidden="true" class="sync-spinner" hidden=""></span>
-<p class="muted" id="sync-status" role="status"></p>
-</div>
-<p class="notice" hidden="" id="data-warning"></p>
-</div>
-</section>
-<section class="probability-page" hidden="" id="probabilities">
-<div class="collection-title">
-<div>
-<span class="eyebrow">MY CARD STATS</span>
-<h1 id="probability-title">確率確認</h1>
-</div>
-</div>
+<main class="contact-main">
+<section class="contact-panel" id="contact-panel">
+<span class="eyebrow">CONTACT</span>
+<h1>お問い合わせ</h1>
 <p class="muted">
-          登録した所持枚数から計算した割合です。公式の排出確率ではありません。
+          カード情報の修正やサイトに関するご相談をお送りください。
         </p>
-<section class="probability-summary">
-<h2>シリーズ総合</h2>
-<p class="muted" id="probability-total"></p>
-<div class="probability-grid" id="probability-overall"></div>
-<p class="cost-box" hidden="" id="probability-overall-cost"></p>
-</section>
-<section class="probability-detail">
-<div class="probability-detail-heading">
-<h2>弾ごとの詳細</h2>
-<label><span class="series-select-label">弾数</span><select id="probability-series"></select></label>
+<form id="contact-form">
+<div hidden="" id="contact-album-field">
+<label>アルバムID</label><output class="created-album-id" id="contact-album-id"></output><small>ログイン中のアルバムIDでお問い合わせを送信します。</small>
 </div>
-<p class="muted" id="probability-detail-total"></p>
-<div class="probability-grid" id="probability-detail-cards"></div>
-<p class="cost-box" hidden="" id="probability-detail-cost"></p>
+<label>メールアドレス<input autocomplete="email" id="contact-email" maxlength="254" required="" type="email"/><small>連絡を受け取れるアドレスを入力してください。</small></label><label>お名前・ニックネーム <small>任意</small><input autocomplete="name" id="contact-name" maxlength="40" type="text"/></label><label>お問い合わせの種類<select id="contact-category">
+<option value="question">使い方について</option>
+<option value="correction">カード情報の修正</option>
+<option value="other">その他</option>
+</select></label><label>お問い合わせ内容<textarea id="contact-message" maxlength="3000" minlength="10" placeholder="対象のカードコードや、起きている状況などをご記入ください。" required="" rows="8"></textarea><small>10〜3,000文字。パスワードや確認メールのURLは記載しないでください。</small></label><label aria-hidden="true" class="contact-honeypot">Website<input autocomplete="off" id="contact-website" tabindex="-1"/></label><label class="consent"><input id="contact-consent" required="" type="checkbox"/><span>プライバシーポリシーを確認し、入力内容の取り扱いに同意します。<button class="text-button" data-info="privacy" type="button">
+                内容を確認
+              </button></span></label>
+<p id="contact-error" role="status"></p>
+<button class="primary" id="contact-submit" type="submit">
+            送信する
+          </button>
+</form>
 </section>
-<label class="cost-toggle"><input id="show-cost" role="switch" type="checkbox"/><span aria-hidden="true" class="switch-track"></span><span>利用金額を表示 <small>1枚100円の目安</small></span></label>
+<section class="contact-panel" hidden="" id="contact-complete">
+<span aria-hidden="true" class="confirmation-icon">✓</span>
+<h1>送信しました</h1>
+<p>お問い合わせを受け付けました。</p>
+<p class="muted">受付番号</p>
+<p class="contact-reference" id="contact-reference"></p>
+<a class="contact-return" href="../">アルバムへ戻る</a>
 </section>
 </main>
 <footer>
-<p class="footer-note">
-        非公式の個人用カード管理サイト ·
-        画像・カード情報は各公式サイトに帰属します。
-      </p>
-<div>
-<a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank">アイカツ！公式</a><a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
-</div>
 <div class="footer-links">
-<a class="contact-footer-link" href="./contact/">お問い合わせ</a>
 <button data-info="terms">利用規約</button><button data-info="privacy">プライバシーポリシー</button><button data-info="about">このサイトについて</button>
 </div>
 </footer>
@@ -387,141 +65,5 @@
 </div>
 <div class="legal-body" id="info-body"></div>
 </dialog>
-<dialog aria-labelledby="nickname-heading" id="nickname-dialog">
-<form id="nickname-form">
-<div class="nickname-heading-row">
-<span class="eyebrow">MY ALBUM</span><button aria-label="閉じる" id="nickname-top-close" type="button">
-            ×
-          </button>
-</div>
-<h2 id="nickname-heading">アルバムの名前</h2>
-<label>ニックネーム<input autocomplete="nickname" id="profile-nickname" maxlength="16" required="" type="text"/></label>
-<small class="nickname-help">2〜8文字。あとから変更できます。</small>
-<p id="nickname-message" role="status"></p>
-<div class="nickname-actions">
-<button id="nickname-cancel" type="button">閉じる</button><button class="primary" id="nickname-save" type="submit">
-            保存する
-          </button>
-</div>
-</form>
-</dialog>
-<dialog id="detail">
-<div class="modal-top">
-<span id="modal-code"></span><button aria-label="閉じる" id="close">×</button>
-</div>
-<div class="modal-body">
-<div class="viewer">
-<button aria-label="表面・裏面を切り替える" id="flip-prev">‹</button>
-<div>
-<img alt="" id="modal-image"/>
-<p hidden="" id="image-failure">画像を読み込めませんでした。</p>
-<span id="side-label"></span>
-</div>
-<button aria-label="表面・裏面を切り替える" id="flip-next">›</button>
-</div>
-<div class="modal-info">
-<span class="pill" id="modal-rarity"></span>
-<h2 id="modal-name"></h2>
-<dl id="modal-fields"></dl>
-<p class="muted" hidden="" id="metadata-note"></p>
-<button class="ownership-button" hidden="" id="modal-owned"></button>
-<div class="quantity-controls" hidden="" id="quantity-controls">
-<span>所持数</span>
-<div>
-<button aria-label="所持数を1枚減らす" id="quantity-minus" type="button">
-                −</button><output aria-live="polite" id="quantity-value">1枚</output><button aria-label="所持数を1枚増やす" id="quantity-plus" type="button">
-                ＋
-              </button>
-</div>
-</div>
-<a id="modal-source" rel="noopener" target="_blank">公式カードリスト</a>
-</div>
-</div>
-<nav aria-label="カードの移動" class="detail-navigation">
-<button id="card-prev" type="button">← 前のカード</button><button id="card-next" type="button">次のカード →</button>
-</nav>
-</dialog>
-<dialog aria-labelledby="logout-title" id="logout-dialog">
-<div class="modal-top">
-<h2 id="logout-title">ログアウトしますか？</h2>
-<button aria-label="閉じる" id="logout-close" type="button">×</button>
-</div>
-<p class="muted" id="logout-account"></p>
-<div id="logout-normal">
-<section aria-label="アルバムID" class="logout-identity">
-<span class="logout-identity-label">ALBUM ID</span>
-<div class="logout-id-row">
-<output aria-label="あなたのアルバムID" id="account-id-value"></output>
-<button aria-label="アルバムIDをコピー" id="account-id-copy" type="button">
-              コピー
-            </button>
-</div>
-<p>ログインに使うIDです。大切に保存してください。</p>
-<p id="account-id-message" role="status"></p>
-</section>
-<p>
-          所持カードの記録は保存されています。またログインして続けられます。2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
-        </p>
-<div class="account-actions">
-<button class="primary" id="logout-confirm">ログアウト</button>
-</div>
-<button class="account-delete-link" id="account-delete-open">
-          アカウント情報を削除
-        </button>
-</div>
-<div hidden="" id="account-delete-panel">
-<p>
-          アカウント、ニックネーム、所持カード・所持数、読み取りメモを削除します。削除後は元に戻せません。削除されたアルバムIDは再利用できません。
-        </p>
-<label>確認のため「削除」と入力してください<input autocomplete="off" id="account-delete-word" placeholder="削除"/></label>
-<div class="account-actions">
-<button id="account-delete-back">戻る</button><button class="danger-button" disabled="" id="account-delete-confirm">
-            アカウントを削除
-          </button>
-</div>
-</div>
-<p id="account-action-message" role="status"></p>
-</dialog>
-<div hidden="" id="toast" role="status"></div>
-<dialog aria-labelledby="id-password-help-title" id="id-password-help">
-<div class="modal-top">
-<h2 id="id-password-help-title">パスワードを忘れた方へ</h2>
-<button aria-label="閉じる" id="id-password-help-close" type="button">
-          ×
-        </button>
-</div>
-<p>
-        アルバムIDで作成したアカウントは、復旧用のメールアドレスを登録していないため、パスワードを再設定できません。
-      </p>
-<p>
-        ブラウザや端末のパスワード管理に、保存したパスワードがないかご確認ください。
-      </p>
-<p>
-        アルバムIDだけでは本人確認ができません。パスワードが見つからない場合は、新しいアルバムを作成してください。以前の所持記録は引き継げません。
-      </p>
-</dialog>
-<dialog aria-labelledby="ownership-export-title" id="ownership-export-dialog">
-<div class="modal-top">
-<h2 id="ownership-export-title">所持状況を出力</h2>
-<button aria-label="閉じる" id="ownership-export-close" type="button">
-          ×
-        </button>
-</div>
-<label class="export-series-label">出力する弾数<select id="ownership-export-series"></select></label>
-<label class="export-detail-toggle">
-<span>所持カードの詳細を含める</span>
-<input id="ownership-export-details" role="switch" type="checkbox"/>
-</label>
-<button class="primary" id="ownership-export-create" type="button">
-        文章を作成
-      </button>
-<p id="ownership-export-status" role="status"></p>
-<pre hidden="" id="ownership-export-preview"></pre>
-<div class="export-actions" hidden="" id="ownership-export-actions">
-<button class="primary" id="ownership-export-share" type="button">
-          共有</button><button id="ownership-export-copy" type="button">文章をコピー</button>
-</div>
-</dialog>
-<script defer="" src="./assets/ownership-export.js?v=20261012-manual-db"></script>
 </body>
 </html>
