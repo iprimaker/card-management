@@ -15,6 +15,7 @@
   let page = 1, maxPage = 1, columns = '3', size = 20, selected = null, loading = null, checkedAt = 0;
   let collectionKey = '', cardListKey = '';
   let generation = 0, viewGeneration = 0, ownedCheckedAt = 0, ready = false;
+  let inventoryLoading=null, lastWarmAt=0;
   const busy = new Set();
   const button = document.createElement('button');
   button.id = 'verse-enter'; button.type = 'button'; button.className = 'text-button'; button.textContent = 'バースへ'; button.hidden = true;
@@ -117,10 +118,10 @@
     options('verse-group', groups, group, 'すべて');
   }
 
-  function image(c, large = false) {
-    if (c.image) return `<span class="verse-full-image"><img src="${esc(large ? c.image : c.thumbnail || c.image)}" alt="${esc(c.name)}" loading="${large ? 'eager' : 'lazy'}" decoding="async"></span>`;
+  function image(c, large = false, eager = false) {
+    if (c.image) return `<span class="verse-full-image"><img src="${esc(large ? c.image : c.thumbnail || c.image)}" alt="${esc(c.name)}" loading="${large || eager ? 'eager' : 'lazy'}" decoding="async"></span>`;
     // フル画像が公式に掲載されていない場合は、部位画像を組み合わせて表示。
-    return `<span class="verse-image-collage">${c.part_ids.map(id => `<span class="verse-collage-item"><img src="${esc(parts.get(id)?.image || '')}" alt="" loading="lazy" decoding="async"></span>`).join('')}</span>`;
+    return `<span class="verse-image-collage">${c.part_ids.map(id => `<span class="verse-collage-item"><img src="${esc(parts.get(id)?.image || '')}" alt="" loading="${eager ? 'eager' : 'lazy'}" decoding="async"></span>`).join('')}</span>`;
   }
   function ownedButton(c, part = null, modal = false) {
     const active = part === null ? full(c) : owned.has(part);
@@ -201,7 +202,7 @@
     const visible=rows.slice((page-1)*perPage,page*perPage);
     const listKey=JSON.stringify([catalog?.version,ready,family,visible.map(c=>[c.id,state(c),duplicate(c),favorites.has(c.id)])]);
     if(listKey!==cardListKey){cardListKey=listKey;
-    $('verse-cards').innerHTML=rows.slice((page-1)*perPage,page*perPage).map(c => `<article class="verse-card ${full(c)?'is-owned':state(c)==='partial'?'is-partial':''}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || 'コード記載なし')}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`).join('');
+    $('verse-cards').innerHTML=rows.slice((page-1)*perPage,page*perPage).map((c,index) => `<article class="verse-card ${full(c)?'is-owned':state(c)==='partial'?'is-partial':''}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c,false,index<6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || 'コード記載なし')}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`).join('');
     }
     $('verse-empty').hidden=rows.length>0;
     renderPages(pageCount);renderCollection();renderDetail();syncUpdateText();
@@ -286,38 +287,75 @@
       if(current()){quantityQueues.delete(queue.key);busy.delete(queue.key);}
     }
   }
+  function hydrateCatalog() {
+    if(catalog)return;
+    try {
+      const data=JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(Array.isArray(data?.coordinates)&&Array.isArray(data?.parts)){
+        catalog=data;parts=new Map(data.parts.map(p=>[p.id,p]));
+      }
+    } catch {}
+  }
   async function readCatalog(force = false) {
     if(!force && catalog && Date.now()-checkedAt<300000)return;
-    let cached;
-    try{cached=JSON.parse(localStorage.getItem(cacheKey)||'null');}catch{}
-    const r=await host.client().rpc('card_verse_catalog_cached',{p_version:catalog?.version||cached?.version||null});
+    hydrateCatalog();
+    const r=await host.client().rpc('card_verse_catalog_cached',{p_version:catalog?.version||null});
     if(r.error||!r.data)throw Error('バース用SQLを導入してから、もう一度開いてください。');
-    const data=r.data.omitted?(catalog||cached):r.data;
+    const data=r.data.omitted?catalog:r.data;
     if(!Array.isArray(data?.coordinates)||!Array.isArray(data?.parts))throw Error('コーデデータを確認できませんでした。');
     catalog={...data,updated_at:r.data.updated_at||data.updated_at};parts=new Map(data.parts.map(p=>[p.id,p]));checkedAt=Date.now();
     if(!r.data.omitted)try{localStorage.setItem(cacheKey,JSON.stringify(catalog));}catch{}
   }
+  function ensureCatalog() {
+    if(catalog&&Date.now()-checkedAt<300000)return Promise.resolve();
+    if(!loading){const task=readCatalog();loading=task;task.finally(()=>{if(loading===task)loading=null;}).catch(()=>{});}
+    return loading;
+  }
+  function ensureInventory() {
+    const uid=currentUser(),g=generation;
+    if(!uid||host.maintenance())return Promise.resolve();
+    if(owner===uid&&ready&&(busy.size||favoriteBusy.size||Date.now()-ownedCheckedAt<300000))return Promise.resolve();
+    if(inventoryLoading?.uid===uid&&inventoryLoading.g===g)return inventoryLoading.promise;
+    const task={uid,g,promise:null};
+    task.promise=(async()=>{
+      const result=await host.client().rpc('card_verse_my_inventory',{});
+      if(uid!==currentUser()||g!==generation)return;
+      if(result.error||!Array.isArray(result.data?.parts)||!Array.isArray(result.data?.coordinates)||!Array.isArray(result.data?.favorites))throw Error('所持数用SQLと通信状態を確認してください。');
+      partQuantities=new Map(result.data.parts.map(r=>[r.part_id,r.quantity]));
+      fullQuantities=new Map(result.data.coordinates.map(r=>[r.coordinate_id,r.quantity]));
+      favorites=new Set(result.data.favorites);refreshEffectiveOwnership();owner=uid;ready=true;ownedCheckedAt=Date.now();
+    })();
+    inventoryLoading=task;
+    task.promise.finally(()=>{if(inventoryLoading===task)inventoryLoading=null;}).catch(()=>{});
+    return task.promise;
+  }
+  function warm() {
+    if(!currentUser()||host.maintenance()||host.game()!=='aipri'||Date.now()-lastWarmAt<30000)return;
+    lastWarmAt=Date.now();
+    hydrateCatalog();
+    Promise.all([ensureCatalog(),ensureInventory()]).then(()=>{
+      if(currentUser()&&host.game()==='aipri'&&!host.maintenance())syncImages();
+    }).catch(()=>{});
+  }
   async function open(value) {
     if(!currentUser()||host.maintenance())return;
     family=value==='himitsu'?'himitsu':'onegai';series=group=query=collectionSeries='';collectionFilter=ownershipView='all';favoriteOnly=duplicateOnly=false;page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';
-    host.screen('verse');document.body.classList.add('game-aipri');$('verse-message').textContent='コーデを読み込み中…';
+    host.screen('verse');document.body.classList.add('game-aipri');
     const uid=currentUser(),g=generation,view=++viewGeneration;
+    const current=()=>uid===currentUser()&&g===generation&&view===viewGeneration&&!host.maintenance();
+    hydrateCatalog();
+    if(catalog){fillFilters(true);render();$('verse-message').textContent='';}
+    else $('verse-message').textContent='コーデを読み込み中…';
     try {
-      if(!loading) loading=readCatalog().finally(()=>{loading=null;});await loading;
-      if(uid!==currentUser()||g!==generation||view!==viewGeneration)return;
-      if(owner!==uid||!ready||(!busy.size&&!favoriteBusy.size&&Date.now()-ownedCheckedAt>=300000)){
-        ready=false;
-        const result=await host.client().rpc('card_verse_my_inventory',{});
-        if(uid!==currentUser()||g!==generation||view!==viewGeneration)return;
-        if(result.error||!Array.isArray(result.data?.parts)||!Array.isArray(result.data?.coordinates)||!Array.isArray(result.data?.favorites))throw Error('所持数用SQLと通信状態を確認してください。');
-        partQuantities=new Map(result.data.parts.map(r=>[r.part_id,r.quantity]));
-        fullQuantities=new Map(result.data.coordinates.map(r=>[r.coordinate_id,r.quantity]));
-        favorites=new Set(result.data.favorites);refreshEffectiveOwnership();owner=uid;ready=true;ownedCheckedAt=Date.now();
-      }
-      fillFilters(true);$('verse-message').textContent='';render();
-    } catch(error){if(uid===currentUser()&&g===generation&&view===viewGeneration)$('verse-message').textContent=error.message;}
+      await Promise.all([
+        ensureCatalog().then(()=>{if(current()){fillFilters(true);render();$('verse-message').textContent='';}}),
+        ensureInventory()
+      ]);
+      if(!current())return;
+      fillFilters();$('verse-message').textContent='';render();
+    } catch(error){if(current())$('verse-message').textContent=error.message;}
   }
-  function reset() {collectionKey=cardListKey='';generation++;viewGeneration++;ownedCheckedAt=0;owner=null;ready=false;owned.clear();partQuantities.clear();fullQuantities.clear();quantityQueues.clear();favorites.clear();favoriteBusy.clear();busy.clear();selected=null;if(dialog.open)dialog.close();$('verse-cards').replaceChildren();$('verse-collection-list').replaceChildren();$('verse-detail-content').replaceChildren();$('verse-percent').textContent='—';$('verse-count').textContent='';$('verse-progress-bar').style.width='0%';}
+  function reset() {collectionKey=cardListKey='';generation++;viewGeneration++;ownedCheckedAt=0;inventoryLoading=null;lastWarmAt=0;owner=null;ready=false;owned.clear();partQuantities.clear();fullQuantities.clear();quantityQueues.clear();favorites.clear();favoriteBusy.clear();busy.clear();selected=null;if(dialog.open)dialog.close();$('verse-cards').replaceChildren();$('verse-collection-list').replaceChildren();$('verse-detail-content').replaceChildren();$('verse-percent').textContent='—';$('verse-count').textContent='';$('verse-progress-bar').style.width='0%';}
   button.onclick=()=>open(host.family()==='ひみつ'?'himitsu':'onegai');
   $('verse-back').onclick=()=>host.cards(family==='himitsu'?'ひみつ':'おねがい');
   mobileRoute.onclick=()=>panel.hidden?open(host.family()==='ひみつ'?'himitsu':'onegai'):host.cards(family==='himitsu'?'ひみつ':'おねがい');
@@ -370,7 +408,7 @@
     try{await readCatalog(true);fillFilters();render();}catch{host.toast('失敗しました','error');}
     finally{refreshing=false;$('verse-sync').disabled=false;syncUpdateText();}
   };
-  window.CARD_VERSE={open,reset,leave(){if(dialog.open)dialog.close();},syncNavigation(){const visible=!!currentUser()&&host.game()==='aipri'&&!host.maintenance();button.hidden=!visible;mobileRoute.hidden=!visible;syncImages();}};
+  window.CARD_VERSE={open,reset,leave(){if(dialog.open)dialog.close();},syncNavigation(){const visible=!!currentUser()&&host.game()==='aipri'&&!host.maintenance();button.hidden=!visible;mobileRoute.hidden=!visible;syncImages();if(visible)warm();}};
   let resizeFrame=null;
   window.addEventListener('resize',()=>{if(resizeFrame!==null)return;resizeFrame=requestAnimationFrame(()=>{resizeFrame=null;placeRoute();if(!panel.hidden&&catalog)renderPages(maxPage);});},{passive:true});
   window.CARD_VERSE.syncNavigation();
