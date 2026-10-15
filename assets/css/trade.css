@@ -50,7 +50,7 @@
 .trade-sheet-grid article>img,.trade-sheet-grid article>.trade-collage { width:100%; height:100px; flex:1; min-height:0; max-height:100px; object-fit:contain; }
 .trade-collage { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); }
 .trade-collage img { width:100%; height:100%; min-height:0; object-fit:contain; }
-.trade-sheet-grid article>span:not(.trade-collage) { width:100%; text-align:center; font-size:9px; line-height:1.3; overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.trade-sheet-grid article>span:not(.trade-collage):not(.trade-shot-image) { width:100%; text-align:center; font-size:9px; line-height:1.3; overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
 .trade-empty { text-align:center; padding:28px 12px; font-size:13px; color:#9b8b95; }
 @media(max-width:600px) {
  .trade-toggles { gap:5px; }.trade-toggles button { padding:6px 8px; font-size:10px; }.trade-toggles button strong { font-size:13px; }
@@ -67,3 +67,25 @@
 #trade-share { min-width:150px; padding:12px 24px; border:1px solid var(--line); border-radius:14px; background:var(--soft,#faedf3); color:var(--accent,#b87998); font-size:14px; font-weight:500; }
 .trade-share-area p { margin:0; font-size:11px; color:#978993; text-align:center; line-height:1.7; }
 #trade-share:disabled { opacity:.5; }
+
+/* スマホは「その他」を介さず、同じメニュー階層へ移動 */
+@media(max-width:760px) {
+ #nav > :is(#trade-open,#ownership-export-open,#edit-nickname,#logout) { width:100%; margin:0; padding:10px 12px; border:0; background:transparent; box-shadow:none; font-size:13px!important; font-weight:400!important; color:inherit; text-align:center; text-decoration:none!important; border-radius:9px; }
+ #nav > :is(#trade-open,#ownership-export-open,#edit-nickname,#logout):hover { background:var(--soft); }
+}
+#trade-back { padding:8px 13px; border:1px solid var(--line); background:#fff; border-radius:12px; box-shadow:0 2px 8px #71566808; color:var(--accent); }
+#trade-back:hover { background:var(--soft); }
+.trade-chevron { width:16px; height:16px; flex:0 0 16px; border:0; border-radius:0; background:currentColor; transform:none;
+ -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 3L16 10L5 17Z' fill='black' stroke='black' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+ mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 3L16 10L5 17Z' fill='black' stroke='black' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
+.trade-filter-panel[open] .trade-chevron { transform:rotate(90deg); }
+.trade-toggles [data-trade-side="offer"][data-priority="true"] { background:#eab18f; border-color:#c88056; color:#753b1f; }
+.trade-toggles [data-trade-side="want"][data-priority="true"] { background:#9dc9ea; border-color:#639bc7; color:#234f75; }
+.trade-sheet-grid article>.trade-shot-image { position:relative; display:block; width:100%; height:var(--trade-image-height,100px); max-height:var(--trade-image-height,100px); flex:1; min-height:0; overflow:hidden; }
+.trade-collage>.trade-shot-image { position:relative; display:block; width:100%; height:100%; min-height:0; min-width:0; overflow:hidden; }
+.trade-shot-image>img,.trade-shot-image>canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+.trade-shot-image>img[data-trade-drawn="true"] { opacity:0; }
+.trade-sheet-grid article.is-priority { position:relative; }
+.trade-sheet-grid article.is-priority::after { content:''; position:absolute; inset:0; box-sizing:border-box; border:2px solid #db6975; border-radius:3px; z-index:4; pointer-events:none; }
+.trade-disclaimer { margin:4px auto 28px; max-width:680px; text-align:center; font-size:10px; line-height:1.8; color:#a3979e; }
+@media(prefers-reduced-motion:reduce) { .trade-chevron { transition:none; } }
