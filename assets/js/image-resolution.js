@@ -17,6 +17,7 @@
       }
     }, {rootMargin: '240px 0px'}) : null;
   function official(image) {
+    if(image.closest('.trade-shot-image'))return false;
     try {
       const host = new URL(image.getAttribute('src') || '',location.href).hostname;
       return host === 'aipri.jp' || host === 'dcd.aikatsu.com';
