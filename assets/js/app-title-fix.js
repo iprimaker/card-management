@@ -393,6 +393,7 @@ function resetFavorites() {
   favorites = new Set();
   favoritesReady = false;
   favoriteFilter = duplicateFilter = false;
+  window.CARD_TRADE?.clear("card");
   favoritesCheckedAt = 0;
   favoritesLoadedUser = null;
   favoritesRequest = null;
@@ -682,6 +683,7 @@ function screen(id) {
     "collection",
     "probabilities",
     "verse",
+    "trade-page",
   ]) {
     const panel = $(s);
     if (panel) panel.hidden = s !== id;
@@ -1062,6 +1064,7 @@ function chooseGame(g) {
   filters = {};
   ownershipFilter = "all";
   favoriteFilter = duplicateFilter = false;
+  window.CARD_TRADE?.clear("card");
   page = 1;
   $("query").value = "";
   document.body.classList.toggle("game-aipri", g === "aipri");
@@ -1169,7 +1172,7 @@ function fillFilters() {
       if (filters[key] && !opts.includes(filters[key])) delete filters[key];
       return `<label><span class="filter-label">${label}<button type="button" class="filter-clear" data-clear-filter="${key}" aria-label="${label}の絞り込みを解除">解除</button></span><select data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${filters[key] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
     })
-    .join("") + favoriteFilterMarkup() + duplicateFilterMarkup();
+    .join("") + favoriteFilterMarkup() + duplicateFilterMarkup() + (window.CARD_TRADE?.filterMarkup("card")||"");
 }
 function chooseFamily(f) {
   if (!["おねがい", "ひみつ"].includes(f)) return;
@@ -1178,6 +1181,7 @@ function chooseFamily(f) {
   filters = {};
   ownershipFilter = "all";
   favoriteFilter = duplicateFilter = false;
+  window.CARD_TRADE?.clear("card");
   page = 1;
   $("query").value = "";
   setLatestSeries();
@@ -1197,6 +1201,7 @@ function filtered(includeOwnership = true) {
     (c) =>
       (!favoriteFilter || (favoritesReady && favorites.has(c.id))) &&
       (!duplicateFilter || (ownershipReady && quantityOf(c.id)>=2)) &&
+      (window.CARD_TRADE?.matches("card",c.id) ?? true) &&
       (!q ||
         [
           c.name,
@@ -1236,6 +1241,7 @@ function renderActiveFilters() {
     }));
   if (favoriteFilter) active.push({ key: "favorites", label: "お気に入り", value: "のみ" });
   if (duplicateFilter) active.push({ key: "duplicates", label: "重複", value: "あり" });
+  const trade=window.CARD_TRADE?.entry("card");if(trade)active.push(trade);
   const query = $("query").value.trim();
   if (query) active.push({ key: "query", label: "検索", value: query });
   $("active-filters").innerHTML = active.length
@@ -1303,8 +1309,8 @@ function render(keepCardNodes = false) {
     baseGot = base.filter((c) => owned.has(c.id)).length;
   $("filter-summary").textContent =
     Object.values(filters).filter(Boolean).length +
-    ($("query").value.trim() ? 1 : 0) + (favoriteFilter ? 1 : 0) + (duplicateFilter ? 1 : 0)
-      ? `適用中 ${Object.values(filters).filter(Boolean).length + ($("query").value.trim() ? 1 : 0) + (favoriteFilter ? 1 : 0) + (duplicateFilter ? 1 : 0)}件`
+    ($("query").value.trim() ? 1 : 0) + (favoriteFilter ? 1 : 0) + (duplicateFilter ? 1 : 0) + (window.CARD_TRADE?.entry("card") ? 1 : 0)
+      ? `適用中 ${Object.values(filters).filter(Boolean).length + ($("query").value.trim() ? 1 : 0) + (favoriteFilter ? 1 : 0) + (duplicateFilter ? 1 : 0) + (window.CARD_TRADE?.entry("card") ? 1 : 0)}件`
       : "";
   document
     .querySelectorAll("[data-clear-filter]")
@@ -1514,6 +1520,9 @@ function showSide() {
 }
 function updateModalOwnership() {
   updateModalFavorite();
+  let tradeControls=$('card-trade-controls');
+  if(!tradeControls){tradeControls=document.createElement('div');tradeControls.id='card-trade-controls';$('quantity-controls').after(tradeControls);}
+  tradeControls.innerHTML=selected&&session?(window.CARD_TRADE?.markup('card',selected.id)||''):'';
   if (!selected) return;
   $("modal-owned").hidden = !session;
   $("quantity-controls").hidden = !session || !owned.has(selected.id);
@@ -2083,6 +2092,7 @@ $("active-filters").onclick = (event) => {
   else if (key === "ownership") ownershipFilter = "all";
   else if (key === "favorites") favoriteFilter = false;
   else if (key === "duplicates") duplicateFilter = false;
+  else if (key === "trade") window.CARD_TRADE?.clear("card");
   else delete filters[key];
   page = 1;
   fillFilters();
@@ -2121,6 +2131,7 @@ $("reset").onclick = () => {
   filters = {};
   ownershipFilter = "all";
   favoriteFilter = duplicateFilter = false;
+  window.CARD_TRADE?.clear("card");
   $("query").value = "";
   page = 1;
   fillFilters();
@@ -2229,6 +2240,7 @@ function closeMenu() {
   $("menu-toggle").setAttribute("aria-label", "メニューを開く");
 }
 function updateHeader() {
+  window.CARD_TRADE?.sync();
   const probabilitiesOpen = !$("probabilities").hidden;
   const verseOpen = $("verse") ? !$("verse").hidden : false;
   window.CARD_VERSE?.syncNavigation();
@@ -2901,8 +2913,8 @@ $('selection').append($('account-album-id'));
 const headerOther = document.createElement('details');
 headerOther.id = 'header-other';
 headerOther.innerHTML = '<summary>その他<span class="header-other-chevron" aria-hidden="true"></span></summary><div class="header-other-options"></div>';
-headerOther.querySelector('div').append($('edit-nickname'),$('logout'));
-$('nav').append($('game-switch'),$('probability-open'),$('probability-back'),$('ownership-export-open'),headerOther);
+headerOther.querySelector('div').append($('ownership-export-open'),$('edit-nickname'),$('logout'));
+$('nav').append($('game-switch'),$('probability-open'),$('probability-back'),headerOther);
 const totalProgressCard = document.querySelector('#collection > .progress-card');
 if (totalProgressCard) {
   totalProgressCard.querySelector('div > span').textContent='総取得率';
@@ -2958,9 +2970,17 @@ window.CARD_VERSE_HOST = {
 };
 const verseStyles = document.createElement("link");
 verseStyles.rel = "stylesheet";
-verseStyles.href = new URL("../css/aipri-verse.css?v=20261015-verse-instant-switch", document.currentScript?.src || location.href).href;
+verseStyles.href = new URL("../css/aipri-verse.css?v=20261015-trade", document.currentScript?.src || location.href).href;
 document.head.append(verseStyles);
 const verseScript = document.createElement("script");
-verseScript.src = new URL("./aipri-verse.js?v=20261015-verse-instant-switch", document.currentScript?.src || location.href).href;
+verseScript.src = new URL("./aipri-verse.js?v=20261015-trade", document.currentScript?.src || location.href).href;
 document.head.append(verseScript);
+window.CARD_TRADE_HOST={
+ client:()=>db,session:()=>session,maintenance:()=>maintenanceActive,game:()=>game,family:()=>aipriFamily,
+ cards:()=>catalog.cards,verse:()=>window.CARD_VERSE?.tradeData(),isVerse:()=>!!$('verse')&&!$('verse').hidden,
+ screen,toast,back:()=>{screen('collection');render();},
+ changed:(resetPage=false)=>{if(resetPage)page=1;if(game){fillFilters();render(true);}window.CARD_VERSE?.refreshTrade(resetPage);if(selected)updateModalOwnership();},
+};
+const tradeStyles=document.createElement('link');tradeStyles.rel='stylesheet';tradeStyles.href=new URL('../css/trade.css?v=20261015-trade-exclusive',document.currentScript?.src||location.href).href;document.head.append(tradeStyles);
+const tradeScript=document.createElement('script');tradeScript.src=new URL('./trade.js?v=20261015-trade-exclusive',document.currentScript?.src||location.href).href;document.head.append(tradeScript);
 init();
