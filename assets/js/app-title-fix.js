@@ -2915,6 +2915,17 @@ headerOther.id = 'header-other';
 headerOther.innerHTML = '<summary>その他<span class="header-other-chevron" aria-hidden="true"></span></summary><div class="header-other-options"></div>';
 headerOther.querySelector('div').append($('ownership-export-open'),$('edit-nickname'),$('logout'));
 $('nav').append($('game-switch'),$('probability-open'),$('probability-back'),headerOther);
+let headerOtherMobile=null;
+function placeHeaderOther(force=false){
+ const mobile=window.innerWidth<=760;if(!force&&headerOtherMobile===mobile)return;
+ headerOtherMobile=mobile;const target=mobile?$('nav'):headerOther.querySelector('.header-other-options');
+ for(const id of ['trade-open','ownership-export-open','edit-nickname','logout']){const node=$(id);if(node)target.append(node);}
+ headerOther.hidden=mobile;if(mobile)headerOther.open=false;
+}
+window.CARD_HEADER_LAYOUT=()=>placeHeaderOther(true);
+window.addEventListener('resize',()=>placeHeaderOther(),{passive:true});
+placeHeaderOther();
+
 const totalProgressCard = document.querySelector('#collection > .progress-card');
 if (totalProgressCard) {
   totalProgressCard.querySelector('div > span').textContent='総取得率';
@@ -2922,7 +2933,7 @@ if (totalProgressCard) {
 }
 // 表示上の縮小を撤回し、画像描画だけを低解像度にする補助スクリプトを読み込みます。
 const resolutionScript = document.createElement('script');
-resolutionScript.src = new URL('./image-resolution.js?v=20261014-resolution-560',document.currentScript?.src || location.href).href;
+resolutionScript.src = new URL('./image-resolution.js?v=20261015-trade-priority',document.currentScript?.src || location.href).href;
 document.head.append(resolutionScript);
 
 const albumHomeLink = $('header-title').closest('a');
@@ -2981,6 +2992,6 @@ window.CARD_TRADE_HOST={
  screen,toast,back:()=>{screen('collection');render();},
  changed:(resetPage=false)=>{if(resetPage)page=1;if(game){fillFilters();render(true);}window.CARD_VERSE?.refreshTrade(resetPage);if(selected)updateModalOwnership();},
 };
-const tradeStyles=document.createElement('link');tradeStyles.rel='stylesheet';tradeStyles.href=new URL('../css/trade.css?v=20261015-trade-exclusive',document.currentScript?.src||location.href).href;document.head.append(tradeStyles);
-const tradeScript=document.createElement('script');tradeScript.src=new URL('./trade.js?v=20261015-trade-exclusive',document.currentScript?.src||location.href).href;document.head.append(tradeScript);
+const tradeStyles=document.createElement('link');tradeStyles.rel='stylesheet';tradeStyles.href=new URL('../css/trade.css?v=20261015-trade-priority',document.currentScript?.src||location.href).href;document.head.append(tradeStyles);
+const tradeScript=document.createElement('script');tradeScript.src=new URL('./trade.js?v=20261015-trade-priority',document.currentScript?.src||location.href).href;document.head.append(tradeScript);
 init();
