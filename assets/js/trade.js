@@ -3,33 +3,34 @@
  'use strict';
  const host=window.CARD_TRADE_HOST;if(!host)return;
  const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let owner=null,ready=false,loading=null,generation=0,records=new Set(),busy=new Set(),origin=null;
+ let owner=null,ready=false,loading=null,generation=0,records=new Set(),priorities=new Map(),busy=new Set(),origin=null;
  const filters={card:'all',coordinate:'all'};
  const uid=()=>host.session()?.user.id||null;
  const key=(kind,id,side)=>JSON.stringify([kind,String(id),side]);
  const targetKey=(kind,id)=>JSON.stringify([kind,String(id)]);
  const has=(kind,id,side)=>records.has(key(kind,id,side));
+ const level=(kind,id,side)=>has(kind,id,side)?(priorities.get(key(kind,id,side))||1):0;
  const label={offer:'譲れるもの',want:'求めるもの'};
  const button=document.createElement('button');button.id='trade-open';button.type='button';button.className='text-button';button.textContent='交換希望';button.hidden=true;
- document.querySelector('#header-other .header-other-options').prepend(button);
+ document.querySelector('#header-other .header-other-options').prepend(button);window.CARD_HEADER_LAYOUT?.();
  const panel=document.createElement('section');panel.id='trade-page';panel.hidden=true;
  panel.innerHTML=`<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="text-button">一覧へ戻る</button></div>
  <details id="trade-filter-panel" class="trade-filter-panel"><summary><span class="trade-chevron" aria-hidden="true"></span><span>交換希望を絞り込む</span><small id="trade-filter-count"></small></summary><div class="trade-filters"><label>キーワード<input id="trade-query" type="search" placeholder="名前・コード"></label><label>だん数<select id="trade-series"></select></label><label id="trade-rarity-label">レアリティ<select id="trade-rarity"></select></label><label id="trade-group-label">ガチャ・キャンペーン<select id="trade-group"></select></label></div></details><p id="trade-load-status" role="status"></p>
  <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2>譲・求の一覧をスクショ</h2><p>下の枠を1枚ずつ撮影してください。合計4枚まで作成できます。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
- <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>交換希望の文章をコピー</h2><p>スクショと一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。スクショは共有先で添付してください。</p></div>`;
+ <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>交換希望の文章をコピー</h2><p>スクショと一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。スクショは共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
  $('collection').after(panel);
- function reset(){generation++;owner=null;ready=false;loading=null;records.clear();busy.clear();filters.card=filters.coordinate='all';origin=null;panel.hidden=true;for(const id of ['trade-post','trade-text','trade-method'])$(id).value='';$('trade-sheets').replaceChildren();}
+ function reset(){generation++;owner=null;ready=false;loading=null;records.clear();priorities.clear();busy.clear();imageQueue.clear();filters.card=filters.coordinate='all';origin=null;panel.hidden=true;for(const id of ['trade-post','trade-text','trade-method'])$(id).value='';$('trade-sheets').replaceChildren();}
  async function load(){
   const user=uid();if(!user||host.maintenance())return;
   if(owner===user&&ready)return;
   if(loading?.uid===user)return loading.promise;
-  if(owner!==user){records=new Set();ready=false;owner=user;}
+  if(owner!==user){records=new Set();priorities=new Map();ready=false;owner=user;}
   const g=generation,task={uid:user,promise:null};
   task.promise=(async()=>{
    const rows=[];
-   for(let offset=0;;offset+=1000){const r=await host.client().from('card_trade_requests').select('kind,target_id,side').eq('user_id',user).order('kind').order('target_id').order('side').range(offset,offset+999);if(r.error)throw Error('交換希望用SQLと通信状態を確認してください。');if(!Array.isArray(r.data))throw Error('交換希望を取得できませんでした。');rows.push(...r.data);if(r.data.length<1000)break;}
+   for(let offset=0;;offset+=1000){const r=await host.client().from('card_trade_requests').select('kind,target_id,side,priority').eq('user_id',user).order('kind').order('target_id').order('side').range(offset,offset+999);if(r.error)throw Error('交換希望用SQLと通信状態を確認してください。');if(!Array.isArray(r.data))throw Error('交換希望を取得できませんでした。');rows.push(...r.data);if(r.data.length<1000)break;}
    if(user!==uid()||g!==generation)return;
-   records=new Set(rows.map(r=>key(r.kind,r.target_id,r.side)));ready=true;host.changed();patch();
+   records=new Set(rows.map(r=>key(r.kind,r.target_id,r.side)));priorities=new Map(rows.map(r=>[key(r.kind,r.target_id,r.side),r.priority===2?2:1]));ready=true;host.changed();patch();
   })();loading=task;task.promise.finally(()=>{if(loading===task)loading=null;}).catch(()=>{});return task.promise;
  }
  function sync(){
@@ -39,19 +40,20 @@
   if(!button.hidden)load().catch(()=>{});
  }
  function markup(kind,id){if(!uid())return '';
-  return `<div class="trade-toggles" data-trade-control data-trade-kind="${esc(kind)}" data-trade-id="${esc(id)}" role="group" aria-label="交換希望">${['offer','want'].map(side=>`<button type="button" data-trade-side="${side}" aria-pressed="${has(kind,id,side)}" ${!ready?'disabled':''}><strong>${side==='offer'?'譲':'求'}</strong><span>${label[side]}</span></button>`).join('')}</div>`;
+  return `<div class="trade-toggles" data-trade-control data-trade-kind="${esc(kind)}" data-trade-id="${esc(id)}" role="group" aria-label="交換希望">${['offer','want'].map(side=>`<button type="button" data-trade-side="${side}" aria-pressed="${has(kind,id,side)}" data-priority="${level(kind,id,side)===2}" title="タップで通常・優先・解除を切り替え" ${!ready?'disabled':''}><strong>${level(kind,id,side)===2?'優先':''}${side==='offer'?'譲':'求'}</strong><span>${label[side]}</span></button>`).join('')}</div>`;
  }
- function patch(){document.querySelectorAll('[data-trade-control]').forEach(node=>{for(const b of node.querySelectorAll('[data-trade-side]')){b.setAttribute('aria-pressed',String(has(node.dataset.tradeKind,node.dataset.tradeId,b.dataset.tradeSide)));b.disabled=!ready||host.maintenance()||busy.has(targetKey(node.dataset.tradeKind,node.dataset.tradeId));}});}
+ function patch(){document.querySelectorAll('[data-trade-control]').forEach(node=>{for(const b of node.querySelectorAll('[data-trade-side]')){b.setAttribute('aria-pressed',String(has(node.dataset.tradeKind,node.dataset.tradeId,b.dataset.tradeSide)));const priority=level(node.dataset.tradeKind,node.dataset.tradeId,b.dataset.tradeSide)===2;b.dataset.priority=String(priority);b.querySelector('strong').textContent=(priority?'優先':'')+(b.dataset.tradeSide==='offer'?'譲':'求');b.disabled=!ready||host.maintenance()||busy.has(targetKey(node.dataset.tradeKind,node.dataset.tradeId));}});}
  async function toggle(kind,id,side){
   if(!uid()||!ready||host.maintenance())return;
   const target=targetKey(kind,id);if(busy.has(target))return;
   const k=key(kind,id,side),other=key(kind,id,side==='offer'?'want':'offer');
-  const user=uid(),g=generation,before=records.has(k),beforeOther=records.has(other);
-  busy.add(target);records.delete(k);records.delete(other);if(!before)records.add(k);host.changed();patch();
-  try{const r=await host.client().rpc('card_album_set_trade',{p_kind:kind,p_target_id:String(id),p_side:side,p_enabled:!before});if(user!==uid()||g!==generation)return;if(r.error||r.data!==!before)throw Error('save');}
+  const user=uid(),g=generation,before=level(kind,id,side),beforeOther=level(kind,id,side==='offer'?'want':'offer'),next=(before+1)%3;
+  const remove=()=>{records.delete(k);records.delete(other);priorities.delete(k);priorities.delete(other);};
+  busy.add(target);remove();if(next){records.add(k);priorities.set(k,next);}host.changed();patch();
+  try{const r=await host.client().rpc('card_album_set_trade_priority',{p_kind:kind,p_target_id:String(id),p_side:side,p_level:next});if(user!==uid()||g!==generation)return;if(r.error||r.data!==next)throw Error('save');}
   catch{if(user!==uid()||g!==generation)return;
-   records.delete(k);records.delete(other);if(before)records.add(k);if(beforeOther)records.add(other);host.changed();host.toast('失敗しました','error');
-   try{const r=await host.client().from('card_trade_requests').select('side').eq('user_id',user).eq('kind',kind).eq('target_id',String(id)).maybeSingle();if(!r.error&&user===uid()&&g===generation){records.delete(k);records.delete(other);if(r.data?.side)records.add(key(kind,id,r.data.side));host.changed();}}catch{}
+   remove();if(before){records.add(k);priorities.set(k,before);}if(beforeOther){records.add(other);priorities.set(other,beforeOther);}host.changed();host.toast('失敗しました','error');
+   try{const r=await host.client().from('card_trade_requests').select('side,priority').eq('user_id',user).eq('kind',kind).eq('target_id',String(id)).maybeSingle();if(!r.error&&user===uid()&&g===generation){remove();if(r.data?.side){const actual=key(kind,id,r.data.side);records.add(actual);priorities.set(actual,r.data.priority===2?2:1);}host.changed();}}catch{}
   }
   finally{if(user===uid()&&g===generation){busy.delete(target);patch();}}
  }
@@ -79,34 +81,50 @@
   const rowHeight=imageHeight+24,rows=Math.max(1,Math.min(8,Math.floor((height-64)/rowHeight)));
   return {cols,rows,capacity:cols*rows,height,imageHeight,rowHeight};
  }
- function image(c){return c.image?`<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="eager" decoding="async">`:`<span class="trade-collage">${(c.collage||[]).map(url=>`<img src="${esc(url)}" alt="" loading="eager">`).join('')}</span>`;}
+ const imageQueue=new Set();let imageFrame=null;
+ function drawShotImage(img){
+  if(!img.isConnected||!img.complete||!img.naturalWidth||!img.naturalHeight)return;
+  const frame=img.closest('.trade-shot-image');if(!frame)return;
+  const rotate=frame.dataset.rotate==='true'&&img.naturalWidth>img.naturalHeight;
+  const ratio=Math.min(1,240/Math.max(img.naturalWidth,img.naturalHeight));
+  const sw=Math.max(1,Math.round(img.naturalWidth*ratio)),sh=Math.max(1,Math.round(img.naturalHeight*ratio));
+  let canvas=frame.querySelector('canvas');if(!canvas){canvas=document.createElement('canvas');canvas.setAttribute('aria-hidden','true');frame.append(canvas);}
+  canvas.width=rotate?sh:sw;canvas.height=rotate?sw:sh;
+  try{const context=canvas.getContext('2d');if(!context)throw Error('canvas');context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';if(rotate){context.translate(canvas.width/2,canvas.height/2);context.rotate(Math.PI/2);context.drawImage(img,-sw/2,-sh/2,sw,sh);}else context.drawImage(img,0,0,sw,sh);img.dataset.tradeDrawn='true';}catch{canvas.remove();img.removeAttribute('data-trade-drawn');}
+ }
+ function queueShotImage(img){imageQueue.add(img);if(imageFrame!==null)return;imageFrame=requestAnimationFrame(function process(){imageFrame=null;let n=0;for(const image of imageQueue){imageQueue.delete(image);drawShotImage(image);if(++n>=3)break;}if(imageQueue.size)imageFrame=requestAnimationFrame(process);});}
+ panel.addEventListener('load',event=>{if(event.target.matches?.('.trade-shot-image>img'))queueShotImage(event.target);},true);
+ function image(c){const frame=(url,rotate)=>`<span class="trade-shot-image" data-rotate="${rotate}"><img src="${esc(url)}" alt="${esc(c.name)}" loading="eager" decoding="async"></span>`;return c.image?frame(c.image,c.kind!=='coordinate'):`<span class="trade-collage">${(c.collage||[]).map(url=>frame(url,true)).join('')}</span>`;}
  function renderOutput(){
   if(!origin||panel.hidden)return;
   const applied=[$('trade-query').value.trim(),$('trade-series').value,$('trade-rarity').value,$('trade-group').value].filter(Boolean).length;
   $('trade-filter-count').textContent=applied?`適用中 ${applied}件`:'';
-  const all=filtered(),offer=all.filter(c=>has(c.kind,c.id,'offer')),want=all.filter(c=>has(c.kind,c.id,'want')),l=layout();
+  const all=filtered(),rank=side=>(a,b)=>level(b.kind,b.id,side)-level(a.kind,a.id,side),offer=all.filter(c=>has(c.kind,c.id,'offer')).sort(rank('offer')),want=all.filter(c=>has(c.kind,c.id,'want')).sort(rank('want')),l=layout();
+  const priorityNote=[...offer].some(c=>level(c.kind,c.id,'offer')===2)||want.some(c=>level(c.kind,c.id,'want')===2)?'※ 赤枠は優先して交換したいものです。':'';
   const groups=[{side:'譲',rows:offer},{side:'求',rows:want}],count=groups.reduce((n,g)=>n+Math.ceil(g.rows.length/l.capacity),0),sheets=[];let n=0;
   const numbers={譲:[],求:[]};
-  for(const g of groups)for(let offset=0;offset<g.rows.length;offset+=l.capacity){n++;numbers[g.side].push(n);sheets.push(`<p class="trade-shot-caption">${n}枚目：${g.side} — 下の枠をスクショしてください</p><section class="trade-sheet" style="--trade-cols:${l.cols};--trade-rows:${l.rows};--trade-height:${l.height}px;--trade-row-height:${l.rowHeight}px;--trade-image-height:${l.imageHeight}px"><div class="trade-sheet-heading"><strong>${g.side}</strong><span>${esc(title())}</span><small>${n} / ${count}</small></div><div class="trade-sheet-grid">${g.rows.slice(offset,offset+l.capacity).map(c=>`<article>${image(c)}<span>${esc(c.code||'コード記載なし')}</span></article>`).join('')}</div></section>`);}
+  for(const g of groups)for(let offset=0;offset<g.rows.length;offset+=l.capacity){n++;numbers[g.side].push(n);sheets.push(`<p class="trade-shot-caption">${n}枚目：${g.side} — 下の枠をスクショしてください</p><section class="trade-sheet" style="--trade-cols:${l.cols};--trade-rows:${l.rows};--trade-height:${l.height}px;--trade-row-height:${l.rowHeight}px;--trade-image-height:${l.imageHeight}px"><div class="trade-sheet-heading"><strong>${g.side}</strong><span>${esc(title())}</span><small>${n} / ${count}</small></div><div class="trade-sheet-grid">${g.rows.slice(offset,offset+l.capacity).map(c=>`<article class="${level(c.kind,c.id,g.side==='譲'?'offer':'want')===2?'is-priority':''}">${image(c)}<span>${esc(c.code||'コード記載なし')}</span></article>`).join('')}</div></section>`);}
   $('trade-output-count').innerHTML=`<span><strong>譲</strong> ${offer.length}件</span><span><strong>求</strong> ${want.length}件</span>`;
   const overflow=count>4;
   $('trade-overflow').textContent=overflow?`現在の条件では${count}画面必要です。4画面以内に収まるように、だん数などで絞り込んでください。カードを省略せず、文字情報は全件出力できます。`:'';
   $('trade-sheets').innerHTML=overflow?'':sheets.join('')||'<p class="trade-empty">譲・求の登録がありません。モーダルから登録してください。</p>';
+  imageQueue.clear();for(const image of $('trade-sheets').querySelectorAll('.trade-shot-image>img'))if(image.complete)queueShotImage(image);
   const refs=side=>numbers[side].length?'画像'+numbers[side].join('、')+'枚目':'登録なし';
-  $('trade-post').value=`${title()}　交換希望\n\n譲　${overflow?'条件を絞り込んで画像を作成してください':refs('譲')}\n求　${overflow?'条件を絞り込んで画像を作成してください':refs('求')}\n\n交換方法　${$('trade-method').value.trim()||'（記載してください）'}\n\nこちらはhttps://iprimaker.github.io/card-managementにより作成されました`;
+  $('trade-post').value=`${title()}　交換希望\n\n譲　${overflow?'条件を絞り込んで画像を作成してください':refs('譲')}\n求　${overflow?'条件を絞り込んで画像を作成してください':refs('求')}\n\n交換方法　${$('trade-method').value.trim()||'（記載してください）'}${priorityNote?'\n\n'+priorityNote:''}`;
   $('trade-copy-post').disabled=overflow||count===0;
   $('trade-share').disabled=overflow||count===0;
-  $('trade-text').value=title()+'　交換希望\n\n'+groups.map(g=>g.side+'\n'+(g.rows.map(c=>[c.code,c.name,c.slot,c.character,c.rarity,c.buzz==null?'':c.buzz+' BP'].filter(Boolean).join(' ｜ ')).join('\n')||'登録なし')).join('\n\n')+'\n\n交換方法　'+($('trade-method').value.trim()||'（記載してください）')+'\n\nこちらはhttps://iprimaker.github.io/card-managementにより作成されました';
+  $('trade-text').value=title()+'　交換希望\n\n'+groups.map(g=>g.side+'\n'+(g.rows.map(c=>[level(c.kind,c.id,g.side==='譲'?'offer':'want')===2?'【優先】':'',c.code,c.name,c.slot,c.character,c.rarity,c.buzz==null?'':c.buzz+' BP'].filter(Boolean).join(' ｜ ')).join('\n')||'登録なし')).join('\n\n')+'\n\n交換方法　'+($('trade-method').value.trim()||'（記載してください）')+(priorityNote?'\n\n'+priorityNote:'');
  }
  async function open(){if(!uid()||host.maintenance())return;origin={kind:host.isVerse()?'coordinate':'card',game:host.game(),family:host.family()};host.screen('trade-page');$('trade-title').textContent=title()+'の交換希望';$('trade-load-status').textContent='読み込み中…';$('trade-text-panel').hidden=true;$('trade-show-text').setAttribute('aria-expanded','false');$('trade-query').value='';$('trade-filter-panel').open=false;$('trade-sheets').replaceChildren();
   const user=uid(),g=generation;try{await load();if(user!==uid()||g!==generation||panel.hidden)return;const all=items();options('trade-series',all.flatMap(c=>values(c.series)));options('trade-rarity',all.map(c=>c.rarity));options('trade-group',all.flatMap(c=>values(c.groups)));$('trade-group-label').hidden=origin.kind==='card';$('trade-rarity-label').hidden=origin.kind!=='card';$('trade-load-status').textContent='';renderOutput();}catch(error){if(user===uid()&&g===generation)$('trade-load-status').textContent=error.message;}}
- async function copy(id){try{const text=$(id).value;if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);else{$(id).focus();$(id).select();if(!document.execCommand('copy'))throw Error('copy');}host.toast('コピーしました');}catch{host.toast('コピーできませんでした。文章を選択してコピーしてください。','error');}}
+ function exportText(id){return $(id).value.trimEnd()+'\n\nhttps://iprimaker.github.io/card-management';}
+ async function copy(id){let temporary;const previous=document.activeElement;try{const text=exportText(id);if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);else{temporary=document.createElement('textarea');temporary.value=text;temporary.readOnly=true;temporary.style.cssText='position:fixed;left:-9999px;top:0';document.body.append(temporary);temporary.focus({preventScroll:true});temporary.select();if(!document.execCommand('copy'))throw Error('copy');}host.toast('コピーしました');}catch{host.toast('コピーできませんでした。','error');}finally{temporary?.remove();if(previous?.isConnected)previous.focus({preventScroll:true});}}
  button.onclick=open;$('trade-back').onclick=()=>{if(origin?.kind==='coordinate')window.CARD_VERSE.open(origin.family==='ひみつ'?'himitsu':'onegai');else host.back();};
  for(const id of ['trade-query','trade-method'])$(id).oninput=renderOutput;
  for(const id of ['trade-series','trade-rarity','trade-group'])$(id).onchange=renderOutput;
  $('trade-share').onclick=async()=>{
   if($('trade-share').disabled||!uid()||host.maintenance())return;
-  const data={title:title()+' 交換希望',text:$('trade-post').value};
+  const data={title:title()+' 交換希望',text:exportText('trade-post')};
   if(!navigator.share){await copy('trade-post');return;}
   try{await navigator.share(data);}catch(error){if(error?.name!=='AbortError')host.toast('共有できませんでした。コピーをご利用ください。','error');}
  };
