@@ -47,6 +47,7 @@
   dialog.innerHTML = `<button id="verse-close" class="verse-close" type="button" aria-label="閉じる">×</button><div id="verse-detail-content"></div>`;
   document.body.append(dialog);
   function currentUser() { return host.session()?.user.id || null; }
+  const trade=()=>window.CARD_TRADE;
   function full(c) { return (fullQuantities.get(c.id)||0)>0 || (c.part_ids.length > 0 && c.part_ids.every(id => owned.has(id))); }
   function quantity(c,part = null) { return (part===null ? fullQuantities.get(c.id) : partQuantities.get(part)) || 0; }
   function duplicate(c) { return quantity(c)>=2 || c.part_ids.some(id=>(partQuantities.get(id)||0)>=2); }
@@ -68,6 +69,7 @@
     const needle = compact(query);
     return pool().filter(c => (!favoriteOnly || favorites.has(c.id))
       && (!duplicateOnly || duplicate(c))
+      && (trade()?.matches('coordinate',c.id) ?? true)
       && appearances(c).some(a => (!series || a.series === series) && (!group || a.group === group))
       && (!needle || compact([c.name,c.code,...appearances(c).map(a=>a.group)].join(' ')).includes(needle))
       && (!includeOwnership || ownershipView === 'all' || state(c) === ownershipView));
@@ -143,6 +145,7 @@
   }
   function renderActiveFilters() {
     const entries = [['query','検索',query],['series','だん数',displayLabel(series)],['group','ガチャ・キャンペーン',group],['favorite','お気に入り',favoriteOnly?'登録済み':''],['duplicate','重複',duplicateOnly?'重複あり':'']].filter(x=>x[2]);
+    const item=trade()?.entry('coordinate');if(item)entries.push(['trade',item.label,item.value]);
     $('verse-filter-summary').textContent = entries.length ? `適用中 ${entries.length}件` : '';
     $('verse-active-filters').innerHTML = entries.length ? '<span class="active-filters-label">適用中</span>'+entries.map(([key,label,value])=>`<button type="button" class="filter-chip" data-verse-clear="${key}" aria-label="${esc(label)}を解除"><span>${esc(label)}：<strong>${esc(displayLabel(value))}</strong></span><span class="filter-chip-close" aria-hidden="true">×</span></button>`).join('') : '<span class="no-active-filters">絞り込みなし</span>';
     panel.querySelectorAll('.filter-clear[data-verse-clear]').forEach(b => b.disabled = !entries.some(x=>x[0]===b.dataset.verseClear));
@@ -189,6 +192,9 @@
     panel.querySelectorAll('[data-verse-columns]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.verseColumns===columns)));
   }
   function render() {
+    let control=$('verse-trade-filter');
+    if(!control){control=document.createElement('div');control.id='verse-trade-filter';panel.querySelector('.verse-filter-grid').append(control);}
+    control.innerHTML=trade()?.filterMarkup('coordinate')||'';
     $('verse-title').textContent = (family==='himitsu'?'ひみつの':'おねがい') + 'アイプリバース';
     panel.querySelectorAll('[data-verse-family]').forEach(b => { const active = b.dataset.verseFamily===family; b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active)); });
     syncImages();applyColumns();renderProgress();renderActiveFilters();
@@ -210,7 +216,7 @@
   function renderDetail() {
     if (!selected || !dialog.open) return;
     const c=catalog.coordinates.find(c=>c.id===selected);if(!c)return;
-    $('verse-detail-content').innerHTML=`<div class="verse-modal-heading"><div class="verse-modal-full">${image(c,true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code||'コード記載なし')}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map(a=>a.series))].join(' ／ ')))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map(a=>a.group))].join(' ／ ')))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c,true)}</div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids.map(id=>{const p=parts.get(id);return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz} バズパワー</strong></div>${ownControl(c,id)}</article>`;}).join('')}</div>`;
+    $('verse-detail-content').innerHTML=`<div class="verse-modal-heading"><div class="verse-modal-full">${image(c,true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code||'コード記載なし')}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map(a=>a.series))].join(' ／ ')))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map(a=>a.group))].join(' ／ ')))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c,true)}${trade()?.markup('coordinate',c.id)||''}</div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids.map(id=>{const p=parts.get(id);return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz} バズパワー</strong></div>${ownControl(c,id)}${trade()?.markup('part',id)||''}</article>`;}).join('')}</div>`;
 
   }
   function openDetail(id) {
@@ -339,7 +345,7 @@
   }
   async function open(value) {
     if(!currentUser()||host.maintenance())return;
-    family=value==='himitsu'?'himitsu':'onegai';series=group=query=collectionSeries='';collectionFilter=ownershipView='all';favoriteOnly=duplicateOnly=false;page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';
+    family=value==='himitsu'?'himitsu':'onegai';series=group=query=collectionSeries='';collectionFilter=ownershipView='all';favoriteOnly=duplicateOnly=false;trade()?.clear('coordinate');page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';
     host.screen('verse');document.body.classList.add('game-aipri');
     const uid=currentUser(),g=generation,view=++viewGeneration;
     const current=()=>uid===currentUser()&&g===generation&&view===viewGeneration&&!host.maintenance();
@@ -366,7 +372,7 @@
     const favorite=e.target.closest('[data-verse-favorite]');if(favorite){saveFavorite(favorite.dataset.verseFavorite);return;}
     const view=e.target.closest('[data-verse-view]');if(view){ownershipView=view.dataset.verseView;page=1;render();return;}
     const collection=e.target.closest('[data-verse-collection]');if(collection){collectionFilter=collectionFilter===collection.dataset.verseCollection?'all':collection.dataset.verseCollection;panel.querySelectorAll('[data-verse-collection]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.verseCollection===collectionFilter)));renderCollection();return;}
-    const f=e.target.closest('[data-verse-family]');if(f){family=f.dataset.verseFamily;series=group=query=collectionSeries='';collectionFilter=ownershipView='all';favoriteOnly=duplicateOnly=false;page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';if(catalog){fillFilters(true);render();}return;}
+    const f=e.target.closest('[data-verse-family]');if(f){family=f.dataset.verseFamily;series=group=query=collectionSeries='';collectionFilter=ownershipView='all';favoriteOnly=duplicateOnly=false;trade()?.clear('coordinate');page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';if(catalog){fillFilters(true);render();}return;}
     const d=e.target.closest('[data-verse-detail]');if(d){openDetail(d.dataset.verseDetail);return;}
     const o=e.target.closest('[data-verse-own]');if(o){save(o.dataset.verseOwn,o.dataset.versePart?Number(o.dataset.versePart):null);return;}
     const p=e.target.closest('[data-verse-page]');if(p){const next=Number(p.dataset.versePage);if(p.disabled||!Number.isInteger(next)||next<1||next>maxPage||next===page)return;const kind=p.classList.contains('verse-page-next')?'verse-page-next':p.classList.contains('verse-page-prev')?'verse-page-prev':null;page=next;render();if(kind)$('verse-pages').querySelector('.'+kind)?.focus({preventScroll:true});$('verse-cards').scrollIntoView({block:'start',behavior:'instant'});}
@@ -377,8 +383,9 @@
   $('verse-group').onchange=()=>{group=$('verse-group').value;page=1;render();};
   $('verse-collection-series').onchange=()=>{collectionSeries=$('verse-collection-series').value;renderCollection();};
   $('verse-size').onchange=()=>{size=$('verse-size').value;page=1;render();};
-  $('verse-clear').onclick=()=>{series=group=query='';favoriteOnly=duplicateOnly=false;ownershipView='all';page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';fillFilters();render();};
+  $('verse-clear').onclick=()=>{series=group=query='';favoriteOnly=duplicateOnly=false;trade()?.clear('coordinate');ownershipView='all';page=1;$('verse-query').value='';$('verse-favorite-filter').value='all';$('verse-duplicate-filter').value='all';fillFilters();render();};
   function clearFilter(key) {
+    if(key==='trade')trade()?.clear('coordinate');
     if(key==='query'){query='';$('verse-query').value='';}
     if(key==='series')series='';
     if(key==='group')group='';
@@ -408,7 +415,7 @@
     try{await readCatalog(true);fillFilters();render();}catch{host.toast('失敗しました','error');}
     finally{refreshing=false;$('verse-sync').disabled=false;syncUpdateText();}
   };
-  window.CARD_VERSE={open,reset,leave(){if(dialog.open)dialog.close();},syncNavigation(){const visible=!!currentUser()&&host.game()==='aipri'&&!host.maintenance();button.hidden=!visible;mobileRoute.hidden=!visible;syncImages();if(visible)warm();}};
+  window.CARD_VERSE={open,reset,tradeData:()=>catalog,refreshTrade(resetPage=false){if(resetPage)page=1;if(catalog)render();},leave(){if(dialog.open)dialog.close();},syncNavigation(){const visible=!!currentUser()&&host.game()==='aipri'&&!host.maintenance();button.hidden=!visible;mobileRoute.hidden=!visible;syncImages();if(visible)warm();}};
   let resizeFrame=null;
   window.addEventListener('resize',()=>{if(resizeFrame!==null)return;resizeFrame=requestAnimationFrame(()=>{resizeFrame=null;placeRoute();if(!panel.hidden&&catalog)renderPages(maxPage);});},{passive:true});
   window.CARD_VERSE.syncNavigation();
