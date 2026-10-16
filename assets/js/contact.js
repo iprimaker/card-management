@@ -1,25 +1,31 @@
-// 認証トークンのみを保存。アルバムID・パスワードを認証代わりに保存しません。
 const albumSessionStorage = (() => {
   const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(".")[0];
   const baseKey = `sb-${project}-auth-token`;
   const preferenceKey = `${baseKey}-remember`;
   const memory = new Map();
   function read(area, key) {
-    try { return window[area].getItem(key); }
-    catch { return memory.get(`${area}:${key}`) ?? null; }
+    try {
+      return window[area].getItem(key);
+    } catch {
+      return memory.get(`${area}:${key}`) ?? null;
+    }
   }
   function write(area, key, value) {
     memory.set(`${area}:${key}`, value);
-    try { window[area].setItem(key, value); } catch {}
+    try {
+      window[area].setItem(key, value);
+    } catch {}
   }
   function remove(area, key) {
     memory.delete(`${area}:${key}`);
-    try { window[area].removeItem(key); } catch {}
+    try {
+      window[area].removeItem(key);
+    } catch {}
   }
   function remembered() {
     const tabChoice = read("sessionStorage", preferenceKey);
     if (tabChoice !== null) return tabChoice !== "false";
-    // 更新前から保存されているログインはそのまま引き継ぎます。
+
     if (read("localStorage", baseKey)) return true;
     return read("localStorage", preferenceKey) !== "false";
   }
@@ -29,18 +35,18 @@ const albumSessionStorage = (() => {
   }
   function options(remember = remembered()) {
     const area = remember ? "localStorage" : "sessionStorage";
-    // タブ内保持の認証イベントが他タブに配信されないよう別チャンネルを使用。
+
     const storageKey = remember ? baseKey : `${baseKey}-private-${crypto.randomUUID()}`;
     const savedKey = remember ? baseKey : `${baseKey}-session`;
-    const mapKey = key => savedKey + key.slice(storageKey.length);
+    const mapKey = (key) => savedKey + key.slice(storageKey.length);
     return {
       persistSession: true,
       autoRefreshToken: true,
       storageKey,
       storage: {
-        getItem: key => read(area, mapKey(key)),
+        getItem: (key) => read(area, mapKey(key)),
         setItem: (key, value) => write(area, mapKey(key), value),
-        removeItem: key => remove(area, mapKey(key)),
+        removeItem: (key) => remove(area, mapKey(key)),
       },
     };
   }
@@ -69,9 +75,7 @@ async function updateContactIdentity() {
   email.closest("label").hidden = !!contactSession;
   email.required = !contactSession;
   document.getElementById("contact-album-field").hidden = !contactSession;
-  document.getElementById("contact-album-id").textContent = contactSession
-    ? "確認中…"
-    : "";
+  document.getElementById("contact-album-id").textContent = contactSession ? "確認中…" : "";
   if (needsIdentity) {
     const { data: id, error } = await contactDB.rpc("card_album_my_id");
     if (generation !== contactIdentityGeneration) return;
@@ -83,9 +87,7 @@ async function updateContactIdentity() {
       contactAlbumID || "IDを確認できませんでした";
   }
   if (!needsIdentity)
-    document.getElementById("contact-album-id").textContent = contactSession
-      ? contactAlbumID
-      : "";
+    document.getElementById("contact-album-id").textContent = contactSession ? contactAlbumID : "";
   if (!contactSession) resolvedContactUser = null;
 }
 const contactIdentityReady = updateContactIdentity().catch(() => {});
@@ -122,9 +124,7 @@ $("contact-form").onsubmit = async (event) => {
     $("contact-form").reset();
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
-    $("contact-error").textContent = /fetch|network|abort|timeout/i.test(
-      error.message,
-    )
+    $("contact-error").textContent = /fetch|network|abort|timeout/i.test(error.message)
       ? "通信できませんでした。時間をおいて再度お試しください。"
       : error.message;
   } finally {
@@ -138,9 +138,7 @@ document.querySelectorAll("[data-info]").forEach(
       const info = window.SITE_INFO[button.dataset.info];
       $("info-title").textContent = info.title;
       $("info-body").innerHTML = info.body;
-      for (const placeholder of $("info-body").querySelectorAll(
-        "[data-contact]",
-      )) {
+      for (const placeholder of $("info-body").querySelectorAll("[data-contact]")) {
         const a = document.createElement("a");
         a.href = "./";
         a.textContent = "お問い合わせフォームへ";
