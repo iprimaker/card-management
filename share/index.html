@@ -1,40 +1,62 @@
 <!doctype html>
-<html lang="ja">
-  <head>
-    <meta charset="utf-8" /><meta
-      name="viewport"
-      content="width=device-width,initial-scale=1"
-    /><meta name="referrer" content="no-referrer" /><meta
-      name="robots"
-      content="noindex,nofollow"
-    /><title>所持状況を見る｜カードアルバム</title>
-    <link rel="icon" href="../assets/images/favicon.png" /><link
+<html lang="ja"
+  ><head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>共有アルバム｜カードアルバム</title>
+    <link rel="icon" href="../assets/images/favicon.png" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+    <link rel="stylesheet" href="../assets/css/dropdowns.css" /><link
       rel="stylesheet"
-      href="../assets/css/style.css"
-    /><link rel="stylesheet" href="../assets/css/public-share.css?v=20261017" />
-    <script defer src="../assets/js/vendor/supabase.js"></script
-    ><script defer src="../assets/js/config.js"></script
-    ><script defer src="../assets/js/catalog-cache.js"></script
-    ><script defer src="../assets/js/image-resolution.js"></script
-    ><script defer src="../assets/js/public-share.js?v=20261017"></script>
+      href="../assets/css/public-share.css?v=20261017-mobile-fix"
+    />
+    <script defer="" src="../assets/js/vendor/supabase.js"></script>
+    <script defer="" src="../assets/js/config.js"></script>
+    <script defer="" src="../assets/js/catalog-cache.js"></script>
+    <script defer="" src="../assets/js/image-resolution.js?v=20261017-modal-center"></script>
+    <script defer="" src="../assets/js/public-share.js?v=20261017-mobile-fix"></script>
   </head>
-  <body class="public-share"
-    ><header class="public-header"><a href="../">カードアルバム</a><span>閲覧専用</span></header
-    ><main>
-      <section id="public-unavailable" hidden
+  <body class="public-share">
+    <header class="public-header">
+      <a id="public-owner" href="../">カードアルバム</a>
+      <span class="public-readonly"
+        ><svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+          <circle cx="12" cy="12" r="3"></circle></svg
+        >閲覧専用</span
+      >
+    </header>
+    <main>
+      <section id="public-unavailable" hidden=""
         ><h1>このアルバムは閲覧できません</h1><p>URLや公開設定をご確認ください。</p></section
       >
       <p id="public-status" role="status">所持状況を読み込み中…</p>
-      <section id="public-album" hidden
-        ><div class="public-heading"
+      <section id="public-album" hidden="">
+        <div class="public-heading"
           ><h1 id="public-title">公開アルバム</h1
-          ><button type="button" id="public-refresh">再読み込み</button></div
-        ><nav id="public-scopes" aria-label="公開中のアルバム"></nav
-        ><div class="public-progress"
-          ><span>総取得率</span><strong id="public-rate"></strong><p id="public-count"></p
+          ><button type="button" id="public-refresh" aria-label="所持状況を再読み込み"
+            ><svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 8a8.5 8.5 0 1 0 .3 7M20 3v5h-5"></path></svg
+            ><span>再読み込み</span></button
+          ></div
+        >
+        <nav id="public-scopes" aria-label="公開中のアルバム"></nav>
+        <div class="public-progress"
+          ><span>総取得率</span><strong id="public-rate"></strong
+          ><div class="public-progress-track"><span id="public-progress-bar"></span></div
+          ><div class="public-progress-bottom"
+            ><p id="public-count"></p
+            ><details id="public-progress-details"
+              ><summary aria-label="弾ごとの取得率を表示"><span aria-hidden="true"></span></summary
+              ><div id="public-series-progress"></div></details></div
+          ><div id="public-filtered-rate"></div
         ></div>
         <details class="public-filters"
-          ><summary>絞り込む<span id="public-filter-count"></span></summary
+          ><summary
+            ><span id="public-filter-label">カードを絞り込む</span
+            ><span id="public-filter-count"></span></summary
           ><div
             ><label
               >フリーワード検索<input
@@ -46,26 +68,49 @@
             ><button id="public-reset" type="button">すべての絞り込みを解除</button></div
           ></details
         >
-        <div id="public-owned" role="group" aria-label="所持状況"></div
-        ><div class="public-toolbar"
+        <div id="public-tags" class="active-filters" aria-label="適用中の絞り込み"></div>
+        <div class="public-owned-wrap"
+          ><div id="public-owned" class="owned-tabs" role="group" aria-label="所持状況"></div
+        ></div>
+        <div class="public-toolbar"
           ><p id="public-found"></p
-          ><label
-            >表示件数<select id="public-size"
-              ><option>20</option
-              ><option>50</option
-              ><option>100</option
-              ><option value="all">すべて</option></select
-            ></label
+          ><div class="public-display-controls"
+            ><label class="display-count"
+              ><span class="display-control-label">表示件数</span
+              ><select id="public-size"
+                ><option>20</option
+                ><option>50</option
+                ><option>100</option
+                ><option value="all">すべて</option></select
+              ></label
+            ><div class="public-layout mobile-column-control" role="group" aria-label="一覧の並び"
+              ><span id="public-layout-label" class="mobile-column-label">カードの並び</span
+              ><div class="mobile-column-buttons"
+                ><button type="button" data-public-columns="2" aria-pressed="false">2列</button
+                ><button type="button" data-public-columns="3" aria-pressed="true">3列</button></div
+              ></div
+            ></div
           ></div
-        ><div id="public-cards"></div
-        ><p id="public-empty" hidden>見つかりませんでした。条件を変えて探してみてください。</p
-        ><nav id="public-pages" aria-label="ページ切り替え"></nav
-      ></section>
-      <a class="public-signup-banner" href="../#signup"
-        ><strong>あなたのカードも、アルバムに。</strong><span>所持状況を管理・共有する</span
-        ><b>新規登録はこちら ›</b></a
-      > </main
-    ><dialog id="public-detail"
-      ><button type="button" id="public-close" aria-label="閉じる">×</button
-      ><div id="public-detail-content"></div></dialog></body
+        >
+        <div id="public-cards"></div>
+        <p id="public-empty" hidden="">見つかりませんでした。条件を変えて探してみてください。</p>
+        <nav id="public-pages" aria-label="ページ切り替え"></nav>
+      </section>
+    </main>
+    <aside id="public-banner" class="public-signup-banner" aria-label="新規登録のご案内">
+      <button type="button" id="public-banner-close" aria-label="新規登録の案内を閉じる">×</button>
+      <div class="public-banner-copy"
+        ><span>MY CARD ALBUM</span><strong>あなたのカードも、ひとつのアルバムに。</strong
+        ><p>集めたカードを記録して、コレクションを共有。</p></div
+      >
+      <div class="public-banner-marquee" aria-hidden="true"
+        ><div id="public-banner-cards"></div
+      ></div>
+      <a href="../#signup">アルバムを作成する</a>
+    </aside>
+    <dialog id="public-detail"
+      ><button type="button" id="public-close" aria-label="閉じる" tabindex="-1">×</button
+      ><div id="public-detail-content"></div
+    ></dialog>
+    <script defer="" src="../assets/js/dropdowns.js"></script></body
 ></html>
