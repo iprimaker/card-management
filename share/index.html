@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="../assets/css/style.css" />
     <link rel="stylesheet" href="../assets/css/dropdowns.css" /><link
       rel="stylesheet"
-      href="../assets/css/public-share.css?v=20261017-mobile-fix"
+      href="../assets/css/public-share.css?v=20261017-site-footer"
     />
     <script defer="" src="../assets/js/vendor/supabase.js"></script>
     <script defer="" src="../assets/js/config.js"></script>
@@ -95,8 +95,22 @@
         <div id="public-cards"></div>
         <p id="public-empty" hidden="">見つかりませんでした。条件を変えて探してみてください。</p>
         <nav id="public-pages" aria-label="ページ切り替え"></nav>
-      </section>
-    </main>
+      </section> </main
+    ><footer id="public-site-footer">
+      <p class="footer-note"
+        >非公式のカードアルバム共有画面 · 画像・カード情報は各権利者に帰属します。</p
+      >
+      <div>
+        <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
+          >アイカツ！公式</a
+        ><a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
+      </div>
+      <div class="footer-links">
+        <button data-share-info="terms" type="button">利用規約</button
+        ><button data-share-info="privacy" type="button">プライバシーポリシー</button
+        ><button data-share-info="about" type="button">このサイトについて</button>
+      </div>
+    </footer>
     <aside id="public-banner" class="public-signup-banner" aria-label="新規登録のご案内">
       <button type="button" id="public-banner-close" aria-label="新規登録の案内を閉じる">×</button>
       <div class="public-banner-copy"
@@ -112,5 +126,11 @@
       ><button type="button" id="public-close" aria-label="閉じる" tabindex="-1">×</button
       ><div id="public-detail-content"></div
     ></dialog>
-    <script defer="" src="../assets/js/dropdowns.js"></script></body
+    <script defer="" src="../assets/js/dropdowns.js"></script>
+    <dialog id="public-info-dialog" aria-labelledby="public-info-title"
+      ><div class="modal-top"
+        ><h2 id="public-info-title" tabindex="-1"></h2
+        ><button type="button" id="public-info-close" aria-label="閉じる">×</button></div
+      ><div class="legal-body" id="public-info-body"></div></dialog
+    ><script defer="" src="../assets/js/public-info.js?v=20261017"></script></body
 ></html>
