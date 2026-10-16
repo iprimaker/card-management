@@ -1,7 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap");
 :root {
-  font-family:
-    "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   color: #403249;
   background: #fff8fc;
   --accent: #d63e84;
@@ -978,13 +977,7 @@ nav {
   overflow: hidden;
   margin: 30px 0 10px;
   padding: 15px 0;
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 8%,
-    #000 92%,
-    transparent
-  );
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
 }
 .marquee-track {
   display: flex;
@@ -1183,18 +1176,15 @@ nav {
     height: 116px;
   }
 }
-/* アルバム一覧・取得率・絞り込み */
 body {
-  background:
-    radial-gradient(circle at 8% 12%, #fff0f7 0, transparent 32%), #fffafc;
+  background: radial-gradient(circle at 8% 12%, #fff0f7 0, transparent 32%), #fffafc;
 }
 .game-aipri {
   --accent: #247ca4;
   --soft: #e4f7ff;
   --line: #cde8f2;
   --muted: #627c8a;
-  background:
-    radial-gradient(circle at 90% 8%, #def6ff 0, transparent 36%), #f6fcff;
+  background: radial-gradient(circle at 90% 8%, #def6ff 0, transparent 36%), #f6fcff;
 }
 .game-aipri .progress-track span {
   background: #51b6da;
@@ -1466,7 +1456,6 @@ body {
     grid-template-columns: 1fr;
   }
 }
-/* 閉じている時も適用条件を表示 */
 .active-filters {
   display: flex;
   align-items: center;
@@ -1532,7 +1521,6 @@ body {
     filter 0.2s ease,
     opacity 0.2s ease;
 }
-/* 適用条件タグと所持状態スライダー */
 .filter-chip {
   border-radius: 12px;
   padding: 8px 10px 8px 12px;
@@ -1626,7 +1614,6 @@ body {
     transition: none;
   }
 }
-/* 表示件数と番号付きページ移動 */
 .results-controls {
   display: flex;
   align-items: center;
@@ -1711,7 +1698,6 @@ body {
     padding: 8px 10px;
   }
 }
-/* 総合取得率と所持枚数 */
 #collection > .progress-card {
   position: relative;
   padding: 24px 28px;
@@ -1798,7 +1784,6 @@ body {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-/* 確率確認ページ */
 .probability-page {
   max-width: 1000px;
   margin: 0 auto;
@@ -1908,7 +1893,6 @@ body {
     flex-shrink: 0;
   }
 }
-/* 一覧と詳細の仕上げ */
 button:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--line);
@@ -2137,7 +2121,6 @@ select {
     transition: none;
   }
 }
-/* カードの上端と操作位置を揃える */
 .card-trigger {
   display: flex;
   flex-direction: column;
@@ -2320,7 +2303,6 @@ input[aria-invalid="true"] {
 .marquee-card img {
   width: 100%;
 }
-/* やわらかな色とコンパクトな操作 */
 .filter-chip {
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2384,7 +2366,6 @@ input[aria-invalid="true"] {
     max-width: 100%;
   }
 }
-/* 小さな画面の操作とフッター */
 .filter-chip {
   padding-top: 5px;
   padding-bottom: 5px;
@@ -2420,7 +2401,6 @@ input[aria-invalid="true"] {
     margin: 0;
   }
 }
-/* ヘッダーの操作ボタンは全て同じ文字・配置にする */
 #nav > :is(#probability-back, #probability-open, #edit-nickname, #logout) {
   display: inline-flex;
   align-items: center;
@@ -2440,8 +2420,7 @@ input[aria-invalid="true"] {
   box-shadow: none;
   text-decoration: none;
 }
-#nav
-  > :is(#probability-back, #probability-open, #edit-nickname, #logout):hover {
+#nav > :is(#probability-back, #probability-open, #edit-nickname, #logout):hover {
   background: var(--soft);
   color: var(--accent);
 }
@@ -2463,8 +2442,6 @@ input[aria-invalid="true"] {
     font-size: 0.8125rem;
   }
 }
-
-/* 読みやすく、操作位置を揃える */
 dialog {
   border: 0;
   border-radius: 24px;
@@ -2729,7 +2706,6 @@ dialog::backdrop {
     width: 100%;
   }
 }
-/* 検索の入口に余白、スライド画像の向きを統一 */
 #filter-panel .filter-content {
   padding-top: 20px;
 }
@@ -2808,7 +2784,6 @@ dialog::backdrop {
 #account-action-message {
   color: #a25767;
 }
-/* アルバムIDによる登録 */
 .signup-flow {
   width: 100%;
 }
@@ -3008,7 +2983,6 @@ dialog::backdrop {
   padding: 12px 14px;
   margin: 20px 0 8px;
 }
-/* 登録フローと共通の選択操作 */
 .signup-steps li {
   position: relative;
   flex: 1;
@@ -3171,8 +3145,6 @@ select option {
 .password-input-wrap input {
   padding-right: 52px;
 }
-
-/* 2026-10-11 登録・共通UIの整列 */
 .album-id-card {
   position: relative;
   display: flex;
@@ -3300,8 +3272,6 @@ select option {
     padding: 4px;
   }
 }
-
-/* 画像フレームに旧span用の上余白を適用しない */
 .marquee-card > .marquee-image-frame {
   margin: 0;
   padding: 0;
@@ -3335,8 +3305,6 @@ select option {
     text-align: right;
   }
 }
-
-/* 固定比率と行の引き伸ばしで白い余白を増やさない */
 .marquee-track,
 .marquee-group {
   align-items: center;
