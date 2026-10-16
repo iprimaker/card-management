@@ -33,14 +33,8 @@ let db,
   poll;
 let pendingSignupEmail = "";
 try {
-  const saved = JSON.parse(
-    localStorage.getItem("card-album-pending-signup") || "null",
-  );
-  if (
-    saved &&
-    Date.now() - saved.at < 86400000 &&
-    typeof saved.email === "string"
-  )
+  const saved = JSON.parse(localStorage.getItem("card-album-pending-signup") || "null");
+  if (saved && Date.now() - saved.at < 86400000 && typeof saved.email === "string")
     pendingSignupEmail = saved.email;
 } catch {}
 function clearPendingSignup() {
@@ -68,9 +62,7 @@ const callbackError =
   callbackHash.get("error") ||
   callbackQuery.get("error");
 const callbackPayload =
-  callbackHash.has("access_token") ||
-  callbackQuery.has("code") ||
-  callbackQuery.has("token_hash");
+  callbackHash.has("access_token") || callbackQuery.has("code") || callbackQuery.has("token_hash");
 const confirmationCallback =
   callbackType !== "recovery" &&
   (callbackType === "signup" ||
@@ -103,15 +95,12 @@ function authResult(ok, message) {
   callbackPending = false;
   authResultShowing = true;
   clearAuthURL();
-  $("auth-result-title").textContent = ok
-    ? "登録できました"
-    : "メールを確認できませんでした";
+  $("auth-result-title").textContent = ok ? "登録できました" : "メールを確認できませんでした";
   $("auth-result-text").textContent = message;
   $("auth-result-album-id").hidden = true;
   $("auth-result-retention").hidden = true;
   $("auth-result-icon").textContent = ok ? "✓" : "!";
-  $("auth-result-next").textContent =
-    ok && session ? "アルバムを開く" : "ログイン画面へ";
+  $("auth-result-next").textContent = ok && session ? "アルバムを開く" : "ログイン画面へ";
   screen("auth-result");
 }
 const siteBase = new URL("./", location.href),
@@ -150,13 +139,7 @@ function toast(s) {
 }
 function screen(id) {
   if (maintenanceActive) id = "auth";
-  for (const s of [
-    "auth",
-    "auth-result",
-    "selection",
-    "collection",
-    "probabilities",
-  ])
+  for (const s of ["auth", "auth-result", "selection", "collection", "probabilities"])
     $(s).hidden = s !== id;
   $("nav").hidden = !session;
   $("menu-toggle").hidden = !session;
@@ -213,12 +196,9 @@ function translatedError(e) {
   const m = e.message || String(e);
   if (/Invalid login credentials/i.test(m))
     return "メールアドレスまたはパスワードが正しくありません。";
-  if (/Email not confirmed/i.test(m))
-    return "確認メールのリンクを開いてからログインしてください。";
-  if (/rate limit|too many/i.test(m))
-    return "しばらく時間をおいてからお試しください。";
-  if (/fetch|network/i.test(m))
-    return "接続できませんでした。通信状態を確認してください。";
+  if (/Email not confirmed/i.test(m)) return "確認メールのリンクを開いてからログインしてください。";
+  if (/rate limit|too many/i.test(m)) return "しばらく時間をおいてからお試しください。";
+  if (/fetch|network/i.test(m)) return "接続できませんでした。通信状態を確認してください。";
   return m;
 }
 let ownershipRequest = null;
@@ -276,22 +256,14 @@ async function readOwnership() {
     ownershipReady = true;
   } catch (e) {
     if (generation === loadGeneration)
-      toast(
-        "所持データを読み込めません。Supabaseの設定・SQLを確認してください。",
-      );
+      toast("所持データを読み込めません。Supabaseの設定・SQLを確認してください。");
   }
   if (game) render();
 }
-// セッションを維持して再訪した場合も利用を記録します。
+
 let lastActivityTouch = 0;
 async function recordAccountVisit() {
-  if (
-    !session ||
-    !db ||
-    document.hidden ||
-    Date.now() - lastActivityTouch < 3600000
-  )
-    return;
+  if (!session || !db || document.hidden || Date.now() - lastActivityTouch < 3600000) return;
   lastActivityTouch = Date.now();
   try {
     const { error } = await db.rpc("card_album_touch_activity");
@@ -308,7 +280,6 @@ document.addEventListener("visibilitychange", () => {
       fetchCatalog();
   }
 });
-// 活動記録はログイン・再訪時にまとめて更新し、放置中の定期書き込みは行いません。
 
 async function authChanged(event, next) {
   if (maintenanceActive) next = null;
@@ -371,9 +342,9 @@ function loadInitialCatalog() {
   const saved = window.PUBLIC_CATALOG_CACHE?.peek();
   if (saved?.cards.length) {
     catalogFallback = saved;
-    catalog = { cards: saved.cards.map(c => ({ ...c })), source: "live", errors: [] };
+    catalog = { cards: saved.cards.map((c) => ({ ...c })), source: "live", errors: [] };
     adminOverrides.clear();
-    saved.overrides.forEach(r => adminOverrides.set(r.card_id, r.patch));
+    saved.overrides.forEach((r) => adminOverrides.set(r.card_id, r.patch));
     applyPersonalMetadata();
     art();
   }
@@ -390,15 +361,22 @@ async function fetchCatalog() {
     catalogCheckedAt = Date.now();
     catalogFallback = data;
     adminOverrides.clear();
-    data.overrides.forEach(r => adminOverrides.set(r.card_id, r.patch));
+    data.overrides.forEach((r) => adminOverrides.set(r.card_id, r.patch));
     catalog = {
-      cards: data.cards.map(c => ({ ...c })), source: "live", errors: [],
-      updatedAt: data.state.updated_at, sync: { running: false }
+      cards: data.cards.map((c) => ({ ...c })),
+      source: "live",
+      errors: [],
+      updatedAt: data.state.updated_at,
+      sync: { running: false },
     };
     applyPersonalMetadata();
     art();
-    if (game) { fillFilters(); render(); }
-    if (!data.cards.length) $("auth-message").textContent = "カード情報の取り込みSQLを実行してください。";
+    if (game) {
+      fillFilters();
+      render();
+    }
+    if (!data.cards.length)
+      $("auth-message").textContent = "カード情報の取り込みSQLを実行してください。";
   } catch (e) {
     catalog.errors = [e.message];
     $("auth-message").textContent = e.message;
@@ -416,8 +394,7 @@ function applyPersonalMetadata() {
     if (patch) {
       if (patch.name) c.name = patch.name;
       if (patch.character) c.character = patch.character;
-      if (Array.isArray(patch.songs) && patch.songs.length)
-        c.songs = patch.songs;
+      if (Array.isArray(patch.songs) && patch.songs.length) c.songs = patch.songs;
       c.metadataSource = patch.metadataSource || "画像文字読み取り（未確認）";
     }
     const forced = adminOverrides.get(c.id);
@@ -445,8 +422,7 @@ async function loadPersonalMetadata() {
       .eq("user_id", uid)
       .order("card_id")
       .range(offset, offset + 499);
-    if (error || generation !== metadataGeneration || uid !== session?.user.id)
-      return;
+    if (error || generation !== metadataGeneration || uid !== session?.user.id) return;
     data.forEach((r) => personalMetadata.set(r.card_id, r.patch));
     if (data.length < 500) break;
     offset += 500;
@@ -477,27 +453,52 @@ async function loadAdminOverrides() {
 function art() {
   updateHeader();
   for (const g of ["aikatsu", "aipri"]) {
-    const available=catalog.cards.filter(c=>c.game===g&&isOfficialMarqueeCard(c));
-    let picks=available.slice(0,2);
-    if(g==="aikatsu") {
-      const preferred=window.CARD_STARTUP_PREVIEW?.preferredAikatsu||["aikatsu:E1-01_PR","aikatsu:E1-83_N"];
-      picks=["いちご","パリン"].map((character,index)=>{
-        const pool=available.filter(c=>(c.character||"").includes(character));
-        return pool.find(c=>c.id===preferred[index])||pool[0];
-      }).filter(Boolean);
+    const available = catalog.cards.filter((c) => c.game === g && isOfficialMarqueeCard(c));
+    let picks = available.slice(0, 2);
+    if (g === "aikatsu") {
+      const preferred = window.CARD_STARTUP_PREVIEW?.preferredAikatsu || [
+        "aikatsu:E1-01_PR",
+        "aikatsu:E1-83_N",
+      ];
+      picks = ["いちご", "パリン"]
+        .map((character, index) => {
+          const pool = available.filter((c) => (c.character || "").includes(character));
+          return pool.find((c) => c.id === preferred[index]) || pool[0];
+        })
+        .filter(Boolean);
     }
-    if(g==="aipri") {
-      const preferred=window.CARD_STARTUP_PREVIEW?.preferredAipri||["aipri:OA4-001","aipri:OA4-005"];
-      picks=["いのり","ナナ"].map((character,index)=>{
-        const pool=available.filter(c=>c.family==="おねがい"&&c.character===character&&/[★☆]\s*[4４]|4つ星/.test(c.rarity||""));
-        return pool.find(c=>c.id===preferred[index])||pool.sort((a,b)=>String(b.code).localeCompare(String(a.code),"en",{numeric:true}))[0];
-      }).filter(Boolean);
+    if (g === "aipri") {
+      const preferred = window.CARD_STARTUP_PREVIEW?.preferredAipri || [
+        "aipri:OA4-001",
+        "aipri:OA4-005",
+      ];
+      picks = ["いのり", "ナナ"]
+        .map((character, index) => {
+          const pool = available.filter(
+            (c) =>
+              c.family === "おねがい" &&
+              c.character === character &&
+              /[★☆]\s*[4４]|4つ星/.test(c.rarity || ""),
+          );
+          return (
+            pool.find((c) => c.id === preferred[index]) ||
+            pool.sort((a, b) =>
+              String(b.code).localeCompare(String(a.code), "en", { numeric: true }),
+            )[0]
+          );
+        })
+        .filter(Boolean);
     }
-    if(!picks.length)continue;
-    const root=$(g+"-art");
-    if(root.dataset.cards===picks.map(c=>c.id+"|"+c.front).join(","))continue;
-    root.dataset.cards=picks.map(c=>c.id+"|"+c.front).join(",");
-    root.innerHTML=picks.map(c=>`<img src="${esc(c.front)}" alt="${esc(c.name||c.code)}（${esc(c.character||c.code)}）" loading="eager" decoding="async">`).join("");
+    if (!picks.length) continue;
+    const root = $(g + "-art");
+    if (root.dataset.cards === picks.map((c) => c.id + "|" + c.front).join(",")) continue;
+    root.dataset.cards = picks.map((c) => c.id + "|" + c.front).join(",");
+    root.innerHTML = picks
+      .map(
+        (c) =>
+          `<img src="${esc(c.front)}" alt="${esc(c.name || c.code)}（${esc(c.character || c.code)}）" loading="eager" decoding="async">`,
+      )
+      .join("");
   }
   buildMarquee();
 }
@@ -518,8 +519,7 @@ function chooseGame(g) {
   $("filter-panel").open = false;
   $("series-progress").hidden = true;
   $("progress-details").setAttribute("aria-expanded", "false");
-  $("progress-details").innerHTML =
-    '<span class="progress-chevron" aria-hidden="true"></span>';
+  $("progress-details").innerHTML = '<span class="progress-chevron" aria-hidden="true"></span>';
   $("progress-details").setAttribute("aria-label", "弾ごとの取得率を表示");
   fillFilters();
   render();
@@ -533,9 +533,7 @@ function albumCards() {
 function seriesRank(label) {
   const text = String(label).normalize("NFKC");
   const number = text.match(/(\d+)\s*(?:だん|弾)/);
-  return number
-    ? (text.includes("リング") ? 1000000 : 0) + Number(number[1])
-    : -1;
+  return number ? (text.includes("リング") ? 1000000 : 0) + Number(number[1]) : -1;
 }
 function setLatestSeries() {
   const series = [...new Set(albumCards().flatMap((c) => values(c.series)))];
@@ -551,18 +549,15 @@ function renderFamilyTabs() {
       (c) => c.game === "aipri" && c.family === family && c.front,
     );
     const preferred =
-      candidates.find(
-        (c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001"),
-      ) || candidates[0];
+      candidates.find((c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001")) ||
+      candidates[0];
     button.innerHTML = `${preferred ? `<img src="${esc(preferred.front)}" alt="" loading="lazy">` : ""}<span><strong>${family === "おねがい" ? "おねがいアイプリ" : "ひみつのアイプリ"}</strong></span>`;
   });
 }
 function renderSeriesProgress() {
   const all = albumCards();
   const series = [...new Set(all.flatMap((c) => values(c.series)))].sort(
-    (a, b) =>
-      seriesRank(b) - seriesRank(a) ||
-      a.localeCompare(b, "ja", { numeric: true }),
+    (a, b) => seriesRank(b) - seriesRank(a) || a.localeCompare(b, "ja", { numeric: true }),
   );
   $("series-progress").innerHTML = series
     .map((label) => {
@@ -574,8 +569,7 @@ function renderSeriesProgress() {
     .join("");
 }
 function fillFilters() {
-  for (const card of catalog.cards)
-    if (card.game === "aipri") card.rarity = displayRarity(card);
+  for (const card of catalog.cards) if (card.game === "aipri") card.rarity = displayRarity(card);
   const cards = albumCards();
   $("game-title").textContent =
     game === "aikatsu"
@@ -591,22 +585,18 @@ function fillFilters() {
   $("filters").innerHTML = fields[game]
     .filter(([key]) => key !== "family")
     .map(([key, label]) => {
-      const opts = [...new Set(cards.flatMap((c) => values(c[key])))].sort(
-        (a, b) => {
-          if (game === "aikatsu" && key === "rarity") {
-            const order = ["ER", "PR", "R", "N"];
-            return (
-              (order.includes(a) ? order.indexOf(a) : 99) -
-                (order.includes(b) ? order.indexOf(b) : 99) ||
-              a.localeCompare(b, "ja")
-            );
-          }
-          return key === "series"
-            ? seriesRank(b) - seriesRank(a) ||
-                a.localeCompare(b, "ja", { numeric: true })
-            : a.localeCompare(b, "ja", { numeric: true });
-        },
-      );
+      const opts = [...new Set(cards.flatMap((c) => values(c[key])))].sort((a, b) => {
+        if (game === "aikatsu" && key === "rarity") {
+          const order = ["ER", "PR", "R", "N"];
+          return (
+            (order.includes(a) ? order.indexOf(a) : 99) -
+              (order.includes(b) ? order.indexOf(b) : 99) || a.localeCompare(b, "ja")
+          );
+        }
+        return key === "series"
+          ? seriesRank(b) - seriesRank(a) || a.localeCompare(b, "ja", { numeric: true })
+          : a.localeCompare(b, "ja", { numeric: true });
+      });
       if (filters[key] && !opts.includes(filters[key])) delete filters[key];
       return `<label><span class="filter-label">${label}<button type="button" class="filter-clear" data-clear-filter="${key}" aria-label="${label}の絞り込みを解除">解除</button></span><select data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${filters[key] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
     })
@@ -636,22 +626,13 @@ function filtered(includeOwnership = true) {
   return albumCards().filter(
     (c) =>
       (!q ||
-        [
-          c.name,
-          c.code,
-          c.rarity,
-          c.character,
-          ...values(c.brand),
-          ...values(c.songs),
-        ]
+        [c.name, c.code, c.rarity, c.character, ...values(c.brand), ...values(c.songs)]
           .join(" ")
           .normalize("NFKC")
           .toLowerCase()
           .includes(q) ||
         (compactQuery && normalizeCardCode(c.code).includes(compactQuery))) &&
-      Object.entries(filters).every(
-        ([k, v]) => !v || values(c[k]).includes(v),
-      ) &&
+      Object.entries(filters).every(([k, v]) => !v || values(c[k]).includes(v)) &&
       (!includeOwnership ||
         ownershipFilter === "all" ||
         (ownershipFilter === "yes" ? owned.has(c.id) : !owned.has(c.id))),
@@ -678,35 +659,20 @@ function getPageSize(count) {
   return pageSize === "all" ? Math.max(1, count) : pageSize;
 }
 function renderPageNumbers(total) {
-  const compact =
-    window.matchMedia?.("(max-width: 760px)").matches ||
-    window.innerWidth <= 760;
+  const compact = window.matchMedia?.("(max-width: 760px)").matches || window.innerWidth <= 760;
   const viewport =
-    $("page-numbers")?.parentElement?.clientWidth ||
-    Math.min(window.innerWidth - 32, 1100);
-  const maxSlots = compact
-    ? Math.max(3, Math.min(9, Math.floor((viewport - 100) / 34)))
-    : 9;
+    $("page-numbers")?.parentElement?.clientWidth || Math.min(window.innerWidth - 32, 1100);
+  const maxSlots = compact ? Math.max(3, Math.min(9, Math.floor((viewport - 100) / 34))) : 9;
   let candidates;
-  if (total <= maxSlots)
-    candidates = Array.from({ length: total }, (_, i) => i + 1);
+  if (total <= maxSlots) candidates = Array.from({ length: total }, (_, i) => i + 1);
   else {
     const count = Math.max(1, maxSlots - 4);
-    const start = Math.max(
-      2,
-      Math.min(page - Math.floor(count / 2), total - count),
-    );
+    const start = Math.max(2, Math.min(page - Math.floor(count / 2), total - count));
     candidates = [
-      ...new Set([
-        1,
-        ...Array.from({ length: count }, (_, i) => start + i),
-        total,
-      ]),
+      ...new Set([1, ...Array.from({ length: count }, (_, i) => start + i), total]),
     ].sort((a, b) => a - b);
     if (page <= 2 && maxSlots >= 6)
-      candidates = [...new Set([1, 2, ...candidates, total - 1, total])].sort(
-        (a, b) => a - b,
-      );
+      candidates = [...new Set([1, 2, ...candidates, total - 1, total])].sort((a, b) => a - b);
   }
   let previous = 0;
   $("prev").textContent = compact ? "前へ" : "前のページ";
@@ -714,9 +680,7 @@ function renderPageNumbers(total) {
   $("page-numbers").innerHTML = candidates
     .map((n) => {
       const gap =
-        previous && n - previous > 1
-          ? '<span class="page-gap" aria-hidden="true">…</span>'
-          : "";
+        previous && n - previous > 1 ? '<span class="page-gap" aria-hidden="true">…</span>' : "";
       previous = n;
       return `${gap}<button type="button" data-page="${n}" ${n === page ? 'aria-current="page"' : ""} aria-label="${n}ページ目">${n}</button>`;
     })
@@ -732,8 +696,7 @@ function render() {
     base = filtered(false),
     baseGot = base.filter((c) => owned.has(c.id)).length;
   $("filter-summary").textContent =
-    Object.values(filters).filter(Boolean).length +
-    ($("query").value.trim() ? 1 : 0)
+    Object.values(filters).filter(Boolean).length + ($("query").value.trim() ? 1 : 0)
       ? `適用中 ${Object.values(filters).filter(Boolean).length + ($("query").value.trim() ? 1 : 0)}件`
       : "";
   document
@@ -753,10 +716,7 @@ function render() {
     : "";
   document
     .querySelector(".owned-tabs")
-    .style.setProperty(
-      "--owned-index",
-      String(["all", "yes", "no"].indexOf(ownershipFilter)),
-    );
+    .style.setProperty("--owned-index", String(["all", "yes", "no"].indexOf(ownershipFilter)));
   document.querySelectorAll("[data-owned]").forEach((b) => {
     b.classList.toggle("active", b.dataset.owned === ownershipFilter);
     b.setAttribute("aria-pressed", String(b.dataset.owned === ownershipFilter));
@@ -785,9 +745,7 @@ function render() {
       : catalog.updatedAt
         ? `カード情報の確認：${new Date(catalog.updatedAt).toLocaleString("ja-JP")}`
         : "カード情報が未登録です";
-  const missing = all.some(
-      (c) => !c.name || (game === "aipri" && !c.songs?.length),
-    ),
+  const missing = all.some((c) => !c.name || (game === "aipri" && !c.songs?.length)),
     errors = catalog.errors?.length;
   $("data-warning").hidden = !missing && !errors;
   $("data-warning").textContent = errors
@@ -815,8 +773,7 @@ async function saveQuantity(id, delta, clear = false) {
     if (session?.user.id !== uid) return;
     ownershipCheckedAt = Date.now();
     const count = Number(result.data);
-    if (!Number.isInteger(count) || count < 0)
-      throw Error("所持数の応答を確認できませんでした");
+    if (!Number.isInteger(count) || count < 0) throw Error("所持数の応答を確認できませんでした");
     if (count) {
       owned.add(id);
       ownedCounts.set(id, count);
@@ -824,9 +781,7 @@ async function saveQuantity(id, delta, clear = false) {
       owned.delete(id);
       ownedCounts.delete(id);
     }
-    toast(
-      count ? `所持数を${count}枚に更新しました` : "所持登録を解除しました",
-    );
+    toast(count ? `所持数を${count}枚に更新しました` : "所持登録を解除しました");
   } catch (error) {
     toast("保存できませんでした。" + translatedError(error));
   } finally {
@@ -842,18 +797,18 @@ let detailCardIds = [];
 function openDetail(id, trigger, navigating = false) {
   if (!navigating) {
     const candidates = trigger?.closest("#auth-art")
-      ? [
-          ...document.querySelectorAll(
-            ".marquee-group:first-child [data-detail]",
-          ),
-        ].map((b) => b.dataset.detail)
+      ? [...document.querySelectorAll(".marquee-group:first-child [data-detail]")].map(
+          (b) => b.dataset.detail,
+        )
       : game
         ? filtered().map((c) => c.id)
         : catalog.cards.map((c) => c.id);
     detailCardIds = [...new Set(candidates)];
     if (!detailCardIds.includes(id)) detailCardIds = [id];
   }
-  selected = catalog.cards.find((c) => c.id === id) || window.CARD_STARTUP_PREVIEW?.cards.find(c => c.id === id);
+  selected =
+    catalog.cards.find((c) => c.id === id) ||
+    window.CARD_STARTUP_PREVIEW?.cards.find((c) => c.id === id);
   if (!selected) return;
   if (!navigating) lastFocus = trigger;
   side = 0;
@@ -862,10 +817,7 @@ function openDetail(id, trigger, navigating = false) {
   $("modal-name").textContent = name(c);
   $("modal-rarity").textContent = displayRarity(c);
   $("modal-fields").innerHTML = fields[c.game]
-    .map(
-      ([k, label]) =>
-        `<dt>${label}</dt><dd>${esc(values(c[k]).join(" ／ ") || "未取得")}</dd>`,
-    )
+    .map(([k, label]) => `<dt>${label}</dt><dd>${esc(values(c[k]).join(" ／ ") || "未取得")}</dd>`)
     .join("");
   $("metadata-note").hidden = true;
   $("modal-source").href = c.source;
@@ -876,8 +828,7 @@ function openDetail(id, trigger, navigating = false) {
   document.body.style.overflow = "hidden";
 }
 function updateDetailNavigation() {
-  document.querySelector(".detail-navigation").hidden =
-    !session || !$("auth").hidden;
+  document.querySelector(".detail-navigation").hidden = !session || !$("auth").hidden;
   const index = detailCardIds.indexOf(selected?.id);
   $("card-prev").disabled = index <= 0;
   $("card-next").disabled = index < 0 || index >= detailCardIds.length - 1;
@@ -893,9 +844,7 @@ function showSide() {
   const url = side ? c.back : c.front;
   $("modal-image").hidden = !url;
   $("image-failure").hidden = !!url;
-  $("image-failure").textContent = url
-    ? "画像を読み込めませんでした。"
-    : "裏面画像は未登録です。";
+  $("image-failure").textContent = url ? "画像を読み込めませんでした。" : "裏面画像は未登録です。";
   $("modal-image").src = url || "";
   $("modal-image").alt = `${name(c)} ${side ? "裏面" : "表面"}`;
   $("side-label").textContent = side ? "裏面" : "表面";
@@ -908,9 +857,7 @@ function updateModalOwnership() {
   $("quantity-value").textContent = quantityOf(selected.id) + "枚";
   $("quantity-minus").disabled = !ownershipReady || saving.has(selected.id);
   $("quantity-plus").disabled =
-    !ownershipReady ||
-    saving.has(selected.id) ||
-    quantityOf(selected.id) >= 1000000;
+    !ownershipReady || saving.has(selected.id) || quantityOf(selected.id) >= 1000000;
   $("modal-owned").textContent = saving.has(selected.id)
     ? "保存中…"
     : owned.has(selected.id)
@@ -930,9 +877,7 @@ async function init() {
       global: { fetch: window.CARD_MAINTENANCE.fetch },
     });
     await window.CARD_MAINTENANCE.check();
-    db.auth.onAuthStateChange((event, s) =>
-      setTimeout(() => authChanged(event, s), 0),
-    );
+    db.auth.onAuthStateChange((event, s) => setTimeout(() => authChanged(event, s), 0));
     if (callbackError) {
       authResult(
         false,
@@ -957,21 +902,15 @@ async function init() {
     if (!callbackError && confirmationCallback) {
       const checked = await db.auth.getUser();
       if (checked.error) throw checked.error;
-      if (!checked.data.user?.email_confirmed_at)
-        throw Error("メールの確認が完了していません");
-      authResult(
-        true,
-        "メールアドレスの確認が完了しました。カードアルバムを使い始められます。",
-      );
+      if (!checked.data.user?.email_confirmed_at) throw Error("メールの確認が完了していません");
+      authResult(true, "メールアドレスの確認が完了しました。カードアルバムを使い始められます。");
     }
     await initialCards;
     await fetchCatalog();
     if (session && startupProbabilityRoute) {
       chooseGame(startupProbabilityRoute === "aikatsu" ? "aikatsu" : "aipri");
       if (startupProbabilityRoute !== "aikatsu")
-        chooseFamily(
-          startupProbabilityRoute === "onegai" ? "おねがい" : "ひみつ",
-        );
+        chooseFamily(startupProbabilityRoute === "onegai" ? "おねがい" : "ひみつ");
       openProbabilities();
     }
   } catch (e) {
@@ -982,9 +921,7 @@ async function init() {
           translatedError(e) +
           " ログインできない場合は確認メールを再送してください。",
       );
-    else
-      $("auth-message").textContent =
-        "初期化できませんでした。" + translatedError(e);
+    else $("auth-message").textContent = "初期化できませんでした。" + translatedError(e);
   }
 }
 $("auth-result-next").onclick = () => {
@@ -1001,8 +938,7 @@ document
 $("resend").onclick = async () => {
   const email = pendingSignupEmail;
   if (!email) {
-    $("auth-message").textContent =
-      "新規登録手続きをしてから再送してください。";
+    $("auth-message").textContent = "新規登録手続きをしてから再送してください。";
     return;
   }
   if (!db) return;
@@ -1061,7 +997,8 @@ for (const id of ["nickname", "email", "password"])
     $(id).removeAttribute("aria-invalid");
   });
 async function albumAuth(body) {
-  if ((await window.CARD_MAINTENANCE.check()).maintenance) throw Error("ただ今メンテナンス中です。");
+  if ((await window.CARD_MAINTENANCE.check()).maintenance)
+    throw Error("ただ今メンテナンス中です。");
   if (body.action === "reserve") {
     const { data, error } = await db.rpc("card_album_reserve_id");
     if (error) throw error;
@@ -1070,31 +1007,52 @@ async function albumAuth(body) {
   }
   if (body.action === "login" || body.action === "legacy") {
     let email;
-    if (body.action === "legacy") email = String(body.email || "").trim().toLowerCase();
+    if (body.action === "legacy")
+      email = String(body.email || "")
+        .trim()
+        .toLowerCase();
     else {
-      const { data, error } = await db.rpc("card_album_login_identifier", { p_id: body.album_id, p_password: body.password });
+      const { data, error } = await db.rpc("card_album_login_identifier", {
+        p_id: body.album_id,
+        p_password: body.password,
+      });
       if (error) throw error;
       email = data;
     }
     const { data, error } = await db.auth.signInWithPassword({ email, password: body.password });
     if (error) throw Error("IDまたはパスワードが正しくありません。");
-    const identity = await db.from("card_album_ids").select("album_id").eq("user_id", data.user.id).maybeSingle();
+    const identity = await db
+      .from("card_album_ids")
+      .select("album_id")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
     if (identity.error || !identity.data) throw Error("アルバムIDを確認できませんでした。");
     return { album_id: identity.data.album_id, session: data.session };
   }
-  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body.reservation_token));
-  const reservationHash = [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, "0")).join("");
+  const bytes = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(body.reservation_token),
+  );
+  const reservationHash = [...new Uint8Array(bytes)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
   const { data, error } = await db.auth.signUp({
     email: body.album_id.toLowerCase() + "@album.card-album.invalid",
     password: body.password,
-    options: { data: { nickname: body.nickname, album_registration_hash: reservationHash, personal_info_ack: body.personal_info_ack } }
+    options: {
+      data: {
+        nickname: body.nickname,
+        album_registration_hash: reservationHash,
+        personal_info_ack: body.personal_info_ack,
+      },
+    },
   });
   if (error) throw error;
-  if (!data.session) throw Error("SupabaseのConfirm emailをOFFにしてください。登録状態を管理者に確認してください。");
+  if (!data.session)
+    throw Error("SupabaseのConfirm emailをOFFにしてください。登録状態を管理者に確認してください。");
   return { album_id: body.album_id, session: data.session };
 }
 async function applyAlbumSession(result) {
-  // signUp/signInWithPasswordが保存したセッションをそのまま利用。
   await authChanged("SIGNED_IN", result.session);
   albumIdentity = result.album_id;
   $("account-album-id").textContent = "アルバムID：" + albumIdentity;
@@ -1132,9 +1090,7 @@ function renderSignupStep(step) {
   $("signup-nickname-form").hidden = step !== "nickname";
   document
     .querySelectorAll("[data-signup-marker]")
-    .forEach((el) =>
-      el.classList.toggle("active", el.dataset.signupMarker === step),
-    );
+    .forEach((el) => el.classList.toggle("active", el.dataset.signupMarker === step));
   $("issue-album-id").hidden = !!signupReservation;
   $("signup-password-start").hidden = !signupReservation;
   $("issued-id-panel").hidden = !signupReservation;
@@ -1142,10 +1098,7 @@ function renderSignupStep(step) {
   $("signup-password-start").disabled = !signupReservation || signupBusy;
   document
     .querySelectorAll(".signup-id-reference")
-    .forEach(
-      (el) =>
-        (el.textContent = "アルバムID：" + (signupReservation?.album_id || "")),
-    );
+    .forEach((el) => (el.textContent = "アルバムID：" + (signupReservation?.album_id || "")));
   $("signup-message").textContent = "";
 }
 async function copyAlbumID(id) {
@@ -1200,8 +1153,7 @@ $("signup-nickname-form").onsubmit = async (event) => {
   const error =
     [...nick].length < 2 || [...nick].length > 8
       ? "ニックネームを2〜8文字で入力してください。"
-      : /@|https?:\/\/|(?:\d[\s-]*){7,}/i.test(nick) ||
-          !$("nickname-privacy-ack").checked
+      : /@|https?:\/\/|(?:\d[\s-]*){7,}/i.test(nick) || !$("nickname-privacy-ack").checked
         ? "個人情報を含まないことを確認してください。"
         : "";
   $("nickname-error").textContent = error;
@@ -1225,10 +1177,7 @@ $("signup-nickname-form").onsubmit = async (event) => {
       localStorage.removeItem("card-album-id-reservation");
     } catch {}
     $("signup-password").value = $("signup-password-confirm").value = "";
-    authResult(
-      true,
-      "アルバムIDを保存してください。\n保存したIDとパスワードでログインできます。",
-    );
+    authResult(true, "アルバムIDを保存してください。\n保存したIDとパスワードでログインできます。");
     $("auth-result-title").textContent = nick + "のアルバムを作成しました！";
     $("auth-result-album-id").textContent = result.album_id;
     $("auth-result-album-id").hidden = false;
@@ -1257,8 +1206,13 @@ function loadAlbumIdentity() {
 async function readAlbumIdentity() {
   const uid = session?.user.id;
   if (!uid) return;
-  const identity = await db.from("card_album_ids").select("album_id").eq("user_id", uid).maybeSingle();
-  const data = identity.data?.album_id, error = identity.error;
+  const identity = await db
+    .from("card_album_ids")
+    .select("album_id")
+    .eq("user_id", uid)
+    .maybeSingle();
+  const data = identity.data?.album_id,
+    error = identity.error;
   if (uid !== session?.user.id) return;
   if (error) {
     $("account-id-message").textContent =
@@ -1306,19 +1260,15 @@ $("password-form").onsubmit = async (e) => {
 let accountActionBusy = false;
 function setAccountBusy(busy) {
   accountActionBusy = busy;
-  for (const button of $("logout-dialog").querySelectorAll("button"))
-    button.disabled = busy;
+  for (const button of $("logout-dialog").querySelectorAll("button")) button.disabled = busy;
   $("account-delete-word").disabled = busy;
   if (!busy)
-    $("account-delete-confirm").disabled =
-      $("account-delete-word").value.trim() !== "削除";
+    $("account-delete-confirm").disabled = $("account-delete-word").value.trim() !== "削除";
 }
 function accountDeleteView(show) {
   $("logout-normal").hidden = show;
   $("account-delete-panel").hidden = !show;
-  $("logout-title").textContent = show
-    ? "アカウント情報を削除"
-    : "ログアウトしますか？";
+  $("logout-title").textContent = show ? "アカウント情報を削除" : "ログアウトしますか？";
   $("account-action-message").textContent = "";
   $("account-delete-word").value = "";
   $("account-delete-confirm").disabled = true;
@@ -1373,17 +1323,12 @@ $("logout-confirm").onclick = async () => {
   }
 };
 $("account-delete-confirm").onclick = async () => {
-  if (
-    accountActionBusy ||
-    !session ||
-    $("account-delete-word").value.trim() !== "削除"
-  )
-    return;
+  if (accountActionBusy || !session || $("account-delete-word").value.trim() !== "削除") return;
   setAccountBusy(true);
   $("account-action-message").textContent = "アカウントを削除しています…";
   try {
     const { data, error } = await db.rpc("card_album_delete_self", {
-      p_confirmation: "DELETE_MY_ACCOUNT"
+      p_confirmation: "DELETE_MY_ACCOUNT",
     });
     if (error || data !== true) throw Error(error?.message || "削除できませんでした。");
     await db.auth.signOut({ scope: "local" }).catch(() => {});
@@ -1434,8 +1379,7 @@ $("progress-details").onclick = () => {
   const expanded = $("series-progress").hidden;
   $("series-progress").hidden = !expanded;
   $("progress-details").setAttribute("aria-expanded", String(expanded));
-  $("progress-details").innerHTML =
-    '<span class="progress-chevron" aria-hidden="true"></span>';
+  $("progress-details").innerHTML = '<span class="progress-chevron" aria-hidden="true"></span>';
   $("progress-details").setAttribute(
     "aria-label",
     expanded ? "弾ごとの取得率を閉じる" : "弾ごとの取得率を表示",
@@ -1516,12 +1460,7 @@ $("detail").onclose = () => {
 $("detail").onclick = (e) => {
   if (e.target === $("detail")) {
     const r = $("detail").getBoundingClientRect();
-    if (
-      e.clientX < r.left ||
-      e.clientX > r.right ||
-      e.clientY < r.top ||
-      e.clientY > r.bottom
-    )
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
       $("detail").close();
   }
 };
@@ -1560,27 +1499,17 @@ function updateHeader() {
   $("ownership-export-open").hidden = !session || !game;
   $("probability-open").hidden = !session || !game || probabilitiesOpen;
   $("probability-back").hidden = !session || !game || !probabilitiesOpen;
-  $("header-title").textContent = session
-    ? nickname() + "のアルバム"
-    : "カードアルバム";
+  $("header-title").textContent = session ? nickname() + "のアルバム" : "カードアルバム";
   const selectedGame = game || "aikatsu";
   $("game-switch").classList.toggle("is-aipri", selectedGame === "aipri");
   document
     .querySelectorAll("#game-switch [data-game]")
-    .forEach((b) =>
-      b.setAttribute("aria-pressed", String(b.dataset.game === selectedGame)),
-    );
+    .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.game === selectedGame)));
   const candidates = catalog.cards.filter(
-    (c) =>
-      (!game || c.game === game) &&
-      (game !== "aipri" || c.family === aipriFamily) &&
-      c.front,
+    (c) => (!game || c.game === game) && (game !== "aipri" || c.family === aipriFamily) && c.front,
   );
   const key = (game || "welcome") + ":" + (game === "aipri" ? aipriFamily : "");
-  if (
-    candidates.length &&
-    (headerImageKey !== key || $("header-card").hidden)
-  ) {
+  if (candidates.length && (headerImageKey !== key || $("header-card").hidden)) {
     const card = candidates[Math.floor(Math.random() * candidates.length)];
     $("header-card").src = card.front;
     $("header-card").hidden = false;
@@ -1597,10 +1526,7 @@ function updateSyncIndicator() {
 $("menu-toggle").onclick = () => {
   const open = $("nav").classList.toggle("open");
   $("menu-toggle").setAttribute("aria-expanded", String(open));
-  $("menu-toggle").setAttribute(
-    "aria-label",
-    open ? "メニューを閉じる" : "メニューを開く",
-  );
+  $("menu-toggle").setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
 };
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeMenu();
@@ -1628,8 +1554,7 @@ $("nickname-form").onsubmit = async (e) => {
     return;
   }
   if (/@|https?:\/\/|(?:\d[\s-]*){7,}/i.test(value)) {
-    $("nickname-message").textContent =
-      "個人情報を含まないニックネームにしてください。";
+    $("nickname-message").textContent = "個人情報を含まないニックネームにしてください。";
     return;
   }
   $("nickname-save").disabled = true;
@@ -1653,8 +1578,10 @@ $("nickname-form").onsubmit = async (e) => {
 
 $("resend").hidden = !pendingSignupEmail;
 
-function needsOCR() { return false; }
-function scheduleOCR() { /* カード情報は手動SQLで登録します。 */ }
+function needsOCR() {
+  return false;
+}
+function scheduleOCR() {}
 function shuffleCards(cards) {
   const a = [...cards];
   for (let i = a.length - 1; i > 0; i--) {
@@ -1670,7 +1597,7 @@ let marqueeBootstrapped = false;
 let marqueeTimer;
 function isOfficialMarqueeCard(card) {
   if (!card?.front || !card.source) return false;
-  // アイプリの追加サインカードは一覧に残し、ログインの紹介には使わない。
+
   if (
     card.game === "aipri" &&
     (/P$/i.test(card.code || "") ||
@@ -1688,8 +1615,7 @@ function isOfficialMarqueeCard(card) {
   try {
     const front = new URL(card.front),
       source = new URL(card.source);
-    if (front.protocol !== "https:" || source.protocol !== "https:")
-      return false;
+    if (front.protocol !== "https:" || source.protocol !== "https:") return false;
     if (card.game === "aikatsu")
       return (
         front.hostname === "dcd.aikatsu.com" &&
@@ -1710,9 +1636,7 @@ function isOfficialMarqueeCard(card) {
   return false;
 }
 function nextMarqueeCard(group) {
-  const available = catalog.cards.filter(
-    (c) => c.game === group && isOfficialMarqueeCard(c),
-  );
+  const available = catalog.cards.filter((c) => c.game === group && isOfficialMarqueeCard(c));
   if (!available.length) return null;
   const availableIds = new Set(available.map((c) => c.id));
   if (
@@ -1743,9 +1667,7 @@ function marqueeOutside(pair) {
 function commitMarqueeCard(index, entry) {
   if (
     !entry.ready ||
-    !isOfficialMarqueeCard(
-      catalog.cards.find((c) => c.id === entry.card.id) || entry.card,
-    ) ||
+    !isOfficialMarqueeCard(catalog.cards.find((c) => c.id === entry.card.id) || entry.card) ||
     marqueePaused ||
     $("detail").open ||
     $("auth").hidden ||
@@ -1757,29 +1679,20 @@ function commitMarqueeCard(index, entry) {
   for (const button of pair) {
     button.dataset.preview = entry.card.id;
     button.dataset.game = entry.card.game;
-    button.setAttribute(
-      "aria-label",
-      (entry.card.name || entry.card.code) + "の詳細",
-    );
+    button.setAttribute("aria-label", (entry.card.name || entry.card.code) + "の詳細");
     const image = button.querySelector("img");
     prepareMarqueeImage(image, entry.card);
     image
       .closest(".marquee-image-frame")
       .classList.toggle(
         "landscape",
-        entry.card.game === "aikatsu" &&
-          entry.image.naturalWidth > entry.image.naturalHeight,
+        entry.card.game === "aikatsu" && entry.image.naturalWidth > entry.image.naturalHeight,
       );
     const isLandscape =
-      entry.card.game === "aikatsu" &&
-      entry.image.naturalWidth > entry.image.naturalHeight;
+      entry.card.game === "aikatsu" && entry.image.naturalWidth > entry.image.naturalHeight;
     const frame = image.closest(".marquee-image-frame");
-    const width = isLandscape
-      ? entry.image.naturalHeight
-      : entry.image.naturalWidth;
-    const height = isLandscape
-      ? entry.image.naturalWidth
-      : entry.image.naturalHeight;
+    const width = isLandscape ? entry.image.naturalHeight : entry.image.naturalWidth;
+    const height = isLandscape ? entry.image.naturalWidth : entry.image.naturalHeight;
     if (width && height) {
       frame.style.aspectRatio = width + " / " + height;
       frame.style.setProperty("--image-ratio", String(height / width));
@@ -1788,24 +1701,16 @@ function commitMarqueeCard(index, entry) {
     image.alt = entry.card.name || entry.card.code;
     image.removeAttribute("fetchpriority");
   }
-  // このカードが画面に現れてから外へ流れるまで、再交換しない。
+
   marqueePending.set(index, { shown: false });
   return true;
 }
 function pumpMarquee() {
-  if (
-    !catalogFallback ||
-    marqueePaused ||
-    $("detail").open ||
-    $("auth").hidden ||
-    document.hidden
-  )
+  if (!catalogFallback || marqueePaused || $("detail").open || $("auth").hidden || document.hidden)
     return;
   const groups = $("auth-art").querySelectorAll(".marquee-group");
   if (groups.length !== 2) return;
-  let loading = [...marqueePending.values()].filter(
-    (entry) => entry.image && !entry.ready,
-  ).length;
+  let loading = [...marqueePending.values()].filter((entry) => entry.image && !entry.ready).length;
   for (let index = 0; index < groups[0].children.length; index++) {
     const pair = marqueePair(index);
     let entry = marqueePending.get(index);
@@ -1823,11 +1728,9 @@ function pumpMarquee() {
     if (loading >= 6 || !marqueeOutside(pair)) continue;
     const primary = pair[0].dataset.game || (index % 2 ? "aipri" : "aikatsu");
     let card =
-      nextMarqueeCard(primary) ||
-      nextMarqueeCard(primary === "aipri" ? "aikatsu" : "aipri");
+      nextMarqueeCard(primary) || nextMarqueeCard(primary === "aipri" ? "aikatsu" : "aipri");
     if (!card) continue;
-    if (pair[0].dataset.preview === card.id)
-      card = nextMarqueeCard(card.game) || card;
+    if (pair[0].dataset.preview === card.id) card = nextMarqueeCard(card.game) || card;
     const image = new Image();
     entry = { card, image, ready: false };
     marqueePending.set(index, entry);
@@ -1854,8 +1757,7 @@ function prepareMarqueeImage(image, card) {
     image.replaceWith(frame);
     frame.append(image);
   }
-  const landscape =
-    card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight;
+  const landscape = card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight;
   frame.classList.toggle("landscape", landscape);
   if (image.naturalWidth && image.naturalHeight) {
     const width = landscape ? image.naturalHeight : image.naturalWidth;
@@ -1869,9 +1771,11 @@ $("auth-art").addEventListener(
   (event) => {
     const image = event.target;
     if (!image.matches?.(".marquee-card img")) return;
-    const card = catalog.cards.find(
-      (c) => c.id === image.closest(".marquee-card").dataset.preview,
-    ) || window.CARD_STARTUP_PREVIEW?.cards.find(c=>c.id===image.closest(".marquee-card").dataset.preview);
+    const card =
+      catalog.cards.find((c) => c.id === image.closest(".marquee-card").dataset.preview) ||
+      window.CARD_STARTUP_PREVIEW?.cards.find(
+        (c) => c.id === image.closest(".marquee-card").dataset.preview,
+      );
     prepareMarqueeImage(image, card);
   },
   true,
@@ -1880,16 +1784,33 @@ function buildMarquee() {
   const groups = $("auth-art").querySelectorAll(".marquee-group");
   if (groups.length !== 2) return;
   if (!marqueeBootstrapped) {
-    const displayCards = catalog.cards.length ? catalog.cards : (window.CARD_STARTUP_PREVIEW?.cards || []);
-    const pools = { aikatsu: shuffleCards(displayCards.filter(c => c.game === "aikatsu" && isOfficialMarqueeCard(c))), aipri: shuffleCards(displayCards.filter(c => c.game === "aipri" && isOfficialMarqueeCard(c))) };
+    const displayCards = catalog.cards.length
+      ? catalog.cards
+      : window.CARD_STARTUP_PREVIEW?.cards || [];
+    const pools = {
+      aikatsu: shuffleCards(
+        displayCards.filter((c) => c.game === "aikatsu" && isOfficialMarqueeCard(c)),
+      ),
+      aipri: shuffleCards(
+        displayCards.filter((c) => c.game === "aipri" && isOfficialMarqueeCard(c)),
+      ),
+    };
     if (!pools.aikatsu.length && !pools.aipri.length) return;
     const initial = [];
     for (let i = 0; i < 16; i++) {
       const pool = pools[i % 2 ? "aipri" : "aikatsu"];
       const fallback = pools[i % 2 ? "aikatsu" : "aipri"];
-      initial.push((pool.length ? pool : fallback)[Math.floor(i / 2) % (pool.length || fallback.length)]);
+      initial.push(
+        (pool.length ? pool : fallback)[Math.floor(i / 2) % (pool.length || fallback.length)],
+      );
     }
-    if (!groups[0].childElementCount) groups[0].innerHTML = shuffleCards(initial).map(c => `<button class="marquee-card" data-preview="${esc(c.id)}" data-game="${esc(c.game)}" aria-label="${esc(c.name || c.code)}の詳細"><span class="marquee-image-frame"><img src="${esc(c.front)}" alt="${esc(c.name || c.code)}" decoding="async"></span></button>`).join("");
+    if (!groups[0].childElementCount)
+      groups[0].innerHTML = shuffleCards(initial)
+        .map(
+          (c) =>
+            `<button class="marquee-card" data-preview="${esc(c.id)}" data-game="${esc(c.game)}" aria-label="${esc(c.name || c.code)}の詳細"><span class="marquee-image-frame"><img src="${esc(c.front)}" alt="${esc(c.name || c.code)}" decoding="async"></span></button>`,
+        )
+        .join("");
     const cards = [...groups[0].children];
     groups[0].replaceChildren(...cards);
     groups[1].replaceChildren(
@@ -1905,12 +1826,14 @@ function buildMarquee() {
   $("auth-art")
     .querySelectorAll(".marquee-card img")
     .forEach((image) => {
-      const card = catalog.cards.find(
-        (c) => c.id === image.closest(".marquee-card").dataset.preview,
-      ) || window.CARD_STARTUP_PREVIEW?.cards.find(c=>c.id===image.closest(".marquee-card").dataset.preview);
+      const card =
+        catalog.cards.find((c) => c.id === image.closest(".marquee-card").dataset.preview) ||
+        window.CARD_STARTUP_PREVIEW?.cards.find(
+          (c) => c.id === image.closest(".marquee-card").dataset.preview,
+        );
       prepareMarqueeImage(image, card);
     });
-  // 読み込み完了時点から、画像を先読みして画面外のカードを交換する。
+
   pumpMarquee();
 }
 function setMarqueePaused(paused) {
@@ -1933,10 +1856,7 @@ document.querySelectorAll("[data-info]").forEach(
     (button.onclick = () => {
       const info = window.SITE_INFO[button.dataset.info];
       closeMenu();
-      $("info-dialog").classList.toggle(
-        "help-dialog",
-        button.dataset.info === "help",
-      );
+      $("info-dialog").classList.toggle("help-dialog", button.dataset.info === "help");
       $("info-title").textContent = info.title;
       $("info-body").innerHTML = info.body;
       for (const contact of $("info-body").querySelectorAll("[data-contact]")) {
@@ -2007,10 +1927,7 @@ function probabilitySummary(cards) {
   return {
     total,
     rows: [...counts]
-      .sort(
-        ([a], [b]) =>
-          rarityOrder(a) - rarityOrder(b) || a.localeCompare(b, "ja"),
-      )
+      .sort(([a], [b]) => rarityOrder(a) - rarityOrder(b) || a.localeCompare(b, "ja"))
       .map(([rarity, count]) => ({
         rarity,
         count,
@@ -2036,9 +1953,7 @@ function rarityColor(rarity) {
 }
 function probabilityMarkup(summary) {
   const label = summary.total
-    ? summary.rows
-        .map((row) => `${row.rarity} ${row.rate.toFixed(1)}%`)
-        .join("、")
+    ? summary.rows.map((row) => `${row.rarity} ${row.rate.toFixed(1)}%`).join("、")
     : "所持枚数が未登録です";
   return `<div class="distribution-bar" role="img" aria-label="${esc(label)}">${summary.rows.map((row) => `<span class="distribution-segment" style="width:${row.rate}%;background:${rarityColor(row.rarity)}" title="${esc(row.rarity)} ${row.rate.toFixed(1)}%"><span class="segment-label">${row.count ? esc(row.rarity === "パラレル" ? "☆" : row.rarity === "ミラクル" ? "M" : row.rarity) : ""}</span></span>`).join("")}</div><table class="probability-table"><thead><tr><th scope="col">レアリティ</th><th scope="col">所持数</th><th scope="col">割合</th></tr></thead><tbody>${summary.rows.map((row) => `<tr><th scope="row"><span class="rarity-dot" style="background:${rarityColor(row.rarity)}" aria-hidden="true"></span>${esc(row.rarity)}</th><td>${row.count.toLocaleString("ja-JP")}枚</td><td>${summary.total ? row.rate.toFixed(1) + "%" : "—"}</td></tr>`).join("")}</tbody></table>`;
 }
@@ -2046,9 +1961,7 @@ function renderProbabilities() {
   if (!session || !game) return;
   const cards = albumCards().filter((card) => regularSeries(card).length);
   const series = [...new Set(cards.flatMap(regularSeries))].sort(
-    (a, b) =>
-      seriesRank(b) - seriesRank(a) ||
-      a.localeCompare(b, "ja", { numeric: true }),
+    (a, b) => seriesRank(b) - seriesRank(a) || a.localeCompare(b, "ja", { numeric: true }),
   );
   const current = $("probability-series").value;
   $("probability-series").innerHTML = series
@@ -2057,9 +1970,7 @@ function renderProbabilities() {
   if (series.includes(current)) $("probability-series").value = current;
   const label = $("probability-series").value;
   const overall = probabilitySummary(cards);
-  const detail = probabilitySummary(
-    cards.filter((card) => regularSeries(card).includes(label)),
-  );
+  const detail = probabilitySummary(cards.filter((card) => regularSeries(card).includes(label)));
   $("probability-title").textContent =
     (game === "aikatsu"
       ? "アイカツ！アンコール"
@@ -2075,8 +1986,7 @@ function renderProbabilities() {
     ? `${label || "対象の弾数なし"} · 所持数 ${detail.total.toLocaleString("ja-JP")}枚`
     : "所持データを読み込み中";
   const showCost = $("show-cost").checked && ownershipReady;
-  $("probability-overall-cost").hidden = $("probability-detail-cost").hidden =
-    !showCost;
+  $("probability-overall-cost").hidden = $("probability-detail-cost").hidden = !showCost;
   $("probability-overall-cost").textContent =
     `シリーズ総合の利用金額目安 ${(overall.total * 100).toLocaleString("ja-JP")}円`;
   $("probability-detail-cost").textContent =
@@ -2093,11 +2003,7 @@ function openProbabilities() {
     null,
     "",
     "#probabilities-" +
-      (game === "aikatsu"
-        ? "aikatsu"
-        : aipriFamily === "おねがい"
-          ? "onegai"
-          : "himitsu"),
+      (game === "aikatsu" ? "aikatsu" : aipriFamily === "おねがい" ? "onegai" : "himitsu"),
   );
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -2160,10 +2066,7 @@ for (const input of document.querySelectorAll('input[type="password"]')) {
     input.type = reveal ? "text" : "password";
     button.innerHTML = passwordEyeIcon(reveal);
     button.setAttribute("aria-pressed", String(reveal));
-    button.setAttribute(
-      "aria-label",
-      reveal ? "パスワードを隠す" : "パスワードを表示",
-    );
+    button.setAttribute("aria-label", reveal ? "パスワードを隠す" : "パスワードを表示");
     input.focus({ preventScroll: true });
     if (start !== null && end !== null) input.setSelectionRange(start, end);
   });
@@ -2177,9 +2080,19 @@ async function applyMaintenance(status) {
   maintenanceActive = status.maintenance;
   $("maintenance-panel").hidden = !maintenanceActive;
   $("auth-normal-panel").hidden = maintenanceActive;
-  $("maintenance-message").textContent = status.message || "ただ今システムのメンテナンスをしていますので、アルバムを開けません。";
+  $("maintenance-message").textContent =
+    status.message || "ただ今システムのメンテナンスをしていますので、アルバムを開けません。";
   const end = status.ends_at ? new Date(status.ends_at) : null;
-  $("maintenance-end").textContent = end && !Number.isNaN(end.getTime()) ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(end) + "（予定）" : "未定";
+  $("maintenance-end").textContent =
+    end && !Number.isNaN(end.getTime())
+      ? new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(end) + "（予定）"
+      : "未定";
   if (!maintenanceActive) return;
   screen("auth");
   for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
@@ -2191,17 +2104,29 @@ async function applyMaintenance(status) {
   await authChanged("SIGNED_OUT", null);
   if (shouldSignOut) {
     maintenanceSigningOut = true;
-    try { await db.auth.signOut({ scope: "local" }); }
-    finally { maintenanceSigningOut = false; }
+    try {
+      await db.auth.signOut({ scope: "local" });
+    } finally {
+      maintenanceSigningOut = false;
+    }
   }
   screen("auth");
 }
-window.CARD_MAINTENANCE?.subscribe(status => { applyMaintenance(status).catch(() => screen("auth")); });
+window.CARD_MAINTENANCE?.subscribe((status) => {
+  applyMaintenance(status).catch(() => screen("auth"));
+});
 $("maintenance-refresh").onclick = async () => {
   $("maintenance-refresh").disabled = true;
-  try { const status = await window.CARD_MAINTENANCE.check(); $("maintenance-check-message").textContent = status.maintenance ? "現在もメンテナンス中です。" : "メンテナンスが終了しました。"; }
-  catch (error) { $("maintenance-check-message").textContent = error.message; }
-  finally { $("maintenance-refresh").disabled = false; }
+  try {
+    const status = await window.CARD_MAINTENANCE.check();
+    $("maintenance-check-message").textContent = status.maintenance
+      ? "現在もメンテナンス中です。"
+      : "メンテナンスが終了しました。";
+  } catch (error) {
+    $("maintenance-check-message").textContent = error.message;
+  } finally {
+    $("maintenance-refresh").disabled = false;
+  }
 };
 
 init();
