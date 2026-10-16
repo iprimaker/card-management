@@ -1,8 +1,6 @@
 .mobile-column-control {
   display: none;
 }
-
-/* 件数・操作欄は近づけ、カード一覧との間は広げます。 */
 #collection .results-heading {
   margin-bottom: 18px;
 }
@@ -11,8 +9,6 @@
   padding: 0;
   line-height: 1.5;
 }
-
-/* 絞り込み内の取得率は、全体の取得率と同じボックスにまとめます。 */
 #collection > .progress-card #filtered-rate {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -52,8 +48,6 @@
   text-align: right;
   white-space: nowrap;
 }
-
-/* スマホの縦画面だけに適用。横画面やPCでは既存の列数を使用。 */
 @media (max-width: 600px) and (orientation: portrait) and (pointer: coarse) {
   .mobile-column-control {
     display: flex;
