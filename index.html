@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 
 <html lang="ja">
   <head>
@@ -18,7 +18,7 @@
     <script defer="" src="./assets/js/site-info.js?v=20261012-manual-db"></script>
     <script defer="" src="./assets/js/catalog-cache.js?v=20261012-manual-db"></script>
     <script defer src="./assets/js/maintenance.js?v=20261012-maintenance"></script>
-    <script defer="" src="./assets/js/app-title-fix.js?v=20261016-mobile-viewer"></script>
+    <script defer="" src="./assets/js/app-title-fix.js?v=20261017-public-share"></script>
     <script defer="" src="./assets/js/dropdowns.js?v=20261012-manual-db"></script>
     <style id="header-tag-correction">
       /* ヘッダー・タグ修正。既存CSSの後に読み込みます。 */
@@ -117,7 +117,7 @@
           <button aria-pressed="false" data-game="aikatsu">アイカツ！</button>
           <button aria-pressed="false" data-game="aipri">アイプリ</button>
         </div>
-        <button hidden="" id="ownership-export-open" type="button"> 所持状況を出力 </button>
+        <button hidden="" id="ownership-export-open" type="button"> 所持状況を共有 </button>
         <button hidden="" id="probability-open">確率確認</button>
         <button hidden="" id="probability-back">アルバム表示</button>
         <button id="edit-nickname">ニックネームを変更</button>
@@ -560,13 +560,11 @@
       </div>
       <div class="modal-body">
         <div class="viewer">
-          <button aria-label="表面・裏面を切り替える" id="flip-prev">‹</button>
           <div>
             <img alt="" id="modal-image" />
             <p hidden="" id="image-failure">画像を読み込めませんでした。</p>
             <span id="side-label"></span>
           </div>
-          <button aria-label="表面・裏面を切り替える" id="flip-next">›</button>
         </div>
         <div class="modal-info">
           <span class="pill" id="modal-rarity"></span>
@@ -649,26 +647,7 @@
         アルバムIDだけでは本人確認ができません。パスワードが見つからない場合は、新しいアルバムを作成してください。以前の所持記録は引き継げません。
       </p>
     </dialog>
-    <dialog aria-labelledby="ownership-export-title" id="ownership-export-dialog">
-      <div class="modal-top">
-        <h2 id="ownership-export-title">所持状況を出力</h2>
-        <button aria-label="閉じる" id="ownership-export-close" type="button"> × </button>
-      </div>
-      <label class="export-series-label"
-        >出力する弾数<select id="ownership-export-series"></select
-      ></label>
-      <label class="export-detail-toggle">
-        <span>所持カードの詳細を含める</span>
-        <input id="ownership-export-details" role="switch" type="checkbox" />
-      </label>
-      <button class="primary" id="ownership-export-create" type="button"> 文章を作成 </button>
-      <p id="ownership-export-status" role="status"></p>
-      <pre hidden="" id="ownership-export-preview"></pre>
-      <div class="export-actions" hidden="" id="ownership-export-actions">
-        <button class="primary" id="ownership-export-share" type="button"> 共有</button
-        ><button id="ownership-export-copy" type="button">文章をコピー</button>
-      </div>
-    </dialog>
-    <script defer="" src="./assets/js/ownership-export.js?v=20261012-manual-db"></script>
+
+    <script defer="" src="./assets/js/ownership-export.js?v=20261017-public-share"></script>
   </body>
 </html>
