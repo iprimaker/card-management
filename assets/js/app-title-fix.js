@@ -454,7 +454,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "../css/favorites.css?v=20261016-mobile-viewer",
+  "../css/favorites.css?v=20261016-all-device-side-switch",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -2363,26 +2363,9 @@ modalSideSwitch.innerHTML =
 $("side-label").after(modalSideSwitch);
 function syncModalSideControls() {
   if (!selected) return;
-  const mobile = window.innerWidth <= 760;
-  const canMove = !!session && $("auth").hidden;
-  const index = detailCardIds.indexOf(selected.id);
-  for (const [id, delta] of [
-    ["flip-prev", -1],
-    ["flip-next", 1],
-  ]) {
-    const button = $(id);
-    button.hidden = mobile && !canMove;
-    button.setAttribute(
-      "aria-label",
-      mobile ? (delta < 0 ? "前のカード" : "次のカード") : "表面・裏面を切り替える",
-    );
-    button.disabled = mobile
-      ? !canMove || index < 0 || (delta < 0 ? index === 0 : index >= detailCardIds.length - 1)
-      : !selected.back;
-  }
-  modalSideSwitch.hidden = !mobile;
+  modalSideSwitch.hidden = false;
   modalSideSwitch.dataset.side = String(side);
-  $("side-label").hidden = mobile;
+  $("side-label").hidden = true;
   modalSideSwitch.querySelectorAll("[data-modal-side]").forEach((button) => {
     button.setAttribute("aria-pressed", String(Number(button.dataset.modalSide) === side));
     button.disabled = button.dataset.modalSide === "1" && !selected.back;
@@ -2394,18 +2377,8 @@ modalSideSwitch.addEventListener("click", (event) => {
   side = Number(button.dataset.modalSide);
   showSide();
 });
-for (const [id, delta] of [
-  ["flip-prev", -1],
-  ["flip-next", 1],
-]) {
-  $(id).onclick = () => {
-    if (window.innerWidth <= 760) moveDetail(delta);
-    else if (selected?.back) {
-      side = 1 - side;
-      showSide();
-    }
-  };
-}
+$("flip-prev")?.remove();
+$("flip-next")?.remove();
 $("detail").onkeydown = (event) => {
   if (!["ArrowLeft", "ArrowRight"].includes(event.key) || !selected) return;
   if (event.target.matches("input,textarea,select")) return;
@@ -2418,7 +2391,6 @@ $("detail").onkeydown = (event) => {
     showSide();
   }
 };
-window.addEventListener("resize", syncModalSideControls, { passive: true });
 $("modal-image").onerror = () => {
   $("modal-image").hidden = true;
   $("image-failure").hidden = false;
@@ -2443,10 +2415,11 @@ function closeMenu() {
 }
 function updateHeader() {
   window.CARD_TRADE?.sync();
+  window.CARD_SHARE?.sync();
   const probabilitiesOpen = !$("probabilities").hidden;
   const verseOpen = $("verse") ? !$("verse").hidden : false;
   window.CARD_VERSE?.syncNavigation();
-  $("ownership-export-open").hidden = !session || !game || verseOpen;
+  $("ownership-export-open").hidden = !session || !game;
   $("probability-open").hidden = !session || !game || probabilitiesOpen || verseOpen;
   $("probability-back").hidden = !session || !game || !probabilitiesOpen;
   $("header-title").textContent = session
@@ -3021,7 +2994,7 @@ for (const input of document.querySelectorAll('input[type="password"]')) {
   });
   wrapper.append(button);
 }
-authMode("login");
+authMode(location.hash === "#signup" ? "signup" : "login");
 let maintenanceActive = false;
 let maintenanceSigningOut = false;
 async function applyMaintenance(status) {
@@ -3137,18 +3110,24 @@ $("selection").append($("account-album-id"));
 const headerOther = document.createElement("details");
 headerOther.id = "header-other";
 headerOther.innerHTML =
-  '<summary>その他<span class="header-other-chevron" aria-hidden="true"></span></summary><div class="header-other-options"></div>';
+  '<summary>メニュー<span class="header-other-chevron" aria-hidden="true"></span></summary><div class="header-other-options"></div>';
 headerOther
   .querySelector("div")
-  .append($("ownership-export-open"), $("edit-nickname"), $("logout"));
-$("nav").append($("game-switch"), $("probability-open"), $("probability-back"), headerOther);
+  .append($("ownership-export-open"), $("probability-open"), $("edit-nickname"), $("logout"));
+$("nav").append($("game-switch"), $("probability-back"), headerOther);
 let headerOtherMobile = null;
 function placeHeaderOther(force = false) {
   const mobile = window.innerWidth <= 760;
   if (!force && headerOtherMobile === mobile) return;
   headerOtherMobile = mobile;
   const target = mobile ? $("nav") : headerOther.querySelector(".header-other-options");
-  for (const id of ["trade-open", "ownership-export-open", "edit-nickname", "logout"]) {
+  for (const id of [
+    "trade-open",
+    "ownership-export-open",
+    "probability-open",
+    "edit-nickname",
+    "logout",
+  ]) {
     const node = $(id);
     if (node) target.append(node);
   }
@@ -3282,4 +3261,19 @@ tradeScript.src = new URL(
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(tradeScript);
+window.CARD_SHARE_HOST = {
+  client: () => db,
+  session: () => session,
+  maintenance: () => maintenanceActive,
+  closeMenu,
+  toast,
+  base: () => siteBase.href,
+};
+const shareStyles = document.createElement("link");
+shareStyles.rel = "stylesheet";
+shareStyles.href = new URL(
+  "../css/public-share.css?v=20261017",
+  document.currentScript?.src || location.href,
+).href;
+document.head.append(shareStyles);
 init();
