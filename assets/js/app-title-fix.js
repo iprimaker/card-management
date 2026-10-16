@@ -2490,6 +2490,7 @@ $("nickname-form").onsubmit = async (e) => {
     $("account").textContent = "";
     loadAlbumIdentity().catch(() => {});
     $("nickname-dialog").close();
+    Promise.resolve(db.rpc("card_album_share_notify")).catch(() => {});
     toast("ニックネームを保存しました");
   } catch (e) {
     $("nickname-message").textContent = translatedError(e);
@@ -3146,7 +3147,7 @@ if (totalProgressCard) {
 
 const resolutionScript = document.createElement("script");
 resolutionScript.src = new URL(
-  "./image-resolution.js?v=20261015-trade-priority",
+  "./image-resolution.js?v=20261017-centered",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(resolutionScript);
@@ -3272,7 +3273,7 @@ window.CARD_SHARE_HOST = {
 const shareStyles = document.createElement("link");
 shareStyles.rel = "stylesheet";
 shareStyles.href = new URL(
-  "../css/public-share.css?v=20261017",
+  "../css/public-share.css?v=20261017-footer",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(shareStyles);
