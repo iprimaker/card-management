@@ -1,6 +1,11 @@
 (() => {
   "use strict";
   const MAX_EDGE = 560;
+  const normalizedFrames =
+    ".family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame,.album-card-frame,.verse-full-image,.verse-family-image,.verse-nav-image,.verse-part-image-frame,.verse-collage-item,.public-image,.public-banner-image,.public-modal-image";
+  function orientedFrame(image) {
+    return image.parentElement?.matches(normalizedFrames) && !image.closest("dialog");
+  }
   const entries = new WeakMap();
   const pending = new Set();
   let frame = null;
@@ -35,21 +40,23 @@
     entries.delete(image);
   }
   function draw(image) {
-    if (
-      !image.isConnected ||
-      !official(image) ||
-      !image.complete ||
-      !image.naturalWidth ||
-      !image.naturalHeight
-    ) {
-      clear(image);
-      return;
-    }
-    if (Math.max(image.naturalWidth, image.naturalHeight) <= MAX_EDGE) {
+    if (!image.isConnected || !image.complete || !image.naturalWidth || !image.naturalHeight) {
       clear(image);
       return;
     }
     const parent = image.parentElement;
+    const normalizedFrame = !!parent?.matches(normalizedFrames);
+    const rotated = !!orientedFrame(image) && image.naturalWidth > image.naturalHeight;
+    if (orientedFrame(image) && parent.classList.contains("landscape") !== rotated)
+      parent.classList.toggle("landscape", rotated);
+    if (!official(image) && !rotated) {
+      clear(image);
+      return;
+    }
+    if (!rotated && Math.max(image.naturalWidth, image.naturalHeight) <= MAX_EDGE) {
+      clear(image);
+      return;
+    }
     if (!parent || image.hidden) {
       clear(image);
       return;
@@ -101,14 +108,7 @@
       entry = { canvas, parent, src: "", width: 0, height: 0 };
       entries.set(image, entry);
     }
-    const normalizedFrame = parent.matches(
-      ".family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame,.album-card-frame,.verse-full-image,.verse-family-image,.verse-nav-image,.verse-part-image-frame,.verse-collage-item",
-    );
-    const rotated =
-      normalizedFrame &&
-      image.naturalWidth > image.naturalHeight &&
-      (parent.classList.contains("landscape") || parent.classList.contains("is-landscape"));
-    const ratio = MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight);
+    const ratio = Math.min(1, MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
     const scaledWidth = Math.max(1, Math.round(image.naturalWidth * ratio));
     const scaledHeight = Math.max(1, Math.round(image.naturalHeight * ratio));
     const width = rotated ? scaledHeight : scaledWidth;
@@ -225,7 +225,8 @@
         resize?.observe(image);
         visibility?.observe(image);
       }
-      if (official(image)) schedule(image);
+      if (official(image) || (orientedFrame(image) && image.naturalWidth > image.naturalHeight))
+        schedule(image);
       else clear(image);
     }
   }
