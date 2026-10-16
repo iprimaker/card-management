@@ -1,4 +1,3 @@
-/* 共通ドロップダウン。元のselectは値・フォーム送信のため保持します。 */
 .album-select {
   position: relative;
   display: block;
@@ -153,8 +152,6 @@
     transition: none;
   }
 }
-
-/* dialogの上位レイヤーで表示するメニューの標準余白を解除 */
 .album-select-menu[popover] {
   margin: 0;
   inset: auto;
