@@ -5,8 +5,7 @@
   const status = (text) => {
     get("ownership-export-status").textContent = text;
   };
-  const seriesOf = (c) =>
-    Array.isArray(c.series) ? c.series : c.series ? [c.series] : [];
+  const seriesOf = (c) => (Array.isArray(c.series) ? c.series : c.series ? [c.series] : []);
   function clearOutput() {
     outputText = "";
     outputOwner = null;
@@ -18,8 +17,7 @@
     return outputText && outputOwner === session?.user.id;
   }
   get("ownership-export-dialog").addEventListener("close", clearOutput);
-  get("ownership-export-close").onclick = () =>
-    get("ownership-export-dialog").close();
+  get("ownership-export-close").onclick = () => get("ownership-export-dialog").close();
   get("ownership-export-open").onclick = () => {
     if (!session || !game) return;
     closeMenu();
@@ -50,9 +48,7 @@
       return;
     }
     const chosen = get("ownership-export-series").value;
-    const all = albumCards().filter(
-      (c) => !chosen || seriesOf(c).includes(chosen),
-    );
+    const all = albumCards().filter((c) => !chosen || seriesOf(c).includes(chosen));
     const cards = all
       .filter((c) => owned.has(c.id))
       .sort((a, b) =>
@@ -110,17 +106,13 @@
       await navigator.clipboard.writeText(outputText);
       status("文章をコピーしました。");
     } catch {
-      status(
-        "コピーできませんでした。表示された文章を選択してコピーしてください。",
-      );
+      status("コピーできませんでした。表示された文章を選択してコピーしてください。");
     }
   };
   get("ownership-export-share").onclick = async () => {
     if (!validOutput()) return;
     if (!navigator.share) {
-      status(
-        "このブラウザでは直接共有できません。「文章をコピー」をご利用ください。",
-      );
+      status("このブラウザでは直接共有できません。「文章をコピー」をご利用ください。");
       return;
     }
     try {
