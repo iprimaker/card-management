@@ -1,4 +1,3 @@
-// スマホ縦画面の列数設定。カードの再取得や一覧の再描画は不要です。
 (() => {
   "use strict";
   const grid = document.getElementById("cards");
@@ -9,17 +8,12 @@
   try {
     const saved = localStorage.getItem(key);
     if (saved === "2" || saved === "3") columns = saved;
-  } catch {
-    /* 保存できない環境でも切り替え可能 */
-  }
+  } catch {}
   function apply(value) {
     columns = value === "3" ? "3" : "2";
     grid.dataset.mobileColumns = columns;
     control.querySelectorAll("[data-card-columns]").forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.cardColumns === columns),
-      );
+      button.setAttribute("aria-pressed", String(button.dataset.cardColumns === columns));
     });
   }
   control.addEventListener("click", (event) => {
@@ -28,9 +22,7 @@
     apply(button.dataset.cardColumns);
     try {
       localStorage.setItem(key, columns);
-    } catch {
-      /* このページ内の設定は維持 */
-    }
+    } catch {}
   });
   apply(columns);
 })();
