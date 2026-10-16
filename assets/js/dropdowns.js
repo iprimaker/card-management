@@ -28,26 +28,19 @@
     if (!state) return;
     const value = select.selectedOptions[0]?.textContent || "選択してください";
     if (state.text.textContent !== value) state.text.textContent = value;
-    if (state.button.disabled !== select.disabled)
-      state.button.disabled = select.disabled;
+    if (state.button.disabled !== select.disabled) state.button.disabled = select.disabled;
     const label =
       select.getAttribute("aria-label") ||
-      select.labels?.[0]?.querySelector(".filter-label")?.firstChild
-        ?.textContent ||
+      select.labels?.[0]?.querySelector(".filter-label")?.firstChild?.textContent ||
       select.labels?.[0]?.firstChild?.textContent ||
       "選択項目";
-    state.button.setAttribute(
-      "aria-label",
-      `${label.trim()}：${state.text.textContent}`,
-    );
+    state.button.setAttribute("aria-label", `${label.trim()}：${state.text.textContent}`);
   }
 
   function highlight(index) {
     if (!active) return;
     active.index = index;
-    active.items.forEach((item, i) =>
-      item.classList.toggle("is-current", i === index),
-    );
+    active.items.forEach((item, i) => item.classList.toggle("is-current", i === index));
     const item = active.items[index];
     if (item) {
       active.button.setAttribute("aria-activedescendant", item.id);
@@ -87,10 +80,7 @@
     }
     let group = null;
     const items = options.map((option, i) => {
-      if (
-        option.parentElement.tagName === "OPTGROUP" &&
-        group !== option.parentElement
-      ) {
+      if (option.parentElement.tagName === "OPTGROUP" && group !== option.parentElement) {
         group = option.parentElement;
         const heading = document.createElement("div");
         heading.className = "album-select-group";
@@ -159,9 +149,7 @@
         return;
       }
       const allowed = active.options
-        .map((option, i) =>
-          option.disabled || option.parentElement.disabled ? -1 : i,
-        )
+        .map((option, i) => (option.disabled || option.parentElement.disabled ? -1 : i))
         .filter((i) => i >= 0);
       if (!allowed.length) return;
       const current = allowed.indexOf(active.index);
@@ -171,25 +159,14 @@
           : key === "End"
             ? allowed.at(-1)
             : allowed[
-                Math.max(
-                  0,
-                  Math.min(
-                    allowed.length - 1,
-                    current + (key === "ArrowDown" ? 1 : -1),
-                  ),
-                )
+                Math.max(0, Math.min(allowed.length - 1, current + (key === "ArrowDown" ? 1 : -1)))
               ];
       highlight(index);
     } else if (key === "Escape") {
       event.preventDefault();
       close(true);
     } else if (key === "Tab") close();
-    else if (
-      key.length === 1 &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey
-    ) {
+    else if (key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
       if (!active) open(select);
       if (!active) return;
       query += key.toLocaleLowerCase();
@@ -221,10 +198,7 @@
     button.setAttribute("aria-expanded", "false");
     button.setAttribute("aria-controls", `album-select-menu-${++serial}`);
     if (select.getAttribute("aria-labelledby"))
-      button.setAttribute(
-        "aria-labelledby",
-        select.getAttribute("aria-labelledby"),
-      );
+      button.setAttribute("aria-labelledby", select.getAttribute("aria-labelledby"));
     const text = document.createElement("span");
     text.className = "album-select-value";
     const arrow = document.createElement("span");
@@ -236,9 +210,7 @@
     select.setAttribute("aria-hidden", "true");
     enhanced.set(select, { button, text });
     sync(select);
-    button.addEventListener("click", () =>
-      active?.select === select ? close() : open(select),
-    );
+    button.addEventListener("click", () => (active?.select === select ? close() : open(select)));
     button.addEventListener("keydown", (event) => keydown(event, select));
     select.addEventListener("change", () => sync(select));
     select.addEventListener("focus", () => button.focus());
@@ -273,33 +245,20 @@
     attributeFilter: ["disabled", "selected", "label", "value"],
   });
   document.addEventListener("pointerdown", (event) => {
-    if (
-      active &&
-      !active.menu.contains(event.target) &&
-      !active.button.contains(event.target)
-    )
+    if (active && !active.menu.contains(event.target) && !active.button.contains(event.target))
       close();
   });
   document.addEventListener(
     "scroll",
     (event) => {
-      if (
-        active &&
-        event.target !== active.menu &&
-        !active.menu.contains(event.target)
-      )
-        close();
+      if (active && event.target !== active.menu && !active.menu.contains(event.target)) close();
     },
     true,
   );
   document.addEventListener(
     "close",
     (event) => {
-      if (
-        active &&
-        event.target.matches?.("dialog") &&
-        event.target.contains(active.select)
-      )
+      if (active && event.target.matches?.("dialog") && event.target.contains(active.select))
         close();
     },
     true,
@@ -307,11 +266,7 @@
   document.addEventListener(
     "cancel",
     (event) => {
-      if (
-        active &&
-        event.target.matches?.("dialog") &&
-        event.target.contains(active.select)
-      ) {
+      if (active && event.target.matches?.("dialog") && event.target.contains(active.select)) {
         event.preventDefault();
         close(true);
       }
