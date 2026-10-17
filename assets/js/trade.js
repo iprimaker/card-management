@@ -118,6 +118,7 @@
     return `<div class="trade-toggles" data-trade-control data-trade-kind="${esc(kind)}" data-trade-id="${esc(id)}" role="group" aria-label="交換希望">${["offer", "want"].map((side) => `<button type="button" data-trade-side="${side}" aria-pressed="${has(kind, id, side)}" data-priority="${level(kind, id, side) === 2}" title="タップで通常・優先・解除を切り替え" ${!ready ? "disabled" : ""}><strong>${level(kind, id, side) === 2 ? "優先" : ""}${side === "offer" ? "譲" : "求"}</strong><span>${label[side]}</span></button>`).join("")}</div>`;
   }
   function patch() {
+    patchBadges();
     document.querySelectorAll("[data-trade-control]").forEach((node) => {
       for (const b of node.querySelectorAll("[data-trade-side]")) {
         b.setAttribute(
@@ -135,6 +136,47 @@
           busy.has(targetKey(node.dataset.tradeKind, node.dataset.tradeId));
       }
     });
+  }
+  function patchBadges() {
+    document
+      .querySelectorAll("#cards article.card,#verse-cards [data-verse-card]")
+      .forEach((card) => {
+        const kind = card.hasAttribute("data-verse-card") ? "coordinate" : "card";
+        const id =
+          kind === "coordinate"
+            ? card.dataset.verseCard
+            : card.querySelector("[data-detail]")?.dataset.detail;
+        const frame = card.querySelector(
+          kind === "coordinate" ? ".verse-card-picture" : ".card-image-frame",
+        );
+        if (!id || !frame) return;
+        let tag = frame.querySelector(".card-trade-tag");
+        const side =
+          ready && owner === uid()
+            ? has(kind, id, "offer")
+              ? "offer"
+              : has(kind, id, "want")
+                ? "want"
+                : null
+            : null;
+        if (!side) {
+          tag?.remove();
+          return;
+        }
+        if (!tag) {
+          tag = document.createElement("span");
+          tag.className = "card-trade-tag";
+          frame.append(tag);
+        }
+        tag.dataset.side = side;
+        tag.dataset.priority = String(level(kind, id, side) === 2);
+        tag.textContent = side === "offer" ? "譲" : "求";
+        tag.setAttribute(
+          "aria-label",
+          (level(kind, id, side) === 2 ? "優先" : "") +
+            (side === "offer" ? "譲れるカード" : "求めるカード"),
+        );
+      });
   }
   async function toggle(kind, id, side) {
     if (!uid() || !ready || host.maintenance()) return;
@@ -616,6 +658,7 @@
     reset,
     markup,
     patch,
+    patchBadges,
     filterMarkup,
     matches,
     entry,
@@ -623,6 +666,19 @@
     open,
     renderOutput,
   };
+  const badgeObserver = new MutationObserver((records) => {
+    if (
+      records.some((record) =>
+        [...record.addedNodes].some(
+          (node) =>
+            node.nodeType === 1 && (node.matches("article") || node.querySelector("article")),
+        ),
+      )
+    )
+      patchBadges();
+  });
+  badgeObserver.observe($("collection"), { childList: true, subtree: true });
+  if ($("verse-cards")) badgeObserver.observe($("verse-cards"), { childList: true, subtree: true });
   sync();
   host.changed();
 })();
