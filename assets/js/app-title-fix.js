@@ -454,7 +454,7 @@ let db,
 const favoriteStylesheet = document.createElement("link");
 favoriteStylesheet.rel = "stylesheet";
 favoriteStylesheet.href = new URL(
-  "../css/favorites.css?v=20261016-all-device-side-switch",
+  "../css/favorites.css?v=20261017-mobile-modal-navigation",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(favoriteStylesheet);
@@ -1564,6 +1564,7 @@ function render(keepCardNodes = false) {
   if (selected) updateModalOwnership();
   if (!$("probabilities").hidden) renderProbabilities();
   scheduleOCR();
+  window.CARD_TRADE?.patchBadges?.();
 }
 function quantityOf(id) {
   return owned.has(id) ? ownedCounts.get(id) || 1 : 0;
@@ -1702,6 +1703,10 @@ function openDetail(id, trigger, navigating = false) {
   updateModalOwnership();
   updateDetailNavigation();
   if (!$("detail").open) $("detail").showModal();
+  if (window.innerWidth <= 760) {
+    $("detail").querySelector(".modal-body").scrollTop = 0;
+    $("detail").scrollTop = 0;
+  }
   document.body.style.overflow = "hidden";
 }
 function updateDetailNavigation() {
@@ -1712,8 +1717,11 @@ function updateDetailNavigation() {
   syncModalSideControls();
 }
 function moveDetail(delta) {
-  const id = detailCardIds[detailCardIds.indexOf(selected?.id) + delta];
-  if (id) openDetail(id, lastFocus, true);
+  if (!$("detail").open || !selected || !session || !$("auth").hidden) return;
+  const index = detailCardIds.indexOf(selected.id);
+  if (index < 0 || (delta !== -1 && delta !== 1)) return;
+  const id = detailCardIds[index + delta];
+  if (id && catalog.cards.some((card) => card.id === id)) openDetail(id, lastFocus, true);
 }
 $("card-prev").onclick = () => moveDetail(-1);
 $("card-next").onclick = () => moveDetail(1);
@@ -2497,6 +2505,7 @@ function closeMenu() {
 function updateHeader() {
   window.CARD_TRADE?.sync();
   window.CARD_SHARE?.sync();
+  window.CARD_UI_SETTINGS?.sync();
   const probabilitiesOpen = !$("probabilities").hidden;
   const verseOpen = $("verse") ? !$("verse").hidden : false;
   window.CARD_VERSE?.syncNavigation();
@@ -3189,13 +3198,18 @@ async function loadAlbumNews() {
 }
 
 $("selection").append($("account-album-id"));
+const displaySettingsButton = document.createElement("button");
+displaySettingsButton.id = "display-settings-open";
+displaySettingsButton.type = "button";
+displaySettingsButton.textContent = "詳細設定";
+$("nav").append(displaySettingsButton);
 const headerOther = document.createElement("details");
 headerOther.id = "header-other";
 headerOther.innerHTML =
   '<summary>メニュー<span class="header-other-chevron" aria-hidden="true"></span></summary><div class="header-other-options"></div>';
 headerOther
   .querySelector("div")
-  .append($("ownership-export-open"), $("probability-open"), $("edit-nickname"), $("logout"));
+  .append($("ownership-export-open"), $("probability-open"), $("display-settings-open"));
 $("nav").append($("game-switch"), $("probability-back"), headerOther);
 let headerOtherMobile = null;
 function placeHeaderOther(force = false) {
@@ -3204,11 +3218,10 @@ function placeHeaderOther(force = false) {
   headerOtherMobile = mobile;
   const target = mobile ? $("nav") : headerOther.querySelector(".header-other-options");
   for (const id of [
-    "trade-open",
     "ownership-export-open",
     "probability-open",
-    "edit-nickname",
-    "logout",
+    "trade-open",
+    "display-settings-open",
   ]) {
     const node = $(id);
     if (node) target.append(node);
@@ -3295,13 +3308,13 @@ window.CARD_VERSE_HOST = {
 const verseStyles = document.createElement("link");
 verseStyles.rel = "stylesheet";
 verseStyles.href = new URL(
-  "../css/aipri-verse.css?v=20261016-mobile-viewer",
+  "../css/aipri-verse.css?v=20261017-album-polish",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(verseStyles);
 const verseScript = document.createElement("script");
 verseScript.src = new URL(
-  "./aipri-verse.js?v=20261015-trade",
+  "./aipri-verse.js?v=20261017-album-polish",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(verseScript);
@@ -3339,11 +3352,56 @@ tradeStyles.href = new URL(
 document.head.append(tradeStyles);
 const tradeScript = document.createElement("script");
 tradeScript.src = new URL(
-  "./trade.js?v=20261016-mobile-viewer",
+  "./trade.js?v=20261017-round-trade",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(tradeScript);
 window.CARD_SHARE_HOST = {
+  async scopeItems(scope) {
+    if (scope.startsWith("verse-")) return window.CARD_VERSE.shareCatalog(scope.slice(6));
+    return catalog.cards.filter((c) =>
+      scope === "aikatsu"
+        ? c.game === "aikatsu"
+        : c.game === "aipri" &&
+          [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family),
+    );
+  },
+  async rates(scopes, seriesFilters = {}) {
+    const uid = session?.user.id;
+    if (!uid) throw Error("再ログインしてください。");
+    const result = {};
+    if (scopes.some((scope) => !scope.startsWith("verse-"))) {
+      if (!ownershipReady) await loadOwnership();
+      if (!ownershipReady || uid !== session?.user.id)
+        throw Error("所持状況を確認できませんでした。");
+      for (const scope of scopes.filter((scope) => !scope.startsWith("verse-"))) {
+        const cards = catalog.cards.filter((c) =>
+          scope === "aikatsu"
+            ? c.game === "aikatsu"
+            : c.game === "aipri" &&
+              [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family),
+        );
+        if (!cards.length) throw Error("カード情報の読み込み後にもう一度開いてください。");
+        const visible = Array.isArray(seriesFilters[scope])
+          ? cards.filter((c) =>
+              values(c.series).some((label) => seriesFilters[scope].includes(label)),
+            )
+          : cards;
+        result[scope] = (
+          visible.length
+            ? (visible.filter((c) => owned.has(c.id)).length / visible.length) * 100
+            : 0
+        ).toFixed(1);
+      }
+    }
+    if (scopes.some((scope) => scope.startsWith("verse-"))) {
+      if (!window.CARD_VERSE?.shareRates)
+        throw Error("コーデ情報の読み込み後にもう一度開いてください。");
+      Object.assign(result, await window.CARD_VERSE.shareRates(scopes, seriesFilters));
+    }
+    if (uid !== session?.user.id) throw Error("再ログインしてください。");
+    return result;
+  },
   client: () => db,
   session: () => session,
   maintenance: () => maintenanceActive,
@@ -3354,7 +3412,7 @@ window.CARD_SHARE_HOST = {
 const shareStyles = document.createElement("link");
 shareStyles.rel = "stylesheet";
 shareStyles.href = new URL(
-  "../css/public-share.css?v=20261017-footer",
+  "../css/public-share.css?v=20261017-share-text",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(shareStyles);
