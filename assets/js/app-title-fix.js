@@ -933,6 +933,70 @@ async function readOwnership() {
   if (game) render();
 }
 
+let accountPresencePending = Promise.resolve(),
+  accountPresenceLoggingOut = false,
+  accountPresenceSent = 0;
+function recordAccountPresence(logout = false) {
+  if (
+    !db ||
+    !session ||
+    (!logout &&
+      (document.hidden || accountPresenceLoggingOut || Date.now() - accountPresenceSent < 40000))
+  )
+    return Promise.resolve();
+  const client = db,
+    uid = session.user.id;
+  accountPresenceSent = Date.now();
+  accountPresencePending = accountPresencePending
+    .catch(() => {})
+    .then(async () => {
+      if (db !== client || session?.user.id !== uid || (!logout && accountPresenceLoggingOut))
+        return;
+      const controller = new AbortController(),
+        timer = setTimeout(() => controller.abort(), 4000);
+      try {
+        let request = client.rpc("card_account_presence_touch", { p_logout: logout, p_all: true });
+        if (typeof request.abortSignal === "function")
+          request = request.abortSignal(controller.signal);
+        const result = await request;
+        if (result.error) accountPresenceSent = 0;
+      } catch {
+        accountPresenceSent = 0;
+      } finally {
+        clearTimeout(timer);
+      }
+    });
+  return accountPresencePending;
+}
+async function recordConfirmedLogout(previous, all = true) {
+  if (!previous?.access_token) return;
+  const controller = new AbortController(),
+    timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    await fetch(
+      new URL("/rest/v1/rpc/card_account_presence_touch", window.APP_CONFIG.supabaseUrl).href,
+      {
+        method: "POST",
+        headers: {
+          apikey: window.APP_CONFIG.supabaseKey,
+          Authorization: "Bearer " + previous.access_token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ p_logout: true, p_all: all }),
+        signal: controller.signal,
+        cache: "no-store",
+      },
+    );
+  } catch {
+  } finally {
+    clearTimeout(timer);
+  }
+}
+setInterval(() => recordAccountPresence(), 45000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) recordAccountPresence();
+});
+window.addEventListener("online", () => recordAccountPresence());
 let lastActivityTouch = 0;
 async function recordAccountVisit() {
   if (!session || !db || document.hidden || Date.now() - lastActivityTouch < 3600000) return;
@@ -957,6 +1021,11 @@ async function authChanged(event, next) {
   if (maintenanceActive) next = null;
   const previous = session?.user.id;
   session = next;
+  if (previous !== session?.user.id) accountPresenceSent = 0;
+  if (next) {
+    accountPresenceLoggingOut = false;
+    recordAccountPresence();
+  }
   if (previous !== session?.user.id) {
     resetFavorites();
     saving.clear();
@@ -2163,11 +2232,23 @@ $("logout-confirm").onclick = async () => {
   if (accountActionBusy) return;
   setAccountBusy(true);
   try {
+    const logoutSession = session;
+    accountPresenceLoggingOut = true;
+    await accountPresencePending.catch(() => {});
     const { error } = await db.auth.signOut();
+    if (error) {
+      accountPresenceLoggingOut = false;
+      accountPresenceSent = 0;
+      recordAccountPresence();
+    }
     if (error) throw error;
+    await recordConfirmedLogout(logoutSession, true);
     $("logout-dialog").close();
     await authChanged("SIGNED_OUT", null);
   } catch (error) {
+    accountPresenceLoggingOut = false;
+    accountPresenceSent = 0;
+    recordAccountPresence();
     $("account-action-message").textContent = translatedError(error);
   } finally {
     setAccountBusy(false);
