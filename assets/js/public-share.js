@@ -50,6 +50,8 @@
     generation++;
     busy = false;
     snapshot = null;
+    $("public-scope-note")?.replaceChildren();
+    if ($("public-scope-note")) $("public-scope-note").hidden = true;
     items = [];
     quantities.clear();
     fullQuantities.clear();
@@ -85,10 +87,24 @@
         : "no";
   }
   function series(c) {
-    return verse() ? [...new Set((c.appearances || []).map((a) => a.series))] : values(c.series);
+    const labels = verse()
+      ? [...new Set((c.appearances || []).map((a) => a.series))]
+      : values(c.series);
+    return Array.isArray(snapshot?.series_filter)
+      ? labels.filter((label) => snapshot.series_filter.includes(label))
+      : labels;
   }
   function groups(c) {
-    return [...new Set((c.appearances || []).map((a) => a.group))];
+    return [
+      ...new Set(
+        (c.appearances || [])
+          .filter(
+            (a) =>
+              !Array.isArray(snapshot?.series_filter) || snapshot.series_filter.includes(a.series),
+          )
+          .map((a) => a.group),
+      ),
+    ];
   }
   function fields() {
     return verse()
@@ -161,7 +177,31 @@
       return `<img src="${esc(url)}" alt="${esc(c.name || c.code)}" loading="${large ? "eager" : "lazy"}" decoding="async">`;
     return `<span class="public-collage">${(c.part_ids || []).map((id) => `<img src="${esc(parts.get(id)?.image || "")}" alt="" loading="lazy">`).join("")}</span>`;
   }
+  function renderScopeNote() {
+    const note = $("public-scope-note");
+    if (!note) return;
+    note.replaceChildren();
+    const selected = snapshot?.series_filter;
+    note.hidden = !Array.isArray(selected);
+    if (note.hidden) return;
+    const labels = [...new Set(selected.map((value) => String(value).replaceAll("弾", "だん")))];
+    const caption = document.createElement("span");
+    caption.className = "public-scope-caption";
+    caption.textContent = "公開範囲";
+    const text = document.createElement("span");
+    text.textContent = labels.length ? labels.slice(0, 3).join("・") : "だん数・プロモの選択なし";
+    if (labels.length <= 3) { note.append(caption, text); return; }
+    const details = document.createElement("details"), summary = document.createElement("summary"), more = document.createElement("span"), list = document.createElement("div");
+    more.className = "public-scope-more";
+    more.textContent = "ほか" + (labels.length - 3) + "件";
+    summary.append(caption, text, more);
+    list.className = "public-scope-list";
+    for (const label of labels) { const item = document.createElement("span"); item.textContent = label; list.append(item); }
+    details.append(summary, list);
+    note.append(details);
+  }
   function render() {
+    renderScopeNote();
     if (!snapshot) return;
     renderProgressDetails();
     const all = filtered(),
@@ -367,6 +407,10 @@
                 [snap.scope, snap.scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family),
           );
       }
+      if (Array.isArray(snap.visible_ids)) {
+        const visible = new Set(snap.visible_ids);
+        rows = rows.filter((row) => visible.has(row.id));
+      }
       if (g !== generation) return;
       const changed = scope !== snap.scope || !scopeFilters.has(snap.scope);
       scope = snap.scope;
@@ -395,6 +439,8 @@
         page = 1;
         $("public-query").value = "";
       }
+      if (filters.series && !items.some((c) => series(c).includes(filters.series)))
+        delete filters.series;
       fillFields();
       render();
       $("public-unavailable").hidden = true;
