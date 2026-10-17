@@ -1554,10 +1554,28 @@ img[data-low-resolution="true"] {
 }
 
 @media (max-width: 760px) {
+  #detail[open] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 92vh;
+    height: 92dvh;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  #detail .modal-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    align-content: start;
+    scrollbar-gutter: stable;
+  }
   #detail .detail-navigation:not([hidden]) {
     display: flex;
     justify-content: space-between;
     gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background: #fff;
   }
   #detail .detail-navigation button {
     flex: 1;
@@ -1565,5 +1583,7 @@ img[data-low-resolution="true"] {
     padding: 9px 10px;
     font-size: 12px;
     white-space: nowrap;
+    min-height: 44px;
+    touch-action: manipulation;
   }
 }
