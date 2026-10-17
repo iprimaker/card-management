@@ -1690,3 +1690,82 @@
     padding: 21px 18px;
   }
 }
+
+.ownership-share-dialog .share-send {
+  display: block;
+  width: 100%;
+  margin: 14px 0 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  touch-action: manipulation;
+}
+.ownership-share-dialog .share-send:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ownership-share-dialog .share-link-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ownership-share-dialog .share-link-actions > * {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.ownership-share-dialog .share-help dl {
+  margin: 14px 0 0;
+  display: block;
+}
+.ownership-share-dialog .share-help dt {
+  margin: 12px 0 4px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.ownership-share-dialog .share-help dd {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.85;
+}
+.ownership-share-dialog #share-delete {
+  margin: 22px 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid #e9cbd1;
+  border-radius: 10px;
+  color: #a75e70;
+  font-weight: 400;
+  text-decoration: none;
+}
+.ownership-share-dialog #share-delete-confirm {
+  margin-top: 12px;
+  padding: 16px;
+  line-height: 1.8;
+}
+.ownership-share-dialog #share-delete-confirm button {
+  padding: 9px 14px;
+  border-radius: 10px;
+}
+.ownership-share-dialog #share-delete-cancel {
+  border: 1px solid #e9cbd1;
+  background: #fff;
+  color: #946e79;
+}
+.ownership-share-dialog .share-close:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
