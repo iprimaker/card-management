@@ -35,7 +35,7 @@
   )
     .map(
       ([id, label]) =>
-        `<div><div class="share-scope-label"><span>${label}</span><button type="button" class="share-series-toggle" data-share-details="${id}" aria-expanded="false" aria-controls="share-series-${id}"><span class="share-details-chevron" aria-hidden="true"></span>細かく設定</button></div><button type="button" role="switch" aria-checked="false" data-share-scope="${id}" aria-label="${label}を公開"><span aria-hidden="true"></span></button><div class="share-series-panel" id="share-series-${id}" data-series-panel="${id}" hidden><p>公開するだん数・プロモにチェックを入れてください。</p><div class="share-series-list"></div><button type="button" class="share-series-all" data-share-series-all="${id}">すべて公開（今後の追加分も含む）</button></div></div>`,
+        `<div class="share-scope-row"><div class="share-scope-label"><span>${label}</span><small class="share-scope-state" id="share-scope-state-${id}" data-share-state="${id}"></small><button type="button" class="share-series-toggle" data-share-details="${id}" aria-expanded="false" aria-controls="share-series-${id}"><span class="share-details-chevron" aria-hidden="true"></span>細かく設定</button></div><button type="button" role="switch" aria-checked="false" data-share-scope="${id}" aria-describedby="share-scope-state-${id}" aria-label="${label}を公開"><span aria-hidden="true"></span></button><div class="share-series-panel" id="share-series-${id}" data-series-panel="${id}" hidden><p>公開するだん数・プロモにチェックを入れてください。</p><div class="share-series-list"></div><button type="button" class="share-series-all" data-share-series-all="${id}">すべて公開（今後の追加分も含む）</button></div></div>`,
     )
     .join(
       "",
@@ -67,9 +67,31 @@
   const current = () => host.session()?.user.id || null;
   function update() {
     dialog.querySelectorAll("[data-share-scope]").forEach((b) => {
-      b.setAttribute("aria-checked", String(scopes.includes(b.dataset.shareScope)));
+      b.setAttribute(
+        "aria-checked",
+        String(scopes.includes(b.dataset.shareScope)),
+      );
       b.disabled = !settingsLoaded || busy;
+      const state = dialog.querySelector(
+        `[data-share-state="${b.dataset.shareScope}"]`,
+      );
+      const selected = seriesFilters[b.dataset.shareScope];
+      if (state)
+        state.textContent = !settingsLoaded
+          ? "確認中…"
+          : !scopes.includes(b.dataset.shareScope)
+            ? "非公開"
+            : Array.isArray(selected)
+              ? selected.length
+                ? `公開中 · ${selected.length}項目`
+                : "選択なし（表示なし）"
+              : "公開中 · すべて";
     });
+    dialog
+      .querySelectorAll("[data-share-details], [data-share-series-all]")
+      .forEach((b) => {
+        b.disabled = !settingsLoaded || busy;
+      });
     $("share-issue").hidden = hasLink;
     $("share-issue").disabled = busy || mutations.length > 0 || !scopes.length;
     $("share-restore-area").hidden = !hasLink || !!token;
@@ -77,7 +99,12 @@
     $("share-delete").hidden = !hasLink;
     $("share-delete").disabled = busy || mutations.length > 0;
     $("share-send").disabled =
-      busy || mutations.length > 0 || sharing || !rates || !token || !scopes.length;
+      busy ||
+      mutations.length > 0 ||
+      sharing ||
+      !rates ||
+      !token ||
+      !scopes.length;
     $("share-delete-yes").disabled = busy || mutations.length > 0;
     $("share-delete-cancel").disabled = busy;
     deleteClose.disabled = busy;
@@ -103,14 +130,16 @@
     if (!uid || !scopes.length || mutations.length) return;
     try {
       const result = await host.rates([...scopes], seriesFilters);
-      if (revision !== rateGeneration || g !== generation || uid !== current()) return;
+      if (revision !== rateGeneration || g !== generation || uid !== current())
+        return;
       if (scopes.some((scope) => !Number.isFinite(Number(result[scope]))))
         throw Error("所持率を確認できませんでした。");
       rates = result;
     } catch (error) {
       if (revision === rateGeneration && g === generation && uid === current())
         $("share-settings-status").textContent =
-          error.message || "所持率を確認できませんでした。画面を開き直してください。";
+          error.message ||
+          "所持率を確認できませんでした。画面を開き直してください。";
     } finally {
       if (revision === rateGeneration && g === generation) update();
     }
@@ -126,6 +155,7 @@
     if (
       busy ||
       sharing ||
+      mutations.length ||
       !rates ||
       !token ||
       !scopes.length ||
@@ -137,9 +167,13 @@
       uid = current();
     const text = [
       "カードアルバム所持率",
+      "",
       ...Object.keys(labels)
         .filter((scope) => scopes.includes(scope))
-        .map((scope) => shortLabels[scope] + "　" + rates[scope] + "%"),
+        .map(
+          (scope) =>
+            shortLabels[scope] + "：" + Number(rates[scope]).toFixed(1) + "%",
+        ),
       "",
       "詳しくはこちらから（登録不要）↓",
       $("share-link-value").value,
@@ -150,7 +184,8 @@
       if (navigator.share) await navigator.share({ text });
       else {
         await navigator.clipboard.writeText(text);
-        if (g === generation && uid === current()) host.toast("共有用文章をコピーしました");
+        if (g === generation && uid === current())
+          host.toast("共有用文章をコピーしました");
       }
     } catch (error) {
       if (error.name !== "AbortError" && g === generation && uid === current())
@@ -166,7 +201,9 @@
   function apply(data) {
     confirmedScopes = data.scopes.filter((s) => s in labels);
     confirmedFilters =
-      data.series_filters && typeof data.series_filters === "object" ? data.series_filters : {};
+      data.series_filters && typeof data.series_filters === "object"
+        ? data.series_filters
+        : {};
     optimisticState();
     hasLink = data.has_link === true;
     token = data.token || null;
@@ -213,7 +250,8 @@
     try {
       const r = await host.client().rpc(name, args);
       if (g !== generation || user !== current()) return;
-      if (r.error) throw Error("保存できませんでした。通信状態をご確認ください。");
+      if (r.error)
+        throw Error("保存できませんでした。通信状態をご確認ください。");
       onSuccess(r.data);
     } catch (error) {
       if (g === generation && user === current()) {
@@ -230,13 +268,18 @@
   async function open() {
     if (!current() || host.maintenance()) return;
     host.closeMenu();
+    if (owner === current() && (busy || savingSettings || mutations.length)) {
+      if (!dialog.open) dialog.showModal();
+      return;
+    }
     reset();
     owner = current();
     dialog.showModal();
     $("share-settings-close").focus({ preventScroll: true });
     $("share-settings-status").textContent = "公開設定を確認中…";
     await run("card_album_share_settings", {}, (data) => {
-      if (!Array.isArray(data?.scopes)) throw Error("公開設定用SQLをご確認ください。");
+      if (!Array.isArray(data?.scopes))
+        throw Error("公開設定用SQLをご確認ください。");
       settingsLoaded = true;
       apply(data);
       $("share-settings-status").textContent =
@@ -259,14 +302,21 @@
   }
   function syncSeriesChecks() {
     dialog.querySelectorAll("[data-share-series]").forEach((input) => {
+      input.disabled = !settingsLoaded || busy;
       input.checked =
         !Array.isArray(seriesFilters[input.dataset.shareSeries]) ||
         seriesFilters[input.dataset.shareSeries].includes(input.value);
     });
   }
   function queueChange(change) {
-    if (!settingsLoaded || busy || !current() || current() !== owner || host.maintenance()) {
-      syncSeriesChecks();
+    if (
+      !settingsLoaded ||
+      busy ||
+      !current() ||
+      current() !== owner ||
+      host.maintenance()
+    ) {
+      update();
       return;
     }
     mutations.push(change);
@@ -288,15 +338,46 @@
         const result = await host
           .client()
           .rpc(
-            change.kind === "scope" ? "card_album_share_set_scope" : "card_album_share_set_series",
+            change.kind === "scope"
+              ? "card_album_share_set_scope"
+              : "card_album_share_set_series",
             change.kind === "scope"
               ? { p_scope: change.scope, p_enabled: change.value }
               : { p_scope: change.scope, p_series: change.value },
           );
         if (g !== generation || uid !== current()) return;
         if (result.error || !Array.isArray(result.data?.scopes)) throw Error();
-        confirmedScopes = result.data.scopes.filter((scope) => scope in labels);
-        confirmedFilters = result.data.series_filters || {};
+        if (
+          change.kind === "scope" &&
+          result.data.scopes.includes(change.scope) !== change.value
+        )
+          throw Error("公開状態を確認できませんでした。");
+        let data = result.data;
+        if (
+          change.kind === "series" &&
+          !Object.prototype.hasOwnProperty.call(data, "series_filters")
+        ) {
+          const check = await host
+            .client()
+            .rpc("card_album_share_settings", {});
+          if (g !== generation || uid !== current()) return;
+          if (check.error || !Array.isArray(check.data?.scopes)) throw Error();
+          data = check.data;
+        }
+        if (change.kind === "series") {
+          const stored = data.series_filters?.[change.scope];
+          if (
+            change.value === null
+              ? Array.isArray(stored)
+              : !Array.isArray(stored) ||
+                JSON.stringify([...stored].sort()) !==
+                  JSON.stringify([...change.value].sort())
+          )
+            throw Error("公開するだん数を確認できませんでした。");
+        }
+        confirmedScopes = data.scopes.filter((scope) => scope in labels);
+        if (data.series_filters && typeof data.series_filters === "object")
+          confirmedFilters = data.series_filters;
       } catch {
         if (g !== generation || uid !== current()) return;
         $("share-settings-status").textContent =
@@ -315,11 +396,15 @@
   async function openSeries(scope) {
     const panel = $("share-series-" + scope),
       button = dialog.querySelector('[data-share-details="' + scope + '"]');
+    if (!settingsLoaded || busy || current() !== owner) return;
     panel.hidden = !panel.hidden;
     button.setAttribute("aria-expanded", String(!panel.hidden));
     if (panel.hidden || seriesOptions.has(scope)) return;
     const g = generation,
       uid = current();
+    const list = panel.querySelector(".share-series-list");
+    list.textContent = "だん数を読み込み中…";
+    panel.setAttribute("aria-busy", "true");
     try {
       const rows = await host.scopeItems(scope);
       if (g !== generation || uid !== current()) return;
@@ -340,7 +425,6 @@
         .sort((a, b) => b.localeCompare(a, "ja", { numeric: true }));
       if (!options.length) throw Error();
       seriesOptions.set(scope, options);
-      const list = panel.querySelector(".share-series-list");
       list.replaceChildren(
         ...options.map((value) => {
           const label = document.createElement("label"),
@@ -348,7 +432,10 @@
           input.type = "checkbox";
           input.dataset.shareSeries = scope;
           input.value = value;
-          label.append(input, document.createTextNode(value.replaceAll("弾", "だん")));
+          label.append(
+            input,
+            document.createTextNode(value.replaceAll("弾", "だん")),
+          );
           return label;
         }),
       );
@@ -359,6 +446,9 @@
         button.setAttribute("aria-expanded", "false");
         host.toast("だん数を読み込めませんでした", "error");
       }
+    } finally {
+      if (g === generation && uid === current())
+        panel.removeAttribute("aria-busy");
     }
   }
   dialog.addEventListener("click", (event) => {
@@ -372,14 +462,21 @@
         value: !scopes.includes(toggle.dataset.shareScope),
       });
     else if (detail) openSeries(detail.dataset.shareDetails);
-    else if (all) queueChange({ kind: "series", scope: all.dataset.shareSeriesAll, value: null });
+    else if (all)
+      queueChange({
+        kind: "series",
+        scope: all.dataset.shareSeriesAll,
+        value: null,
+      });
   });
   dialog.addEventListener("change", (event) => {
     const input = event.target.closest("[data-share-series]");
     if (!input) return;
     const scope = input.dataset.shareSeries;
     const selected = new Set(
-      Array.isArray(seriesFilters[scope]) ? seriesFilters[scope] : seriesOptions.get(scope) || [],
+      Array.isArray(seriesFilters[scope])
+        ? seriesFilters[scope]
+        : seriesOptions.get(scope) || [],
     );
     if (input.checked) selected.add(input.value);
     else selected.delete(input.value);
@@ -388,7 +485,8 @@
   $("share-issue").onclick = () => {
     if (hasLink || !scopes.length) return;
     run("card_album_share_issue", {}, (data) => {
-      if (!/^[0-9a-f]{64}$/.test(data?.token || "")) throw Error("URLを発行できませんでした。");
+      if (!/^[0-9a-f]{64}$/.test(data?.token || ""))
+        throw Error("URLを発行できませんでした。");
       token = data.token;
       hasLink = true;
       prepareRates();
@@ -401,11 +499,13 @@
     try {
       const url = new URL($("share-restore-input").value.trim());
       const base = new URL("share/", host.base());
-      if (url.origin !== base.origin || url.pathname !== base.pathname) throw Error();
+      if (url.origin !== base.origin || url.pathname !== base.pathname)
+        throw Error();
       previous = url.hash.slice(1);
       if (!/^[0-9a-f]{64}$/.test(previous)) throw Error();
     } catch {
-      $("share-settings-status").textContent = "以前の共有URLを貼り付けてください。";
+      $("share-settings-status").textContent =
+        "以前の共有URLを貼り付けてください。";
       return;
     }
     run("card_album_share_restore", { p_token: previous }, (data) => {
@@ -420,20 +520,28 @@
     if (!deleteDialog.open) deleteDialog.showModal();
     $("share-delete-cancel").focus({ preventScroll: true });
   };
-  function cancelDelete() { if (!busy) deleteDialog.close(); }
+  function cancelDelete() {
+    if (!busy) deleteDialog.close();
+  }
   $("share-delete-cancel").onclick = cancelDelete;
   deleteClose.onclick = cancelDelete;
-  deleteDialog.addEventListener("cancel", (event) => { if (busy) event.preventDefault(); });
-  deleteDialog.addEventListener("close", () => {
-    if (dialog.open && hasLink && current() === owner) $("share-delete").focus({ preventScroll: true });
+  deleteDialog.addEventListener("cancel", (event) => {
+    if (busy) event.preventDefault();
   });
-  dialog.addEventListener("close", () => { if (deleteDialog.open) deleteDialog.close(); });
+  deleteDialog.addEventListener("close", () => {
+    if (dialog.open && hasLink && current() === owner)
+      $("share-delete").focus({ preventScroll: true });
+  });
+  dialog.addEventListener("close", () => {
+    if (deleteDialog.open) deleteDialog.close();
+  });
   $("share-delete-yes").onclick = () =>
     run("card_album_share_delete", {}, () => {
       token = null;
       hasLink = false;
       deleteDialog.close();
-      $("share-settings-status").textContent = "共有URLを削除しました。以前のURLは使用できません。";
+      $("share-settings-status").textContent =
+        "共有URLを削除しました。以前のURLは使用できません。";
     });
   $("share-link-copy").onclick = async () => {
     if (!current() || current() !== owner || !token) return;
@@ -443,7 +551,8 @@
     } catch {
       $("share-link-value").focus();
       $("share-link-value").select();
-      $("share-settings-status").textContent = "URLを選択してコピーしてください。";
+      $("share-settings-status").textContent =
+        "URLを選択してコピーしてください。";
     }
   };
   $("share-settings-close").onclick = () => dialog.close();
