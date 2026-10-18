@@ -341,7 +341,7 @@
           ? `<h3>パーツごとの所持状況</h3><div class="public-modal-parts">${c.part_ids
               .map((id) => {
                 const p = parts.get(id);
-                return `<article><img src="${esc(p?.image || "")}" alt="${esc(p?.slot)}"><span>${esc(p?.slot)} ／ ${p?.buzz || 0} BP</span><small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small></article>`;
+                return `<article><img src="${esc(p?.image || "")}" alt="${esc(p?.slot)}"><span>${esc(p?.slot)} ／ ${p?.buzz == null ? "BP未確認" : p.buzz + " BP"}</span><small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small></article>`;
               })
               .join("")}</div>`
           : ""
