@@ -1708,6 +1708,7 @@ function openDetail(id, trigger, navigating = false) {
     $("detail").scrollTop = 0;
   }
   document.body.style.overflow = "hidden";
+  window.CARD_MODAL_SCROLL?.refresh($("detail"));
 }
 function updateDetailNavigation() {
   document.querySelector(".detail-navigation").hidden = !session || !$("auth").hidden;
@@ -3314,7 +3315,7 @@ verseStyles.href = new URL(
 document.head.append(verseStyles);
 const verseScript = document.createElement("script");
 verseScript.src = new URL(
-  "./aipri-verse.js?v=20261017-album-polish",
+  "./aipri-verse.js?v=20261018-trade-image-export",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(verseScript);
@@ -3326,6 +3327,8 @@ window.CARD_TRADE_HOST = {
   family: () => aipriFamily,
   cards: () => catalog.cards,
   verse: () => window.CARD_VERSE?.tradeData(),
+  quantity: (kind, id) =>
+    kind === "card" ? quantityOf(id) : window.CARD_VERSE?.tradeQuantity(kind, id) ?? 0,
   isVerse: () => !!$("verse") && !$("verse").hidden,
   screen,
   toast,
@@ -3346,13 +3349,13 @@ window.CARD_TRADE_HOST = {
 const tradeStyles = document.createElement("link");
 tradeStyles.rel = "stylesheet";
 tradeStyles.href = new URL(
-  "../css/trade.css?v=20261016-mobile-viewer",
+  "../css/trade.css?v=20261018-trade-image-export",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(tradeStyles);
 const tradeScript = document.createElement("script");
 tradeScript.src = new URL(
-  "./trade.js?v=20261017-round-trade",
+  "./trade.js?v=20261018-trade-image-export",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(tradeScript);
