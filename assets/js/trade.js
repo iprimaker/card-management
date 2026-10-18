@@ -1,12 +1,26 @@
 (() => {
   "use strict";
   const host = window.CARD_TRADE_HOST;
+  const exporterURL = new URL(
+    "./trade-image-export.js?v=20261018",
+    document.currentScript.src,
+  ).href;
+  let exportSheets = [],
+    outputVersion = 0,
+    exportLoading = null;
   if (!host) return;
   const $ = (id) => document.getElementById(id),
     esc = (s) =>
       String(s ?? "").replace(
         /[&<>"']/g,
-        (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          })[c],
       );
   let owner = null,
     ready = false,
@@ -37,11 +51,15 @@
   panel.hidden = true;
   panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="text-button">一覧へ戻る</button></div>
  <details id="trade-filter-panel" class="trade-filter-panel"><summary><span class="trade-chevron" aria-hidden="true"></span><span>交換希望を絞り込む</span><small id="trade-filter-count"></small></summary><div class="trade-filters"><label>キーワード<input id="trade-query" type="search" placeholder="名前・コード"></label><label>だん数<select id="trade-series"></select></label><label id="trade-rarity-label">レアリティ<select id="trade-rarity"></select></label><label id="trade-group-label">ガチャ・キャンペーン<select id="trade-group"></select></label></div></details><p id="trade-load-status" role="status"></p>
- <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2>譲・求の一覧をスクショ</h2><p>下の枠を1枚ずつ撮影してください。合計4枚まで作成できます。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
- <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>交換希望の文章をコピー</h2><p>スクショと一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。スクショは共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
+ <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2>譲・求のカードを確認</h2><p>絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のカードです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
+ <section class="trade-step trade-export-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>希望画像を出力</h2><p>1画像に最大36枚。譲・求ごとに、保存する画像を選んでください。</p></div></div><div id="trade-export-buttons" class="trade-export-buttons"></div><p id="trade-export-status" role="status" aria-live="polite"></p></section>
+ <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">3</span><div><h2>交換希望の文章をコピー</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。出力した画像は共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
   $("collection").after(panel);
   function reset() {
     generation++;
+    outputVersion++;
+    exportSheets = [];
+    window.CARD_TRADE_IMAGE?.close();
     owner = null;
     ready = false;
     loading = null;
@@ -52,8 +70,11 @@
     filters.card = filters.coordinate = "all";
     origin = null;
     panel.hidden = true;
-    for (const id of ["trade-post", "trade-text", "trade-method"]) $(id).value = "";
+    for (const id of ["trade-post", "trade-text", "trade-method"])
+      $(id).value = "";
     $("trade-sheets").replaceChildren();
+    $("trade-export-buttons").replaceChildren();
+    $("trade-export-status").textContent = "";
   }
   async function load() {
     const user = uid();
@@ -81,14 +102,18 @@
           .order("side")
           .range(offset, offset + 999);
         if (r.error) throw Error("交換希望用SQLと通信状態を確認してください。");
-        if (!Array.isArray(r.data)) throw Error("交換希望を取得できませんでした。");
+        if (!Array.isArray(r.data))
+          throw Error("交換希望を取得できませんでした。");
         rows.push(...r.data);
         if (r.data.length < 1000) break;
       }
       if (user !== uid() || g !== generation) return;
       records = new Set(rows.map((r) => key(r.kind, r.target_id, r.side)));
       priorities = new Map(
-        rows.map((r) => [key(r.kind, r.target_id, r.side), r.priority === 2 ? 2 : 1]),
+        rows.map((r) => [
+          key(r.kind, r.target_id, r.side),
+          r.priority === 2 ? 2 : 1,
+        ]),
       );
       ready = true;
       host.changed();
@@ -123,13 +148,24 @@
       for (const b of node.querySelectorAll("[data-trade-side]")) {
         b.setAttribute(
           "aria-pressed",
-          String(has(node.dataset.tradeKind, node.dataset.tradeId, b.dataset.tradeSide)),
+          String(
+            has(
+              node.dataset.tradeKind,
+              node.dataset.tradeId,
+              b.dataset.tradeSide,
+            ),
+          ),
         );
         const priority =
-          level(node.dataset.tradeKind, node.dataset.tradeId, b.dataset.tradeSide) === 2;
+          level(
+            node.dataset.tradeKind,
+            node.dataset.tradeId,
+            b.dataset.tradeSide,
+          ) === 2;
         b.dataset.priority = String(priority);
         b.querySelector("strong").textContent =
-          (priority ? "優先" : "") + (b.dataset.tradeSide === "offer" ? "譲" : "求");
+          (priority ? "優先" : "") +
+          (b.dataset.tradeSide === "offer" ? "譲" : "求");
         b.disabled =
           !ready ||
           host.maintenance() ||
@@ -141,7 +177,9 @@
     document
       .querySelectorAll("#cards article.card,#verse-cards [data-verse-card]")
       .forEach((card) => {
-        const kind = card.hasAttribute("data-verse-card") ? "coordinate" : "card";
+        const kind = card.hasAttribute("data-verse-card")
+          ? "coordinate"
+          : "card";
         const id =
           kind === "coordinate"
             ? card.dataset.verseCard
@@ -262,9 +300,9 @@
     return (
       has(kind, id, side) ||
       (kind === "coordinate" &&
-        (host.verse()?.coordinates.find((c) => c.id === id)?.part_ids || []).some((p) =>
-          has("part", p, side),
-        ))
+        (
+          host.verse()?.coordinates.find((c) => c.id === id)?.part_ids || []
+        ).some((p) => has("part", p, side)))
     );
   }
   function entry(kind) {
@@ -280,7 +318,11 @@
     if (origin.kind === "card")
       return host
         .cards()
-        .filter((c) => c.game === origin.game && (c.game !== "aipri" || c.family === origin.family))
+        .filter(
+          (c) =>
+            c.game === origin.game &&
+            (c.game !== "aipri" || c.family === origin.family),
+        )
         .map((c) => ({
           kind: "card",
           id: c.id,
@@ -336,7 +378,10 @@
   }
   const values = (v) => (Array.isArray(v) ? v : v ? [v] : []);
   function filtered() {
-    const query = $("trade-query").value.normalize("NFKC").toLowerCase().replace(/[\s-]/g, "");
+    const query = $("trade-query")
+      .value.normalize("NFKC")
+      .toLowerCase()
+      .replace(/[\s-]/g, "");
     return items().filter(
       (c) =>
         (!query ||
@@ -346,9 +391,11 @@
             .toLowerCase()
             .replace(/[\s-]/g, "")
             .includes(query)) &&
-        (!$("trade-series").value || values(c.series).includes($("trade-series").value)) &&
+        (!$("trade-series").value ||
+          values(c.series).includes($("trade-series").value)) &&
         (!$("trade-rarity").value || c.rarity === $("trade-rarity").value) &&
-        (!$("trade-group").value || values(c.groups).includes($("trade-group").value)),
+        (!$("trade-group").value ||
+          values(c.groups).includes($("trade-group").value)),
     );
   }
   function options(id, rows) {
@@ -367,24 +414,32 @@
   }
   function layout() {
     const available =
-      $("trade-sheets").clientWidth ||
-      Math.max(240, (document.documentElement.clientWidth || window.innerWidth) - 64);
-    const width = Math.max(180, Math.min(820, available) - 20),
-      height = Math.max(260, (window.visualViewport?.height || window.innerHeight || 700) - 100);
-    const cols = Math.max(2, Math.min(10, Math.floor(width / 76))),
-      imageHeight = Math.ceil(width / cols / (origin?.kind === "card" ? 0.714 : 1));
-    const rowHeight = imageHeight + 20,
-      rows = Math.max(1, Math.min(8, Math.floor((height - 64) / rowHeight)));
-    return { cols, rows, capacity: cols * rows, height, imageHeight, rowHeight };
+      $("trade-sheets").clientWidth || Math.max(240, window.innerWidth - 64);
+    const cols = available < 600 ? 4 : 6;
+    const imageHeight = Math.ceil(
+      (available - 24) / cols / (origin?.kind === "card" ? 0.714 : 1),
+    );
+    return { cols, capacity: 36, imageHeight, rowHeight: imageHeight + 18 };
   }
+
   const imageQueue = new Set();
   let imageFrame = null;
   function drawShotImage(img) {
-    if (!img.isConnected || !img.complete || !img.naturalWidth || !img.naturalHeight) return;
+    if (
+      !img.isConnected ||
+      !img.complete ||
+      !img.naturalWidth ||
+      !img.naturalHeight
+    )
+      return;
     const frame = img.closest(".trade-shot-image");
     if (!frame) return;
-    const rotate = frame.dataset.rotate === "true" && img.naturalWidth > img.naturalHeight;
-    const ratio = Math.min(1, 240 / Math.max(img.naturalWidth, img.naturalHeight));
+    const rotate =
+      frame.dataset.rotate === "true" && img.naturalWidth > img.naturalHeight;
+    const ratio = Math.min(
+      1,
+      240 / Math.max(img.naturalWidth, img.naturalHeight),
+    );
     const sw = Math.max(1, Math.round(img.naturalWidth * ratio)),
       sh = Math.max(1, Math.round(img.naturalHeight * ratio));
     let canvas = frame.querySelector("canvas");
@@ -428,7 +483,8 @@
   panel.addEventListener(
     "load",
     (event) => {
-      if (event.target.matches?.(".trade-shot-image>img")) queueShotImage(event.target);
+      if (event.target.matches?.(".trade-shot-image>img"))
+        queueShotImage(event.target);
     },
     true,
   );
@@ -448,8 +504,10 @@
       $("trade-group").value,
     ].filter(Boolean).length;
     $("trade-filter-count").textContent = applied ? `適用中 ${applied}件` : "";
+    outputVersion++;
     const all = filtered(),
-      rank = (side) => (a, b) => level(b.kind, b.id, side) - level(a.kind, a.id, side),
+      rank = (side) => (a, b) =>
+        level(b.kind, b.id, side) - level(a.kind, a.id, side),
       offer = all.filter((c) => has(c.kind, c.id, "offer")).sort(rank("offer")),
       want = all.filter((c) => has(c.kind, c.id, "want")).sort(rank("want")),
       l = layout();
@@ -462,16 +520,35 @@
         { side: "譲", rows: offer },
         { side: "求", rows: want },
       ],
-      count = groups.reduce((n, g) => n + Math.ceil(g.rows.length / l.capacity), 0),
+      count = groups.reduce(
+        (n, g) => n + Math.ceil(g.rows.length / l.capacity),
+        0,
+      ),
       sheets = [];
+    exportSheets = [];
     let n = 0;
     const numbers = { 譲: [], 求: [] };
     for (const g of groups)
       for (let offset = 0; offset < g.rows.length; offset += l.capacity) {
         n++;
         numbers[g.side].push(n);
+        const side = g.side === "譲" ? "offer" : "want";
+        const cards = g.rows.slice(offset, offset + l.capacity).map((c) => ({
+          ...c,
+          quantity: Math.max(0, Number(host.quantity(c.kind, c.id)) || 0),
+          priority: level(c.kind, c.id, side) === 2,
+        }));
+        const sheet = {
+          side,
+          cards,
+          number: n,
+          page: numbers[g.side].length,
+          pages: Math.ceil(g.rows.length / l.capacity),
+          total: count,
+        };
+        exportSheets.push(sheet);
         sheets.push(
-          `<p class="trade-shot-caption">${n}枚目：${g.side} — 下の枠をスクショしてください</p><section class="trade-sheet" style="--trade-cols:${l.cols};--trade-rows:${l.rows};--trade-height:${l.height}px;--trade-row-height:${l.rowHeight}px;--trade-image-height:${l.imageHeight}px"><div class="trade-sheet-heading"><strong>${g.side}</strong><span>${esc(title())}</span><small>${n} / ${count}</small></div><div class="trade-sheet-grid">${g.rows
+          `<p class="trade-shot-caption">${g.side} ${sheet.page}枚目の内容（画像${n}枚目）</p><section class="trade-sheet" style="--trade-cols:${l.cols};--trade-row-height:${l.rowHeight}px;--trade-image-height:${l.imageHeight}px"><div class="trade-sheet-heading"><strong>${g.side}</strong><span>${esc(title())}</span><small>${n} / ${count}</small></div><div class="trade-sheet-grid">${g.rows
             .slice(offset, offset + l.capacity)
             .map(
               (c) =>
@@ -482,23 +559,35 @@
       }
     $("trade-output-count").innerHTML =
       `<span><strong>譲</strong> ${offer.length}件</span><span><strong>求</strong> ${want.length}件</span>`;
-    const overflow = count > 4;
+    const overflow = count >= 4;
     $("trade-overflow").textContent = overflow
-      ? `現在の条件では${count}画面必要です。4画面以内に収まるように、だん数などで絞り込んでください。カードを省略せず、文字情報は全件出力できます。`
+      ? `譲・求合わせて${count}画像になります。共有先の添付枚数をご確認ください。すべての画像を出力できます。`
       : "";
-    $("trade-sheets").innerHTML = overflow
-      ? ""
-      : sheets.join("") ||
-        '<p class="trade-empty">譲・求の登録がありません。モーダルから登録してください。</p>';
+    $("trade-sheets").innerHTML =
+      sheets.join("") ||
+      '<p class="trade-empty">譲・求の登録がありません。モーダルから登録してください。</p>';
+    $("trade-export-buttons").innerHTML = ["offer", "want"]
+      .map((side) => {
+        const rows = exportSheets
+          .map((sheet, index) => ({ sheet, index }))
+          .filter((r) => r.sheet.side === side);
+        return `<div class="trade-export-group" data-side="${side}"><h3>${side === "offer" ? "譲れるカード" : "欲しいカード"}<small>${rows.length}画像</small></h3><div>${rows.length ? rows.map(({ sheet, index }) => `<button type="button" data-trade-export="${index}"><span>${sheet.page}枚目を出力</span><small>画像${sheet.number}枚目 · ${sheet.cards.length}枚</small></button>`).join("") : "<p>登録なし</p>"}</div></div>`;
+      })
+      .join("");
+    $("trade-export-status").textContent = "";
     imageQueue.clear();
-    for (const image of $("trade-sheets").querySelectorAll(".trade-shot-image>img"))
+    for (const image of $("trade-sheets").querySelectorAll(
+      ".trade-shot-image>img",
+    ))
       if (image.complete) queueShotImage(image);
     const refs = (side) =>
-      numbers[side].length ? "画像" + numbers[side].join("、") + "枚目" : "登録なし";
+      numbers[side].length
+        ? "画像" + numbers[side].join("、") + "枚目"
+        : "登録なし";
     $("trade-post").value =
-      `${title()}　交換希望\n\n譲　${overflow ? "条件を絞り込んで画像を作成してください" : refs("譲")}\n求　${overflow ? "条件を絞り込んで画像を作成してください" : refs("求")}\n\n交換方法　${$("trade-method").value.trim() || "（記載してください）"}${priorityNote ? "\n\n" + priorityNote : ""}`;
-    $("trade-copy-post").disabled = overflow || count === 0;
-    $("trade-share").disabled = overflow || count === 0;
+      `${title()}　交換希望\n\n譲　${refs("譲")}\n求　${refs("求")}\n\n交換方法　${$("trade-method").value.trim() || "（記載してください）"}${priorityNote ? "\n\n" + priorityNote : ""}`;
+    $("trade-copy-post").disabled = count === 0;
+    $("trade-share").disabled = count === 0;
     $("trade-text").value =
       title() +
       "　交換希望\n\n" +
@@ -510,7 +599,9 @@
             (g.rows
               .map((c) =>
                 [
-                  level(c.kind, c.id, g.side === "譲" ? "offer" : "want") === 2 ? "【優先】" : "",
+                  level(c.kind, c.id, g.side === "譲" ? "offer" : "want") === 2
+                    ? "【優先】"
+                    : "",
                   c.code,
                   c.name,
                   c.slot,
@@ -527,6 +618,85 @@
       "\n\n交換方法　" +
       ($("trade-method").value.trim() || "（記載してください）") +
       (priorityNote ? "\n\n" + priorityNote : "");
+  }
+  function ensureExporter() {
+    if (window.CARD_TRADE_IMAGE)
+      return Promise.resolve(window.CARD_TRADE_IMAGE);
+    if (!exportLoading) {
+      exportLoading = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = exporterURL;
+        script.onload = () =>
+          window.CARD_TRADE_IMAGE
+            ? resolve(window.CARD_TRADE_IMAGE)
+            : reject(Error("画像出力機能を読み込めませんでした。"));
+        script.onerror = () => {
+          script.remove();
+          reject(Error("画像出力機能を読み込めませんでした。"));
+        };
+        document.head.append(script);
+      }).catch((error) => {
+        exportLoading = null;
+        throw error;
+      });
+    }
+    return exportLoading;
+  }
+  async function outputImage(button) {
+    const sheet = exportSheets[Number(button.dataset.tradeExport)];
+    if (!sheet || button.disabled || !uid() || host.maintenance()) return;
+    const version = outputVersion,
+      user = uid(),
+      g = generation;
+    const current = () =>
+      version === outputVersion &&
+      user === uid() &&
+      g === generation &&
+      !panel.hidden &&
+      !host.maintenance();
+    const heading = title().replace(
+      "アイカツアンコール",
+      "アイカツ！アンコール",
+    );
+    const buttons = [...$("trade-export-buttons").querySelectorAll("button")];
+    buttons.forEach((b) => {
+      b.disabled = true;
+    });
+    $("trade-export-status").textContent = "画像を準備しています…";
+    try {
+      const exporter = await ensureExporter();
+      if (!current()) return;
+      const blob = await exporter.create(
+        sheet,
+        heading,
+        (done, total) => {
+          if (current())
+            $("trade-export-status").textContent =
+              `画像を準備しています… ${done} / ${total}`;
+        },
+        current,
+      );
+      if (!current()) return;
+      exporter.show(
+        blob,
+        `${heading}_${sheet.side === "offer" ? "譲" : "求"}_${sheet.page}.jpg`,
+        `${sheet.side === "offer" ? "譲" : "求"} ${sheet.page}枚目（画像${sheet.number}枚目）`,
+      );
+      $("trade-export-status").textContent =
+        "画像を作成しました。「画像を保存」から保存できます。";
+    } catch (error) {
+      if (current()) {
+        $("trade-export-status").textContent =
+          error.message ||
+          "画像を作成できませんでした。もう一度お試しください。";
+        host.toast("画像を作成できませんでした", "error");
+      }
+    } finally {
+      if (current())
+        buttons.forEach((b) => {
+          b.disabled = false;
+        });
+    }
   }
   async function open() {
     if (!uid() || host.maintenance()) return;
@@ -566,18 +736,22 @@
       $("trade-load-status").textContent = "";
       renderOutput();
     } catch (error) {
-      if (user === uid() && g === generation) $("trade-load-status").textContent = error.message;
+      if (user === uid() && g === generation)
+        $("trade-load-status").textContent = error.message;
     }
   }
   function exportText(id) {
-    return $(id).value.trimEnd() + "\n\nhttps://iprimaker.github.io/card-management";
+    return (
+      $(id).value.trimEnd() + "\n\nhttps://iprimaker.github.io/card-management"
+    );
   }
   async function copy(id) {
     let temporary;
     const previous = document.activeElement;
     try {
       const text = exportText(id);
-      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      if (navigator.clipboard?.writeText)
+        await navigator.clipboard.writeText(text);
       else {
         temporary = document.createElement("textarea");
         temporary.value = text;
@@ -602,11 +776,25 @@
       window.CARD_VERSE.open(origin.family === "ひみつ" ? "himitsu" : "onegai");
     else host.back();
   };
-  for (const id of ["trade-query", "trade-method"]) $(id).oninput = renderOutput;
-  for (const id of ["trade-series", "trade-rarity", "trade-group"]) $(id).onchange = renderOutput;
+  $("trade-query").oninput = renderOutput;
+  $("trade-method").oninput = () => {
+    for (const id of ["trade-post", "trade-text"]) {
+      $(id).value = $(id).value.replace(
+        /交換方法　[^\n]*/,
+        () =>
+          "交換方法　" +
+          ($("trade-method").value.trim() || "（記載してください）"),
+      );
+    }
+  };
+  for (const id of ["trade-series", "trade-rarity", "trade-group"])
+    $(id).onchange = renderOutput;
   $("trade-share").onclick = async () => {
     if ($("trade-share").disabled || !uid() || host.maintenance()) return;
-    const data = { title: title() + " 交換希望", text: exportText("trade-post") };
+    const data = {
+      title: title() + " 交換希望",
+      text: exportText("trade-post"),
+    };
     if (!navigator.share) {
       await copy("trade-post");
       return;
@@ -626,6 +814,8 @@
     $("trade-show-text").setAttribute("aria-expanded", String(show));
   };
   document.addEventListener("click", (e) => {
+    const exportButton = e.target.closest("[data-trade-export]");
+    if (exportButton) outputImage(exportButton);
     const side = e.target.closest("[data-trade-side]");
     if (side) {
       const c = side.closest("[data-trade-control]");
@@ -671,14 +861,16 @@
       records.some((record) =>
         [...record.addedNodes].some(
           (node) =>
-            node.nodeType === 1 && (node.matches("article") || node.querySelector("article")),
+            node.nodeType === 1 &&
+            (node.matches("article") || node.querySelector("article")),
         ),
       )
     )
       patchBadges();
   });
   badgeObserver.observe($("collection"), { childList: true, subtree: true });
-  if ($("verse-cards")) badgeObserver.observe($("verse-cards"), { childList: true, subtree: true });
+  if ($("verse-cards"))
+    badgeObserver.observe($("verse-cards"), { childList: true, subtree: true });
   sync();
   host.changed();
 })();
