@@ -179,7 +179,7 @@
       );
       text(
         context,
-        offer ? "譲れるカード" : "欲しいカード",
+        `${offer ? "譲れる" : "欲しい"}${sheet.kind === "coordinate" ? "コーデ" : "カード"}`,
         MARGIN,
         73,
         25,
@@ -187,7 +187,7 @@
         620,
         600,
       );
-      const page = `${sheet.page} / ${sheet.pages}　画像${sheet.number}枚目 · ${cards.length}枚`;
+      const page = `${sheet.page} / ${sheet.pages}　画像${sheet.number}枚目 · ${cards.length}${sheet.kind === "coordinate" ? "コーデ" : "枚"}`;
       text(context, page, WIDTH - 335, 73, 18, "#8b8087", 310);
       cards.forEach((card, index) => {
         const x = MARGIN + (index % COLS) * (CELL_WIDTH + GAP);
@@ -277,7 +277,9 @@
       });
       text(
         context,
-        cards.some((c) => c.priority) ? "赤枠：優先して交換したいカード" : "",
+        cards.some((c) => c.priority)
+          ? `赤枠：優先して交換したい${sheet.kind === "coordinate" ? "コーデ" : "カード"}`
+          : "",
         MARGIN,
         canvas.height - 24,
         16,
