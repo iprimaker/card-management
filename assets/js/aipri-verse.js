@@ -446,6 +446,7 @@
     renderCollection();
     renderDetail();
     syncUpdateText();
+    trade()?.patchBadges?.();
   }
   function renderDetail() {
     if (!selected || !dialog.open) return;
@@ -659,14 +660,12 @@
       while (queue.operations.length && current()) {
         const operation = queue.operations[0];
         try {
-          const result = await host
-            .client()
-            .rpc("card_verse_change_quantity", {
-              p_coordinate_id: queue.coordinateID,
-              p_part_id: queue.partID,
-              p_delta: operation.delta,
-              p_clear: operation.clear,
-            });
+          const result = await host.client().rpc("card_verse_change_quantity", {
+            p_coordinate_id: queue.coordinateID,
+            p_part_id: queue.partID,
+            p_delta: operation.delta,
+            p_clear: operation.clear,
+          });
           if (!current()) return;
           if (
             result.error ||
@@ -1115,9 +1114,37 @@
     }
   };
   window.CARD_VERSE = {
+    async shareCatalog(scopeFamily) {
+      await ensureCatalog();
+      return catalog.coordinates.filter((c) => c.family === scopeFamily);
+    },
+    async shareRates(scopes, seriesFilters = {}) {
+      const uid = currentUser();
+      await Promise.all([ensureCatalog(), ensureInventory()]);
+      if (!uid || uid !== currentUser() || owner !== uid || !ready || !catalog)
+        throw Error("コーデの所持状況を確認できませんでした。");
+      const rates = {};
+      for (const scope of scopes.filter((value) => value.startsWith("verse-"))) {
+        const rows = catalog.coordinates.filter(
+          (c) =>
+            c.family === scope.slice(6) &&
+            (!Array.isArray(seriesFilters[scope]) ||
+              appearances(c).some((a) => seriesFilters[scope].includes(a.series))),
+        );
+
+        rates[scope] = (rows.length ? (rows.filter(full).length / rows.length) * 100 : 0).toFixed(
+          1,
+        );
+      }
+      return rates;
+    },
     open,
     reset,
     tradeData: () => catalog,
+    tradeQuantity(kind, id) {
+      if (!ready || owner !== currentUser()) return 0;
+      return (kind === "part" ? partQuantities.get(Number(id)) : fullQuantities.get(id)) || 0;
+    },
     refreshTrade(resetPage = false) {
       if (resetPage) page = 1;
       if (catalog) render();
