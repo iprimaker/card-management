@@ -2,7 +2,7 @@
   "use strict";
   const host = window.CARD_TRADE_HOST;
   const exporterURL = new URL(
-    "./trade-image-export.js?v=20261018",
+    "./trade-image-export.js?v=20261018-trade-share-polish",
     document.currentScript.src,
   ).href;
   let exportSheets = [],
@@ -51,7 +51,7 @@
   panel.hidden = true;
   panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="text-button">一覧へ戻る</button></div>
  <details id="trade-filter-panel" class="trade-filter-panel"><summary><span class="trade-chevron" aria-hidden="true"></span><span>交換希望を絞り込む</span><small id="trade-filter-count"></small></summary><div class="trade-filters"><label>キーワード<input id="trade-query" type="search" placeholder="名前・コード"></label><label>だん数<select id="trade-series"></select></label><label id="trade-rarity-label">レアリティ<select id="trade-rarity"></select></label><label id="trade-group-label">ガチャ・キャンペーン<select id="trade-group"></select></label></div></details><p id="trade-load-status" role="status"></p>
- <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2>譲・求のカードを確認</h2><p>絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のカードです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
+ <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求のカードを確認</h2><p>絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のものです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
  <section class="trade-step trade-export-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>希望画像を出力</h2><p>1画像に最大36枚。譲・求ごとに、保存する画像を選んでください。</p></div></div><div id="trade-export-buttons" class="trade-export-buttons"></div><p id="trade-export-status" role="status" aria-live="polite"></p></section>
  <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">3</span><div><h2>交換希望の文章をコピー</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。出力した画像は共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
   $("collection").after(panel);
@@ -140,7 +140,7 @@
   }
   function markup(kind, id) {
     if (!uid()) return "";
-    return `<div class="trade-toggles" data-trade-control data-trade-kind="${esc(kind)}" data-trade-id="${esc(id)}" role="group" aria-label="交換希望">${["offer", "want"].map((side) => `<button type="button" data-trade-side="${side}" aria-pressed="${has(kind, id, side)}" data-priority="${level(kind, id, side) === 2}" title="タップで通常・優先・解除を切り替え" ${!ready ? "disabled" : ""}><strong>${level(kind, id, side) === 2 ? "優先" : ""}${side === "offer" ? "譲" : "求"}</strong><span>${label[side]}</span></button>`).join("")}</div>`;
+    return `<div class="trade-toggles" data-trade-control data-trade-kind="${esc(kind)}" data-trade-id="${esc(id)}" role="group" aria-label="交換希望">${["offer", "want"].map((side) => `<button type="button" data-trade-side="${side}" aria-pressed="${has(kind, id, side)}" data-priority="${level(kind, id, side) === 2}" title="タップで通常・優先・解除を切り替え" ${!ready ? "disabled" : ""}><strong>${level(kind, id, side) === 2 ? "優先" : ""}${side === "offer" ? "譲" : "求"}</strong><span>${kind === "card" ? label[side] : side === "offer" ? "譲れるコーデ" : "欲しいコーデ"}</span></button>`).join("")}</div>`;
   }
   function patch() {
     patchBadges();
@@ -352,7 +352,7 @@
         parts.set(id, {
           kind: "part",
           id,
-          code: p.code || String(id),
+          code: prev?.code || c.code || "",
           name: p.name || c.name,
           image: p.image,
           series: [...new Set([...(prev?.series || []), ...series])],
@@ -412,16 +412,6 @@
       : (origin.family === "ひみつ" ? "ひみつのアイプリ" : "おねがいアイプリ") +
           (origin.kind === "coordinate" ? "バース" : "");
   }
-  function layout() {
-    const available =
-      $("trade-sheets").clientWidth || Math.max(240, window.innerWidth - 64);
-    const cols = available < 600 ? 4 : 6;
-    const imageHeight = Math.ceil(
-      (available - 24) / cols / (origin?.kind === "card" ? 0.714 : 1),
-    );
-    return { cols, capacity: 36, imageHeight, rowHeight: imageHeight + 18 };
-  }
-
   const imageQueue = new Set();
   let imageFrame = null;
   function drawShotImage(img) {
@@ -510,7 +500,7 @@
         level(b.kind, b.id, side) - level(a.kind, a.id, side),
       offer = all.filter((c) => has(c.kind, c.id, "offer")).sort(rank("offer")),
       want = all.filter((c) => has(c.kind, c.id, "want")).sort(rank("want")),
-      l = layout();
+      capacity = 36;
     const priorityNote =
       [...offer].some((c) => level(c.kind, c.id, "offer") === 2) ||
       want.some((c) => level(c.kind, c.id, "want") === 2)
@@ -521,19 +511,18 @@
         { side: "求", rows: want },
       ],
       count = groups.reduce(
-        (n, g) => n + Math.ceil(g.rows.length / l.capacity),
+        (n, g) => n + Math.ceil(g.rows.length / capacity),
         0,
-      ),
-      sheets = [];
+      );
     exportSheets = [];
     let n = 0;
     const numbers = { 譲: [], 求: [] };
     for (const g of groups)
-      for (let offset = 0; offset < g.rows.length; offset += l.capacity) {
+      for (let offset = 0; offset < g.rows.length; offset += capacity) {
         n++;
         numbers[g.side].push(n);
         const side = g.side === "譲" ? "offer" : "want";
-        const cards = g.rows.slice(offset, offset + l.capacity).map((c) => ({
+        const cards = g.rows.slice(offset, offset + capacity).map((c) => ({
           ...c,
           quantity: Math.max(0, Number(host.quantity(c.kind, c.id)) || 0),
           priority: level(c.kind, c.id, side) === 2,
@@ -543,19 +532,11 @@
           cards,
           number: n,
           page: numbers[g.side].length,
-          pages: Math.ceil(g.rows.length / l.capacity),
+          pages: Math.ceil(g.rows.length / capacity),
           total: count,
         };
+        sheet.kind = origin.kind;
         exportSheets.push(sheet);
-        sheets.push(
-          `<p class="trade-shot-caption">${g.side} ${sheet.page}枚目の内容（画像${n}枚目）</p><section class="trade-sheet" style="--trade-cols:${l.cols};--trade-row-height:${l.rowHeight}px;--trade-image-height:${l.imageHeight}px"><div class="trade-sheet-heading"><strong>${g.side}</strong><span>${esc(title())}</span><small>${n} / ${count}</small></div><div class="trade-sheet-grid">${g.rows
-            .slice(offset, offset + l.capacity)
-            .map(
-              (c) =>
-                `<article class="${level(c.kind, c.id, g.side === "譲" ? "offer" : "want") === 2 ? "is-priority" : ""}">${image(c)}<span>${esc(c.code || "コード記載なし")}</span></article>`,
-            )
-            .join("")}</div></section>`,
-        );
       }
     $("trade-output-count").innerHTML =
       `<span><strong>譲</strong> ${offer.length}件</span><span><strong>求</strong> ${want.length}件</span>`;
@@ -563,15 +544,25 @@
     $("trade-overflow").textContent = overflow
       ? `譲・求合わせて${count}画像になります。共有先の添付枚数をご確認ください。すべての画像を出力できます。`
       : "";
-    $("trade-sheets").innerHTML =
-      sheets.join("") ||
-      '<p class="trade-empty">譲・求の登録がありません。モーダルから登録してください。</p>';
+    const unit = origin.kind === "coordinate" ? "コーデ" : "カード";
+    $("trade-review-title").textContent = `譲・求の${unit}を確認`;
+    $("trade-copy-text").textContent = `${unit}情報をコピー`;
+    $("trade-text").setAttribute("aria-label", `譲・求の${unit}情報`);
+    $("trade-text-panel").querySelector("p").textContent = `${unit}情報を文字で確認・コピーできます。`;
+    $("trade-sheets").innerHTML = count
+      ? `<div class="trade-review">${groups
+          .map((group) => {
+            const side = group.side === "譲" ? "offer" : "want";
+            return `<section class="trade-review-group" data-side="${side}"><h3>${group.side === "譲" ? "譲れる" : "欲しい"}${unit}<small>${group.rows.length}件</small></h3><div class="trade-review-grid">${group.rows.length ? group.rows.map((c) => `<article class="trade-review-card ${level(c.kind, c.id, side) === 2 ? "is-priority" : ""}" data-kind="${c.kind}" title="${esc(c.code)} ${esc(c.name)}">${image(c)}<small>${esc(c.code || "コード記載なし")}</small></article>`).join("") : '<p class="trade-review-empty">登録なし</p>'}</div></section>`;
+          })
+          .join("")}</div>`
+      : '<p class="trade-empty">譲・求の登録がありません。モーダルから登録してください。</p>';
     $("trade-export-buttons").innerHTML = ["offer", "want"]
       .map((side) => {
         const rows = exportSheets
           .map((sheet, index) => ({ sheet, index }))
           .filter((r) => r.sheet.side === side);
-        return `<div class="trade-export-group" data-side="${side}"><h3>${side === "offer" ? "譲れるカード" : "欲しいカード"}<small>${rows.length}画像</small></h3><div>${rows.length ? rows.map(({ sheet, index }) => `<button type="button" data-trade-export="${index}"><span>${sheet.page}枚目を出力</span><small>画像${sheet.number}枚目 · ${sheet.cards.length}枚</small></button>`).join("") : "<p>登録なし</p>"}</div></div>`;
+        return `<div class="trade-export-group" data-side="${side}"><h3>${side === "offer" ? "譲れる" : "欲しい"}${unit}<small>${rows.length}画像</small></h3><div>${rows.length ? rows.map(({ sheet, index }) => `<button type="button" data-trade-export="${index}"><span>${sheet.page}枚目を出力</span><small>画像${sheet.number}枚目 · ${sheet.cards.length}枚</small></button>`).join("") : "<p>登録なし</p>"}</div></div>`;
       })
       .join("");
     $("trade-export-status").textContent = "";
@@ -834,15 +825,6 @@
       host.changed(true);
     }
   });
-  let resizeTimer;
-  window.addEventListener(
-    "resize",
-    () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(renderOutput, 100);
-    },
-    { passive: true },
-  );
   window.CARD_TRADE = {
     sync,
     reset,
