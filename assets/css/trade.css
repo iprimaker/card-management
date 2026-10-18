@@ -253,7 +253,7 @@
 }
 .trade-sheet {
   width: min(100%, 820px);
-  max-height: var(--trade-height);
+  max-height: none;
   padding: 10px;
   box-sizing: border-box;
   border: 1px solid #e5dce2;
@@ -437,7 +437,8 @@
     text-decoration: none !important;
     border-radius: 9px;
   }
-  #nav > :is(#trade-open, #ownership-export-open, #edit-nickname, #logout):hover {
+  #nav
+    > :is(#trade-open, #ownership-export-open, #edit-nickname, #logout):hover {
     background: var(--soft);
   }
 }
@@ -538,4 +539,151 @@
 
 .trade-sheet-grid article > span:not(.trade-collage):not(.trade-shot-image) {
   line-height: 1.1;
+}
+
+/* 交換画像の作成・保存 */
+.trade-export-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.trade-export-group {
+  min-width: 0;
+}
+.trade-export-group h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #a2664d;
+}
+.trade-export-group[data-side="want"] h3 {
+  color: #4b82a5;
+}
+.trade-export-group h3 small {
+  color: #9b8e96;
+  font-size: 11px;
+  font-weight: 400;
+}
+.trade-export-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.trade-export-group button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 14px;
+  border: 1px solid #e6cfc2;
+  border-radius: 12px;
+  background: #fff4ec;
+  color: #966347;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.trade-export-group[data-side="want"] button {
+  border-color: #c7dde9;
+  background: #eef8fe;
+  color: #4e83a5;
+}
+.trade-export-group button small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+.trade-export-group button:hover {
+  filter: brightness(0.98);
+}
+.trade-export-group button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.trade-export-group p,
+#trade-export-status {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #99858f;
+}
+#trade-export-status:empty {
+  display: none;
+}
+.trade-export-dialog {
+  width: min(740px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid var(--line, #eadde5);
+  border-radius: 20px;
+  background: #fffafc;
+  color: #6f606a;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.trade-export-dialog::backdrop {
+  background: #41354166;
+}
+.trade-export-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.trade-export-dialog-heading h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.trade-export-dialog-heading button {
+  padding: 2px 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #8d7c87;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.trade-export-dialog > p,
+.trade-export-dialog > small {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.trade-export-dialog > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.trade-export-dialog [data-export-save] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  background: var(--soft, #faedf3);
+  border: 1px solid var(--line, #eadde5);
+  border-radius: 12px;
+  color: var(--accent, #b87998);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+}
+.trade-export-dialog .trade-actions {
+  margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .trade-export-buttons {
+    gap: 12px;
+  }
+  .trade-export-group button {
+    width: 100%;
+    padding: 10px;
+  }
+  .trade-export-dialog {
+    padding: 14px;
+  }
 }
