@@ -687,3 +687,115 @@
     padding: 14px;
   }
 }
+
+/* 確認一覧は保存用画像と分け、コンパクトに表示します。 */
+.trade-review {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.trade-review-group {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #eadfd9;
+  border-radius: 12px;
+  background: #fffdfb;
+}
+.trade-review-group[data-side="want"] {
+  border-color: #dce8ee;
+  background: #fbfdff;
+}
+.trade-review-group h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 9px;
+  color: #9e725d;
+  font-size: 12px;
+  font-weight: 500;
+}
+.trade-review-group[data-side="want"] h3 {
+  color: #54829e;
+}
+.trade-review-group h3 small {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+}
+.trade-review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px 4px;
+  align-items: start;
+}
+.trade-review-card {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+}
+.trade-review-card > .trade-shot-image,
+.trade-review-card > .trade-collage {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 0.714;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 3px;
+}
+.trade-review-card[data-kind="coordinate"] > .trade-shot-image,
+.trade-review-card[data-kind="coordinate"] > .trade-collage {
+  aspect-ratio: 1;
+}
+.trade-review-card > .trade-collage {
+  display: grid;
+}
+.trade-review-card.is-priority::after {
+  position: absolute;
+  content: "";
+  inset: 0 0 14px;
+  border: 2px solid #db6975;
+  border-radius: 3px;
+  pointer-events: none;
+}
+.trade-review-card > small {
+  display: block;
+  height: 14px;
+  font-size: 8px;
+  line-height: 14px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #8e818a;
+}
+.trade-review-empty {
+  grid-column: 1 / -1;
+  padding: 10px 0;
+  margin: 0;
+  font-size: 11px;
+  color: #a1969e;
+  text-align: center;
+}
+@media (min-width: 760px) {
+  .trade-review-grid {
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  }
+}
+@media (max-width: 420px) {
+  .trade-review {
+    gap: 8px;
+  }
+  .trade-review-group {
+    padding: 8px;
+  }
+  .trade-review-grid {
+    grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+  }
+  .trade-review-group h3 {
+    font-size: 11px;
+  }
+}
