@@ -3349,19 +3349,38 @@ window.CARD_TRADE_HOST = {
 const tradeStyles = document.createElement("link");
 tradeStyles.rel = "stylesheet";
 tradeStyles.href = new URL(
-  "../css/trade.css?v=20261018-trade-image-export",
+  "../css/trade.css?v=20261018-trade-share-polish",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(tradeStyles);
 const tradeScript = document.createElement("script");
 tradeScript.src = new URL(
-  "./trade.js?v=20261018-trade-image-export",
+  "./trade.js?v=20261018-trade-share-polish",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(tradeScript);
+let shareVerseWaiting = null;
+function requireShareVerse() {
+  if (window.CARD_VERSE) return Promise.resolve(window.CARD_VERSE);
+  if (!shareVerseWaiting) {
+    shareVerseWaiting = new Promise((resolve, reject) => {
+      const finish = () => {
+        clearTimeout(timer);
+        verseScript.removeEventListener("load", finish);
+        verseScript.removeEventListener("error", finish);
+        if (window.CARD_VERSE) resolve(window.CARD_VERSE);
+        else reject(Error("コーデ機能を読み込めませんでした。ページを再読み込みしてください。"));
+      };
+      const timer = setTimeout(finish, 15000);
+      verseScript.addEventListener("load", finish);
+      verseScript.addEventListener("error", finish);
+    }).catch((error) => { shareVerseWaiting = null; throw error; });
+  }
+  return shareVerseWaiting;
+}
 window.CARD_SHARE_HOST = {
   async scopeItems(scope) {
-    if (scope.startsWith("verse-")) return window.CARD_VERSE.shareCatalog(scope.slice(6));
+    if (scope.startsWith("verse-")) return (await requireShareVerse()).shareCatalog(scope.slice(6));
     return catalog.cards.filter((c) =>
       scope === "aikatsu"
         ? c.game === "aikatsu"
@@ -3398,9 +3417,8 @@ window.CARD_SHARE_HOST = {
       }
     }
     if (scopes.some((scope) => scope.startsWith("verse-"))) {
-      if (!window.CARD_VERSE?.shareRates)
-        throw Error("コーデ情報の読み込み後にもう一度開いてください。");
-      Object.assign(result, await window.CARD_VERSE.shareRates(scopes, seriesFilters));
+      const verse = await requireShareVerse();
+      Object.assign(result, await verse.shareRates(scopes, seriesFilters));
     }
     if (uid !== session?.user.id) throw Error("再ログインしてください。");
     return result;
@@ -3415,7 +3433,7 @@ window.CARD_SHARE_HOST = {
 const shareStyles = document.createElement("link");
 shareStyles.rel = "stylesheet";
 shareStyles.href = new URL(
-  "../css/public-share.css?v=20261017-share-text",
+  "../css/public-share.css?v=20261018-trade-share-polish",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(shareStyles);
