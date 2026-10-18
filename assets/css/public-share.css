@@ -1044,7 +1044,13 @@
   flex: 1;
   height: 88px;
   overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
 }
 #public-banner-cards {
   width: max-content;
@@ -1768,4 +1774,106 @@
 .ownership-share-dialog .share-close:focus:not(:focus-visible) {
   outline: none;
   box-shadow: none;
+}
+
+/* 公開設定：長いバース名と詳細欄がスイッチへ重ならない配置。 */
+#ownership-share-dialog .share-scope-settings > .share-scope-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 8px 12px;
+}
+#ownership-share-dialog .share-scope-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 0;
+}
+#ownership-share-dialog .share-scope-label > span {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#ownership-share-dialog .share-scope-state {
+  min-width: 0;
+  color: var(--muted, #988690);
+  font-size: 10px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+#ownership-share-dialog .share-series-toggle {
+  justify-self: end;
+  margin: 0;
+  padding: 3px 0 3px 5px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+#ownership-share-dialog [data-share-scope] {
+  box-sizing: border-box;
+  align-self: center;
+  justify-self: end;
+  width: 42px;
+  min-width: 42px;
+  height: 25px;
+  padding: 3px;
+  touch-action: manipulation;
+}
+#ownership-share-dialog [data-share-scope] > span {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+}
+#ownership-share-dialog .share-series-panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+}
+#ownership-share-dialog .share-series-panel[hidden] {
+  display: none !important;
+}
+#ownership-share-dialog .share-series-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+}
+#ownership-share-dialog .share-series-list label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 4px 0;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#ownership-share-dialog .share-series-list input[type="checkbox"] {
+  box-sizing: border-box;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  min-height: 15px;
+  margin: 0;
+  padding: 0;
+}
+@media (max-width: 380px) {
+  #ownership-share-dialog {
+    padding: 20px 16px;
+    box-sizing: border-box;
+  }
+  #ownership-share-dialog .share-scope-settings {
+    padding-inline: 10px;
+  }
+  #ownership-share-dialog .share-series-list {
+    grid-template-columns: 1fr;
+  }
 }
