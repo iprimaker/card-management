@@ -3315,7 +3315,7 @@ verseStyles.href = new URL(
 document.head.append(verseStyles);
 const verseScript = document.createElement("script");
 verseScript.src = new URL(
-  "./aipri-verse.js?v=20261018-trade-image-export",
+  "./aipri-verse.js?v=20261019-millefeui",
   document.currentScript?.src || location.href,
 ).href;
 document.head.append(verseScript);
