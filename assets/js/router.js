@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const version = "20261019-shared-scroll-stability";
+  const version = "20261019-shared-scroll-repair";
   const requested = new URLSearchParams(location.search).get("view");
   const page = requested === "shared" || requested === "contact" ? requested : "album";
   const template = document.getElementById("page-" + page);
