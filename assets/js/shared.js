@@ -90,6 +90,11 @@
 /* image-resolution.js */
 (() => {
   "use strict";
+  // Keep the original image available when a mobile canvas loses its backing store.
+  const fallbackStyle = document.createElement("style");
+  fallbackStyle.textContent = `html body img[data-low-resolution="true"],
+    html body .public-share img[data-low-resolution="true"] { opacity: 1 !important; }`;
+  document.head.append(fallbackStyle);
   const MAX_EDGE = 560;
   const LIST_MAX_EDGE = 420;
   const normalizedFrames =
@@ -116,7 +121,10 @@
               if (record.isIntersecting) {
                 inView.add(record.target);
                 schedule(record.target);
-              } else inView.delete(record.target);
+              } else {
+                inView.delete(record.target);
+                clear(record.target);
+              }
             }
           },
           { rootMargin: "240px 0px" },
@@ -133,7 +141,11 @@
   }
   function clear(image) {
     const entry = entries.get(image);
-    entry?.canvas.remove();
+    if (entry) {
+      entry.canvas.remove();
+      entry.canvas.width = 0;
+      entry.canvas.height = 0;
+    }
     image.removeAttribute("data-low-resolution");
     entries.delete(image);
   }
@@ -352,6 +364,14 @@
     true,
   );
   window.addEventListener("resize", () => scan(document));
+  function restoreVisibleImages() {
+    document.querySelectorAll('img[data-low-resolution="true"]').forEach(clear);
+    scan(document);
+  }
+  window.addEventListener("pageshow", restoreVisibleImages);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) restoreVisibleImages();
+  });
 
   const observer = new MutationObserver((records) => {
     const roots = new Set();
