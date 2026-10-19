@@ -5141,6 +5141,13 @@ init();
     return image.parentElement?.matches(normalizedFrames) && !image.closest("dialog");
   }
   const entries = new WeakMap();
+  const canvasOwners = new WeakMap();
+  function removeOrphans(image) {
+    for (const canvas of image.parentElement?.querySelectorAll(":scope > canvas.low-resolution-image") || []) {
+      if (!canvasOwners.has(canvas)) canvas.remove();
+    }
+    if (!entries.has(image)) image.removeAttribute("data-low-resolution");
+  }
   const pending = new Set();
   let frame = null;
   const inView = new WeakSet();
@@ -5178,10 +5185,8 @@ init();
       clear(image);
       return;
     }
-    const maxEdge =
-      image.closest("#cards, #verse-cards, #public-cards") && !image.closest("dialog")
-        ? LIST_MAX_EDGE
-        : MAX_EDGE;
+    const maxEdge = image.closest("#cards, #verse-cards, #public-cards") && !image.closest("dialog")
+      ? LIST_MAX_EDGE : MAX_EDGE;
     const parent = image.parentElement;
     const normalizedFrame = !!parent?.matches(normalizedFrames);
     const rotated = !!orientedFrame(image) && image.naturalWidth > image.naturalHeight;
@@ -5238,6 +5243,7 @@ init();
     let entry = entries.get(image);
     if (!entry || entry.parent !== parent || !entry.canvas.isConnected) {
       clear(image);
+      removeOrphans(image);
       const canvas = document.createElement("canvas");
       canvas.className = "low-resolution-image";
       canvas.setAttribute("aria-hidden", "true");
@@ -5245,6 +5251,10 @@ init();
       image.after(canvas);
       entry = { canvas, parent, src: "", width: 0, height: 0 };
       entries.set(image, entry);
+      canvasOwners.set(canvas, image);
+      canvas.addEventListener("contextlost", () => {
+        if (entries.get(image)?.canvas === canvas) clear(image);
+      });
     }
     const ratio = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
     const scaledWidth = Math.max(1, Math.round(image.naturalWidth * ratio));
@@ -5260,7 +5270,8 @@ init();
     ) {
       entry.canvas.width = width;
       entry.canvas.height = height;
-      const context = entry.canvas.getContext("2d");
+      let context;
+      try { context = entry.canvas.getContext("2d"); } catch { clear(image); return; }
       if (!context) {
         clear(image);
         return;
@@ -5358,6 +5369,7 @@ init();
   function scan(root) {
     const images = root instanceof HTMLImageElement ? [root] : root.querySelectorAll?.("img") || [];
     for (const image of images) {
+      removeOrphans(image);
       if (!watched.has(image)) {
         watched.add(image);
         resize?.observe(image);
@@ -5390,6 +5402,10 @@ init();
       if (record.type === "childList") {
         for (const node of record.removedNodes) {
           if (node.nodeType !== 1) continue;
+          if (node.matches?.("canvas.low-resolution-image")) {
+            const owner = canvasOwners.get(node);
+            if (owner && entries.get(owner)?.canvas === node && !node.isConnected) clear(owner);
+          }
           const images =
             node instanceof HTMLImageElement ? [node] : node.querySelectorAll?.("img") || [];
           for (const image of images) {
@@ -5406,6 +5422,7 @@ init();
             roots.add(node);
       } else if (record.target instanceof HTMLImageElement && record.attributeName === "src") {
         clear(record.target);
+        removeOrphans(record.target);
         schedule(record.target);
       } else roots.add(record.target);
     }
@@ -5423,6 +5440,8 @@ init();
   });
   scan(document);
 })();
+
+;
 
 /* aipri-verse.js */
 (() => {
