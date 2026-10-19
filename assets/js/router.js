@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const version = "20261019-image-white-fix";
+  const version = "20261019-image-mobile-fix";
   const requested = new URLSearchParams(location.search).get("view");
   const page = requested === "shared" || requested === "contact" ? requested : "album";
   const template = document.getElementById("page-" + page);
