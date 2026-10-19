@@ -14,10 +14,10 @@
     <script src="./assets/js/startup-cards.js?v=20261012-maintenance"></script>
     <script defer="" src="./assets/js/vendor/supabase.js?v=20261012-manual-db"></script>
     <script defer="" src="./assets/js/config.js?v=20261012-manual-db"></script>
-    <script defer="" src="./assets/js/site-info.js?v=20261012-manual-db"></script>
+    <script defer="" src="./assets/js/site-info.js?v=20261019-retention-one-month"></script>
     <script defer="" src="./assets/js/catalog-cache.js?v=20261012-manual-db"></script>
     <script defer src="./assets/js/maintenance.js?v=20261012-maintenance"></script>
-    <script defer="" src="./assets/js/app-title-fix.js?v=20261019-millefeui"></script>
+    <script defer="" src="./assets/js/app-title-fix.js?v=20261019-retention-one-month"></script>
     <script defer="" src="./assets/js/dropdowns.js?v=20261012-manual-db"></script>
     <style id="header-tag-correction">
       /* ヘッダー・タグ修正。既存CSSの後に読み込みます。 */
@@ -202,7 +202,7 @@
               ></label>
               <button class="primary" id="auth-submit" type="submit"> ログイン </button>
               <p class="account-retention-note">
-                2か月間ログイン・利用がないアカウントは所持記録とともに自動削除します。削除されたIDは再利用できません。
+                1か月間ログイン・利用がないアカウントは所持記録とともに自動削除します。削除されたIDは再利用できません。
               </p>
             </form>
             <div hidden="" id="signup-flow">
@@ -324,7 +324,7 @@
           <p class="account-retention-note" hidden="" id="auth-result-retention">
             <strong>パスワードを忘れた場合、再設定やアカウントの復旧はできません。</strong><br />
             アルバムIDとパスワードを、安全な場所に保存してください。<br /><br />
-            2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
+            1か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
           </p>
           <button class="primary" id="auth-result-next">アルバムを選ぶ</button>
         </div>
@@ -610,7 +610,7 @@
           <p id="account-id-message" role="status"></p>
         </section>
         <p>
-          所持カードの記録は保存されています。またログインして続けられます。2か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
+          所持カードの記録は保存されています。またログインして続けられます。1か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
         </p>
         <div class="account-actions">
           <button class="primary" id="logout-confirm">ログアウト</button>
