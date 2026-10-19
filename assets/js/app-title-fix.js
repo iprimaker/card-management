@@ -740,7 +740,7 @@ function clearAuthURL() {
 }
 $("auth-result-retention").innerHTML = `
   <span class="signup-notice-item"><strong>アルバムID・パスワードを大切に保管</strong><span>パスワードを忘れた場合、再設定やアカウントの復旧はできません。アルバムIDとパスワードは、安全な場所に保存してください。</span></span>
-  <span class="signup-notice-item"><strong>2か月間ご利用がない場合</strong><span>2か月間ログイン・利用がないと、アカウントと所持記録が自動削除されます。削除されたIDは再利用できません。</span></span>
+  <span class="signup-notice-item"><strong>1か月間ご利用がない場合</strong><span>1か月間ログイン・利用がないと、アカウントと所持記録が自動削除されます。削除されたIDは再利用できません。</span></span>
 `;
 function authResult(ok, message) {
   if (ok) clearPendingSignup();
