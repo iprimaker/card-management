@@ -11,7 +11,7 @@
   const panel = document.createElement("section");
   panel.id = "command-page";
   panel.hidden = true;
-  panel.innerHTML = `<aside class="command-notice"><strong>実行前に確認してください</strong><p>リセット・解除は元に戻せません。確認は5分間有効です。確認後にデータが変わった場合は、もう一度確認してください。自分の記録だけが対象です。登録済みの所持数は減らしません。複数のコーデで共通するパーツは、他のだんの収集状況にも影響します。確認から実行までに別端末で変更した記録も、実行時点の内容が対象になります。</p></aside><div class="command-heading"><h1>コマンド</h1><button type="button" data-back>アルバムに戻る</button></div><article class="command-box"><h2>コマンド入力</h2><label for="command-input">コマンド</label><textarea id="command-input" rows="3" placeholder="set aikatsu ownership" spellcheck="false"></textarea><div class="command-actions"><button type="button" class="primary" data-execute>実行</button></div></article><article class="command-box"><h2>実行結果</h2><div class="command-result" role="status" aria-live="polite">まだ実行していません。</div></article><article class="command-box"><h2>入力補助</h2><div class="command-assist"><label>対象（広）<select data-scope></select></label><label>実行詳細<select data-type></select></label><label>実行種類<select data-action><option value="read">確認・お楽しみ</option><option value="set">登録・設定</option><option value="reset">リセット・解除</option><option value="check">件数確認（リセット対象）</option></select></label><label>対象（狭）<select data-series><option value="">すべてのだん</option></select></label></div><div class="command-actions"><button type="button" data-generate>入力欄に出力</button></div><p class="command-note">出力だけでは実行されません。上の入力欄を確認して「実行」を押してください。</p></article><details class="command-box command-list"><summary>コマンド一覧</summary><p class="command-note">末尾に弾の名前を付けると対象を限定できます。表記は一覧と同じ名前を指定してください。</p><div data-list></div></details>`;
+  panel.innerHTML = `<div class="command-heading"><h1>コマンド実行</h1><button type="button" data-back>アルバムに戻る</button></div><details class="command-notice"><summary><svg class="command-warning-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.1 4.7a2.2 2.2 0 0 1 3.8 0l7.2 12.6a2.2 2.2 0 0 1-1.9 3.3H4.8a2.2 2.2 0 0 1-1.9-3.3Z" fill="currentColor" opacity=".14"/><path d="M10.1 4.7a2.2 2.2 0 0 1 3.8 0l7.2 12.6a2.2 2.2 0 0 1-1.9 3.3H4.8a2.2 2.2 0 0 1-1.9-3.3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/></svg><span>実行前の注意事項</span><i aria-hidden="true"></i></summary><div><p>リセット・解除で消した記録は元に戻せません。入力補助で対象と操作を選び、実行前に内容を確認してください。</p><ul><li>変更できるのは自分の記録だけです。アカウント・カード情報・共有URLは削除しません。</li><li>一括所持登録は未所持を1枚にします。例：0枚→1枚、3枚→3枚。リセットを選んだ場合は0枚になります。</li><li>譲と求は同時に設定できません。新しく選んだ側に切り替わります。</li><li>共通のバースパーツの変更は、そのパーツを使う他のだんにも反映されます。</li><li>確認は5分間有効です。確認後に記録やカード情報が変わったら、もう一度確認してください。</li><li>確認は1分10回、変更の実行は1分3回までです。HTMLやSQLは実行できません。</li></ul></div></details><article class="command-box"><h2>コマンド入力</h2><textarea id="command-input" rows="3" placeholder="例：A02 T01 D01 S00" aria-label="実行するコマンド" maxlength="100" autocapitalize="characters" autocomplete="off" spellcheck="false"></textarea><div class="command-actions"><button type="button" class="primary" data-execute>実行</button></div></article><article class="command-box"><h2>実行結果</h2><div class="command-result" role="status" aria-live="polite">まだ実行していません。</div></article><article class="command-box"><h2>入力補助</h2><div class="command-assist"><label>対象（広）<select data-scope></select></label><label>実行詳細<select data-type></select></label><label>実行種類<select data-action><option value="read">確認・お楽しみ</option><option value="set">登録・設定</option><option value="reset">リセット・解除</option><option value="check">件数確認（リセット対象）</option></select></label><label>対象（狭）<select data-series><option value="">すべてのだん</option></select></label></div><div class="command-actions"><button type="button" data-generate>入力欄に出力</button></div><p class="command-note">出力だけでは実行されません。上の入力欄を確認して「実行」を押してください。</p></article><details class="command-box command-list"><summary>コマンド一覧</summary><p class="command-note">各行は全だんを対象とするコマンドです。だんを限定する場合は入力補助から選択してください。</p><div data-list></div></details>`;
   document.getElementById("collection").parentElement.append(panel);
   const $ = (s) => panel.querySelector(s),
     input = $("#command-input"),
@@ -20,6 +20,50 @@
     scope = $("[data-scope]"),
     type = $("[data-type]"),
     action = $("[data-action]");
+  const codes = defs.codes;
+  const reverse = (table, token) =>
+    Object.keys(table).find((key) => table[key] === token);
+  function commandText(action, scope, type, series = "S00") {
+    return [
+      codes.actions[action],
+      codes.scopes[scope],
+      codes.types[type],
+      series,
+    ].join(" ");
+  }
+  async function seriesChoices(target) {
+    const labels = new Set();
+    const keys =
+      target === "all"
+        ? Object.keys(defs.scopes).filter((x) => x !== "all")
+        : [target];
+    for (const key of keys)
+      for (const item of await window.CARD_SHARE_HOST.scopeItems(key)) {
+        const values =
+          item.appearances?.map((x) => x.series) ||
+          (Array.isArray(item.series) ? item.series : [item.series]);
+        for (const value of values || [])
+          if (typeof value === "string" && value) labels.add(value);
+      }
+    const choices = new Map([["S00", null]]);
+    for (const label of [...labels].sort((a, b) =>
+      b.localeCompare(a, "ja", { numeric: true }),
+    )) {
+      const bytes = new TextEncoder().encode(label);
+      const hash = await crypto.subtle.digest("SHA-256", bytes);
+      const token =
+        "S" +
+        [...new Uint8Array(hash)]
+          .slice(0, 8)
+          .map((x) => x.toString(16).padStart(2, "0"))
+          .join("")
+          .toUpperCase();
+      if (choices.has(token) && choices.get(token) !== label)
+        throw Error("だんコードの重複を検出しました。");
+      choices.set(token, label);
+    }
+    return choices;
+  }
   function options(select, values) {
     select.replaceChildren(
       ...Object.entries(values).map(([value, text]) => {
@@ -53,31 +97,20 @@
     select.disabled = true;
     select.replaceChildren(new Option("読み込み中…", ""));
     try {
-      let items = [];
-      if (scope.value === "all") {
-        for (const key of Object.keys(defs.scopes).filter((x) => x !== "all"))
-          items.push(...(await window.CARD_SHARE_HOST.scopeItems(key)));
-      } else items = await window.CARD_SHARE_HOST.scopeItems(scope.value);
+      const choices = await seriesChoices(scope.value);
       if (id !== seriesRequest) return;
-      const labels = new Set();
-      for (const item of items) {
-        const values =
-          item.appearances?.map((x) => x.series) ||
-          (Array.isArray(item.series) ? item.series : [item.series]);
-        for (const value of values || [])
-          if (typeof value === "string" && value) labels.add(value);
-      }
-      options(select, {
-        "": "すべてのだん",
-        ...Object.fromEntries(
-          [...labels]
-            .sort((a, b) => b.localeCompare(a, "ja", { numeric: true }))
-            .map((x) => [x, x]),
+      options(
+        select,
+        Object.fromEntries(
+          [...choices].map(([token, label]) => [
+            token,
+            label || "すべてのだん",
+          ]),
         ),
-      });
+      );
     } catch (e) {
       if (id === seriesRequest) {
-        options(select, { "": "すべてのだん" });
+        options(select, { S00: "すべてのだん" });
         result.textContent =
           "だんの候補を取得できませんでした。もう一度対象を選んでください。";
       }
@@ -92,7 +125,16 @@
   fillTypes();
   $("[data-generate]").onclick = () => {
     const series = $("[data-series]").value.trim();
-    input.value = `${action.value} ${scope.value} ${type.value}${series ? " " + series : ""}`;
+    if ($("[data-series]").disabled) {
+      result.textContent = "だんの読み込みが終わるまでお待ちください。";
+      return;
+    }
+    input.value = commandText(
+      action.value,
+      scope.value,
+      type.value,
+      series || "S00",
+    );
     input.focus();
     result.textContent =
       "コマンドを入力欄へ出力しました。まだ実行していません。";
@@ -124,7 +166,7 @@
         const row = document.createElement("div");
         row.className = "command-list-row";
         const code = document.createElement("code");
-        code.textContent = `${key} ${s} ${t}`;
+        code.textContent = commandText(key, s, t);
         const help = document.createElement("small");
         help.textContent = `${label}：${description}${key === "check" ? "の対象件数を確認（変更なし）" : ""}`;
         const b = document.createElement("button");
@@ -139,7 +181,13 @@
             result.textContent = e.message;
           }
         };
-        row.append(code, help, b);
+        const explanation = document.createElement("p");
+        explanation.className = "command-explanation";
+        explanation.textContent =
+          key === "check"
+            ? "この対象・種類でリセットした場合の件数だけを確認します。登録・削除は行いません。"
+            : defs.help?.[key]?.[t] || "";
+        row.append(code, help, explanation, b);
         group.append(row);
       }
     list.append(group);
@@ -164,26 +212,46 @@
     }
     return true;
   }
-  function parse() {
-    const m = input.value
-      .trim()
-      .match(/^(read|set|reset|check)\s+(\S+)\s+(\S+)(?:\s+(.+))?$/);
-    const def = m && defs.actions[m[1] === "check" ? "reset" : m[1]];
+  async function parse() {
+    const text = input.value.trim().toUpperCase();
     if (
-      !m ||
-      !Object.hasOwn(defs.scopes, m[2]) ||
-      !Object.hasOwn(def.types, m[3])
+      text.length > 100 ||
+      !/^A[0-9]{2} T[0-9]{2} D[0-9]{2} S(?:00|[0-9A-F]{16})$/.test(text)
     )
-      throw Error("コマンド一覧または入力補助から選んでください。");
-    let series = m[4]?.trim() || null;
-    if (series?.startsWith('"') && series.endsWith('"'))
-      series = series.slice(1, -1);
+      throw Error(
+        "専用の英数字コマンドを入力してください。HTML・SQL・スクリプトは使用できません。",
+      );
+    const [a, t, d, seriesToken] = text.split(" ");
+    const action = reverse(codes.actions, a),
+      scope = reverse(codes.scopes, t),
+      type = reverse(codes.types, d);
+    const definition = defs.actions[action === "check" ? "reset" : action];
+    if (
+      !scope ||
+      !definition ||
+      !Object.hasOwn(definition.types, type) ||
+      (type === "parts" &&
+        !["all", "verse-onegai", "verse-himitsu"].includes(scope))
+    )
+      throw Error(
+        "この組み合わせは使用できません。入力補助から選んでください。",
+      );
+    let series = null;
+    if (seriesToken !== "S00") {
+      const choices = await seriesChoices(scope);
+      if (!choices.has(seriesToken))
+        throw Error(
+          "だんのコードが見つかりません。入力補助から選び直してください。",
+        );
+      series = choices.get(seriesToken);
+    }
     return {
-      action: m[1],
-      def,
-      args: { p_scope: m[2], p_type: m[3], p_series: series },
+      action,
+      def: definition,
+      args: { p_scope: scope, p_type: type, p_series: series },
     };
   }
+
   async function readCommand(cmd) {
     const scope = cmd.args.p_scope,
       series = cmd.args.p_series;
@@ -317,7 +385,7 @@
     busy = true;
     run.disabled = true;
     try {
-      const cmd = parse(),
+      const cmd = await parse(),
         user = host.session().user.id;
       result.textContent = "確認中…";
       if (cmd.action === "read") {
@@ -390,5 +458,15 @@
   };
   const style = document.createElement("style");
   style.textContent = `.command-notice{margin:16px 0;padding:15px 18px;background:var(--soft,#fff5f8);border:1px solid var(--line,#eee);border-radius:15px}.command-notice strong{font-size:13px}.command-notice p{margin:6px 0 0;font-size:11px;line-height:1.9;color:var(--muted)}.command-assist label:nth-child(1){order:1}.command-assist label:nth-child(4){order:2}.command-assist label:nth-child(3){order:3}.command-assist label:nth-child(2){order:4}.command-box input,.command-box select,.command-box textarea{border:1px solid var(--line,#e6dee4);border-radius:10px;padding:12px;background:#fff;color:inherit}.command-box textarea{line-height:1.8}.command-box button{border-radius:10px}.command-result{background:var(--soft,#faf6fa);border-radius:12px;padding:14px}.command-entry{display:block;margin:20px 0 0 auto!important;padding:5px 0!important;font-size:11px!important;color:var(--muted)!important;background:none!important;border:0!important;box-shadow:none!important}#command-page{max-width:850px;margin:0 auto;padding-bottom:32px}.command-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.command-heading h1{font-size:22px}.command-box{display:block;padding:20px;margin:16px 0;background:white;border:1px solid var(--line,#eee);border-radius:18px}.command-box h2{font-size:15px;margin:0 0 14px}.command-box textarea{box-sizing:border-box;width:100%;font-size:16px;margin:8px 0 12px;resize:vertical}.command-assist{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.command-assist label{display:grid;gap:6px;font-size:12px}.command-assist select,.command-assist input{width:100%;min-width:0;box-sizing:border-box;font-size:16px}.command-result{min-height:50px;line-height:1.9;white-space:pre-wrap;font-size:13px}.command-note{font-size:11px;line-height:1.8;color:var(--muted)}.command-list summary{cursor:pointer;font-size:13px;padding:6px 0}.command-list-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:12px 0;border-bottom:1px solid var(--line,#eee)}.command-list-row code{overflow-wrap:anywhere;font-size:12px}.command-list-row small{grid-column:1;color:var(--muted);line-height:1.6}.command-list-row button{grid-column:2;grid-row:1/3;align-self:center;font-size:11px;padding:6px 10px}.command-confirm{max-width:460px;width:calc(100% - 32px);box-sizing:border-box;border:0;border-radius:20px;padding:24px}.command-confirm p{line-height:1.8}.command-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}@media(max-width:500px){.command-assist{grid-template-columns:1fr}.command-box{padding:16px}.command-heading h1{font-size:20px}}`;
+  style.textContent += `
+.command-notice{background:var(--soft,#fff6f8);padding:0;overflow:hidden}
+.command-notice summary{display:flex;align-items:center;gap:9px;list-style:none;padding:14px 16px;cursor:pointer;font-size:12px;color:var(--accent,#b7738b)}
+.command-notice summary::-webkit-details-marker{display:none}.command-warning-icon{width:22px;height:22px;flex:none;color:#b48b48}
+.command-notice summary i{margin-left:auto;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);transition:transform .15s}.command-notice[open] summary i{transform:rotate(225deg)}
+.command-notice>div{padding:0 18px 16px}.command-notice ul{margin:10px 0 0;padding-left:18px;font-size:11px;line-height:1.9;color:var(--muted)}
+.command-list>[data-list]>details{border:1px solid var(--line,#eee);border-radius:12px;padding:8px 12px;margin-top:10px}
+.command-list-row{background:var(--soft,#fcf8fa);border:0;border-radius:11px;margin:10px 0;padding:13px;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px}
+.command-list-row code{font-size:12px;letter-spacing:.03em;color:var(--accent,#a86580);font-weight:600}.command-list-row small{font-size:11px}.command-list-row .command-explanation{grid-column:1/-1;font-size:11px;color:var(--muted);margin:0;line-height:1.85}.command-list-row button{grid-row:1/3;background:white}.command-box textarea{font-family:ui-monospace,monospace;letter-spacing:.04em}
+`;
   document.head.append(style);
 })();
