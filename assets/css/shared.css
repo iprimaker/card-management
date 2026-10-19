@@ -2796,3 +2796,19 @@ dialog *,
   width: 0;
   height: 0;
 }
+
+/* The decorative fixed footer must not capture vertical pan gestures. */
+.public-share .public-signup-banner { pointer-events:none; }
+.public-share .public-signup-banner > a,
+.public-share #public-banner-close { pointer-events:auto; touch-action:pan-y pinch-zoom; }
+.public-share .public-banner-marquee,
+.public-share #public-banner-cards,
+.public-share .public-banner-copy,
+.public-share .public-signup-banner::before,
+.public-share .public-signup-banner::after { pointer-events:none; }
+.public-share img[data-low-resolution="true"] { opacity:1 !important; }
+@media (hover:none), (pointer:coarse) {
+ .public-share .public-signup-banner { backdrop-filter:none; -webkit-backdrop-filter:none; background:#fffdfefa; }
+ .public-share #modal-scroll-rail { display:none !important; pointer-events:none !important; }
+ .public-share dialog { -webkit-overflow-scrolling:touch; }
+}
