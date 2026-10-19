@@ -635,6 +635,7 @@ function refreshFavoriteUI(id) {
   if (favoriteFilter && game) render();
 }
 async function saveFavorite(id) {
+  if (!requireEditingSession()) return;
   if (!session || !favoritesReady || favoriteSaving.has(id) || maintenanceActive) return;
   const uid = session.user.id;
   const generation = favoritesGeneration;
@@ -1611,6 +1612,7 @@ function syncOwnershipCardNodes() {
   }
 }
 async function saveQuantity(id, delta, clear = false) {
+  if (!requireEditingSession()) return;
   if (!session || !ownershipReady || saving.has(id) || maintenanceActive) return;
   const uid = session.user.id;
   const generation = loadGeneration;
@@ -1761,6 +1763,62 @@ function updateModalOwnership() {
   $("modal-owned").disabled = !ownershipReady;
   $("modal-owned").setAttribute("aria-disabled", String(saving.has(selected.id)));
 }
+let loginRequiredAt = 0;
+function requireEditingSession() {
+  if (session?.user?.id) return true;
+  showLoginRequired();
+  return false;
+}
+function showLoginRequired() {
+  if (maintenanceActive) return;
+  const now = Date.now();
+  if (now - loginRequiredAt < 800) return;
+  loginRequiredAt = now;
+  for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
+  authResultShowing = false;
+  callbackPending = false;
+  void authChanged("SIGNED_OUT", null);
+  authMode("login");
+  screen("auth");
+  history.replaceState(null, "", location.pathname + location.search);
+  toast("ログインしてください", "error");
+  setTimeout(() => toast("ログインしてください", "error"), 0);
+}
+function isAccountEditRequest(input, options = {}) {
+  const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url, location.href);
+  if (url.origin !== new URL(window.APP_CONFIG.supabaseUrl).origin) return false;
+  const method = String(options.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+  if (["GET", "HEAD", "OPTIONS"].includes(method) || !url.pathname.startsWith("/rest/v1/")) return false;
+  if (!url.pathname.startsWith("/rest/v1/rpc/")) return true;
+  const name = decodeURIComponent(url.pathname.split("/").pop());
+  return /^card_admin_/.test(name) || /^card_(?:album|verse)_(?:set_|change_|clear_|delete_|share_(?:issue|delete|restore|set_))/.test(name);
+}
+async function accountGuardFetch(input, options) {
+  const editing = isAccountEditRequest(input, options);
+  if (editing && !requireEditingSession()) {
+    return Response.json({code:"PGRST301", message:"ログインしてください"}, {status:401});
+  }
+  const response = await window.CARD_MAINTENANCE.fetch(input, options);
+  if (editing && response.status === 401 && !maintenanceActive) {
+    void db?.auth.signOut({scope:"local"}).catch(() => {});
+    showLoginRequired();
+  }
+  return response;
+}
+const editingControls = "[data-toggle], [data-favorite], [data-verse-own], [data-verse-adjust], [data-verse-favorite], [data-trade-side], #modal-owned, #modal-favorite, #quantity-minus, #quantity-plus, #edit-nickname, #account-delete-confirm";
+document.addEventListener("click", (event) => {
+  if (event.target.closest(editingControls) && !requireEditingSession()) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+}, true);
+document.addEventListener("submit", (event) => {
+  if (event.target.id === "nickname-form" && !requireEditingSession()) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+}, true);
+
 let albumAuthSubscription = null;
 let albumRememberSession = albumSessionStorage.remembered();
 function configureAlbumAuth(remember = albumRememberSession) {
@@ -1774,7 +1832,7 @@ function configureAlbumAuth(remember = albumRememberSession) {
       detectSessionInUrl: true,
       flowType: "implicit",
     },
-    global: { fetch: window.CARD_MAINTENANCE.fetch },
+    global: { fetch: accountGuardFetch },
   });
   db = client;
   albumAuthSubscription = client.auth.onAuthStateChange((event, session) => {
@@ -2560,7 +2618,7 @@ $("nickname-top-close").onclick = () => $("nickname-dialog").close();
 $("nickname-cancel").onclick = () => $("nickname-dialog").close();
 $("nickname-form").onsubmit = async (e) => {
   e.preventDefault();
-  if (!session || !db) return;
+  if (!requireEditingSession() || !db) return;
   const value = $("profile-nickname").value.trim();
   if ([...value].length < 2 || [...value].length > 8) {
     $("nickname-message").textContent = "2〜8文字で入力してください。";
