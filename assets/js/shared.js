@@ -304,6 +304,14 @@
   }
   function schedule(image) {
     if (!(image instanceof HTMLImageElement) || !image.isConnected) return;
+    // Moving banner images stay native: no canvas creation/destruction at every intersection.
+    if (image.closest("#public-banner-cards")) {
+      const parent = image.parentElement;
+      if (image.complete && image.naturalWidth && parent?.matches(normalizedFrames))
+        parent.classList.toggle("landscape", image.naturalWidth > image.naturalHeight);
+      clear(image);
+      return;
+    }
     if (image.hidden) {
       clear(image);
       return;
@@ -339,6 +347,10 @@
     const images = root instanceof HTMLImageElement ? [root] : root.querySelectorAll?.("img") || [];
     for (const image of images) {
       removeOrphans(image);
+      if (image.closest("#public-banner-cards")) {
+        schedule(image);
+        continue;
+      }
       if (!watched.has(image)) {
         watched.add(image);
         resize?.observe(image);
@@ -363,7 +375,13 @@
     },
     true,
   );
-  window.addEventListener("resize", () => scan(document));
+  let imageViewportWidth = document.documentElement.clientWidth;
+  window.addEventListener("resize", () => {
+    const width = document.documentElement.clientWidth;
+    if (width === imageViewportWidth) return;
+    imageViewportWidth = width;
+    scan(document);
+  });
   function restoreVisibleImages() {
     document.querySelectorAll('img[data-low-resolution="true"]').forEach(clear);
     scan(document);
@@ -1098,16 +1116,21 @@
       })
       .join("");
   }
-  window.addEventListener(
-    "resize",
-    () => {
+  let pagingWidth = document.documentElement.clientWidth;
+  let pagingResizeFrame = null;
+  window.addEventListener("resize", () => {
+    const width = document.documentElement.clientWidth;
+    if (width === pagingWidth) return;
+    pagingWidth = width;
+    if (pagingResizeFrame !== null) cancelAnimationFrame(pagingResizeFrame);
+    pagingResizeFrame = requestAnimationFrame(() => {
+      pagingResizeFrame = null;
       if (snapshot) {
         const count = filtered().length;
         renderPages(Math.max(1, Math.ceil(count / (size === "all" ? Math.max(1, count) : size))));
       }
-    },
-    { passive: true },
-  );
+    });
+  }, { passive: true });
   $("public-progress-details").addEventListener("toggle", renderProgressDetails);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopLive();
@@ -1327,6 +1350,7 @@
   document.addEventListener(
     "scroll",
     (event) => {
+      if (!modal && !document.querySelector("dialog[open]")) return;
       if (modal?.contains(event.target) && scrollable(event.target)) {
         cachedScroller = event.target;
         needsScan = false;
