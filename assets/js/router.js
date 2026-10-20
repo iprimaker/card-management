@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const version = "20261020-registration-numbering";
+  const version = "20261020-registration-counts-formal";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "contact", "card-registration"].includes(requested)
