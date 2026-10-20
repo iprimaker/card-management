@@ -1,17 +1,21 @@
 (() => {
   "use strict";
-  const version = "20261020-tutorial-no-image-export";
+  const version = "20261020-registration-header-back";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
-    requested === "shared" || requested === "contact" ? requested : "album";
-  const template = document.getElementById("page-" + page);
+    ["shared", "contact", "card-registration"].includes(requested)
+      ? requested
+      : "album";
+  const template = document.getElementById("page-" + (page === "card-registration" ? "album" : page));
   const rootURL = new URL("./", location.href);
   document.title =
     page === "shared"
       ? "共有アルバム｜カードアルバム"
       : page === "contact"
         ? "お問い合わせ｜カードアルバム"
-        : "カードアルバム";
+        : page === "card-registration"
+          ? "カード登録情報｜カードアルバム"
+          : "カードアルバム";
   if (page === "shared") {
     for (const [name, content] of [
       ["referrer", "no-referrer"],
@@ -67,11 +71,13 @@
     });
   }
   const styles = Promise.all(
-    (page === "album" ? ["album", "features"] : [page]).map(stylesheet),
+    (page === "album" || page === "card-registration"
+      ? ["album", "features", "card-registration"]
+      : [page]).map(stylesheet),
   );
   styles.then(
     () => {
-      document.body.style.visibility = initialVisibility;
+      if (page !== "card-registration") document.body.style.visibility = initialVisibility;
     },
     () => {},
   );
@@ -88,7 +94,9 @@
         })
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
-    .then(() => script(page + ".js"))
+    .then(() => page === "card-registration"
+      ? script("registration-site-info.js").then(() => script("card-registration.js"))
+      : script(page + ".js"))
     .then(() =>
       page === "album"
         ? script("command-definitions.js").then(() =>
@@ -97,6 +105,8 @@
         : undefined,
     )
     .then(() => (page === "album" ? script("tutorial.js") : undefined))
+    .then(() => (page === "album" ? script("card-registration.js") : undefined))
+    .then(() => { document.body.style.visibility = initialVisibility; })
     .catch((error) => {
       document.body.style.visibility = initialVisibility;
       const status = document.createElement("p");
