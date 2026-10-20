@@ -132,7 +132,7 @@
     meta.className = "registration-entry-meta";
     const id = document.createElement("span");
     id.className = "registration-entry-id";
-    id.textContent = "REG-" + String(entry.id).padStart(6, "0");
+    id.textContent = "REG-" + String(entry.display_number ?? entry.id).padStart(6, "0");
     const time = document.createElement("time");
     const date = new Date(entry.updated_on);
     if (Number.isFinite(date.getTime())) {
