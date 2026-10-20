@@ -161,6 +161,16 @@
     liveWanted = false,
     refreshTimer = null,
     pendingRefresh = false;
+  let shareReadBlockedUntil = 0;
+  function showShareReadLimit(data) {
+    const seconds = Math.min(300, Math.max(1, Number(data.retry_after) || 60));
+    shareReadBlockedUntil = Date.now() + seconds * 1000;
+    clearTimeout(refreshTimer);
+    pendingRefresh = false;
+    unavailable();
+    $("public-unavailable").hidden = true;
+    $("public-status").textContent = `アクセスが集中しています。${seconds}秒ほど待ってから再読み込みしてください。`;
+  }
   const scopeFilters = new Map();
   const verse = () => scope?.startsWith("verse-");
   function unavailable() {
@@ -475,6 +485,10 @@
       }`;
   }
   async function load(wanted = scope, quiet = false) {
+    if (Date.now() < shareReadBlockedUntil) {
+      $("public-status").textContent = `アクセスが集中しています。あと${Math.ceil((shareReadBlockedUntil - Date.now()) / 1000)}秒ほど待ってから再読み込みしてください。`;
+      return;
+    }
     const g = ++generation;
     busy = true;
     if (!quiet) {
@@ -490,6 +504,10 @@
       });
       if (g !== generation) return;
       if (r.error) throw Error("所持状況を取得できませんでした。再読み込みしてください。");
+      if (r.data?.rate_limited === true) {
+        showShareReadLimit(r.data);
+        return;
+      }
       if (r.data?.available !== true) {
         if (quiet && wanted) {
           const retry = await client.rpc("card_album_share_read", {
@@ -498,6 +516,10 @@
           });
           if (g !== generation) return;
           if (retry.error) throw Error("更新できませんでした。");
+          if (retry.data?.rate_limited === true) {
+            showShareReadLimit(retry.data);
+            return;
+          }
           if (retry.data?.available === true) {
             r.data = retry.data;
           } else {
@@ -695,7 +717,7 @@
     true,
   );
   function scheduleRefresh() {
-    if (document.hidden) return;
+    if (document.hidden || Date.now() < shareReadBlockedUntil) return;
     if (busy) {
       pendingRefresh = true;
       return;
