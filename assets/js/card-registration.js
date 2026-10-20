@@ -42,7 +42,7 @@
         <p class="registration-count-note">カードはパラレルなどの別種を含みます。バースのコーデ・パーツは別集計です。</p>
       </section>
       <section class="registration-history" aria-labelledby="registration-history-title">
-        <div class="registration-section-heading"><h2 id="registration-history-title">登録の履歴</h2><span>新しい順</span></div>
+        <div class="registration-section-heading"><h2 id="registration-history-title">登録履歴</h2><span>新しい順</span></div>
         <p id="registration-status" role="status">登録情報を読み込んでいます…</p>
         <div id="registration-entries"></div>
         <button id="registration-more" class="registration-more" type="button" hidden>過去の登録情報を表示</button>
