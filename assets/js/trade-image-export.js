@@ -1,6 +1,42 @@
 (() => {
   "use strict";
   const cache = new Map();
+  const rendered = new Map();
+  const IMAGE_CACHE_LIMIT = 96;
+  const RENDER_CACHE_LIMIT = 6;
+  const RENDER_CACHE_BYTES = 8 * 1024 * 1024;
+  const IMAGE_CONCURRENCY = 8;
+  let renderedBytes = 0;
+
+  function trimImages() {
+    for (const [key, entry] of cache) {
+      if (cache.size <= IMAGE_CACHE_LIMIT) break;
+      if (entry.settled) cache.delete(key);
+    }
+  }
+
+  function outputKey(sheet, title) {
+    return JSON.stringify([
+      title, sheet.side, sheet.kind, sheet.page, sheet.pages, sheet.number,
+      sheet.cards.map((card) => [
+        card.image, card.collage, card.kind, card.quantity, card.code, card.priority,
+      ]),
+    ]);
+  }
+
+  function rememberOutput(key, blob) {
+    if (blob.size > RENDER_CACHE_BYTES) return;
+    const previous = rendered.get(key);
+    if (previous) renderedBytes -= previous.size;
+    rendered.delete(key);
+    rendered.set(key, blob);
+    renderedBytes += blob.size;
+    while (rendered.size > RENDER_CACHE_LIMIT || renderedBytes > RENDER_CACHE_BYTES) {
+      const oldest = rendered.keys().next().value;
+      renderedBytes -= rendered.get(oldest).size;
+      rendered.delete(oldest);
+    }
+  }
   const CAPACITY = 36;
   const WIDTH = 1080;
   const MARGIN = 24;
@@ -46,7 +82,7 @@
       const value = cache.get(url.href);
       cache.delete(url.href);
       cache.set(url.href, value);
-      return value;
+      return value.task;
     }
     // 外部サイトのCORS制限を避け、出力時だけ公開画像を縮小変換します。
     // アルバムID・所持数・交換設定・認証情報は変換サービスに送信しません。
@@ -66,12 +102,21 @@
       output: "webp",
       q: "65",
     }).toString();
-    const task = loadImage(publicRemote ? proxy.href : url.href).catch((error) => {
-      cache.delete(url.href);
-      throw error;
-    });
-    cache.set(url.href, task);
-    while (cache.size > 64) cache.delete(cache.keys().next().value);
+    const entry = { task: null, settled: false };
+    const task = loadImage(publicRemote ? proxy.href : url.href).then(
+      (image) => {
+        entry.settled = true;
+        trimImages();
+        return image;
+      },
+      (error) => {
+        if (cache.get(url.href) === entry) cache.delete(url.href);
+        throw error;
+      },
+    );
+    entry.task = task;
+    cache.set(url.href, entry);
+    trimImages();
     return task;
   }
 
@@ -114,22 +159,42 @@
   async function create(sheet, title, progress = () => {}, current = () => true) {
     if (!sheet.cards?.length || sheet.cards.length > CAPACITY)
       throw Error("1画像に配置できるカードは1〜36枚です。");
-    const cards = sheet.cards;
+    const cards = sheet.cards.map((card) => ({
+      ...card,
+      collage: card.collage ? [...card.collage] : card.collage,
+    }));
+    sheet = { ...sheet, cards };
     const sources = [...new Set(cards.flatMap((c) => (c.image ? [c.image] : c.collage || [])))];
     if (cards.some((c) => !c.image && !c.collage?.length))
       throw Error("画像が未登録のカードがあります。カード情報を確認してください。");
+    if (!current()) throw Error("画像の作成を中止しました。");
+    const key = outputKey(sheet, title);
+    const cached = rendered.get(key);
+    if (cached) {
+      rendered.delete(key);
+      rendered.set(key, cached);
+      progress(sources.length, sources.length);
+      if (!current()) throw Error("画像の作成を中止しました。");
+      return cached;
+    }
     const images = new Map();
     let next = 0,
-      done = 0;
+      done = 0,
+      failed = false;
     const assertCurrent = () => {
-      if (!current()) throw Error("画像の作成を中止しました。");
+      if (failed || !current()) throw Error("画像の作成を中止しました。");
     };
     await Promise.all(
-      Array.from({ length: Math.min(4, sources.length) }, async () => {
+      Array.from({ length: Math.min(IMAGE_CONCURRENCY, sources.length) }, async () => {
         while (next < sources.length) {
           assertCurrent();
           const source = sources[next++];
-          images.set(source, await exportImage(source));
+          try {
+            images.set(source, await exportImage(source));
+          } catch (error) {
+            failed = true;
+            throw error;
+          }
           assertCurrent();
           progress(++done, sources.length);
         }
@@ -230,7 +295,7 @@
         "#aa6672",
         WIDTH - MARGIN * 2,
       );
-      return await new Promise((resolve, reject) => {
+      const blob = await new Promise((resolve, reject) => {
         try {
           canvas.toBlob(
             (blob) => (blob ? resolve(blob) : reject(Error("画像を作成できませんでした。"))),
@@ -241,6 +306,9 @@
           reject(Error("画像の保存が制限されています。画像の配信設定をご確認ください。"));
         }
       });
+      assertCurrent();
+      rememberOutput(key, blob);
+      return blob;
     } finally {
       canvas.width = canvas.height = 1;
     }
