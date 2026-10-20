@@ -1,8 +1,9 @@
 (() => {
   "use strict";
-  const version = "20261019-shared-scroll-repair";
+  const version = "20261020-tutorial-no-image-export";
   const requested = new URLSearchParams(location.search).get("view");
-  const page = requested === "shared" || requested === "contact" ? requested : "album";
+  const page =
+    requested === "shared" || requested === "contact" ? requested : "album";
   const template = document.getElementById("page-" + page);
   const rootURL = new URL("./", location.href);
   document.title =
@@ -43,7 +44,9 @@
       node.async = false;
       node.onload = resolve;
       node.onerror = () =>
-        reject(Error("ファイルを読み込めませんでした。再読み込みしてください。"));
+        reject(
+          Error("ファイルを読み込めませんでした。再読み込みしてください。"),
+        );
       document.head.append(node);
     });
   }
@@ -51,30 +54,49 @@
     return new Promise((resolve, reject) => {
       const node = document.createElement("link");
       node.rel = "stylesheet";
-      node.href = new URL("assets/css/" + file + ".css?v=" + version, rootURL).href;
+      node.href = new URL(
+        "assets/css/" + file + ".css?v=" + version,
+        rootURL,
+      ).href;
       node.onload = resolve;
       node.onerror = () =>
-        reject(Error("表示ファイルを読み込めませんでした。再読み込みしてください。"));
+        reject(
+          Error("表示ファイルを読み込めませんでした。再読み込みしてください。"),
+        );
       document.head.append(node);
     });
   }
-  const styles = Promise.all((page === "album" ? ["album", "features"] : [page]).map(stylesheet));
+  const styles = Promise.all(
+    (page === "album" ? ["album", "features"] : [page]).map(stylesheet),
+  );
   styles.then(
     () => {
       document.body.style.visibility = initialVisibility;
     },
     () => {},
   );
-  const dependencies = Promise.all([script("vendor/supabase.js"), script("config.js")]);
+  const dependencies = Promise.all([
+    script("vendor/supabase.js"),
+    script("config.js"),
+  ]);
   const preview =
     page === "album"
       ? script("startup.js").then(() => {
-          window.CARD_STARTUP_PREVIEW.paint(document.getElementById("auth-art"));
+          window.CARD_STARTUP_PREVIEW.paint(
+            document.getElementById("auth-art"),
+          );
         })
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
     .then(() => script(page + ".js"))
-    .then(() => page === "album" ? script("command-definitions.js").then(() => script("settings-commands.js")) : undefined)
+    .then(() =>
+      page === "album"
+        ? script("command-definitions.js").then(() =>
+            script("settings-commands.js"),
+          )
+        : undefined,
+    )
+    .then(() => (page === "album" ? script("tutorial.js") : undefined))
     .catch((error) => {
       document.body.style.visibility = initialVisibility;
       const status = document.createElement("p");
