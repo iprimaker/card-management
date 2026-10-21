@@ -136,7 +136,9 @@
         .normalize("NFKC")
         .toLowerCase()
         .replace(/[\s‐‑–—−_-]/g, "");
-  const token = location.hash.slice(1);
+  const browseOnly = new URLSearchParams(location.search).get("view") === "browse";
+  const browseScopes = ["aikatsu", "onegai", "himitsu", "verse-onegai", "verse-himitsu"];
+  const token = browseOnly ? "" : location.hash.slice(1);
   let verseCatalog = null,
     publicCatalog = null,
     bannerFlight = false;
@@ -305,6 +307,7 @@
     return `<span class="public-collage">${(c.part_ids || []).map((id) => `<img src="${esc(parts.get(id)?.image || "")}" alt="" loading="lazy">`).join("")}</span>`;
   }
   function renderScopeNote() {
+    if (browseOnly) return;
     const note = $("public-scope-note");
     if (!note) return;
     note.replaceChildren();
@@ -340,7 +343,7 @@
   function render() {
     renderScopeNote();
     if (!snapshot) return;
-    renderProgressDetails();
+    if (!browseOnly) renderProgressDetails();
     const all = filtered(),
       got = items.filter(full).length,
       count = items.length;
@@ -350,7 +353,7 @@
     );
     const limit = size === "all" ? Math.max(1, all.length) : size;
     $("public-title").textContent = labels[scope];
-    $("public-owner").textContent = (snapshot.nickname || "ゲスト") + "のカードアルバム";
+    $("public-owner").textContent = browseOnly ? "カードアルバム｜カード検索" : (snapshot.nickname || "ゲスト") + "のカードアルバム";
     const subset = filtered(false),
       subsetGot = subset.filter(full).length,
       unit = verse() ? "コーデ" : "枚";
@@ -413,7 +416,7 @@
       .slice((page - 1) * limit, page * limit)
       .map(
         (c) =>
-          `<article class="public-card ${full(c) ? "is-owned" : ""}"><button type="button" data-public-detail="${esc(c.id)}"><span class="public-image ${full(c) ? "" : "is-unowned"}">${image(c)}${(verse() ? fullQuantities.get(c.id) : quantities.get(c.id)) > 0 ? `<span class="public-quantity">${verse() ? fullQuantities.get(c.id) : quantities.get(c.id)}枚</span>` : ""}${state(c) === "partial" ? '<span class="public-partial">一部獲得済</span>' : ""}</span><span class="public-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name || "カード名未取得")}</strong>${verse() ? "" : `<small>${esc(rarity(c))}</small>`}</button></article>`,
+          `<article class="public-card ${full(c) ? "is-owned" : ""}"><button type="button" data-public-detail="${esc(c.id)}"><span class="public-image ${browseOnly || full(c) ? "" : "is-unowned"}">${image(c)}${(verse() ? fullQuantities.get(c.id) : quantities.get(c.id)) > 0 ? `<span class="public-quantity">${verse() ? fullQuantities.get(c.id) : quantities.get(c.id)}枚</span>` : ""}${state(c) === "partial" ? '<span class="public-partial">一部獲得済</span>' : ""}</span><span class="public-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name || "カード名未取得")}</strong>${verse() ? "" : `<small>${esc(rarity(c))}</small>`}</button></article>`,
       )
       .join("");
     $("public-empty").hidden = all.length > 0;
@@ -470,15 +473,15 @@
           ["遊べる曲", values(c.songs).join(" ／ ")],
         ];
     $("public-detail-content").innerHTML =
-      `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2><p class="public-possession is-${state(c)}">${held ? "持っている" : state(c) === "partial" ? "一部持っている" : "持っていない"}</p><dl>${rows
+      `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2>${browseOnly ? "" : `<p class="public-possession is-${state(c)}">${held ? "持っている" : state(c) === "partial" ? "一部持っている" : "持っていない"}</p>`}<dl>${rows
         .filter(([, v]) => v)
         .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
         .join("")}</dl></div></div>${
         verse()
-          ? `<h3>パーツごとの所持状況</h3><div class="public-modal-parts">${c.part_ids
+          ? `<h3>${browseOnly ? "構成パーツ" : "パーツごとの所持状況"}</h3><div class="public-modal-parts">${c.part_ids
               .map((id) => {
                 const p = parts.get(id);
-                return `<article><img src="${esc(p?.image || "")}" alt="${esc(p?.slot)}"><span>${esc(p?.slot)} ／ ${p?.buzz == null ? "BP未確認" : p.buzz + " BP"}</span><small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small></article>`;
+                return `<article><img src="${esc(p?.image || "")}" alt="${esc(p?.slot)}"><span>${esc(p?.slot)} ／ ${p?.buzz == null ? "BP未確認" : p.buzz + " BP"}</span>${browseOnly ? "" : `<small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small>`}</article>`;
               })
               .join("")}</div>`
           : ""
@@ -492,16 +495,18 @@
     const g = ++generation;
     busy = true;
     if (!quiet) {
-      $("public-status").textContent = "所持状況を読み込み中…";
+      $("public-status").textContent = browseOnly ? "カード情報を読み込み中…" : "所持状況を読み込み中…";
       $("public-album").hidden = true;
       selected = null;
       if ($("public-detail").open) $("public-detail").close();
     }
     try {
-      const r = await client.rpc("card_album_share_read", {
-        p_token: token,
-        p_scope: wanted || null,
-      });
+      const r = browseOnly
+        ? { data: { available: true, scope: browseScopes.includes(wanted) ? wanted : "aikatsu", scopes: browseScopes } }
+        : await client.rpc("card_album_share_read", {
+            p_token: token,
+            p_scope: wanted || null,
+          });
       if (g !== generation) return;
       if (r.error) throw Error("所持状況を取得できませんでした。再読み込みしてください。");
       if (r.data?.rate_limited === true) {
@@ -741,6 +746,7 @@
     }
   }
   function startLive() {
+    if (browseOnly) return;
     liveWanted = true;
     if (channel || liveClosing || document.hidden || typeof client.channel !== "function") return;
     channel = client
@@ -847,7 +853,17 @@
       load(scope, true);
     }
   });
-  if (!/^[0-9a-f]{64}$/.test(token)) {
+  if (browseOnly) {
+    document.body.classList.add("guest-browse");
+    $("public-owner").textContent = "カードアルバム｜カード検索";
+    $("public-scopes").setAttribute("aria-label", "検索するシリーズ");
+    $("public-refresh").setAttribute("aria-label", "カード情報を再読み込み");
+    $("public-status").textContent = "カード情報を読み込み中…";
+    $("public-unavailable").querySelector("h1").textContent = "カード情報を表示できません";
+    $("public-unavailable").querySelector("p").textContent = "通信環境を確認して再読み込みしてください。";
+    $("public-owner").setAttribute("aria-label", "ログイン画面へ戻る");
+  }
+  if (!browseOnly && !/^[0-9a-f]{64}$/.test(token)) {
     unavailable();
     return;
   }
@@ -918,14 +934,18 @@
       modal = active;
       resize.observe(active);
     }
-    if (!desktop.matches || !canPopover) {
+    if (!canPopover) {
       hideRail();
       target = null;
       return;
     }
     const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
-    const scroller = scrollable(target) && active.contains(target) ? target :
-      candidates.includes(active) ? active : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
+    const cardBody = active.id === "detail" ? active.querySelector(".modal-body") : null;
+    const scroller = cardBody
+      ? (scrollable(cardBody) ? cardBody : null)
+      : scrollable(target) && active.contains(target) ? target
+      : candidates.includes(active) ? active
+      : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
     if (!scroller) { hideRail(); target = null; return; }
     if (target !== scroller) {
       hideRail();
@@ -941,13 +961,13 @@
     const vv = window.visualViewport;
     const left = vv?.offsetLeft || 0, top = vv?.offsetTop || 0;
     const width = vv?.width || innerWidth, height = vv?.height || innerHeight;
-    const y = Math.max(top + 8, rect.top + 8);
-    const bottom = Math.min(top + height - 8, rect.bottom - 8);
+    const y = Math.max(top + 8, box.top + 8);
+    const bottom = Math.min(top + height - 8, box.bottom - 8);
     trackHeight = Math.max(0, bottom - y);
     const max = Math.max(0, target.scrollHeight - target.clientHeight);
     if (!max || trackHeight < 40) { hideRail(); return; }
     if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
-    rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 3)) + "px";
+    rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 8)) + "px";
     rail.style.top = y + "px";
     rail.style.height = trackHeight + "px";
     try { if (!rail.matches(":popover-open")) rail.showPopover(); }
