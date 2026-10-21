@@ -2842,3 +2842,9 @@ dialog *,
   transform: translate(-50%, -50%) rotate(90deg);
   transform-origin: center;
 }
+
+/* 共有先もフルコーデ所持（青）とパーツ収集（緑・黄）を区別。 */
+.public-share .public-card.is-verse.is-parts-complete { background: #e9f7ee; border-color: #91c9a7; }
+.public-share .public-card.is-verse.is-partial { background: #fff9e5; border-color: #ead597; }
+.public-share .public-card.is-verse.is-owned { background: #def3fc; border-color: #63b5d2; }
+.public-share .public-partial.is-parts-complete { background: #ccebd7; color: #367c52; }
