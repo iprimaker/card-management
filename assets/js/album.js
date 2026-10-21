@@ -4813,14 +4813,18 @@ init();
       modal = active;
       resize.observe(active);
     }
-    if (!desktop.matches || !canPopover) {
+    if (!canPopover) {
       hideRail();
       target = null;
       return;
     }
     const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
-    const scroller = scrollable(target) && active.contains(target) ? target :
-      candidates.includes(active) ? active : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
+    const cardBody = active.id === "detail" ? active.querySelector(".modal-body") : null;
+    const scroller = cardBody
+      ? (scrollable(cardBody) ? cardBody : null)
+      : scrollable(target) && active.contains(target) ? target
+      : candidates.includes(active) ? active
+      : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
     if (!scroller) { hideRail(); target = null; return; }
     if (target !== scroller) {
       hideRail();
@@ -4836,13 +4840,13 @@ init();
     const vv = window.visualViewport;
     const left = vv?.offsetLeft || 0, top = vv?.offsetTop || 0;
     const width = vv?.width || innerWidth, height = vv?.height || innerHeight;
-    const y = Math.max(top + 8, rect.top + 8);
-    const bottom = Math.min(top + height - 8, rect.bottom - 8);
+    const y = Math.max(top + 8, box.top + 8);
+    const bottom = Math.min(top + height - 8, box.bottom - 8);
     trackHeight = Math.max(0, bottom - y);
     const max = Math.max(0, target.scrollHeight - target.clientHeight);
     if (!max || trackHeight < 40) { hideRail(); return; }
     if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
-    rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 3)) + "px";
+    rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 8)) + "px";
     rail.style.top = y + "px";
     rail.style.height = trackHeight + "px";
     try { if (!rail.matches(":popover-open")) rail.showPopover(); }
