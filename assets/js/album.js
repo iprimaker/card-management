@@ -4585,6 +4585,7 @@ init();
       "画像と所持ボタンを中心に表示します",
     ],
     ["hideRates", "取得率を非表示にする", "取得率と、その内訳を隠します"],
+    ["versePartsAsOwned", "持っているにパーツコンプを含める", "バースの所持状態の絞り込みに適用します。OFFではパーツコンプは「一部持っている」に含まれます。色・タグ・収集率は変わりません。"],
   ];
   let prefs = {};
   const dialog = document.createElement("dialog");
@@ -4595,7 +4596,7 @@ init();
   const actions = dialog.querySelector(".display-account-actions");
   actions.append($("edit-nickname"), $("logout"));
   const normalize = (value) => Object.fromEntries(
-    options.map(([id]) => [id, value?.[id] === true]),
+    options.map(([id]) => [id, id === "versePartsAsOwned" ? value?.[id] !== false : value?.[id] === true]),
   );
   let owner = null, ready = false, generation = 0;
   let loading = null, saving = false, saveTimer = null;
@@ -4669,7 +4670,13 @@ init();
     loading = task;
     return task;
   }
+  let appliedPartsAsOwned = true;
   function apply() {
+    const includeParts = prefs.versePartsAsOwned !== false;
+    if (includeParts !== appliedPartsAsOwned) {
+      appliedPartsAsOwned = includeParts;
+      window.CARD_VERSE?.refreshOwnershipFilter();
+    }
     for (const [id] of options) {
       document.body.classList.toggle("display-" + id, prefs[id] === true);
       dialog
@@ -4707,6 +4714,9 @@ init();
   for (const id of ["edit-nickname", "logout"])
     $(id).addEventListener("click", () => dialog.close(), { capture: true });
   window.CARD_UI_SETTINGS = {
+    get(id) {
+      return id === "versePartsAsOwned" ? prefs[id] !== false : prefs[id] === true;
+    },
     sync() {
       const user = currentUser();
       if (user !== owner) {
@@ -6168,6 +6178,29 @@ init();
   let partQuantities = new Map(),
     fullQuantities = new Map();
   const quantityQueues = new Map();
+  let inventoryRevision = 0;
+  const inventoryChanges = new Map();
+  function markInventoryChange(key) {
+    inventoryChanges.set(key, ++inventoryRevision);
+  }
+  function preserveInventoryChanges(nextParts, nextFull, nextFavorites, revision) {
+    for (const [key, changedAt] of inventoryChanges) {
+      if (changedAt <= revision && !quantityQueues.has(key) &&
+          !(key.startsWith("favorite:") && favoriteBusy.has(key.slice(9)))) continue;
+      if (key.startsWith("favorite:")) {
+        const id = key.slice(9);
+        if (favorites.has(id)) nextFavorites.add(id);
+        else nextFavorites.delete(id);
+        continue;
+      }
+      const isPart = key.startsWith("part:");
+      const id = isPart ? Number(key.slice(5)) : key.slice(5);
+      const source = isPart ? partQuantities : fullQuantities;
+      const target = isPart ? nextParts : nextFull;
+      if (source.has(id)) target.set(id, source.get(id));
+      else target.delete(id);
+    }
+  }
   let family = "onegai",
     series = "",
     group = "",
@@ -6236,10 +6269,16 @@ init();
   }
   const trade = () => window.CARD_TRADE;
   function full(c) {
-    return (
-      (fullQuantities.get(c.id) || 0) > 0 ||
-      (c.part_ids.length > 0 && c.part_ids.every((id) => owned.has(id)))
-    );
+    return (fullQuantities.get(c.id) || 0) > 0;
+  }
+  function partsComplete(c) {
+    return c.part_ids.length > 0 && c.part_ids.every((id) => owned.has(id));
+  }
+  function collected(c) {
+    return full(c) || partsComplete(c);
+  }
+  function ownershipClass(c) {
+    return full(c) ? "is-owned" : partsComplete(c) ? "is-parts-complete" : got(c) ? "is-partial" : "";
   }
   function quantity(c, part = null) {
     return (
@@ -6280,7 +6319,9 @@ init();
     return c.part_ids.filter((id) => owned.has(id)).length;
   }
   function state(c) {
-    return full(c) ? "full" : got(c) ? "partial" : "none";
+    return full(c) ||
+      (window.CARD_UI_SETTINGS?.get("versePartsAsOwned") !== false && partsComplete(c))
+      ? "full" : got(c) ? "partial" : "none";
   }
   const compact = (value) =>
     String(value || "")
@@ -6425,7 +6466,7 @@ init();
         : active
           ? "他の登録で取得済みです。この項目の所持数を1枚にします"
           : "この項目を1枚登録します";
-    return `<button type="button" title="${hint}" class="verse-owned ${active ? "is-owned" : ""} ${repeated ? "is-duplicate" : ""}" data-verse-own="${esc(c.id)}" ${part === null ? "" : `data-verse-part="${part}"`} aria-pressed="${active}" ${ready ? "" : "disabled"}>${repeated ? "重複して所有" : part === null ? (active ? "✓ フルコーデ獲得済" : "フルコーデ未獲得") : active ? "✓ 持っている" : "＋ 持っていない"}</button>`;
+    return `<button type="button" title="${hint}" class="verse-owned ${active ? "is-owned" : ""} ${repeated ? "is-duplicate" : ""}" data-verse-own="${esc(c.id)}" ${part === null ? "" : `data-verse-part="${part}"`} aria-pressed="${active}" ${ready ? "" : "disabled"}>${repeated ? "重複して所有" : part === null ? (active ? "✓ フルコーデ持ってる" : "フルコーデ未獲得") : active ? "✓ 持っている" : "＋ 持っていない"}</button>`;
   }
   function renderCollection() {
     const base = pool().filter(
@@ -6433,7 +6474,7 @@ init();
         !collectionSeries ||
         appearances(c).some((a) => a.series === collectionSeries),
     );
-    const completed = base.filter(full).length;
+    const completed = base.filter(collected).length;
     $("verse-collection-count").textContent =
       `収集済 ${completed} ／ 未収集 ${base.length - completed}`;
     if (!$("verse-collection").open) return;
@@ -6441,7 +6482,7 @@ init();
       (c) =>
         collectionFilter === "all" ||
         (collectionFilter === "complete"
-          ? full(c)
+          ? collected(c)
           : got(c) > 0 && c.part_ids.length - got(c) === 1),
     );
     const key = JSON.stringify([
@@ -6449,14 +6490,14 @@ init();
       family,
       collectionSeries,
       collectionFilter,
-      all.map((c) => [c.id, c.part_ids.map((id) => owned.has(id))]),
+      all.map((c) => [c.id, full(c), c.part_ids.map((id) => owned.has(id))]),
     ]);
     if (key === collectionKey) return;
     collectionKey = key;
     $("verse-collection-list").innerHTML = all
       .map(
         (c) =>
-          `<article class="verse-coordinate ${full(c) ? "is-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame"><img src="${esc(parts.get(id)?.image)}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async"></span></button>`).join("")}</div></article>`,
+          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame"><img src="${esc(parts.get(id)?.image)}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async"></span></button>`).join("")}</div></article>`,
       )
       .join("");
     $("verse-collection-empty").hidden = all.length > 0;
@@ -6492,7 +6533,7 @@ init();
   }
   function renderProgress() {
     const all = pool(),
-      complete = all.filter(full).length;
+      complete = all.filter(collected).length;
     $("verse-total").textContent = `全${all.length}コーデ`;
     $("verse-percent").textContent = ready
       ? (all.length ? ((complete / all.length) * 100).toFixed(1) : "0.0") + "%"
@@ -6503,7 +6544,7 @@ init();
       ? `収集済 ${complete}コーデ ／ 未収集 ${all.length - complete}コーデ`
       : "所持データを確認中";
     const base = filtered(false),
-      n = base.filter(full).length;
+      n = base.filter(collected).length;
     $("verse-filtered-rate").innerHTML = ready
       ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((n / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">収集済 ${n}コーデ ／ 未収集 ${base.length - n}コーデ</span>`
       : "";
@@ -6518,7 +6559,7 @@ init();
         const rows = pool().filter((c) =>
             appearances(c).some((a) => a.series === label),
           ),
-          n = rows.filter(full).length,
+          n = rows.filter(collected).length,
           rate = rows.length ? (n / rows.length) * 100 : 0;
         return `<div class="progress-card progress-card-small"><div><span>${esc(displayLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="progress-track"><span style="width:${rate}%"></span></div><p>収集済 ${n}コーデ ／ 未収集 ${rows.length - n}コーデ</p></div>`;
       })
@@ -6529,9 +6570,10 @@ init();
     return `<button type="button" class="${modal ? "verse-modal-favorite" : "verse-favorite"} ${active ? "is-favorite" : ""}" data-verse-favorite="${esc(c.id)}" aria-pressed="${active}" aria-label="${active ? "お気に入りを解除" : "お気に入りに登録"}" ${ready ? "" : "disabled"}>${host.star}${modal ? `<span>${active ? "お気に入り登録済み" : "お気に入りに登録"}</span>` : ""}</button>`;
   }
   function partialBadge(c) {
-    return state(c) === "partial"
-      ? `<span class="verse-partial" aria-label="一部所持 ${got(c)}／${c.part_ids.length}">一部獲得済</span>`
-      : "";
+    const count = got(c);
+    if (!count) return "";
+    const complete = partsComplete(c);
+    return `<span class="verse-partial ${complete ? "is-parts-complete" : ""}" aria-label="パーツ所持 ${count}／${c.part_ids.length}">${complete ? "パーツコンプ" : "パーツ一部獲得"}</span>`;
   }
   function syncUpdateText() {
     const date = catalog?.updated_at ? new Date(catalog.updated_at) : null;
@@ -6635,7 +6677,7 @@ init();
       catalog?.version,
       ready,
       family,
-      visible.map((c) => [c.id, state(c), duplicate(c), favorites.has(c.id)]),
+      visible.map((c) => [c.id, full(c), got(c), state(c), duplicate(c), favorites.has(c.id)]),
     ]);
     if (listKey !== cardListKey) {
       cardListKey = listKey;
@@ -6643,7 +6685,7 @@ init();
         .slice((page - 1) * perPage, page * perPage)
         .map(
           (c, index) =>
-            `<article class="verse-card ${full(c) ? "is-owned" : state(c) === "partial" ? "is-partial" : ""}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c, false, index < 6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`,
+            `<article class="verse-card ${ownershipClass(c)}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c, false, index < 6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`,
         )
         .join("");
     }
@@ -6681,20 +6723,14 @@ init();
       const c = catalog.coordinates.find((c) => c.id === a.dataset.verseCard);
       if (!c) return;
       a.classList.toggle("is-owned", full(c));
-      a.classList.toggle("is-partial", state(c) === "partial");
-      let badge = a.querySelector(".verse-partial");
-      if (state(c) === "partial") {
-        if (!badge) {
-          badge = document.createElement("span");
-          badge.className = "verse-partial";
-          badge.textContent = "一部獲得済";
-          a.prepend(badge);
-        }
-        badge.setAttribute(
-          "aria-label",
-          `一部所持 ${got(c)}／${c.part_ids.length}`,
-        );
-      } else badge?.remove();
+      a.classList.toggle("is-parts-complete", !full(c) && partsComplete(c));
+      a.classList.toggle("is-partial", !full(c) && !partsComplete(c) && got(c) > 0);
+      const badge = a.querySelector(".verse-partial");
+      const markup = partialBadge(c);
+      if (badge) {
+        if (markup) badge.outerHTML = markup;
+        else badge.remove();
+      } else if (markup) a.insertAdjacentHTML("afterbegin", markup);
       const old = a.querySelector(".verse-duplicate-tag");
       if (duplicate(c)) {
         if (!old)
@@ -6730,7 +6766,7 @@ init();
               ? "✓ 持っている"
               : "＋ 持っていない"
             : active
-              ? "✓ フルコーデ獲得済"
+              ? "✓ フルコーデ持ってる"
               : "フルコーデ未獲得";
       });
     document.querySelectorAll("[data-verse-quantity]").forEach((value) => {
@@ -6755,7 +6791,7 @@ init();
           !collectionSeries ||
           appearances(c).some((a) => a.series === collectionSeries),
       ),
-      n = base.filter(full).length;
+      n = base.filter(collected).length;
     $("verse-collection-count").textContent =
       `収集済 ${n} ／ 未収集 ${base.length - n}`;
     if (collectionFilter !== "all") {
@@ -6766,7 +6802,8 @@ init();
       const b = a.querySelector("[data-verse-detail]"),
         c = catalog.coordinates.find((c) => c.id === b?.dataset.verseDetail);
       if (!c) return;
-      a.classList.toggle("is-complete", full(c));
+      a.classList.toggle("is-complete", collected(c));
+      a.classList.toggle("is-parts-complete", !full(c) && partsComplete(c));
       a.querySelector(".verse-character").classList.toggle("is-owned", full(c));
       a.querySelectorAll(".verse-part-image").forEach((b, i) =>
         b.classList.toggle("is-owned", owned.has(c.part_ids[i])),
@@ -6797,6 +6834,7 @@ init();
       before = favorites.has(id),
       enabled = !before;
     favoriteBusy.add(id);
+    markInventoryChange("favorite:" + id);
     if (enabled) favorites.add(id);
     else favorites.delete(id);
     patchFavorite(id);
@@ -6828,13 +6866,19 @@ init();
         }
       } catch {}
     } finally {
-      if (uid === currentUser() && g === generation) favoriteBusy.delete(id);
+      if (uid === currentUser() && g === generation) {
+        markInventoryChange("favorite:" + id);
+        favoriteBusy.delete(id);
+      }
     }
   }
   function save(coordinateID, partID = null, delta = null) {
     if (!ready || !currentUser() || host.maintenance()) return;
     const c = catalog.coordinates.find((c) => c.id === coordinateID);
     if (!c || (partID !== null && !c.part_ids.includes(partID))) return;
+    const key = partID === null ? "full:" + coordinateID : "part:" + partID;
+    // 所持ボタンの再タップで、保存中の登録を解除しない。枚数の±は従来通りキューへ追加。
+    if (delta === null && busy.has(key)) return;
     const q = quantity(c, partID),
       operation =
         delta === null
@@ -6847,7 +6891,6 @@ init();
         (operation.delta === 1 && q >= 9999))
     )
       return;
-    const key = partID === null ? "full:" + coordinateID : "part:" + partID;
     let queue = quantityQueues.get(key);
     if (!queue) {
       queue = {
@@ -6862,6 +6905,7 @@ init();
       };
       quantityQueues.set(key, queue);
     }
+    markInventoryChange(key);
     queue.operations.push(operation);
     busy.add(key);
     showQueuedQuantity(queue);
@@ -6931,6 +6975,7 @@ init();
           } catch {}
         }
         if (!current()) return;
+        markInventoryChange(queue.key);
         queue.operations.shift();
         showQueuedQuantity(queue);
       }
@@ -6995,7 +7040,7 @@ init();
       return Promise.resolve();
     if (inventoryLoading?.uid === uid && inventoryLoading.g === g)
       return inventoryLoading.promise;
-    const task = { uid, g, promise: null };
+    const task = { uid, g, revision: inventoryRevision, promise: null };
     task.promise = (async () => {
       const result = await host.client().rpc("card_verse_my_inventory", {});
       if (uid !== currentUser() || g !== generation) return;
@@ -7006,13 +7051,18 @@ init();
         !Array.isArray(result.data?.favorites)
       )
         throw Error("所持数用SQLと通信状態を確認してください。");
-      partQuantities = new Map(
+      const nextParts = new Map(
         result.data.parts.map((r) => [r.part_id, r.quantity]),
       );
-      fullQuantities = new Map(
+      const nextFull = new Map(
         result.data.coordinates.map((r) => [r.coordinate_id, r.quantity]),
       );
-      favorites = new Set(result.data.favorites);
+      const nextFavorites = new Set(result.data.favorites);
+      // 読み込み開始後に編集した項目は、古い応答で巻き戻さない。
+      preserveInventoryChanges(nextParts, nextFull, nextFavorites, task.revision);
+      partQuantities = nextParts;
+      fullQuantities = nextFull;
+      favorites = nextFavorites;
       refreshEffectiveOwnership();
       owner = uid;
       ready = true;
@@ -7102,6 +7152,8 @@ init();
     partQuantities.clear();
     fullQuantities.clear();
     quantityQueues.clear();
+    inventoryChanges.clear();
+    inventoryRevision = 0;
     favorites.clear();
     favoriteBusy.clear();
     busy.clear();
@@ -7391,6 +7443,12 @@ init();
     }
   };
   window.CARD_VERSE = {
+    refreshOwnershipFilter() {
+      if (!panel.hidden) {
+        page = 1;
+        render();
+      }
+    },
     async shareCatalog(scopeFamily) {
       await ensureCatalog();
       return catalog.coordinates.filter((c) => c.family === scopeFamily);
@@ -7414,7 +7472,7 @@ init();
         );
 
         rates[scope] = (
-          rows.length ? (rows.filter(full).length / rows.length) * 100 : 0
+          rows.length ? (rows.filter(collected).length / rows.length) * 100 : 0
         ).toFixed(1);
       }
       return rates;
