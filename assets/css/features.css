@@ -6347,3 +6347,21 @@ body.game-aipri #collection #total,
     border-radius: 12px;
   }
 }
+
+/* フルコーデ所持とパーツ収集を分離。青 > 緑 > 黄の順で表示。 */
+#verse-cards .verse-card.is-parts-complete:not(.is-owned),
+#verse .verse-coordinate.is-parts-complete {
+  background: #e9f7ee;
+  border-color: #91c9a7;
+}
+#verse-cards .verse-card.is-owned {
+  background: #def3fc;
+  border-color: #63b5d2;
+}
+#verse .verse-partial.is-parts-complete {
+  background: #ccebd7;
+  color: #367c52;
+}
+body.display-grayscale #verse-cards .verse-card.is-parts-complete .verse-card-picture :is(img, canvas) {
+  filter: none;
+}
