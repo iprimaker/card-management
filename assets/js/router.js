@@ -1,22 +1,24 @@
 (() => {
   "use strict";
-  const version = "20261022-scrollbar-repair";
+  const version = "20261022-footer-slide-portrait";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
-    ["shared", "contact", "card-registration"].includes(requested)
+    ["shared", "browse", "contact", "card-registration"].includes(requested)
       ? requested
       : "album";
-  const template = document.getElementById("page-" + (page === "card-registration" ? "album" : page));
+  const template = document.getElementById("page-" + (page === "card-registration" ? "album" : page === "browse" ? "shared" : page));
   const rootURL = new URL("./", location.href);
   document.title =
-    page === "shared"
+    page === "browse"
+      ? "カード検索｜カードアルバム"
+      : page === "shared"
       ? "共有アルバム｜カードアルバム"
       : page === "contact"
         ? "お問い合わせ｜カードアルバム"
         : page === "card-registration"
           ? "カード登録情報｜カードアルバム"
           : "カードアルバム";
-  if (page === "shared") {
+  if (page === "shared" || page === "browse") {
     for (const [name, content] of [
       ["referrer", "no-referrer"],
       ["robots", "noindex,nofollow"],
@@ -40,6 +42,7 @@
   const initialVisibility = document.body.style.visibility;
   document.body.style.visibility = "hidden";
   document.body.className = template.dataset.bodyClass;
+  if (page === "browse") document.body.classList.add("guest-browse");
   document.body.replaceChildren(template.content.cloneNode(true));
   function script(file) {
     return new Promise((resolve, reject) => {
@@ -74,7 +77,7 @@
   const styles = Promise.all(
     (page === "album" || page === "card-registration"
       ? ["album", "features", "card-registration"]
-      : [page]).map(stylesheet),
+      : [page === "browse" ? "shared" : page]).map(stylesheet),
   );
   styles.then(
     () => {
@@ -97,7 +100,7 @@
   Promise.all([styles, dependencies, preview])
     .then(() => page === "card-registration"
       ? script("registration-site-info.js").then(() => script("card-registration.js"))
-      : script(page + ".js"))
+      : script((page === "browse" ? "shared" : page) + ".js"))
     .then(() =>
       page === "album"
         ? script("command-definitions.js").then(() =>
