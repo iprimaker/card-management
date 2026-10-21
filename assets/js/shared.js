@@ -202,6 +202,16 @@
     }
     return c.rarity || "記載なし";
   }
+  function ownsFull(c) {
+    return verse() ? (fullQuantities.get(c.id) || 0) > 0 : (quantities.get(c.id) || 0) > 0;
+  }
+  function ownsAllParts(c) {
+    return verse() && c.part_ids?.length > 0 && c.part_ids.every((id) => (quantities.get(id) || 0) > 0);
+  }
+  function partBadge(c) {
+    if (browseOnly || !verse() || !c.part_ids.some((id) => (quantities.get(id) || 0) > 0)) return "";
+    return `<span class="public-partial ${ownsAllParts(c) ? "is-parts-complete" : ""}">${ownsAllParts(c) ? "パーツコンプ" : "パーツ一部獲得"}</span>`;
+  }
   function full(c) {
     return verse()
       ? (fullQuantities.get(c.id) || 0) > 0 ||
@@ -416,7 +426,7 @@
       .slice((page - 1) * limit, page * limit)
       .map(
         (c) =>
-          `<article class="public-card ${full(c) ? "is-owned" : ""}"><button type="button" data-public-detail="${esc(c.id)}"><span class="public-image ${browseOnly || full(c) ? "" : "is-unowned"}">${image(c)}${(verse() ? fullQuantities.get(c.id) : quantities.get(c.id)) > 0 ? `<span class="public-quantity">${verse() ? fullQuantities.get(c.id) : quantities.get(c.id)}枚</span>` : ""}${state(c) === "partial" ? '<span class="public-partial">一部獲得済</span>' : ""}</span><span class="public-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name || "カード名未取得")}</strong>${verse() ? "" : `<small>${esc(rarity(c))}</small>`}</button></article>`,
+          `<article class="public-card ${verse() ? "is-verse" : ""} ${ownsFull(c) ? "is-owned" : ownsAllParts(c) ? "is-parts-complete" : state(c) === "partial" ? "is-partial" : ""}"><button type="button" data-public-detail="${esc(c.id)}"><span class="public-image ${browseOnly || full(c) ? "" : "is-unowned"}">${image(c)}${(verse() ? fullQuantities.get(c.id) : quantities.get(c.id)) > 0 ? `<span class="public-quantity">${verse() ? fullQuantities.get(c.id) : quantities.get(c.id)}枚</span>` : ""}${partBadge(c)}</span><span class="public-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name || "カード名未取得")}</strong>${verse() ? "" : `<small>${esc(rarity(c))}</small>`}</button></article>`,
       )
       .join("");
     $("public-empty").hidden = all.length > 0;
@@ -473,7 +483,7 @@
           ["遊べる曲", values(c.songs).join(" ／ ")],
         ];
     $("public-detail-content").innerHTML =
-      `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2>${browseOnly ? "" : `<p class="public-possession is-${state(c)}">${held ? "持っている" : state(c) === "partial" ? "一部持っている" : "持っていない"}</p>`}<dl>${rows
+      `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2>${browseOnly ? "" : `<p class="public-possession is-${verse() ? (ownsFull(c) ? "yes" : "no") : state(c)}">${verse() ? (ownsFull(c) ? "フルコーデ持ってる" : "フルコーデ未所持") : held ? "持っている" : "持っていない"}</p>`}<dl>${rows
         .filter(([, v]) => v)
         .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
         .join("")}</dl></div></div>${
