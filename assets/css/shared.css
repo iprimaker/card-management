@@ -296,14 +296,28 @@
 .public-image {
   position: relative;
   display: block;
+  flex: none;
   width: 100%;
-  aspect-ratio: 3/4;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 460 / 670;
+  overflow: hidden;
 }
 .public-image > img {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
   object-fit: contain;
-  display: block;
+  object-position: center;
+}
+.public-image > .public-collage {
+  position: absolute;
+  inset: 0;
 }
 .public-image.is-unowned > img,
 .public-image.is-unowned .public-collage {
@@ -923,8 +937,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 145.65%;
-  height: 68.65%;
+  width: calc(100% * 670 / 460);
+  height: calc(100% * 460 / 670);
   transform: translate(-50%, -50%) rotate(90deg);
   max-width: none;
 }
@@ -2811,4 +2825,20 @@ dialog *,
  .public-share .public-signup-banner { backdrop-filter:none; -webkit-backdrop-filter:none; background:#fffdfefa; }
  .public-share #modal-scroll-rail { display:none !important; pointer-events:none !important; }
  .public-share dialog { -webkit-overflow-scrolling:touch; }
+}
+
+/* フッターの横向きカードを、60×86pxの共通枠内で縦向きに表示。 */
+#public-banner-cards > .public-banner-image.landscape > img {
+  position: absolute;
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: 86px;
+  height: 60px;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  object-fit: contain;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center;
 }
