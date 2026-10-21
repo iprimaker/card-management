@@ -3697,3 +3697,61 @@ html.album-modal-open body {
     height: 9px !important;
   }
 }
+
+/* Login entry for the public catalog. */
+#guest-browse-link { display: none; }
+body:has(#auth:not([hidden])) #guest-browse-link { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; padding: 9px 12px; border: 1px solid #d7c9d2; border-radius: 999px; background: #fff; color: #796072; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+body:has(#auth:not([hidden])) #guest-browse-link:hover { background: #fff4f8; }
+@media (max-width: 600px) { body:has(#auth:not([hidden])) #guest-browse-link { font-size: 11px; padding: 8px 9px; } }
+body.guest-browse #public-owner { font-size: 16px; }
+body.guest-browse .public-progress,
+body.guest-browse .public-owned-wrap,
+body.guest-browse #public-scope-note { display: none !important; }
+body.guest-browse .public-possession,
+body.guest-browse .public-quantity,
+body.guest-browse .public-partial { display: none !important; }
+body.guest-browse .public-image.is-unowned { filter: none !important; opacity: 1; }
+
+/* Keep the modal rail outside on mouse and touch devices alike. */
+html.album-modal-open body #modal-scroll-rail[popover]:popover-open {
+  display: block !important;
+  pointer-events: auto !important;
+  touch-action: none;
+}
+html.album-modal-open dialog:modal.external-modal-scroll,
+html.album-modal-open dialog:modal .external-modal-scroll {
+  scrollbar-width: none !important;
+  scrollbar-gutter: auto !important;
+}
+html.album-modal-open dialog:modal.external-modal-scroll::-webkit-scrollbar,
+html.album-modal-open dialog:modal .external-modal-scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+/* Leave enough room for the external rail at narrow viewport widths. */
+html.album-modal-open #detail:modal {
+  max-width: min(900px, calc(100vw - 40px));
+}
+
+/* Card details have a single scroll owner, including the Aipri layouts. */
+html.album-modal-open #detail[open] {
+  display: flex !important;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: auto !important;
+  max-height: calc(100dvh - 32px);
+  max-width: min(900px, calc(100vw - 48px));
+  overflow: hidden !important;
+}
+html.album-modal-open #detail > .modal-top,
+html.album-modal-open #detail > .detail-navigation {
+  flex: 0 0 auto;
+}
+html.album-modal-open #detail > .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
