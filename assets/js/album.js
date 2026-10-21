@@ -4761,7 +4761,8 @@ init();
 /* modal-scrollbar.js */
 (() => {
   "use strict";
-  if (!HTMLElement.prototype.showPopover) return;
+  const desktop = matchMedia("(min-width: 761px) and (hover: hover) and (pointer: fine)");
+  const root = document.documentElement;
   const rail = document.createElement("div");
   rail.id = "modal-scroll-rail";
   rail.setAttribute("popover", "manual");
@@ -4773,220 +4774,148 @@ init();
   thumb.className = "modal-scroll-thumb";
   thumb.setAttribute("aria-hidden", "true");
   rail.append(thumb);
-  let modal = null,
-    target = null,
-    frame = 0,
-    trackHeight = 0,
-    thumbHeight = 0,
-    thumbTop = 0,
-    drag = null,
-    nextId = 0;
-  let cachedScroller = null,
-    needsScan = true;
-  const resize = new ResizeObserver(() => {
-    needsScan = true;
-    schedule();
-  });
+  let modal = null, target = null, frame = 0, drag = null;
+  let trackHeight = 0, thumbHeight = 0, thumbTop = 0, nextId = 0, sequence = 0;
+  const order = new WeakMap();
+  const canPopover = typeof rail.showPopover === "function";
+  const resize = new ResizeObserver(schedule);
   function scrollable(node) {
-    return (
-      node instanceof HTMLElement &&
-      !rail.contains(node) &&
-      node !== rail &&
-      node.clientHeight > 0 &&
-      node.scrollHeight > node.clientHeight + 1 &&
-      /auto|scroll/.test(getComputedStyle(node).overflowY)
-    );
+    return node instanceof HTMLElement && node !== rail && !rail.contains(node) &&
+      node.clientHeight > 0 && node.scrollHeight > node.clientHeight + 1 &&
+      /auto|scroll/.test(getComputedStyle(node).overflowY);
   }
-  function findScroller(active) {
-    if (active !== modal || needsScan || !cachedScroller?.isConnected) {
-      const candidates = [active, ...active.querySelectorAll("*")].filter(
-        scrollable,
-      );
-      cachedScroller = candidates.includes(active)
-        ? active
-        : candidates.sort(
-            (a, b) =>
-              b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight,
-          )[0] || active;
-      needsScan = false;
+  function hideRail() {
+    if (target) target.classList.remove("external-modal-scroll");
+    if (rail.isConnected && canPopover) {
+      try { rail.hidePopover(); } catch (_) {}
     }
-    return cachedScroller;
+    if (drag && rail.hasPointerCapture(drag.id)) rail.releasePointerCapture(drag.id);
+    drag = null;
   }
   function clear() {
-    try {
-      rail.hidePopover();
-    } catch {}
-    if (target) target.classList.remove("external-modal-scroll");
+    hideRail();
     resize.disconnect();
-    modal = target = drag = null;
+    rail.remove();
+    modal = target = null;
   }
   function schedule() {
     if (!frame) frame = requestAnimationFrame(update);
   }
   function update() {
     frame = 0;
-    const dialogs = [...document.querySelectorAll("dialog[open]")].filter(
-      (node) => node.matches(":modal"),
-    );
-    const active = dialogs.at(-1);
-    if (!active) {
-      clear();
-      return;
-    }
-    const scroller = findScroller(active);
-    if (active !== modal || target !== scroller) {
+    const dialogs = [...document.querySelectorAll("dialog[open]")].filter(d => d.matches(":modal"));
+    dialogs.forEach(d => { if (!order.has(d)) order.set(d, ++sequence); });
+    const active = dialogs.sort((a, b) => order.get(a) - order.get(b)).at(-1);
+    root.classList.toggle("album-modal-open", Boolean(active));
+    if (!active) { clear(); return; }
+    if (active !== modal) {
       clear();
       modal = active;
+      resize.observe(active);
+    }
+    if (!desktop.matches || !canPopover) {
+      hideRail();
+      target = null;
+      return;
+    }
+    const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
+    const scroller = scrollable(target) && active.contains(target) ? target :
+      candidates.includes(active) ? active : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
+    if (!scroller) { hideRail(); target = null; return; }
+    if (target !== scroller) {
+      hideRail();
+      resize.disconnect();
       target = scroller;
-      active.append(rail);
       resize.observe(active);
       if (target !== active) resize.observe(target);
+      if (target.firstElementChild) resize.observe(target.firstElementChild);
     }
-    const rect = active.getBoundingClientRect();
-    trackHeight = Math.max(
-      0,
-      Math.min(rect.bottom, innerHeight - 12) - Math.max(12, rect.top) - 20,
-    );
+    // 内部のスクロール領域に追従し、画面内に収めます。
+    const rect = target.getBoundingClientRect();
+    const box = active.getBoundingClientRect();
+    const vv = window.visualViewport;
+    const left = vv?.offsetLeft || 0, top = vv?.offsetTop || 0;
+    const width = vv?.width || innerWidth, height = vv?.height || innerHeight;
+    const y = Math.max(top + 8, rect.top + 8);
+    const bottom = Math.min(top + height - 8, rect.bottom - 8);
+    trackHeight = Math.max(0, bottom - y);
     const max = Math.max(0, target.scrollHeight - target.clientHeight);
-    if (!max || trackHeight < 40) {
-      try {
-        rail.hidePopover();
-      } catch {}
-      return;
-    }
-    try {
-      if (!rail.matches(":popover-open")) rail.showPopover();
-    } catch {
-      clear();
-      return;
-    }
-    if (!target.classList.contains("external-modal-scroll"))
-      target.classList.add("external-modal-scroll");
+    if (!max || trackHeight < 40) { hideRail(); return; }
+    if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
+    rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 3)) + "px";
+    rail.style.top = y + "px";
+    rail.style.height = trackHeight + "px";
+    try { if (!rail.matches(":popover-open")) rail.showPopover(); }
+    catch (_) { hideRail(); return; }
+    // 表示に成功した場合だけ、その領域の標準バーを隠します。
+    target.classList.add("external-modal-scroll");
     if (!target.id) target.id = "modal-scroll-target-" + ++nextId;
     rail.setAttribute("aria-controls", target.id);
     rail.setAttribute("aria-valuemin", "0");
     rail.setAttribute("aria-valuemax", String(Math.round(max)));
     rail.setAttribute("aria-valuenow", String(Math.round(target.scrollTop)));
-    rail.style.left = Math.min(innerWidth - 11, rect.right + 3) + "px";
-    rail.style.top = Math.max(12, rect.top) + 10 + "px";
-    rail.style.height = trackHeight + "px";
-    thumbHeight = Math.min(
-      trackHeight,
-      Math.max(28, (trackHeight * target.clientHeight) / target.scrollHeight),
-    );
-    thumbTop =
-      (trackHeight - thumbHeight) *
-      Math.min(1, Math.max(0, target.scrollTop / max));
+    thumbHeight = Math.min(trackHeight, Math.max(28, trackHeight * target.clientHeight / target.scrollHeight));
+    thumbTop = (trackHeight - thumbHeight) * Math.min(1, Math.max(0, target.scrollTop / max));
     thumb.style.height = thumbHeight + "px";
     thumb.style.transform = "translateY(" + thumbTop + "px)";
   }
-  function move(pointerY, offset) {
+  function move(y, offset) {
     if (!target) return;
-    const max = target.scrollHeight - target.clientHeight;
-    const top = pointerY - rail.getBoundingClientRect().top - offset;
-    target.scrollTop =
-      Math.max(0, Math.min(1, top / Math.max(1, trackHeight - thumbHeight))) *
-      max;
+    const ratio = (y - rail.getBoundingClientRect().top - offset) / Math.max(1, trackHeight - thumbHeight);
+    target.scrollTop = Math.max(0, Math.min(1, ratio)) * Math.max(0, target.scrollHeight - target.clientHeight);
     schedule();
   }
-  rail.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || !target) return;
-    event.preventDefault();
+  rail.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || !target) return;
+    e.preventDefault();
     rail.focus({ preventScroll: true });
-    const y = event.clientY - rail.getBoundingClientRect().top;
-    drag = {
-      id: event.pointerId,
-      offset:
-        y >= thumbTop && y <= thumbTop + thumbHeight
-          ? y - thumbTop
-          : thumbHeight / 2,
-    };
-    rail.setPointerCapture(event.pointerId);
-    move(event.clientY, drag.offset);
+    const y = e.clientY - rail.getBoundingClientRect().top;
+    drag = { id: e.pointerId, offset: y >= thumbTop && y <= thumbTop + thumbHeight ? y - thumbTop : thumbHeight / 2 };
+    rail.setPointerCapture(e.pointerId);
+    move(e.clientY, drag.offset);
   });
-  rail.addEventListener("pointermove", (event) => {
-    if (drag?.id === event.pointerId) move(event.clientY, drag.offset);
-  });
-  for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
-    rail.addEventListener(type, () => {
-      drag = null;
-    });
-  rail.addEventListener(
-    "wheel",
-    (event) => {
-      if (!target) return;
-      event.preventDefault();
-      target.scrollTop +=
-        event.deltaY *
-        (event.deltaMode === 1
-          ? 16
-          : event.deltaMode === 2
-            ? target.clientHeight
-            : 1);
-      schedule();
-    },
-    { passive: false },
-  );
-  rail.addEventListener("keydown", (event) => {
-    if (
-      !target ||
-      !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(
-        event.key,
-      )
-    )
-      return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.key === "Home") target.scrollTop = 0;
-    else if (event.key === "End") target.scrollTop = target.scrollHeight;
-    else
-      target.scrollTop +=
-        (event.key.endsWith("Up") ? -1 : 1) *
-        (event.key.startsWith("Page") ? target.clientHeight * 0.85 : 40);
+  rail.addEventListener("pointermove", e => { if (drag?.id === e.pointerId) move(e.clientY, drag.offset); });
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) rail.addEventListener(type, () => { drag = null; });
+  rail.addEventListener("wheel", e => {
+    if (!target) return;
+    e.preventDefault();
+    target.scrollTop += e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? target.clientHeight : 1);
+    schedule();
+  }, { passive: false });
+  rail.addEventListener("keydown", e => {
+    if (!target || !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) return;
+    e.preventDefault(); e.stopPropagation();
+    if (e.key === "Home") target.scrollTop = 0;
+    else if (e.key === "End") target.scrollTop = target.scrollHeight;
+    else target.scrollTop += (e.key.endsWith("Up") ? -1 : 1) * (e.key.startsWith("Page") ? target.clientHeight * .85 : 40);
     schedule();
   });
-  new MutationObserver((records) => {
-    if (
-      records.some(
-        (record) => record.target !== rail && !rail.contains(record.target),
-      )
-    ) {
-      needsScan = true;
-      schedule();
-    }
-  }).observe(document.body, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: ["open", "hidden"],
-  });
-  document.addEventListener(
-    "scroll",
-    (event) => {
-      if (modal?.contains(event.target) && scrollable(event.target)) {
-        cachedScroller = event.target;
-        needsScan = false;
+  new MutationObserver(records => {
+    let changed = false;
+    for (const record of records) {
+      if (record.target === rail || rail.contains(record.target)) continue;
+      if (record.attributeName === "open" && record.target instanceof HTMLDialogElement) {
+        if (record.target.open) order.set(record.target, ++sequence);
+        else order.delete(record.target);
       }
-      schedule();
-    },
-    true,
-  );
-  document.addEventListener(
-    "load",
-    () => {
-      needsScan = true;
-      schedule();
-    },
-    true,
-  );
-  addEventListener(
-    "resize",
-    () => {
-      needsScan = true;
-      schedule();
-    },
-    { passive: true },
-  );
+      changed = true;
+    }
+    if (changed) schedule();
+  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["open", "hidden"] });
+  document.addEventListener("scroll", e => {
+    if (!modal) return;
+    if (modal.contains(e.target) && scrollable(e.target) && e.target !== target) {
+      hideRail(); target = e.target;
+      resize.observe(target);
+    }
+    schedule();
+  }, true);
+  document.addEventListener("load", () => { if (modal) schedule(); }, true);
+  document.addEventListener("close", schedule, true);
+  addEventListener("resize", schedule, { passive: true });
+  desktop.addEventListener("change", schedule);
+  window.visualViewport?.addEventListener("resize", schedule, { passive: true });
+  window.visualViewport?.addEventListener("scroll", schedule, { passive: true });
   schedule();
 })();
 
