@@ -6365,3 +6365,26 @@ body.game-aipri #collection #total,
 body.display-grayscale #verse-cards .verse-card.is-parts-complete .verse-card-picture :is(img, canvas) {
   filter: none;
 }
+
+/* Missing research data stays visibly unknown without fabricated images/parts. */
+#verse .verse-image-unavailable, #verse-detail .verse-image-unavailable {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: #edf5f8;
+  color: #6c8793;
+  font-size: 12px;
+  text-align: center;
+}
+#verse-detail .verse-data-unavailable {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f3f8fa;
+  color: #6c8793;
+  font-size: 12px;
+  line-height: 1.8;
+}
