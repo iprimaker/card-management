@@ -2146,7 +2146,6 @@ function openDetail(id, trigger, navigating = false) {
     $("detail").querySelector(".modal-body").scrollTop = 0;
     $("detail").scrollTop = 0;
   }
-  document.body.style.overflow = "hidden";
   window.CARD_MODAL_SCROLL?.refresh($("detail"));
 }
 function updateDetailNavigation() {
@@ -3013,7 +3012,6 @@ $("next").onclick = () => {
 };
 $("close").onclick = () => $("detail").close();
 $("detail").onclose = () => {
-  document.body.style.overflow = "";
   selected = null;
   lastFocus?.focus({ preventScroll: true });
   if (lastFocus?.closest("#auth-art")) setMarqueePaused(false);
