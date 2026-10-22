@@ -195,6 +195,7 @@
     $("public-status").textContent = "";
   }
   function rarity(c) {
+    if (c.game === "aipri" && /^OP-?132$/i.test(String(c.code || "")) && /^SP$/i.test(String(c.rarity || "").trim())) return "スペシャル";
     if (c.game === "aipri") {
       const code = String(c.code || "").toUpperCase();
       if (code.endsWith("P")) return "パラレル";
@@ -268,6 +269,17 @@
             ["songs", "遊べる曲"],
           ];
   }
+function songFilterValue(value) {
+  let song = String(value || "").trim();
+  const personal = song.match(/^(.+?のひみつマイソング♪)/u);
+  if (personal) return personal[1];
+  song = song.replace(/(?:～|〜)まんかい\s*ver\.?[～〜]?/giu, "");
+  // 歌手・人数・バージョンはカード情報に残し、曲の選択肢だけをまとめる。
+  while (/[（(][^()（）]*[）)]\s*$/u.test(song))
+    song = song.replace(/\s*[（(][^()（）]*[）)]\s*$/u, "");
+  return song.replace(/^わいるど[☆★]?すたー/u, "わいるどすたー").trim();
+}
+
   function fieldValues(c, key) {
     return key === "series"
       ? series(c)
@@ -275,7 +287,7 @@
         ? groups(c)
         : key === "rarity"
           ? [rarity(c)]
-          : values(c[key]);
+          : key === "songs" ? values(c.songs).map(songFilterValue) : values(c[key]);
   }
   function filtered(includeOwned = true) {
     const q = normal($("public-query").value);
