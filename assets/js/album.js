@@ -6239,8 +6239,12 @@ init();
   mobileRoute.hidden = true;
   mobileRoute.className = "verse-nav-link verse-mobile-route";
   function placeRoute() {
-    if (window.innerWidth <= 760) $("menu-toggle").before(mobileRoute);
-    else $("game-switch").after(mobileRoute);
+    // Moving an existing control can disturb focus and scroll anchoring in Safari.
+    const mobile = window.innerWidth <= 760;
+    const anchor = $(mobile ? "menu-toggle" : "game-switch");
+    if (mobile) {
+      if (anchor.previousElementSibling !== mobileRoute) anchor.before(mobileRoute);
+    } else if (anchor.nextElementSibling !== mobileRoute) anchor.after(mobileRoute);
   }
   placeRoute();
   const panel = document.createElement("section");
@@ -6581,6 +6585,7 @@ init();
         ? "：" + date.toLocaleString("ja-JP")
         : "");
   }
+  let paginationMarkup = "";
   function renderPages(count) {
     maxPage = count;
     const width =
@@ -6603,7 +6608,7 @@ init();
           if (n >= 1 && n <= count && selected.size < budget) selected.add(n);
       }
     let previous = 0;
-    $("verse-pages").innerHTML =
+    const markup =
       `<button class="verse-page-prev" type="button" data-verse-page="${page - 1}" ${page === 1 ? "disabled" : ""}>前のページ</button>` +
       [...selected]
         .filter((n) => n >= 1 && n <= count)
@@ -6621,6 +6626,11 @@ init();
         })
         .join("") +
       `<button class="verse-page-next" type="button" data-verse-page="${page + 1}" ${page === count ? "disabled" : ""}>次のページ</button>`;
+    // Keep the existing buttons (and focus) when the visible page range is unchanged.
+    if (markup !== paginationMarkup) {
+      paginationMarkup = markup;
+      $("verse-pages").innerHTML = markup;
+    }
   }
   function applyColumns() {
     try {
@@ -7503,12 +7513,17 @@ init();
     },
   };
   let resizeFrame = null;
+  let layoutWidth = window.innerWidth;
   window.addEventListener(
     "resize",
     () => {
-      if (resizeFrame !== null) return;
+      // Mobile browser chrome changes height while a slow pan is in progress.
+      // Only a width change requires navigation/pagination layout work.
+      if (window.innerWidth === layoutWidth || resizeFrame !== null) return;
       resizeFrame = requestAnimationFrame(() => {
         resizeFrame = null;
+        if (window.innerWidth === layoutWidth) return;
+        layoutWidth = window.innerWidth;
         placeRoute();
         if (!panel.hidden && catalog) renderPages(maxPage);
       });
