@@ -1093,6 +1093,17 @@ const fields = {
   ],
 };
 const values = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+function songFilterValue(value) {
+  let song = String(value || "").trim();
+  const personal = song.match(/^(.+?のひみつマイソング♪)/u);
+  if (personal) return personal[1];
+  song = song.replace(/(?:～|〜)まんかい\s*ver\.?[～〜]?/giu, "");
+  // 歌手・人数・バージョンはカード情報に残し、曲の選択肢だけをまとめる。
+  while (/[（(][^()（）]*[）)]\s*$/u.test(song))
+    song = song.replace(/\s*[（(][^()（）]*[）)]\s*$/u, "");
+  return song.replace(/^わいるど[☆★]?すたー/u, "わいるどすたー").trim();
+}
+
 function toast(s, kind = "normal") {
   $("toast").classList.toggle("is-error", kind === "error");
   $("toast").textContent = s;
@@ -1733,7 +1744,7 @@ function fillFilters() {
     fields[game]
       .filter(([key]) => key !== "family")
       .map(([key, label]) => {
-        const opts = [...new Set(cards.flatMap((c) => values(c[key])))].sort(
+        const opts = [...new Set(cards.flatMap((c) => key === "songs" ? values(c.songs).map(songFilterValue) : values(c[key])))].sort(
           (a, b) => {
             if (game === "aikatsu" && key === "rarity") {
               const order = ["ER", "PR", "R", "N"];
@@ -1804,7 +1815,7 @@ function filtered(includeOwnership = true) {
             normalizeCardCode(code).includes(compactQuery),
           ))) &&
       Object.entries(filters).every(
-        ([k, v]) => !v || values(c[k]).includes(v),
+        ([k, v]) => !v || (k === "songs" ? values(c.songs).map(songFilterValue) : values(c[k])).includes(v),
       ) &&
       (!includeOwnership ||
         ownershipFilter === "all" ||
@@ -3540,6 +3551,7 @@ function displayRarity(c) {
       .normalize("NFKC")
       .trim()
       .toUpperCase();
+    if (code === "OP-132" && /^SP$/i.test(String(c.rarity || "").trim())) return "スペシャル";
     if (/^[A-Z0-9]+-\d+P$/.test(code)) return "パラレル";
     if (/^(?:AP(?:R)?\d+|OA\d+)M-\d+/.test(code)) return "ミラクル";
   }
@@ -6473,7 +6485,10 @@ init();
     if (c.image)
       return `<span class="verse-full-image"><img src="${esc(large ? c.image : c.thumbnail || c.image)}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
 
-    return `<span class="verse-image-collage">${c.part_ids.map((id) => `<span class="verse-collage-item"><img src="${esc(parts.get(id)?.image || "")}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
+    const images = c.part_ids.map((id) => parts.get(id)).filter((part) => part?.image);
+    if (!images.length)
+      return '<span class="verse-image-unavailable" role="img" aria-label="コーデ画像未取得">画像未取得</span>';
+    return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(part.image)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
   }
   function ownedButton(c, part = null, modal = false) {
     const active = part === null ? full(c) : owned.has(part);
@@ -6709,7 +6724,7 @@ init();
         .slice((page - 1) * perPage, page * perPage)
         .map(
           (c, index) =>
-            `<article class="verse-card ${ownershipClass(c)}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c, false, index < 6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || "コード記載なし")}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`,
+            `<article class="verse-card ${ownershipClass(c)}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c, false, index < 6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || "コード未取得")}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`,
         )
         .join("");
     }
@@ -6725,12 +6740,12 @@ init();
     const c = catalog.coordinates.find((c) => c.id === selected);
     if (!c) return;
     $("verse-detail-content").innerHTML =
-      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}${trade()?.markup("coordinate", c.id) || ""}</div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
+      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}${trade()?.markup("coordinate", c.id) || ""}</div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
         .map((id) => {
           const p = parts.get(id);
-          return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? "BP未確認" : p.buzz + " バズパワー"}</strong></div>${ownControl(c, id)}${trade()?.markup("part", id) || ""}</article>`;
+          return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? "BP未取得" : p.buzz + " バズパワー"}</strong></div>${ownControl(c, id)}${trade()?.markup("part", id) || ""}</article>`;
         })
-        .join("")}</div>`;
+        .join("") || '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'}</div>`;
   }
   function openDetail(id) {
     if (!catalog?.coordinates.some((c) => c.id === id)) return;
