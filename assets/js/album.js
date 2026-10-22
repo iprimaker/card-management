@@ -3551,7 +3551,7 @@ function displayRarity(c) {
       .normalize("NFKC")
       .trim()
       .toUpperCase();
-    if (code === "OP-132" && /^SP$/i.test(String(c.rarity || "").trim())) return "スペシャル";
+    if (/^OP-?132$/.test(code)) return "SP";
     if (/^[A-Z0-9]+-\d+P$/.test(code)) return "パラレル";
     if (/^(?:AP(?:R)?\d+|OA\d+)M-\d+/.test(code)) return "ミラクル";
   }
