@@ -3668,10 +3668,16 @@ html:has(body.game-aipri), html.contact-aipri { --scroll-thumb: #adccdc; --scrol
 *::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }
 
 /* Scrollbar lifecycle: background stays still; only the active modal scrolls. */
-html.album-modal-open,
-html.album-modal-open body {
+/* Use the real top-layer state, not the asynchronously updated rail class.
+   Lock only the document scroller: a second body lock can strand iOS panning. */
+html:has(dialog:modal) {
   overflow: hidden !important;
   overscroll-behavior: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  /* Keep Safari's root scroller out of elastic overscroll at the page ends.
+     Native panning, momentum and pinch zoom remain enabled. */
+  html { overscroll-behavior-y: none; }
 }
 :is(dialog, [role="dialog"], [role="alertdialog"]) {
   overscroll-behavior-y: contain;
