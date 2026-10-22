@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const version = "20261022-verse-parts-owned-setting";
+  const version = "20261022-mobile-scroll-fix";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
