@@ -195,7 +195,7 @@
     $("public-status").textContent = "";
   }
   function rarity(c) {
-    if (c.game === "aipri" && /^OP-?132$/i.test(String(c.code || "")) && /^SP$/i.test(String(c.rarity || "").trim())) return "スペシャル";
+    if (c.game === "aipri" && /^OP-?132$/i.test(String(c.code || "").normalize("NFKC").trim())) return "SP";
     if (c.game === "aipri") {
       const code = String(c.code || "").toUpperCase();
       if (code.endsWith("P")) return "パラレル";
