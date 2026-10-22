@@ -636,6 +636,7 @@
     if (active && markSkipped) save({ pending: false, chapter, index });
     flush();
     active = false;
+    setScrollBlocking(false);
     pendingAdvance = null;
     clickPending = false;
     clearTimeout(timer);
@@ -655,6 +656,7 @@
     chapter = which;
     index = Math.max(0, Math.min(at, steps[which].length - 1));
     active = true;
+    setScrollBlocking(true);
     show();
   }
   const chooser = document.createElement("dialog");
@@ -835,11 +837,17 @@
     "submit",
   ])
     document.addEventListener(name, blockOutside, true);
-  for (const name of ["wheel", "touchmove"])
-    document.addEventListener(name, blockOutside, {
-      capture: true,
-      passive: false,
-    });
+  // A non-passive document touchmove listener belongs only to an active tour.
+  // Normal album/Verse scrolling must not wait for an inactive guide handler.
+  function setScrollBlocking(enabled) {
+    for (const name of ["wheel", "touchmove"]) {
+      if (enabled) document.addEventListener(name, blockOutside, {
+        capture: true,
+        passive: false,
+      });
+      else document.removeEventListener(name, blockOutside, true);
+    }
+  }
   document.addEventListener(
     "focusin",
     (event) => {
