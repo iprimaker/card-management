@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const version = "20261022-verse-scroll-fix-v2";
+  const version = "20261022-verse-scroll-fix-v3";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
@@ -47,7 +47,7 @@
   function script(file) {
     return new Promise((resolve, reject) => {
       const node = document.createElement("script");
-      const assetVersion = file === "tutorial.js" ? "20261021-debug-review" : version;
+      const assetVersion = version;
       node.src = new URL("assets/js/" + file + "?v=" + assetVersion, rootURL).href;
       node.async = false;
       node.onload = resolve;
