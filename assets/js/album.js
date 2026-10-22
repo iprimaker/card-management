@@ -5767,6 +5767,10 @@ init();
   document.head.append(fallbackStyle);
   const MAX_EDGE = 560;
   const LIST_MAX_EDGE = 420;
+  // Keep native images in the touch-driven Verse view. Creating and removing
+  // canvas overlays at the viewport edge must not compete with a slow pan.
+  const touchImages = matchMedia("(pointer: coarse)").matches;
+  const nativeVerseImage = (image) => touchImages && !!image.closest("#verse");
   const normalizedFrames =
     ".family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame,.album-card-frame,.verse-full-image,.verse-family-image,.verse-nav-image,.verse-part-image-frame,.verse-collage-item,.public-image,.public-banner-image,.public-modal-image";
   function orientedFrame(image) {
@@ -5825,6 +5829,10 @@ init();
     entries.delete(image);
   }
   function draw(image) {
+    if (nativeVerseImage(image)) {
+      clear(image);
+      return;
+    }
     if (
       !image.isConnected ||
       !image.complete ||
@@ -6014,6 +6022,10 @@ init();
   }
   function schedule(image) {
     if (!(image instanceof HTMLImageElement) || !image.isConnected) return;
+    if (nativeVerseImage(image)) {
+      clear(image);
+      return;
+    }
     if (image.hidden) {
       clear(image);
       return;
@@ -6052,6 +6064,10 @@ init();
         : root.querySelectorAll?.("img") || [];
     for (const image of images) {
       removeOrphans(image);
+      if (nativeVerseImage(image)) {
+        clear(image);
+        continue;
+      }
       if (!watched.has(image)) {
         watched.add(image);
         resize?.observe(image);
