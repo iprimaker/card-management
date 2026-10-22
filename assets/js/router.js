@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const version = "20261022-verse-scroll-fix-v3";
+  const version = "20261022-cards-verse-v4";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
