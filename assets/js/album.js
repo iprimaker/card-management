@@ -1428,7 +1428,7 @@ function applyPersonalMetadata() {
     if (patch) {
       if (patch.name) c.name = patch.name;
       if (patch.character) c.character = patch.character;
-      if (Array.isArray(patch.songs) && patch.songs.length)
+      if (c.id !== "aipri:OP-072" && Array.isArray(patch.songs) && patch.songs.length)
         c.songs = patch.songs;
       c.metadataSource = patch.metadataSource || "画像文字読み取り（未確認）";
     }
