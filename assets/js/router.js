@@ -55,7 +55,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261025-visibility-v1";
+  const version = "20261026-visibility-info-v2";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
