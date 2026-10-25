@@ -3140,7 +3140,7 @@ const marqueePending = new Map();
 let marqueeBootstrapped = false;
 let marqueeTimer;
 function isOfficialMarqueeCard(card) {
-  if (!card?.front || !card.source) return false;
+  if (!card?.front || !card.source || card._visibility?.image) return false;
 
   if (
     card.game === "aipri" &&
@@ -3354,6 +3354,15 @@ $("auth-art").addEventListener(
 function buildMarquee() {
   const groups = $("auth-art").querySelectorAll(".marquee-group");
   if (groups.length !== 2) return;
+  const signature = catalog.cards.map(c => c.id + "|" + c.front + "|" + !!c._visibility?.image).join(";");
+  if (marqueeBootstrapped && $("auth-art").dataset.catalogSignature !== signature) {
+    clearInterval(marqueeTimer); marqueePending.clear();
+    marqueePools.aikatsu = []; marqueePools.aipri = [];
+    marqueePositions.aikatsu = 0; marqueePositions.aipri = 0;
+    groups.forEach(group => group.replaceChildren());
+    marqueeBootstrapped = false;
+  }
+  $("auth-art").dataset.catalogSignature = signature;
   if (!marqueeBootstrapped) {
     const displayCards = catalog.cards.length
       ? catalog.cards
@@ -3464,6 +3473,7 @@ function regularSeries(card) {
   );
 }
 function rarityOrder(rare) {
+  rare = window.CARD_VISIBILITY.rarityCode(rare);
   const order =
     game === "aikatsu"
       ? ["ER", "PR", "R", "N", "パラレル"]
@@ -3480,7 +3490,7 @@ function displayRarity(c) {
     if (/^[A-Z0-9]+-\d+P$/.test(code)) return "パラレル";
     if (/^(?:AP(?:R)?\d+|OA\d+)M-\d+/.test(code)) return "ミラクル";
   }
-  return c.rarity || "記載なし";
+  return window.CARD_VISIBILITY.rarity(c.rarity || "記載なし");
 }
 function incompleteCard(c) {
   return (
@@ -3522,6 +3532,7 @@ function probabilitySummary(cards) {
   };
 }
 function rarityColor(rarity) {
+  rarity = window.CARD_VISIBILITY.rarityCode(rarity);
   return (
     {
       ER: "#ef88b1",
@@ -8484,3 +8495,25 @@ verseScript.dispatchEvent(new Event("load"));
   sync();
   host.changed();
 })();
+
+// Update card information without navigating or changing personal records.
+document.addEventListener("card-visibility-updated", () => {
+  const fresh = window.CARD_VISIBILITY.cache(); if (!fresh) return;
+  const currentId = selected?.id, oldSide = side;
+  const dialog = $("detail"), body = dialog?.querySelector(".modal-body");
+  const dialogScroll = dialog?.scrollTop || 0, bodyScroll = body?.scrollTop || 0;
+  const position = { x: window.scrollX, y: window.scrollY };
+  catalogFallback = fresh;
+  adminOverrides.clear();
+  catalog = { ...catalog, cards: fresh.cards.map(c => ({ ...c })), updatedAt: fresh.state.updated_at, source: "live" };
+  applyPersonalMetadata();
+  if (game) { fillFilters(); render(); }
+  if (dialog?.open && currentId) {
+    openDetail(currentId, lastFocus, true);
+    side = oldSide && selected?.back ? 1 : 0; showSide();
+    dialog.scrollTop = dialogScroll; if (body) body.scrollTop = bodyScroll;
+  }
+  if (!$("auth").hidden) art();
+  if ($("trade-page") && !$("trade-page").hidden) window.CARD_TRADE?.renderOutput();
+  window.scrollTo(position.x, position.y);
+});
