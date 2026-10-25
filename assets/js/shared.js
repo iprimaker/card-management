@@ -636,7 +636,7 @@ function songFilterValue(value) {
     } catch (error) {
       if (g === generation) {
         if (!quiet) unavailable();
-        $("public-status").textContent = error.message;
+        $("public-status").textContent = window.CARD_ERROR.message(error);
       }
     } finally {
       if (g === generation) {
