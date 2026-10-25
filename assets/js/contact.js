@@ -511,9 +511,7 @@ $("contact-form").onsubmit = async (event) => {
     $("contact-form").reset();
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
-    $("contact-error").textContent = /fetch|network|abort|timeout/i.test(error.message)
-      ? "通信できませんでした。時間をおいて再度お試しください。"
-      : error.message;
+    $("contact-error").textContent = window.CARD_ERROR.message(error);
   } finally {
     $("contact-submit").disabled = false;
   }
