@@ -121,7 +121,7 @@
       if (code.endsWith("P")) return "パラレル";
       if (code.includes("M")) return "ミラクル";
     }
-    return c.rarity || "記載なし";
+    return window.CARD_VISIBILITY.rarity(c.rarity || "記載なし");
   }
   function ownsFull(c) {
     return verse() ? (fullQuantities.get(c.id) || 0) > 0 : (quantities.get(c.id) || 0) > 0;
@@ -429,6 +429,22 @@ function songFilterValue(value) {
           : ""
       }`;
   }
+  document.addEventListener("card-visibility-updated", () => {
+    publicCatalog = window.CARD_VISIBILITY.cache();
+    if (!publicCatalog || !scope || scope.startsWith("verse-")) return;
+    const byId = new Map(publicCatalog.cards.map(c => [c.id, c]));
+    const scroll = { x: window.scrollX, y: window.scrollY };
+    const dialog = $("public-detail"), content = $("public-detail-content");
+    const ds = dialog.scrollTop, cs = content.scrollTop, selectedId = selected?.id;
+    items = publicCatalog.cards.filter(c => scope === "aikatsu" ? c.game === "aikatsu" : c.game === "aipri" && [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family));
+    if (Array.isArray(snapshot?.visible_ids)) { const visible = new Set(snapshot.visible_ids); items = items.filter(c => visible.has(c.id)); }
+    fillFields(); render(); fillBanner();
+    if (selectedId && dialog.open) {
+      selected = byId.get(selectedId) || selected; if (!selected.back) side = 0; detail();
+      dialog.scrollTop = ds; content.scrollTop = cs;
+    }
+    window.scrollTo(scroll.x, scroll.y);
+  });
   async function load(wanted = scope, quiet = false) {
     if (Date.now() < shareReadBlockedUntil) {
       $("public-status").textContent = `アクセスが集中しています。あと${Math.ceil((shareReadBlockedUntil - Date.now()) / 1000)}秒ほど待ってから再読み込みしてください。`;
