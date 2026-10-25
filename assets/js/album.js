@@ -1193,7 +1193,16 @@ function authMode(m) {
   if (m === "signup") renderSignupStep(signupStep);
 }
 function translatedError(e) {
-  return window.CARD_ERROR.message(e);
+  const raw = typeof e === "string" ? e : String(e?.message || "");
+  if (/load[\s_-]*fail(?:ed)?|lode[\s_-]*fail(?:ed|ede)?|failed[\s_-]*to[\s_-]*fetch|network|offline|fetch/i.test(raw))
+    return "接続できませんでした。通信状態を確認して、もう一度お試しください。";
+  if (/timeout|timed.?out|abort/i.test(raw) || e?.name === "AbortError")
+    return "通信に時間がかかっています。時間をおいて、もう一度お試しください。";
+  if (/Invalid login credentials/i.test(raw))
+    return "アルバムIDまたはパスワードが正しくありません。";
+  if (typeof window.CARD_ERROR?.message === "function")
+    return window.CARD_ERROR.message(e);
+  return "操作を完了できませんでした。時間をおいて、もう一度お試しください。";
 }
 let ownershipRequest = null;
 let ownershipCheckedAt = 0,
@@ -2025,6 +2034,10 @@ async function saveQuantity(id, delta, clear = false) {
   if (!requireEditingSession()) return;
   if (!session || !ownershipReady || saving.has(id) || maintenanceActive)
     return;
+  if (navigator.onLine === false) {
+    toast("通信に接続されていません。接続を確認して、もう一度お試しください。", "error");
+    return;
+  }
   const uid = session.user.id;
   const generation = loadGeneration;
   const before = quantityOf(id);
@@ -2566,7 +2579,7 @@ $("auth-form").onsubmit = async (event) => {
     await applyAlbumSession(result);
     $("password").value = "";
   } catch (error) {
-    $("auth-message").textContent = window.CARD_ERROR.message(error);
+    $("auth-message").textContent = translatedError(error);
   } finally {
     $("auth-submit").disabled = false;
   }
