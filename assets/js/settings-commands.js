@@ -178,7 +178,7 @@
             b.textContent = "コピー済み";
             setTimeout(() => (b.textContent = "コピー"), 1500);
           } catch (e) {
-            result.textContent = e.message;
+            result.textContent = window.CARD_ERROR.message(e);
           }
         };
         const explanation = document.createElement("p");
@@ -413,7 +413,7 @@
         await execute(cmd, user);
       }
     } catch (e) {
-      result.textContent = e.message || "失敗しました。";
+      result.textContent = window.CARD_ERROR.message(e);
     } finally {
       busy = false;
       run.disabled = false;
@@ -428,7 +428,7 @@
       await execute(pending.cmd, pending.user);
     } catch (e) {
       dialog.querySelector("[data-error]").textContent =
-        e.message || "失敗しました。";
+        window.CARD_ERROR.message(e);
     } finally {
       busy = false;
       confirm.disabled = false;
