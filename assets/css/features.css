@@ -6388,3 +6388,11 @@ body.display-grayscale #verse-cards .verse-card.is-parts-complete .verse-card-pi
   font-size: 12px;
   line-height: 1.8;
 }
+
+/* 本人へのお問い合わせ返信 */
+.album-news .contact-reply-tag{display:inline-block;margin-right:7px;padding:2px 8px;border-radius:999px;background:#e5edff;color:#254c9b;font-size:10px;font-weight:700;line-height:1.5;white-space:nowrap}
+#album-contact-replies:empty{display:none}
+#album-contact-replies .album-news-item p{white-space:pre-wrap;overflow-wrap:anywhere}
+#album-contact-replies .album-news-history{display:block;margin:10px 0 12px auto;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px}
+#album-contact-replies .album-news-history[hidden]{display:none}
+#album-contact-replies .album-news-empty:empty{display:none}
