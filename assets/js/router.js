@@ -55,7 +55,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261025-auth-errors-v4";
+  const version = "20261025-visibility-v1";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
@@ -143,10 +143,10 @@
   const dependencies = Promise.all([
     script("vendor/supabase.js"),
     script("config.js"),
-  ]);
+  ]).then(() => script("card-visibility.js")).then(() => window.CARD_VISIBILITY.ready);
   const preview =
     page === "album"
-      ? script("startup.js").then(() => {
+      ? dependencies.then(() => script("startup.js")).then(() => {
           window.CARD_STARTUP_PREVIEW.paint(
             document.getElementById("auth-art"),
           );
