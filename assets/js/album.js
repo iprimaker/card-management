@@ -1378,6 +1378,7 @@ async function authChanged(event, next) {
     recordAccountPresence();
   }
   if (previous !== session?.user.id) {
+    resetContactReplyNews();
     resetFavorites();
     saving.clear();
     window.CARD_VERSE?.reset();
@@ -3812,13 +3813,13 @@ let albumNewsFlight = null;
 const albumNewsPanel = document.createElement("div");
 albumNewsPanel.className = "album-news";
 albumNewsPanel.innerHTML =
-  '<section class="album-news-box"><h2><span class="news-dot"></span>お知らせ</h2><div id="album-notices"></div></section><section class="album-news-box updates"><h2><span class="news-dot"></span>更新情報</h2><div id="album-updates"></div></section>';
+  '<section class="album-news-box"><h2><span class="news-dot"></span>お知らせ</h2><div id="album-contact-replies"></div><div id="album-notices"></div></section><section class="album-news-box updates"><h2><span class="news-dot"></span>更新情報</h2><div id="album-updates"></div></section>';
 $("selection").append(albumNewsPanel);
 function albumNewsHTML(rows) {
   return rows
     .map(
       (row) =>
-        `<details class="album-news-item"><summary><time datetime="${esc(row.posted_at)}">${esc(new Date(row.posted_at).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" }))}</time><span>${row.important ? '<small class="important-tag">重要</small>' : ""}${esc(row.title)}</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg></summary><p>${esc(row.body)}</p></details>`,
+        `<details class="album-news-item"><summary><time datetime="${esc(row.posted_at)}">${esc(new Date(row.posted_at).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" }))}</time><span>${row.reply ? '<small class="contact-reply-tag">返信</small>' : ""}${row.important ? '<small class="important-tag">重要</small>' : ""}${esc(row.title)}</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg></summary><p>${esc(row.body)}</p></details>`,
     )
     .join("");
 }
@@ -3911,6 +3912,7 @@ function renderAlbumNews(rows, target) {
 }
 async function loadAlbumNews() {
   if (!db || !session || maintenanceActive || $("selection").hidden) return;
+  void loadContactReplyNews();
   if (albumNewsFetchedAt && Date.now() - albumNewsFetchedAt < 300000) return;
   if (albumNewsFlight) return albumNewsFlight;
   const flight = (async () => {
@@ -3950,6 +3952,88 @@ async function loadAlbumNews() {
     if (albumNewsFlight === flight) albumNewsFlight = null;
   }
 }
+
+// 返信は公開お知らせとは別に取得し、ログイン中の本人のお知らせ欄に表示する。
+function resetContactReplyNews() {
+  const previous = loadContactReplyNews.state;
+  if (previous) previous.cancelled = true;
+  loadContactReplyNews.state = null;
+  document.getElementById("album-contact-replies")?.replaceChildren();
+}
+function loadContactReplyNews() {
+  const box = document.getElementById("album-contact-replies");
+  const user = session?.user.id;
+  if (!box || !db || !user || maintenanceActive) {
+    resetContactReplyNews();
+    return Promise.resolve();
+  }
+  const previous = loadContactReplyNews.state;
+  if (previous?.owner === user && previous.flight) return previous.flight;
+  if (previous) previous.cancelled = true;
+  const state = { owner: user, cancelled: false, flight: null };
+  loadContactReplyNews.state = state;
+  const current = () => !state.cancelled && loadContactReplyNews.state === state &&
+    session?.user.id === user && !maintenanceActive;
+  const list = document.createElement("div");
+  const more = document.createElement("button");
+  more.type = "button";
+  more.className = "album-news-history";
+  more.textContent = "以前の返信を表示";
+  more.hidden = true;
+  const status = document.createElement("p");
+  status.className = "album-news-empty";
+  status.setAttribute("role", "status");
+  status.textContent = "返信を確認中…";
+  box.replaceChildren(list, status, more);
+  let cursor = null, busy = false;
+  async function page() {
+    if (busy || !current()) return;
+    busy = true;
+    more.disabled = true;
+    status.textContent = "返信を確認中…";
+    try {
+      let query = db.from("card_contact_replies")
+        .select("contact_id,body,created_at,updated_at")
+        .eq("recipient_id", user)
+        .order("created_at", { ascending: false })
+        .order("contact_id", { ascending: false })
+        .limit(21);
+      if (cursor) query = query.or(
+        `created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},contact_id.lt.${cursor.contact_id})`,
+      );
+      const { data, error } = await query;
+      if (!current()) return;
+      if (error) throw error;
+      const rows = (data || []).slice(0, 20);
+      list.insertAdjacentHTML("beforeend", albumNewsHTML(rows.map((row) => ({
+        id: row.contact_id,
+        title: "お問い合わせへの返信",
+        body: "受付番号：" + row.contact_id + "\n\n" + row.body,
+        posted_at: row.created_at,
+        reply: true,
+      }))));
+      if (rows.length) cursor = rows[rows.length - 1];
+      more.hidden = (data || []).length <= 20;
+      status.textContent = "";
+    } catch {
+      if (current()) {
+        status.textContent = "返信を読み込めませんでした。再度お試しください。";
+        more.textContent = "返信を再読み込み";
+        more.hidden = false;
+      }
+    } finally {
+      busy = false;
+      if (current()) more.disabled = false;
+    }
+  }
+  more.onclick = page;
+  state.flight = page().finally(() => { state.flight = null; });
+  return state.flight;
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !document.getElementById("selection")?.hidden)
+    void loadContactReplyNews();
+});
 
 $("selection").append($("account-album-id"));
 const displaySettingsButton = document.createElement("button");
