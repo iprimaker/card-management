@@ -1108,8 +1108,12 @@ function toast(s, kind = "normal") {
   $("toast").classList.toggle("is-error", kind === "error");
   $("toast").textContent = s;
   $("toast").hidden = false;
+  window.CARD_TOAST_LAYER.raise($("toast"));
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => ($("toast").hidden = true), 3500);
+  toastTimer = setTimeout(() => {
+    window.CARD_TOAST_LAYER.hide($("toast"));
+    $("toast").hidden = true;
+  }, 3500);
 }
 function randomizeAuthTheme() {
   document.body.classList.toggle(
@@ -1189,16 +1193,7 @@ function authMode(m) {
   if (m === "signup") renderSignupStep(signupStep);
 }
 function translatedError(e) {
-  const m = e.message || String(e);
-  if (/Invalid login credentials/i.test(m))
-    return "メールアドレスまたはパスワードが正しくありません。";
-  if (/Email not confirmed/i.test(m))
-    return "確認メールのリンクを開いてからログインしてください。";
-  if (/rate limit|too many/i.test(m))
-    return "しばらく時間をおいてからお試しください。";
-  if (/fetch|network/i.test(m))
-    return "接続できませんでした。通信状態を確認してください。";
-  return m;
+  return window.CARD_ERROR.message(e);
 }
 let ownershipRequest = null;
 let ownershipCheckedAt = 0,
@@ -1494,7 +1489,7 @@ async function fetchCatalog(force = false) {
     return true;
   } catch (e) {
     catalog.errors = [e.message];
-    $("auth-message").textContent = e.message;
+    $("auth-message").textContent = window.CARD_ERROR.message(e);
     return false;
   } finally {
     catalogLoading = false;
@@ -1975,7 +1970,7 @@ function render(keepCardNodes = false) {
         : "カード情報の更新";
   const errors = catalog.errors?.length;
   $("data-warning").hidden = !errors;
-  $("data-warning").textContent = errors ? catalog.errors[0] : "";
+  $("data-warning").textContent = errors ? window.CARD_ERROR.message(catalog.errors[0]) : "";
   renderCoordinates();
   if (selected) updateModalOwnership();
   if (!$("probabilities").hidden) renderProbabilities();
@@ -2545,7 +2540,7 @@ async function albumAuth(body) {
   if (error) throw error;
   if (!data.session)
     throw Error(
-      "SupabaseのConfirm emailをOFFにしてください。登録状態を管理者に確認してください。",
+      "登録を完了できませんでした。時間をおいて再度お試しください。改善しない場合はお問い合わせください。",
     );
   return { album_id: body.album_id, session: data.session };
 }
@@ -2571,7 +2566,7 @@ $("auth-form").onsubmit = async (event) => {
     await applyAlbumSession(result);
     $("password").value = "";
   } catch (error) {
-    $("auth-message").textContent = error.message;
+    $("auth-message").textContent = window.CARD_ERROR.message(error);
   } finally {
     $("auth-submit").disabled = false;
   }
@@ -2624,7 +2619,7 @@ $("issue-album-id").onclick = async () => {
 
     renderSignupStep("id");
   } catch (error) {
-    $("signup-message").textContent = error.message;
+    $("signup-message").textContent = window.CARD_ERROR.message(error);
   } finally {
     signupBusy = false;
     $("issue-album-id").disabled = false;
@@ -2695,7 +2690,7 @@ $("signup-nickname-form").onsubmit = async (event) => {
     window.CARD_TUTORIAL?.created(session?.user.id);
   } catch (error) {
     authResultShowing = false;
-    $("signup-message").textContent = error.message;
+    $("signup-message").textContent = window.CARD_ERROR.message(error);
   } finally {
     signupBusy = false;
     $("album-create").disabled = false;
@@ -3802,7 +3797,7 @@ $("maintenance-refresh").onclick = async () => {
       ? "現在もメンテナンス中です。"
       : "メンテナンスが終了しました。";
   } catch (error) {
-    $("maintenance-check-message").textContent = error.message;
+    $("maintenance-check-message").textContent = window.CARD_ERROR.message(error);
   } finally {
     $("maintenance-refresh").disabled = false;
   }
@@ -5168,8 +5163,7 @@ init();
     } catch (error) {
       if (revision === rateGeneration && g === generation && uid === current())
         $("share-settings-status").textContent =
-          error.message ||
-          "所持率を確認できませんでした。画面を開き直してください。";
+          window.CARD_ERROR.message(error);
     } finally {
       if (revision === rateGeneration && g === generation) update();
     }
@@ -5285,8 +5279,8 @@ init();
       onSuccess(r.data);
     } catch (error) {
       if (g === generation && user === current()) {
-        $("share-settings-status").textContent = error.message;
-        if (deleteDialog.open) deleteStatus.textContent = error.message;
+        $("share-settings-status").textContent = window.CARD_ERROR.message(error);
+        if (deleteDialog.open) deleteStatus.textContent = window.CARD_ERROR.message(error);
       }
     } finally {
       if (g === generation && user === current()) {
@@ -7259,7 +7253,7 @@ init();
       $("verse-message").textContent = "";
       render();
     } catch (error) {
-      if (current()) $("verse-message").textContent = error.message;
+      if (current()) $("verse-message").textContent = window.CARD_ERROR.message(error);
     }
   }
   function reset() {
@@ -8376,8 +8370,7 @@ verseScript.dispatchEvent(new Event("load"));
     } catch (error) {
       if (current()) {
         $("trade-export-status").textContent =
-          error.message ||
-          "画像を作成できませんでした。もう一度お試しください。";
+          window.CARD_ERROR.message(error);
         host.toast("画像を作成できませんでした", "error");
       }
     } finally {
@@ -8434,7 +8427,7 @@ verseScript.dispatchEvent(new Event("load"));
       renderOutput();
     } catch (error) {
       if (user === uid() && g === generation)
-        $("trade-load-status").textContent = error.message;
+        $("trade-load-status").textContent = window.CARD_ERROR.message(error);
     }
   }
   function exportText(id) {
