@@ -7518,6 +7518,7 @@ init();
     },
     open,
     reset,
+    family: () => family,
     tradeData: () => catalog,
     tradeQuantity(kind, id) {
       if (!ready || owner !== currentUser()) return 0;
@@ -8309,10 +8310,13 @@ verseScript.dispatchEvent(new Event("load"));
   }
   async function open() {
     if (!uid() || host.maintenance()) return;
+    const isVerse = host.isVerse();
     origin = {
-      kind: host.isVerse() ? "coordinate" : "card",
-      game: host.game(),
-      family: host.family(),
+      kind: isVerse ? "coordinate" : "card",
+      game: isVerse ? "aipri" : host.game(),
+      family: isVerse
+        ? (window.CARD_VERSE.family() === "himitsu" ? "ひみつ" : "おねがい")
+        : host.family(),
     };
     host.screen("trade-page");
     $("trade-title").textContent = title() + "の交換希望";
