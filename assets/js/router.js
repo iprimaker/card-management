@@ -55,7 +55,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261026-slide-initial-v8";
+  const version = "20261026-login-startup-v9";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
@@ -140,13 +140,14 @@
     },
     () => {},
   );
-  const dependencies = Promise.all([
+  const visibilityModule = Promise.all([
     script("vendor/supabase.js"),
     script("config.js"),
-  ]).then(() => script("card-visibility.js")).then(() => window.CARD_VISIBILITY.ready);
+  ]).then(() => script("card-visibility.js"));
+  const dependencies = visibilityModule.then(() => window.CARD_VISIBILITY.ready);
   const preview =
     page === "album"
-      ? script("startup.js").then(() => {
+      ? visibilityModule.then(() => script("startup.js")).then(() => {
           window.CARD_STARTUP_PREVIEW.paint(
             document.getElementById("auth-art"),
           );
