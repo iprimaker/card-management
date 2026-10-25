@@ -9,8 +9,8 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
-    <link rel="stylesheet" href="./assets/css/base.css?v=20261025-contact-replies-v1" />
-    <script defer src="./assets/js/router.js?v=20261025-contact-replies-v1"></script>
+    <link rel="stylesheet" href="./assets/css/base.css?v=20261025-friendly-errors-toast-v2" />
+    <script defer src="./assets/js/router.js?v=20261025-friendly-errors-toast-v2"></script>
   </head>
   <body>
     <template id="page-album" data-body-class="">
@@ -600,10 +600,13 @@
               ><input autocomplete="name" id="contact-name" maxlength="40" type="text" /></label
             ><label
               >お問い合わせの種類<select id="contact-category">
-                <option value="question">使い方について</option>
-                <option value="correction">カード情報の修正</option>
-                <option value="other">その他</option>
-              </select></label
+<option value="question">使い方についての質問</option>
+<option value="correction">カード情報の修正・追加依頼</option>
+<option value="coordinate">コーデ情報の修正・追加依頼</option>
+<option value="bug">不具合についての報告</option>
+<option value="feature">機能追加依頼</option>
+<option value="other">その他</option>
+</select></label
             ><label
               >お問い合わせ内容<textarea
                 id="contact-message"
