@@ -287,7 +287,7 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
   preferredAikatsu: ["aikatsu:E1-01_PR", "aikatsu:E1-83_N"],
   paint(root) {
     if (!root) return;
-    const shuffled = [...this.cards];
+    const shuffled = [...window.CARD_VISIBILITY.mask(this.cards)];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -299,7 +299,7 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       (event) => {
         const img = event.target;
         if (!img.matches?.(".marquee-card img")) return;
-        const card = this.cards.find((c) => c.id === img.closest(".marquee-card").dataset.preview),
+        const card = window.CARD_VISIBILITY.mask(this.cards).find((c) => c.id === img.closest(".marquee-card").dataset.preview),
           frame = img.closest(".marquee-image-frame");
         const horizontal = card?.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
         frame.classList.toggle("landscape", horizontal);
