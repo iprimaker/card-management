@@ -1,24 +1,39 @@
 (() => {
-  function hide(node) { try { node.hidePopover?.(); } catch {} }
+  let latestDialog = null;
+  function hide(node) {
+    try { node.hidePopover?.(); } catch {}
+    node.style.removeProperty("display");
+  }
   function raise(node) {
     if (!node || node.hidden) return;
+    const dialogs = [...document.querySelectorAll("dialog[open]")];
+    const host = latestDialog?.open ? latestDialog : dialogs.at(-1) || document.body;
+    // Place the notification inside the active modal's non-inert subtree first.
+    if (node.parentElement !== host) host.append(node);
+    Object.assign(node.style, { inset: "auto", bottom: "25px", left: "50%", margin: "0", border: "0", pointerEvents: "none", zIndex: "2147483647" });
     if (typeof node.showPopover === "function") {
       node.setAttribute("popover", "manual");
-      Object.assign(node.style, { inset: "auto", bottom: "25px", left: "50%", margin: "0", border: "0", pointerEvents: "none", zIndex: "2147483647" });
-      hide(node);
-      try { node.showPopover(); return; } catch {}
+      try {
+        if (!node.matches(":popover-open")) node.showPopover();
+        return;
+      } catch {}
     }
-    const dialogs = [...document.querySelectorAll("dialog[open]")];
-    const host = dialogs.at(-1) || document.body;
-    if (node.parentElement !== host) host.append(node);
-    node.style.zIndex = "2147483647";
-    node.style.pointerEvents = "none";
+    // A failed popover must not retain the browser's default display:none.
+    node.removeAttribute("popover");
+    node.style.display = "block";
   }
   window.CARD_TOAST_LAYER = Object.freeze({ raise, hide });
   new MutationObserver((records) => {
-    if (records.some(r => r.type === "childList" || r.target.tagName === "DIALOG"))
-      raise(document.getElementById("toast"));
-  }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["open"] });
+    for (const record of records) {
+      if (record.target.tagName === "DIALOG" && record.target.open)
+        latestDialog = record.target;
+    }
+    const node = document.getElementById("toast");
+    if (node && !node.hidden) {
+      hide(node);
+      raise(node);
+    }
+  }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["open"] });
 })();
 (() => {
   "use strict";
@@ -40,7 +55,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261025-friendly-errors-toast-v2";
+  const version = "20261025-auth-errors-v4";
   const requested = new URLSearchParams(location.search).get("view");
   const page =
     ["shared", "browse", "contact", "card-registration"].includes(requested)
