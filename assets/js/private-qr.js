@@ -763,18 +763,20 @@
         if (uid() !== user || !dialog.open) return;
         stop();
         captureFooter.replaceChildren();
-        content.innerHTML = '<h2>URLを直接入力</h2><p>QRコードに含まれるURLを入力してください。</p><form class="qr-manual-form"><label>URL<textarea name="url" rows="3" maxlength="2048" required inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://"></textarea></label><p role="status" aria-live="polite"></p><button type="submit">登録する</button></form>';
-        const form = content.querySelector("form"), input = form.elements.url;
+        content.innerHTML = '<h2>読み取り内容を直接入力</h2><p>QRコードに含まれる文字列を入力してください。</p><form class="qr-manual-form"><label>登録する内容（300文字以内）<textarea name="payload" rows="3" maxlength="600" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="英数字・記号などをそのまま入力"></textarea></label><p role="status" aria-live="polite"></p><button type="submit">登録する</button></form>';
+        const form = content.querySelector("form"), input = form.elements.payload;
         let saving = false;
         form.onsubmit = async (event) => {
           event.preventDefault();
           if (saving || uid() !== user || !dialog.open) return;
-          const payload = input.value.trim(), status = form.querySelector('[role="status"]');
-          try {
-            const url = new URL(payload);
-            if (!/^https?:$/.test(url.protocol) || !url.hostname || /[\s\u0000-\u001f\u007f]/.test(payload) || payload.length > 2048) throw Error();
-          } catch {
-            status.textContent = "http:// または https:// で始まるURLを入力してください。";
+          const payload = input.value, status = form.querySelector('[role="status"]');
+          if (!payload.length) {
+            status.textContent = "登録する内容を入力してください。";
+            input.focus();
+            return;
+          }
+          if (Array.from(payload).length > 300) {
+            status.textContent = "300文字以内で入力してください。";
             input.focus();
             return;
           }
