@@ -6,12 +6,13 @@
   const series = {
     aikatsu: "アイカツ！アンコール",
     aipri: "アイプリ",
+    friend: "フレカ",
   };
   const button = document.createElement("button");
   button.id = "save-codes-open";
   button.type = "button";
   button.className = "text-button save-codes-open";
-  button.innerHTML = window.CARD_QR.icon + "<span>セーブコード</span>";
+  button.innerHTML = window.CARD_QR.icon + "<span>セーブ・フレカ</span>";
   button.setAttribute("aria-haspopup", "dialog");
   button.setAttribute("aria-controls", "save-codes-dialog");
   button.hidden = true;
@@ -25,13 +26,35 @@
   list.id = "save-codes-dialog";
   list.setAttribute("aria-labelledby", "save-codes-title");
   list.innerHTML =
-    '<div class="save-codes-heading"><h2 id="save-codes-title">セーブコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="save-codes-toolbar"><p>シリーズごとのマイキャラを管理</p><button type="button" class="primary" data-new>新規登録</button></div><p data-status role="status" aria-live="polite"></p><div data-list></div>';
+    '<div class="save-codes-heading"><h2 id="save-codes-title">セーブ・フレカ</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="save-codes-toolbar"><p>セーブコード・フレンドカードを管理</p><button type="button" class="primary" data-new>新規登録</button></div><p data-status role="status" aria-live="polite"></p><div data-list></div>';
   document.body.append(list);
+  let selectedType = "aikatsu";
+  const tabs = document.createElement("div");
+  tabs.className = "save-type-tabs";
+  tabs.setAttribute("role", "group");
+  tabs.setAttribute("aria-label", "種別で絞り込み");
+  for (const [value, label] of [
+    ["aikatsu", "アイカツ"],
+    ["aipri", "アイプリ"],
+    ["friend", "フレカ"],
+  ]) {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.dataset.saveType = value;
+    tab.textContent = label;
+    tab.onclick = () => {
+      selectedType = value;
+      render();
+    };
+    tabs.append(tab);
+  }
+  list.querySelector(".save-codes-heading").after(tabs);
+
   const formDialog = document.createElement("dialog");
   formDialog.className = "save-codes-dialog save-codes-editor";
   formDialog.setAttribute("aria-labelledby", "save-code-add-title");
   formDialog.innerHTML =
-    '<div class="save-codes-heading"><h2 id="save-code-add-title">セーブコードを登録</h2><button type="button" data-close aria-label="閉じる">×</button></div><form><label>シリーズ<select name="series"><option value="aikatsu">アイカツ！アンコール</option><option value="aipri">アイプリ</option></select></label><label>マイキャラネーム<input name="character_name" maxlength="40" required autocomplete="off"></label><label data-manual hidden>ID（任意）<input name="display_id" maxlength="200" autocomplete="off" placeholder="わかる場合だけ入力"></label><label data-birthday hidden>マイキャラの誕生日（任意）<span class="save-birthday-fields"><select name="birth_month" aria-label="誕生月"><option value="">月</option></select><select name="birth_day" aria-label="誕生日の日"><option value="">日</option></select></span></label><p data-help>アイカツはQRコードの読み取り結果をIDとして表示します。</p><p role="status" data-status aria-live="polite"></p><button type="submit" class="primary">QRコードを読み取る</button></form>';
+    '<div class="save-codes-heading"><h2 id="save-code-add-title">セーブ・フレカを登録</h2><button type="button" data-close aria-label="閉じる">×</button></div><form><label>種別<select name="series"><option value="aikatsu">アイカツ！アンコール</option><option value="aipri">アイプリ</option><option value="friend">フレンドカード</option></select></label><label>マイキャラネーム<input name="character_name" maxlength="40" required autocomplete="off"></label><label data-manual hidden>ID（任意）<input name="display_id" maxlength="200" autocomplete="off" placeholder="わかる場合だけ入力"></label><label data-birthday hidden>マイキャラの誕生日（任意）<span class="save-birthday-fields"><select name="birth_month" aria-label="誕生月"><option value="">月</option></select><select name="birth_day" aria-label="誕生日の日"><option value="">日</option></select></span></label><label data-memo hidden>メモ（任意）<textarea name="memo" maxlength="1000" rows="3" placeholder="自由にメモを入力できます"></textarea></label><p data-help>アイカツはQRコードの読み取り結果をIDとして表示します。</p><p role="status" data-status aria-live="polite"></p><button type="submit" class="primary">QRコードを読み取る</button></form>';
   document.body.append(formDialog);
   const form = formDialog.querySelector("form"),
     f = form.elements,
@@ -75,10 +98,10 @@
         const r = await db()
           .from("card_save_codes")
           .select(
-            "id,series,character_name,payload,display_id,birthday,created_at",
+            "id,series,character_name,payload,display_id,birthday,memo,created_at",
           )
           .eq("user_id", u)
-          .order("birthday,created_at")
+          .order("created_at")
           .order("id")
           .range(offset, offset + 499);
         if (r.error) throw r.error;
@@ -123,7 +146,7 @@
   confirm.className = "save-codes-dialog save-code-confirm";
   confirm.setAttribute("aria-labelledby", "save-code-delete-title");
   confirm.innerHTML =
-    '<div class="save-confirm-symbol" aria-hidden="true">×</div><h2 id="save-code-delete-title">セーブコードを削除しますか？</h2><p data-name></p><p class="save-confirm-note">削除後は再度QRコードの読み取りが必要です。</p><div class="save-confirm-actions"><button data-cancel type="button">キャンセル</button><button data-confirm type="button">削除する</button></div>';
+    '<div class="save-confirm-symbol" aria-hidden="true">×</div><h2 id="save-code-delete-title">登録したQRコードを削除しますか？</h2><p data-name></p><p class="save-confirm-note">削除後は再度QRコードの読み取りが必要です。</p><div class="save-confirm-actions"><button data-cancel type="button">キャンセル</button><button data-confirm type="button">削除する</button></div>';
   document.body.append(confirm);
   function confirmDelete(row) {
     if (confirm.open || uid() !== rowsOwner) return Promise.resolve(false);
@@ -143,26 +166,42 @@
       };
     });
   }
+  function normalizedType(value) {
+    return value === "friend"
+      ? "friend"
+      : value === "aikatsu"
+        ? "aikatsu"
+        : "aipri";
+  }
   function render() {
     const root = list.querySelector("[data-list]");
     root.replaceChildren();
-    if (!rows.length) {
+    tabs.style.setProperty(
+      "--save-type-index",
+      ["aikatsu", "aipri", "friend"].indexOf(selectedType),
+    );
+    for (const tab of tabs.children)
+      tab.setAttribute(
+        "aria-pressed",
+        String(tab.dataset.saveType === selectedType),
+      );
+    if (!rows.some((row) => normalizedType(row.series) === selectedType)) {
       const p = document.createElement("p");
       p.className = "save-codes-empty";
-      p.textContent = "まだセーブコードが登録されていません。";
+      p.textContent = "この種別のQRコードはまだ登録されていません。";
       root.append(p);
       return;
     }
-    for (const [key, label] of Object.entries(series)) {
-      const items = rows.filter(
-        (r) => (r.series === "aikatsu" ? "aikatsu" : "aipri") === key,
-      );
+    for (const [key, label] of Object.entries(series).filter(
+      ([key]) => key === selectedType,
+    )) {
+      const items = rows.filter((r) => normalizedType(r.series) === key);
       if (!items.length) continue;
       const section = document.createElement("section");
       section.className = "save-code-group";
       const h = document.createElement("h3");
       h.textContent = label;
-      section.append(h);
+
       for (const row of items) {
         const article = document.createElement("article");
         article.className = "save-code-row";
@@ -171,7 +210,12 @@
         const tag = document.createElement("span");
         tag.className = "save-code-series";
         tag.dataset.series = key;
-        tag.textContent = key === "aikatsu" ? "アイカツ" : "アイプリ";
+        tag.textContent =
+          key === "friend"
+            ? "フレカ"
+            : key === "aikatsu"
+              ? "アイカツ"
+              : "アイプリ";
         const name = document.createElement("strong");
         name.textContent = row.character_name;
         const qr = document.createElement("button");
@@ -210,7 +254,13 @@
         idButton.disabled = !id;
         idButton.title = id ? "タップしてコピー" : "";
         idButton.onclick = () => copy(id);
-        article.append(top, idButton);
+        article.append(top);
+        if (key === "friend") {
+          const memo = document.createElement("p");
+          memo.className = "save-code-memo";
+          memo.textContent = row.memo || "メモ：未登録";
+          article.append(memo);
+        } else article.append(idButton);
         if (key === "aipri") {
           const birthday = document.createElement("button");
           birthday.type = "button";
@@ -242,30 +292,36 @@
   list.querySelector("[data-new]").onclick = () => {
     form.reset();
     f.birth_day.setCustomValidity("");
-    f.series.value = "aikatsu";
+    f.series.value = selectedType;
     f.series.dispatchEvent(new Event("change"));
     formDialog.querySelector("[data-status]").textContent = "";
     formDialog.showModal();
   };
   f.series.onchange = () => {
-    const aikatsu = f.series.value === "aikatsu";
-    form.querySelector("[data-manual]").hidden = aikatsu;
-    form.querySelector("[data-birthday]").hidden = aikatsu;
-    form.querySelector("[data-help]").textContent = aikatsu
-      ? "アイカツはQRコードの読み取り結果をIDとして表示します。"
-      : "アイプリのIDは任意です。QRの読み取り結果からIDを推測・変換しません。";
+    const type = f.series.value;
+    f.birth_day.setCustomValidity("");
+    form.querySelector("[data-manual]").hidden = type !== "aipri";
+    form.querySelector("[data-birthday]").hidden = type !== "aipri";
+    form.querySelector("[data-memo]").hidden = type !== "friend";
+    form.querySelector("[data-help]").textContent =
+      type === "friend"
+        ? "フレンドカードのQRコードを読み取って登録します。"
+        : type === "aikatsu"
+          ? "アイカツはQRコードの読み取り結果をIDとして表示します。"
+          : "アイプリのIDは任意です。QRの読み取り結果からIDを推測・変換しません。";
   };
   form.onsubmit = async (e) => {
     e.preventDefault();
     if (busy || !uid() || !form.reportValidity()) return;
     const u = uid(),
       name = f.character_name.value.trim();
-    if (!name || (f.series.value !== "aikatsu" && !validBirthday(f))) return;
+    if (!name || (f.series.value === "aipri" && !validBirthday(f))) return;
     const details = {
       p_series: f.series.value,
       p_name: name,
-      p_display_id: f.display_id.value.trim(),
-      p_birthday: f.series.value === "aikatsu" ? null : readBirthday(f),
+      p_display_id: f.series.value === "aipri" ? f.display_id.value.trim() : "",
+      p_memo: f.series.value === "friend" ? f.memo.value.trim() : "",
+      p_birthday: f.series.value === "aipri" ? readBirthday(f) : null,
     };
     busy = true;
     const submit = form.querySelector("[type=submit]");
@@ -283,6 +339,7 @@
         document.dispatchEvent(new Event("private-qr-changed"));
       });
       if (saved && uid() === u) {
+        selectedType = details.p_series;
         formDialog.close();
         await reload();
       }
