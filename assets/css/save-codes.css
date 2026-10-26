@@ -491,3 +491,86 @@
   font-size: 11px;
   line-height: 1.65;
 }
+
+.save-type-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  padding: 4px;
+  margin: 18px 0 12px;
+  border-radius: 999px;
+  background: #f2edf6;
+  isolation: isolate;
+}
+.save-type-tabs::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 5px #59426415;
+  transform: translateX(calc(var(--save-type-index, 0) * 100%));
+  transition: transform 0.2s ease;
+}
+.save-type-tabs button {
+  border: 0;
+  background: transparent;
+  padding: 9px 5px;
+  border-radius: 999px;
+  color: #9b8ba5;
+  font: inherit;
+  font-size: 12px;
+  box-shadow: none;
+}
+.save-type-tabs button[aria-pressed="true"] {
+  color: #80539e;
+  font-weight: 600;
+}
+.save-codes-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e9e0ef;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  resize: vertical;
+}
+.save-code-memo {
+  flex: 0 0 100%;
+  min-width: 0;
+  margin: 6px 0 0;
+  color: #a092ab;
+  font-size: 11px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.save-code-series[data-series="friend"] {
+  background: #eaf5ef;
+  color: #65957d;
+}
+.save-codes-dialog:focus,
+.save-codes-dialog:focus-visible {
+  outline: none;
+}
+.save-confirm-actions button:is(:hover, :focus, :focus-visible, :active) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.save-confirm-actions [data-cancel]:is(:hover, :focus, :active) {
+  background: white;
+}
+.save-confirm-actions [data-confirm]:is(:hover, :focus, :active) {
+  background: #ba7085;
+}
+@media (prefers-reduced-motion: reduce) {
+  .save-type-tabs::before {
+    transition: none;
+  }
+}
