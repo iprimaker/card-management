@@ -492,19 +492,29 @@ body.game-aipri #album-back-to-top:active {
     --card-content-inset: 6px;
     --card-code-height: 26px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-code-link .code {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .card-code-link
+    .code {
     font-size: 9px;
     line-height: 1.35;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-code-row {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .card-code-row {
     gap: 2px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .favorite-button {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .favorite-button {
     flex-basis: 23px;
     width: 23px;
     height: 23px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .favorite-button svg {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .favorite-button
+    svg {
     width: 22px;
     height: 22px;
   }
@@ -512,7 +522,9 @@ body.game-aipri #album-back-to-top:active {
     justify-content: flex-start;
     font-size: 9px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-text-trigger {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .card-text-trigger {
     padding-bottom: 6px;
   }
   #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-name {
@@ -522,7 +534,9 @@ body.game-aipri #album-back-to-top:active {
   #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-song {
     font-size: clamp(8.5px, 2.3vw, 10px);
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .ownership-button {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .ownership-button {
     min-height: 30px;
     padding: 4px 2px;
     margin-bottom: 5px;
@@ -3958,7 +3972,8 @@ body.game-aipri #collection #total,
     text-decoration: none !important;
     border-radius: 9px;
   }
-  #nav > :is(#trade-open, #ownership-export-open, #edit-nickname, #logout):hover {
+  #nav
+    > :is(#trade-open, #ownership-export-open, #edit-nickname, #logout):hover {
     background: var(--soft);
   }
 }
@@ -5393,7 +5408,13 @@ body.game-aipri #collection #total,
   flex: 1;
   height: 88px;
   overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
 }
 #public-banner-cards {
   width: max-content;
@@ -6296,7 +6317,10 @@ body.game-aipri #collection #total,
   font-weight: 400;
   white-space: nowrap;
 }
-.public-share .public-display-controls .display-count :is(select, .album-select) {
+.public-share
+  .public-display-controls
+  .display-count
+  :is(select, .album-select) {
   width: auto;
   min-height: 36px;
   height: 36px;
@@ -6362,12 +6386,17 @@ body.game-aipri #collection #total,
   background: #ccebd7;
   color: #367c52;
 }
-body.display-grayscale #verse-cards .verse-card.is-parts-complete .verse-card-picture :is(img, canvas) {
+body.display-grayscale
+  #verse-cards
+  .verse-card.is-parts-complete
+  .verse-card-picture
+  :is(img, canvas) {
   filter: none;
 }
 
 /* Missing research data stays visibly unknown without fabricated images/parts. */
-#verse .verse-image-unavailable, #verse-detail .verse-image-unavailable {
+#verse .verse-image-unavailable,
+#verse-detail .verse-image-unavailable {
   display: grid;
   place-items: center;
   width: 100%;
@@ -6390,9 +6419,37 @@ body.display-grayscale #verse-cards .verse-card.is-parts-complete .verse-card-pi
 }
 
 /* 本人へのお問い合わせ返信 */
-.album-news .contact-reply-tag{display:inline-block;margin-right:7px;padding:2px 8px;border-radius:999px;background:#e5edff;color:#254c9b;font-size:10px;font-weight:700;line-height:1.5;white-space:nowrap}
-#album-contact-replies:empty{display:none}
-#album-contact-replies .album-news-item p{white-space:pre-wrap;overflow-wrap:anywhere}
-#album-contact-replies .album-news-history{display:block;margin:10px 0 12px auto;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px}
-#album-contact-replies .album-news-history[hidden]{display:none}
-#album-contact-replies .album-news-empty:empty{display:none}
+.album-news .contact-reply-tag {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e5edff;
+  color: #254c9b;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+#album-contact-replies:empty {
+  display: none;
+}
+#album-contact-replies .album-news-item p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#album-contact-replies .album-news-history {
+  display: block;
+  margin: 10px 0 12px auto;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+}
+#album-contact-replies .album-news-history[hidden] {
+  display: none;
+}
+#album-contact-replies .album-news-empty:empty {
+  display: none;
+}
