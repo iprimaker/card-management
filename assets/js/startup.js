@@ -9,7 +9,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "星宮いちご",
       rarity: "PR",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=1&sort=1&brand=%E3%82%A8%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%B7%E3%83%A5%E3%82%AC%E3%83%BC",
@@ -45,7 +46,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "霧矢あおい",
       rarity: "PR",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-36_PR.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-36_PR.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-36_PR_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=1&sort=1&brand=%E3%83%95%E3%83%A5%E3%83%BC%E3%83%81%E3%83%A3%E3%83%AA%E3%83%B3%E3%82%B0%E3%82%AC%E3%83%BC%E3%83%AB",
@@ -63,7 +65,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "紫吹蘭",
       rarity: "N",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -81,7 +84,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "星宮いちご",
       rarity: "N",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -99,7 +103,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "音城ノエル",
       rarity: "ER",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-50_ER.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-50_ER.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-50_ER_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -135,7 +140,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "霧矢あおい",
       rarity: "R",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -299,9 +305,12 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       (event) => {
         const img = event.target;
         if (!img.matches?.(".marquee-card img")) return;
-        const card = window.CARD_VISIBILITY.mask(this.cards).find((c) => c.id === img.closest(".marquee-card").dataset.preview),
+        const card = window.CARD_VISIBILITY.mask(this.cards).find(
+            (c) => c.id === img.closest(".marquee-card").dataset.preview,
+          ),
           frame = img.closest(".marquee-image-frame");
-        const horizontal = card?.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
+        const horizontal =
+          card?.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
         frame.classList.toggle("landscape", horizontal);
         const width = horizontal ? img.naturalHeight : img.naturalWidth,
           height = horizontal ? img.naturalWidth : img.naturalHeight;
@@ -326,7 +335,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       img.decoding = "async";
       img.loading = "eager";
       img.addEventListener("load", () => {
-        const horizontal = card.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
+        const horizontal =
+          card.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
         frame.classList.toggle("landscape", horizontal);
         const width = horizontal ? img.naturalHeight : img.naturalWidth,
           height = horizontal ? img.naturalWidth : img.naturalHeight;
