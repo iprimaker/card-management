@@ -197,7 +197,9 @@
             const item = active.items[index];
             if (item) {
               active.button.setAttribute("aria-activedescendant", item.id);
-              item.scrollIntoView?.({ block: "nearest" });
+              const menu=active.menu,top=item.offsetTop,bottom=top+item.offsetHeight;
+              if(top<menu.scrollTop)menu.scrollTop=top;
+              else if(bottom>menu.scrollTop+menu.clientHeight)menu.scrollTop=bottom-menu.clientHeight;
             }
           }
 
@@ -443,18 +445,9 @@
             )
               close();
           });
-          document.addEventListener(
-            "scroll",
-            (event) => {
-              if (
-                active &&
-                event.target !== active.menu &&
-                !active.menu.contains(event.target)
-              )
-                close();
-            },
-            true,
-          );
+          for(const type of ["wheel","touchmove"])document.addEventListener(type,event=>{
+            if(active && event.target!==active.menu && !active.menu.contains(event.target))close();
+          },{capture:true,passive:true});
           document.addEventListener(
             "close",
             (event) => {
