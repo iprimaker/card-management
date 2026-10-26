@@ -1,128 +1,3 @@
-/* site-info.js */
-window.SITE_INFO = {
-  terms: {
-    title: "利用規約",
-    body: `<p class="effective-date">制定日：2026年10月8日</p>
-      <p>この規約は「カードアルバム」（以下、本サイト）の利用条件を定めます。</p>
-      <h3>1. サービスについて</h3><p>本サイトは、カード情報の検索と、ご自身の所持カードの記録を目的とした非公式サービスです。カードの売買や公式のゲームデータとの連携は行いません。</p>
-      <h3>2. アカウント</h3><p>アルバムIDとパスワードはご自身で管理してください。1か月間ログイン・利用がないアカウントは、所持記録とともに自動削除します。削除されたアルバムIDは再利用できません。他人のアカウントの利用、なりすまし、第三者の個人情報を含むニックネームの登録は禁止します。</p>
-      <h3>3. 禁止事項</h3><ul><li>不正アクセス、権限の回避、サービスへの過度な負荷</li><li>他の利用者や権利者への迷惑行為</li><li>本サイトのデータを用いた違法な行為</li></ul>
-      <h3>4. カード情報と権利</h3><p>カード画像、名称、作品名などの権利は各権利者に帰属します。掲載情報には誤りや更新の遅れが含まれる場合があります。ゲームの仕様や最新情報は公式サイトをご確認ください。</p>
-      <h3>5. サービスの変更・停止</h3><p>保守、障害、外部サービスの変更などにより、機能を変更・停止する場合があります。重要な所持情報は、ご自身でも控えを残してください。</p>
-      <h3>6. 責任について</h3><p>運営者は情報の正確性や継続提供を保証するものではありません。ただし、法令上免除できない責任を免除するものではありません。</p>
-      <h3>7. 規約の変更</h3><p>変更時は本サイトで内容と変更日を案内します。利用者に重要な影響がある変更は、適切な方法で事前に案内します。</p>
-      <h3>8. お問い合わせ</h3><p>カード情報の修正やサービスに関するご相談はお問い合わせフォームをご利用ください。サイトの削除依頼もお問い合わせよりお願いいたします。削除依頼があった場合は、遅滞なく削除いたします。</p><p data-contact></p>`,
-  },
-  privacy: {
-    title: "プライバシーポリシー",
-    body: `<p class="effective-date">制定日：2026年10月8日</p>
-      <p>カードアルバムの運営者は、サービスの提供に必要な範囲で利用者の情報を取り扱います。</p>
-      <h3>1. 取り扱う情報</h3><ul><li>アルバムID、ニックネーム、登録日時、最終ログイン日時、メールアドレス（登録されている場合）</li><li>所持カードの記録と、カード情報の補足データ</li><li>お問い合わせの返信先メールアドレス（未ログインの場合）、アルバムID（ログイン済みの場合）、任意のお名前、お問い合わせ内容</li><li>認証に必要な情報、通信・障害対応に必要なアクセス情報</li></ul><p>パスワードは認証基盤で保護して管理します。発行済みアルバムIDは、重複・再発行防止のためアカウント削除後も使用済みのIDとして保持します。</p>
-      <h3>2. 利用目的</h3><p>登録・ログイン、確認メールや再設定メールの送信、所持記録の保存、情報の修正、不正利用の防止、障害対応、お問い合わせへの対応のために利用します。</p>
-
-      <h3>3. ブラウザへの保存</h3><p>ログイン状態を保持するため、ブラウザのローカルストレージ等を使用します。共有端末では利用後にログアウトしてください。</p>
-      <h3>4. 安全管理と保存期間</h3><p>情報へのアクセスを権限に応じて制限します。お問い合わせの入力内容は暗号化して保存します。情報はサービスの提供や安全な運営に必要な期間保存し、不要になった情報は適切に削除します。バックアップや法令上必要な記録は削除に時間を要する場合があります。</p>
-      <h3>5. 登録情報の管理</h3><p>ニックネームと所持記録はサイト上で変更できます。アカウントはログアウト確認画面の「アカウント情報を削除」から削除できます。1か月間ログイン・利用がない場合もアカウントと所持記録を自動削除します。ログイン状態を維持してサイトを利用した場合も利用日時を更新します。削除されたIDは再利用できません。</p>
-      <h3>6. ポリシーの変更</h3><p>変更した内容と日付は本サイトで案内します。</p>`,
-  },
-  about: {
-    title: "このサイトについて",
-    body: `<p>カードアルバムは、アイカツ！アンコールとアイプリのカードを探して、集めたカードを記録するための非公式サイトです。</p>
-      <h3>できること</h3><ul><li>作品や種類ごとのカード検索・絞り込み</li><li>表面・裏面の閲覧</li><li>所持カードの登録と取得率の確認</li></ul>
-      <h3>公式サービスとの関係</h3><p>本サイトは作品・ゲームの公式運営とは関係ありません。作品名、カード画像などの権利は各権利者に帰属します。掲載内容について公式運営へお問い合わせいただくことはお控えください。</p>
-      <h3>情報の更新</h3><p>カード情報は定期的に更新します。未掲載・誤記・反映の遅れがある場合は、公式情報もあわせてご確認ください。</p>
-      <h3>お問い合わせ</h3><p data-contact></p>`,
-  },
-};
-
-/* catalog-cache.js */
-(() => {
- window.PUBLIC_CATALOG_CACHE = {
-  peek: () => window.CARD_VISIBILITY.cache(),
-  invalidate() {},
-  async load() { await window.CARD_VISIBILITY.refresh(); return window.CARD_VISIBILITY.cache(); }
- };
-})();
-
-/* maintenance.js */
-(() => {
-  "use strict";
-  const nativeFetch = window.fetch.bind(window);
-  let pending = null;
-  let state = { maintenance: false };
-  let notify = () => {};
-  async function check() {
-    if (pending) return pending;
-    pending = (async () => {
-      const config = window.APP_CONFIG;
-      const response = await nativeFetch(
-        config.supabaseUrl + "/rest/v1/rpc/card_album_site_status",
-        {
-          method: "POST",
-          headers: {
-            apikey: config.supabaseKey,
-            "Content-Type": "application/json",
-          },
-          body: "{}",
-          cache: "no-store",
-        },
-      );
-      if (!response.ok)
-        throw new Error(
-          "メンテナンス設定を確認できません。ページを再読み込みしてください。",
-        );
-      state = await response.json();
-      if (!state || typeof state.maintenance !== "boolean")
-        throw new Error("メンテナンス設定を確認できません。");
-      notify(state);
-      return state;
-    })().finally(() => {
-      pending = null;
-    });
-    return pending;
-  }
-  async function guardedFetch(input, options) {
-    const url = typeof input === "string" ? input : input.url || String(input);
-    if (!url.startsWith(window.APP_CONFIG.supabaseUrl + "/"))
-      return nativeFetch(input, options);
-    const status = await check();
-
-    const publicRead =
-      /\/rest\/v1\/(?:card_catalog(?:\?|$)|card_catalog_revision(?:\?|$)|rpc\/card_album_catalog_cached(?:\?|$)|rpc\/card_album_registration_status(?:\?|$))/.test(
-        url,
-      );
-    if (status.maintenance && !publicRead) {
-      return new Response(
-        JSON.stringify({ code: "42501", message: "CARD_ALBUM_MAINTENANCE" }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-    const response = await nativeFetch(input, options);
-    if (!response.ok) {
-      const text = await response.clone().text();
-      if (
-        text.includes("CARD_ALBUM_MAINTENANCE") ||
-        text.includes("user_banned")
-      )
-        await check();
-    }
-    return response;
-  }
-  window.CARD_MAINTENANCE = {
-    check,
-    fetch: guardedFetch,
-    subscribe(fn) {
-      notify = fn;
-    },
-    get state() {
-      return state;
-    },
-  };
-})();
-
 /* app-title-fix.js */
 const albumSessionStorage = (() => {
   const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(".")[0];
@@ -1108,7 +983,11 @@ function authMode(m) {
 }
 function translatedError(e) {
   const raw = typeof e === "string" ? e : String(e?.message || "");
-  if (/load[\s_-]*fail(?:ed)?|lode[\s_-]*fail(?:ed|ede)?|failed[\s_-]*to[\s_-]*fetch|network|offline|fetch/i.test(raw))
+  if (
+    /load[\s_-]*fail(?:ed)?|lode[\s_-]*fail(?:ed|ede)?|failed[\s_-]*to[\s_-]*fetch|network|offline|fetch/i.test(
+      raw,
+    )
+  )
     return "接続できませんでした。通信状態を確認して、もう一度お試しください。";
   if (/timeout|timed.?out|abort/i.test(raw) || e?.name === "AbortError")
     return "通信に時間がかかっています。時間をおいて、もう一度お試しください。";
@@ -1428,14 +1307,21 @@ function applyPersonalMetadata() {
     if (patch) {
       if (patch.name) c.name = patch.name;
       if (patch.character) c.character = patch.character;
-      if (c.id !== "aipri:OP-072" && Array.isArray(patch.songs) && patch.songs.length)
+      if (
+        c.id !== "aipri:OP-072" &&
+        Array.isArray(patch.songs) &&
+        patch.songs.length
+      )
         c.songs = patch.songs;
       c.metadataSource = patch.metadataSource || "画像文字読み取り（未確認）";
     }
     const forced = adminOverrides.get(c.id);
     if (forced) Object.assign(c, forced);
     const visible = window.CARD_VISIBILITY.mask([c])[0];
-    if (visible !== c) { Object.keys(c).forEach(key => delete c[key]); Object.assign(c, visible); }
+    if (visible !== c) {
+      Object.keys(c).forEach((key) => delete c[key]);
+      Object.assign(c, visible);
+    }
     if (c.game === "aipri") {
       const serial = String(c.code || "")
         .normalize("NFKC")
@@ -1665,22 +1551,28 @@ function fillFilters() {
     fields[game]
       .filter(([key]) => key !== "family")
       .map(([key, label]) => {
-        const opts = [...new Set(cards.flatMap((c) => key === "songs" ? values(c.songs).map(songFilterValue) : values(c[key])))].sort(
-          (a, b) => {
-            if (game === "aikatsu" && key === "rarity") {
-              const order = ["ER", "PR", "R", "N"];
-              return (
-                (order.includes(a) ? order.indexOf(a) : 99) -
-                  (order.includes(b) ? order.indexOf(b) : 99) ||
-                a.localeCompare(b, "ja")
-              );
-            }
-            return key === "series"
-              ? seriesRank(b) - seriesRank(a) ||
-                  a.localeCompare(b, "ja", { numeric: true })
-              : a.localeCompare(b, "ja", { numeric: true });
-          },
-        );
+        const opts = [
+          ...new Set(
+            cards.flatMap((c) =>
+              key === "songs"
+                ? values(c.songs).map(songFilterValue)
+                : values(c[key]),
+            ),
+          ),
+        ].sort((a, b) => {
+          if (game === "aikatsu" && key === "rarity") {
+            const order = ["ER", "PR", "R", "N"];
+            return (
+              (order.includes(a) ? order.indexOf(a) : 99) -
+                (order.includes(b) ? order.indexOf(b) : 99) ||
+              a.localeCompare(b, "ja")
+            );
+          }
+          return key === "series"
+            ? seriesRank(b) - seriesRank(a) ||
+                a.localeCompare(b, "ja", { numeric: true })
+            : a.localeCompare(b, "ja", { numeric: true });
+        });
         if (filters[key] && !opts.includes(filters[key])) delete filters[key];
         return `<label><span class="filter-label">${label}<button type="button" class="filter-clear" data-clear-filter="${key}" aria-label="${label}の絞り込みを解除">解除</button></span><select data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${filters[key] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
       })
@@ -1717,6 +1609,7 @@ function filtered(includeOwnership = true) {
       (!favoriteFilter || (favoritesReady && favorites.has(c.id))) &&
       (!duplicateFilter || (ownershipReady && quantityOf(c.id) >= 2)) &&
       (window.CARD_TRADE?.matches("card", c.id) ?? true) &&
+      (window.CARD_QR?.matches("card", c.id) ?? true) &&
       (!q ||
         [
           c.name,
@@ -1736,7 +1629,12 @@ function filtered(includeOwnership = true) {
             normalizeCardCode(code).includes(compactQuery),
           ))) &&
       Object.entries(filters).every(
-        ([k, v]) => !v || (k === "songs" ? values(c.songs).map(songFilterValue) : values(c[k])).includes(v),
+        ([k, v]) =>
+          !v ||
+          (k === "songs"
+            ? values(c.songs).map(songFilterValue)
+            : values(c[k])
+          ).includes(v),
       ) &&
       (!includeOwnership ||
         ownershipFilter === "all" ||
@@ -1758,6 +1656,8 @@ function renderActiveFilters() {
     active.push({ key: "favorites", label: "お気に入り", value: "のみ" });
   if (duplicateFilter)
     active.push({ key: "duplicates", label: "重複", value: "あり" });
+  const qr = window.CARD_QR?.entry("card");
+  if (qr) active.push(qr);
   const trade = window.CARD_TRADE?.entry("card");
   if (trade) active.push(trade);
   const query = $("query").value.trim();
@@ -1878,7 +1778,7 @@ function render(keepCardNodes = false) {
       .slice((page - 1) * size, page * size)
       .map(
         (c) =>
-          `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame"><img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady ? "disabled" : ""}>${owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+          `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame">${window.CARD_QR?.badge("card", c.id) || ""}<img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady ? "disabled" : ""}>${owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
       )
       .join("");
   else syncOwnershipCardNodes();
@@ -1895,7 +1795,9 @@ function render(keepCardNodes = false) {
         : "カード情報の更新";
   const errors = catalog.errors?.length;
   $("data-warning").hidden = !errors;
-  $("data-warning").textContent = errors ? window.CARD_ERROR.message(catalog.errors[0]) : "";
+  $("data-warning").textContent = errors
+    ? window.CARD_ERROR.message(catalog.errors[0])
+    : "";
   renderCoordinates();
   if (selected) updateModalOwnership();
   if (!$("probabilities").hidden) renderProbabilities();
@@ -1951,7 +1853,10 @@ async function saveQuantity(id, delta, clear = false) {
   if (!session || !ownershipReady || saving.has(id) || maintenanceActive)
     return;
   if (navigator.onLine === false) {
-    toast("通信に接続されていません。接続を確認して、もう一度お試しください。", "error");
+    toast(
+      "通信に接続されていません。接続を確認して、もう一度お試しください。",
+      "error",
+    );
     return;
   }
   const uid = session.user.id;
@@ -2054,7 +1959,9 @@ function openDetail(id, trigger, navigating = false) {
   }
   selected =
     catalog.cards.find((c) => c.id === id) ||
-    window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find((c) => c.id === id);
+    window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find(
+      (c) => c.id === id,
+    );
   if (!selected) return;
   if (!navigating) lastFocus = trigger;
   side = 0;
@@ -2125,7 +2032,7 @@ function updateModalOwnership() {
   }
   tradeControls.innerHTML =
     selected && session
-      ? window.CARD_TRADE?.markup("card", selected.id) || ""
+      ? `<div class="qr-action-row">${window.CARD_TRADE?.markup("card", selected.id) || ""}${window.CARD_QR?.button("card", selected.id, name(selected)) || ""}</div>`
       : "";
   if (!selected) return;
   $("modal-owned").hidden = !session;
@@ -2850,6 +2757,7 @@ $("active-filters").onclick = (event) => {
   else if (key === "favorites") favoriteFilter = false;
   else if (key === "duplicates") duplicateFilter = false;
   else if (key === "trade") window.CARD_TRADE?.clear("card");
+  else if (key === "qr") window.CARD_QR?.clear("card");
   else delete filters[key];
   page = 1;
   fillFilters();
@@ -3344,9 +3252,9 @@ $("auth-art").addEventListener(
       catalog.cards.find(
         (c) => c.id === image.closest(".marquee-card").dataset.preview,
       ) ||
-      window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find(
-        (c) => c.id === image.closest(".marquee-card").dataset.preview,
-      );
+      window.CARD_VISIBILITY.mask(
+        window.CARD_STARTUP_PREVIEW?.cards || [],
+      ).find((c) => c.id === image.closest(".marquee-card").dataset.preview);
     prepareMarqueeImage(image, card);
   },
   true,
@@ -3354,19 +3262,28 @@ $("auth-art").addEventListener(
 function buildMarquee() {
   const groups = $("auth-art").querySelectorAll(".marquee-group");
   if (groups.length !== 2) return;
-  const signature = catalog.cards.map(c => c.id + "|" + c.front + "|" + !!c._visibility?.image).join(";");
-  if (marqueeBootstrapped && $("auth-art").dataset.catalogSignature !== signature) {
-    clearInterval(marqueeTimer); marqueePending.clear();
-    marqueePools.aikatsu = []; marqueePools.aipri = [];
-    marqueePositions.aikatsu = 0; marqueePositions.aipri = 0;
-    groups.forEach(group => group.replaceChildren());
+  const signature = catalog.cards
+    .map((c) => c.id + "|" + c.front + "|" + !!c._visibility?.image)
+    .join(";");
+  if (
+    marqueeBootstrapped &&
+    $("auth-art").dataset.catalogSignature !== signature
+  ) {
+    clearInterval(marqueeTimer);
+    marqueePending.clear();
+    marqueePools.aikatsu = [];
+    marqueePools.aipri = [];
+    marqueePositions.aikatsu = 0;
+    marqueePositions.aipri = 0;
+    groups.forEach((group) => group.replaceChildren());
     marqueeBootstrapped = false;
   }
   $("auth-art").dataset.catalogSignature = signature;
   if (!marqueeBootstrapped) {
     const displayCards = catalog.cards.length
       ? catalog.cards
-      : window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []) || [];
+      : window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []) ||
+        [];
     const pools = {
       aikatsu: shuffleCards(
         displayCards.filter(
@@ -3416,9 +3333,9 @@ function buildMarquee() {
         catalog.cards.find(
           (c) => c.id === image.closest(".marquee-card").dataset.preview,
         ) ||
-        window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find(
-          (c) => c.id === image.closest(".marquee-card").dataset.preview,
-        );
+        window.CARD_VISIBILITY.mask(
+          window.CARD_STARTUP_PREVIEW?.cards || [],
+        ).find((c) => c.id === image.closest(".marquee-card").dataset.preview);
       prepareMarqueeImage(image, card);
     });
 
@@ -3737,7 +3654,8 @@ $("maintenance-refresh").onclick = async () => {
       ? "現在もメンテナンス中です。"
       : "メンテナンスが終了しました。";
   } catch (error) {
-    $("maintenance-check-message").textContent = window.CARD_ERROR.message(error);
+    $("maintenance-check-message").textContent =
+      window.CARD_ERROR.message(error);
   } finally {
     $("maintenance-refresh").disabled = false;
   }
@@ -3907,8 +3825,11 @@ function loadContactReplyNews() {
   if (previous) previous.cancelled = true;
   const state = { owner: user, cancelled: false, flight: null };
   loadContactReplyNews.state = state;
-  const current = () => !state.cancelled && loadContactReplyNews.state === state &&
-    session?.user.id === user && !maintenanceActive;
+  const current = () =>
+    !state.cancelled &&
+    loadContactReplyNews.state === state &&
+    session?.user.id === user &&
+    !maintenanceActive;
   const list = document.createElement("div");
   const more = document.createElement("button");
   more.type = "button";
@@ -3920,33 +3841,41 @@ function loadContactReplyNews() {
   status.setAttribute("role", "status");
   status.textContent = "返信を確認中…";
   box.replaceChildren(list, status, more);
-  let cursor = null, busy = false;
+  let cursor = null,
+    busy = false;
   async function page() {
     if (busy || !current()) return;
     busy = true;
     more.disabled = true;
     status.textContent = "返信を確認中…";
     try {
-      let query = db.from("card_contact_replies")
+      let query = db
+        .from("card_contact_replies")
         .select("contact_id,body,created_at,updated_at")
         .eq("recipient_id", user)
         .order("created_at", { ascending: false })
         .order("contact_id", { ascending: false })
         .limit(21);
-      if (cursor) query = query.or(
-        `created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},contact_id.lt.${cursor.contact_id})`,
-      );
+      if (cursor)
+        query = query.or(
+          `created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},contact_id.lt.${cursor.contact_id})`,
+        );
       const { data, error } = await query;
       if (!current()) return;
       if (error) throw error;
       const rows = (data || []).slice(0, 20);
-      list.insertAdjacentHTML("beforeend", albumNewsHTML(rows.map((row) => ({
-        id: row.contact_id,
-        title: "お問い合わせへの返信",
-        body: "受付番号：" + row.contact_id + "\n\n" + row.body,
-        posted_at: row.created_at,
-        reply: true,
-      }))));
+      list.insertAdjacentHTML(
+        "beforeend",
+        albumNewsHTML(
+          rows.map((row) => ({
+            id: row.contact_id,
+            title: "お問い合わせへの返信",
+            body: "受付番号：" + row.contact_id + "\n\n" + row.body,
+            posted_at: row.created_at,
+            reply: true,
+          })),
+        ),
+      );
       if (rows.length) cursor = rows[rows.length - 1];
       more.hidden = (data || []).length <= 20;
       status.textContent = "";
@@ -3962,7 +3891,9 @@ function loadContactReplyNews() {
     }
   }
   more.onclick = page;
-  state.flight = page().finally(() => { state.flight = null; });
+  state.flight = page().finally(() => {
+    state.flight = null;
+  });
   return state.flight;
 }
 document.addEventListener("visibilitychange", () => {
@@ -4240,334 +4171,6 @@ window.CARD_SHARE_HOST = {
 
 init();
 
-/* dropdowns.js */
-(() => {
-  "use strict";
-  const enhanced = new WeakMap();
-  let active = null;
-  let serial = 0;
-  let query = "";
-  let queryTimer;
-
-  function close(restoreFocus = false) {
-    if (!active) return;
-    const { button, menu } = active;
-    active = null;
-    if (typeof menu.hidePopover === "function") {
-      try {
-        menu.hidePopover();
-      } catch (_) {}
-    }
-    menu.remove();
-    button.setAttribute("aria-expanded", "false");
-    button.removeAttribute("aria-activedescendant");
-    if (restoreFocus && button.isConnected) button.focus();
-    query = "";
-    clearTimeout(queryTimer);
-  }
-
-  function sync(select) {
-    const state = enhanced.get(select);
-    if (!state) return;
-    const value = select.selectedOptions[0]?.textContent || "選択してください";
-    if (state.text.textContent !== value) state.text.textContent = value;
-    if (state.button.disabled !== select.disabled)
-      state.button.disabled = select.disabled;
-    const label =
-      select.getAttribute("aria-label") ||
-      select.labels?.[0]?.querySelector(".filter-label")?.firstChild
-        ?.textContent ||
-      select.labels?.[0]?.firstChild?.textContent ||
-      "選択項目";
-    state.button.setAttribute(
-      "aria-label",
-      `${label.trim()}：${state.text.textContent}`,
-    );
-  }
-
-  function highlight(index) {
-    if (!active) return;
-    active.index = index;
-    active.items.forEach((item, i) =>
-      item.classList.toggle("is-current", i === index),
-    );
-    const item = active.items[index];
-    if (item) {
-      active.button.setAttribute("aria-activedescendant", item.id);
-      item.scrollIntoView?.({ block: "nearest" });
-    }
-  }
-
-  function choose(index) {
-    if (!active) return;
-    const { select, options } = active;
-    const option = options[index];
-    if (!option || option.disabled || option.parentElement.disabled) return;
-    const changed = select.selectedIndex !== option.index;
-    select.selectedIndex = option.index;
-    close(true);
-    sync(select);
-    if (changed) {
-      select.dispatchEvent(new Event("input", { bubbles: true }));
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-  }
-
-  function open(select) {
-    close();
-    if (select.disabled) return;
-    const { button } = enhanced.get(select);
-    const options = Array.from(select.options);
-    if (!options.length) return;
-    const menu = document.createElement("div");
-    menu.className = "album-select-menu";
-    menu.id = button.getAttribute("aria-controls");
-    menu.setAttribute("role", "listbox");
-    menu.setAttribute("aria-label", button.getAttribute("aria-label"));
-    const theme = getComputedStyle(select);
-    for (const name of ["--accent", "--soft", "--line", "--muted"]) {
-      menu.style.setProperty(name, theme.getPropertyValue(name));
-    }
-    let group = null;
-    const items = options.map((option, i) => {
-      if (
-        option.parentElement.tagName === "OPTGROUP" &&
-        group !== option.parentElement
-      ) {
-        group = option.parentElement;
-        const heading = document.createElement("div");
-        heading.className = "album-select-group";
-        heading.textContent = group.label;
-        heading.setAttribute("role", "presentation");
-        menu.append(heading);
-      }
-      const item = document.createElement("div");
-      item.id = `${menu.id}-${i}`;
-      item.className = "album-select-option";
-      item.setAttribute("role", "option");
-      item.setAttribute("aria-selected", String(option.selected));
-      item.setAttribute(
-        "aria-disabled",
-        String(option.disabled || !!option.parentElement.disabled),
-      );
-      item.textContent = option.textContent;
-      item.addEventListener("pointermove", () => highlight(i));
-      item.addEventListener("click", () => choose(i));
-      menu.append(item);
-      return item;
-    });
-    const ownerDialog = select.closest("dialog");
-    (ownerDialog || document.body).append(menu);
-    if (ownerDialog && typeof menu.showPopover === "function") {
-      menu.setAttribute("popover", "manual");
-      menu.showPopover();
-    }
-    const rect = button.getBoundingClientRect();
-    const viewport = window.visualViewport;
-    const leftEdge = viewport?.offsetLeft || 0;
-    const topEdge = viewport?.offsetTop || 0;
-    const width = viewport?.width || innerWidth;
-    const height = viewport?.height || innerHeight;
-    const menuWidth = Math.min(Math.max(rect.width, 180), width - 24);
-    menu.style.width = `${menuWidth}px`;
-    menu.style.left = `${Math.max(leftEdge + 12, Math.min(rect.left, leftEdge + width - menuWidth - 12))}px`;
-    const below = topEdge + height - rect.bottom - 18;
-    const above = rect.top - topEdge - 18;
-    const upwards = below < 180 && above > below;
-    const maxHeight = Math.max(80, Math.min(320, upwards ? above : below));
-    menu.style.maxHeight = `${maxHeight}px`;
-    menu.style.top = `${upwards ? Math.max(topEdge + 12, rect.top - Math.min(menu.scrollHeight, maxHeight) - 6) : rect.bottom + 6}px`;
-    active = {
-      select,
-      button,
-      menu,
-      options,
-      items,
-      index: select.selectedIndex,
-    };
-    button.setAttribute("aria-expanded", "true");
-    highlight(select.selectedIndex);
-  }
-
-  function keydown(event, select) {
-    const key = event.key;
-    if (["ArrowDown", "ArrowUp", "Home", "End", "Enter", " "].includes(key)) {
-      event.preventDefault();
-      if (!active || active.select !== select) {
-        open(select);
-        return;
-      }
-      if (key === "Enter" || key === " ") {
-        choose(active.index);
-        return;
-      }
-      const allowed = active.options
-        .map((option, i) =>
-          option.disabled || option.parentElement.disabled ? -1 : i,
-        )
-        .filter((i) => i >= 0);
-      if (!allowed.length) return;
-      const current = allowed.indexOf(active.index);
-      const index =
-        key === "Home"
-          ? allowed[0]
-          : key === "End"
-            ? allowed.at(-1)
-            : allowed[
-                Math.max(
-                  0,
-                  Math.min(
-                    allowed.length - 1,
-                    current + (key === "ArrowDown" ? 1 : -1),
-                  ),
-                )
-              ];
-      highlight(index);
-    } else if (key === "Escape") {
-      event.preventDefault();
-      close(true);
-    } else if (key === "Tab") close();
-    else if (
-      key.length === 1 &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey
-    ) {
-      if (!active) open(select);
-      if (!active) return;
-      query += key.toLocaleLowerCase();
-      clearTimeout(queryTimer);
-      queryTimer = setTimeout(() => {
-        query = "";
-      }, 650);
-      const index = active.options.findIndex(
-        (option) =>
-          !option.disabled &&
-          !option.parentElement.disabled &&
-          option.textContent.trim().toLocaleLowerCase().startsWith(query),
-      );
-      if (index >= 0) highlight(index);
-    }
-  }
-
-  function enhance(select) {
-    if (enhanced.has(select) || select.multiple || select.size > 1) return;
-    const wrapper = document.createElement("span");
-    wrapper.className = "album-select";
-    select.before(wrapper);
-    wrapper.append(select);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "album-select-trigger";
-    button.setAttribute("role", "combobox");
-    button.setAttribute("aria-haspopup", "listbox");
-    button.setAttribute("aria-expanded", "false");
-    button.setAttribute("aria-controls", `album-select-menu-${++serial}`);
-    if (select.getAttribute("aria-labelledby"))
-      button.setAttribute(
-        "aria-labelledby",
-        select.getAttribute("aria-labelledby"),
-      );
-    const text = document.createElement("span");
-    text.className = "album-select-value";
-    const arrow = document.createElement("span");
-    arrow.className = "album-select-chevron";
-    arrow.setAttribute("aria-hidden", "true");
-    button.append(text, arrow);
-    wrapper.append(button);
-    select.tabIndex = -1;
-    select.setAttribute("aria-hidden", "true");
-    enhanced.set(select, { button, text });
-    sync(select);
-    button.addEventListener("click", () =>
-      active?.select === select ? close() : open(select),
-    );
-    button.addEventListener("keydown", (event) => keydown(event, select));
-    select.addEventListener("change", () => sync(select));
-    select.addEventListener("focus", () => button.focus());
-    select.addEventListener("invalid", () => {
-      button.focus();
-    });
-  }
-
-  document.querySelectorAll("select").forEach(enhance);
-  new MutationObserver((records) => {
-    if (
-      active &&
-      (!active.select.isConnected ||
-        active.select.disabled ||
-        records.some((record) => active.select.contains(record.target)))
-    )
-      close();
-    for (const record of records) {
-      for (const node of record.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        if (node.matches("select")) enhance(node);
-        node.querySelectorAll("select").forEach(enhance);
-      }
-      const select = record.target.closest?.("select");
-      if (select) sync(select);
-    }
-    document.querySelectorAll(".album-select > select").forEach(sync);
-  }).observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["disabled", "selected", "label", "value"],
-  });
-  document.addEventListener("pointerdown", (event) => {
-    if (
-      active &&
-      !active.menu.contains(event.target) &&
-      !active.button.contains(event.target)
-    )
-      close();
-  });
-  document.addEventListener(
-    "scroll",
-    (event) => {
-      if (
-        active &&
-        event.target !== active.menu &&
-        !active.menu.contains(event.target)
-      )
-        close();
-    },
-    true,
-  );
-  document.addEventListener(
-    "close",
-    (event) => {
-      if (
-        active &&
-        event.target.matches?.("dialog") &&
-        event.target.contains(active.select)
-      )
-        close();
-    },
-    true,
-  );
-  document.addEventListener(
-    "cancel",
-    (event) => {
-      if (
-        active &&
-        event.target.matches?.("dialog") &&
-        event.target.contains(active.select)
-      ) {
-        event.preventDefault();
-        close(true);
-      }
-    },
-    true,
-  );
-  window.addEventListener("resize", () => close());
-  window.visualViewport?.addEventListener("resize", () => close());
-  document.addEventListener("reset", (event) =>
-    setTimeout(() => event.target.querySelectorAll("select").forEach(sync), 0),
-  );
-})();
-
 /* card-columns.js */
 (() => {
   "use strict";
@@ -4614,7 +4217,11 @@ init();
       "画像と所持ボタンを中心に表示します",
     ],
     ["hideRates", "取得率を非表示にする", "取得率と、その内訳を隠します"],
-    ["versePartsAsOwned", "持っているにパーツコンプを含める", "バースの所持状態の絞り込みに適用します。OFFではパーツコンプは「一部持っている」に含まれます。色・タグ・収集率は変わりません。"],
+    [
+      "versePartsAsOwned",
+      "持っているにパーツコンプを含める",
+      "バースの所持状態の絞り込みに適用します。OFFではパーツコンプは「一部持っている」に含まれます。色・タグ・収集率は変わりません。",
+    ],
   ];
   let prefs = {};
   const dialog = document.createElement("dialog");
@@ -4624,50 +4231,76 @@ init();
   document.body.append(dialog);
   const actions = dialog.querySelector(".display-account-actions");
   actions.append($("edit-nickname"), $("logout"));
-  const normalize = (value) => Object.fromEntries(
-    options.map(([id]) => [id, id === "versePartsAsOwned" ? value?.[id] !== false : value?.[id] === true]),
-  );
-  let owner = null, ready = false, generation = 0;
-  let loading = null, saving = false, saveTimer = null;
+  const normalize = (value) =>
+    Object.fromEntries(
+      options.map(([id]) => [
+        id,
+        id === "versePartsAsOwned"
+          ? value?.[id] !== false
+          : value?.[id] === true,
+      ]),
+    );
+  let owner = null,
+    ready = false,
+    generation = 0;
+  let loading = null,
+    saving = false,
+    saveTimer = null;
   let pending = {};
   const currentUser = () => window.CARD_SHARE_HOST?.session()?.user.id || null;
   const client = () => window.CARD_SHARE_HOST.client();
-  const localKey = (user) => key + ':' + user;
+  const localKey = (user) => key + ":" + user;
   function storeLocal() {
     if (!owner) return;
-    try { localStorage.setItem(localKey(owner), JSON.stringify(prefs)); } catch {}
+    try {
+      localStorage.setItem(localKey(owner), JSON.stringify(prefs));
+    } catch {}
   }
   function initialFor(user) {
     try {
       const cached = localStorage.getItem(localKey(user));
       if (cached) return normalize(JSON.parse(cached));
-      const migrated = localStorage.getItem(key + ':migrated-user');
+      const migrated = localStorage.getItem(key + ":migrated-user");
       if (!migrated || migrated === user)
-        return normalize(JSON.parse(localStorage.getItem(key) || '{}'));
+        return normalize(JSON.parse(localStorage.getItem(key) || "{}"));
     } catch {}
     return normalize({});
   }
   async function flushSettings() {
     clearTimeout(saveTimer);
     saveTimer = null;
-    if (saving || !ready || !owner || owner !== currentUser() || !Object.keys(pending).length) return;
-    const user = owner, g = generation, patch = pending;
+    if (
+      saving ||
+      !ready ||
+      !owner ||
+      owner !== currentUser() ||
+      !Object.keys(pending).length
+    )
+      return;
+    const user = owner,
+      g = generation,
+      patch = pending;
     pending = {};
     saving = true;
     try {
-      const { data, error } = await client().rpc('card_album_display_save', { p_patch: patch });
-      if (error || !data) throw error || Error('response');
+      const { data, error } = await client().rpc("card_album_display_save", {
+        p_patch: patch,
+      });
+      if (error || !data) throw error || Error("response");
       if (g !== generation || user !== currentUser()) return;
       prefs = { ...normalize(data), ...pending };
       storeLocal();
       apply();
-      $('display-settings-status').textContent = '';
+      $("display-settings-status").textContent = "";
     } catch {
       if (g === generation && user === currentUser()) {
         pending = { ...patch, ...pending };
-        $('display-settings-status').textContent =
-          '設定をDBに保存できませんでした。この端末には保持しています。詳細設定を開き直すと再試行します。';
-        window.CARD_SHARE_HOST.toast?.('表示設定をDBに保存できませんでした。', 'error');
+        $("display-settings-status").textContent =
+          "設定をDBに保存できませんでした。この端末には保持しています。詳細設定を開き直すと再試行します。";
+        window.CARD_SHARE_HOST.toast?.(
+          "表示設定をDBに保存できませんでした。",
+          "error",
+        );
         return;
       }
     } finally {
@@ -4677,23 +4310,31 @@ init();
   }
   async function loadSettings() {
     if (!owner || loading || currentUser() !== owner) return;
-    const user = owner, g = generation;
+    const user = owner,
+      g = generation;
     const task = (async () => {
       try {
-        const { data, error } = await client().rpc('card_album_display_load', { p_initial: initialFor(user) });
-        if (error || !data) throw error || Error('response');
+        const { data, error } = await client().rpc("card_album_display_load", {
+          p_initial: initialFor(user),
+        });
+        if (error || !data) throw error || Error("response");
         if (g !== generation || user !== currentUser()) return;
         prefs = normalize(data);
         ready = true;
         storeLocal();
-        try { localStorage.setItem(key + ':migrated-user', user); } catch {}
-        $('display-settings-status').textContent = '';
+        try {
+          localStorage.setItem(key + ":migrated-user", user);
+        } catch {}
+        $("display-settings-status").textContent = "";
       } catch {
         if (g === generation && user === currentUser())
-          $('display-settings-status').textContent =
-            '表示設定をDBから取得できませんでした。詳細設定を開き直して再試行してください。';
+          $("display-settings-status").textContent =
+            "表示設定をDBから取得できませんでした。詳細設定を開き直して再試行してください。";
       } finally {
-        if (g === generation) { loading = null; apply(); }
+        if (g === generation) {
+          loading = null;
+          apply();
+        }
       }
     })();
     loading = task;
@@ -4738,13 +4379,17 @@ init();
     dialog.showModal();
     $("display-settings-close").focus({ preventScroll: true });
   };
-  dialog.addEventListener("close", () => { if (ready) flushSettings(); });
+  dialog.addEventListener("close", () => {
+    if (ready) flushSettings();
+  });
   $("display-settings-close").onclick = () => dialog.close();
   for (const id of ["edit-nickname", "logout"])
     $(id).addEventListener("click", () => dialog.close(), { capture: true });
   window.CARD_UI_SETTINGS = {
     get(id) {
-      return id === "versePartsAsOwned" ? prefs[id] !== false : prefs[id] === true;
+      return id === "versePartsAsOwned"
+        ? prefs[id] !== false
+        : prefs[id] === true;
     },
     sync() {
       const user = currentUser();
@@ -4757,7 +4402,7 @@ init();
         saving = false;
         pending = {};
         prefs = user ? initialFor(user) : {};
-        $('display-settings-status').textContent = '';
+        $("display-settings-status").textContent = "";
         apply();
         if (user) loadSettings();
       }
@@ -4795,171 +4440,6 @@ init();
   document.addEventListener("click", contactLink, true);
   apply();
   window.CARD_UI_SETTINGS.sync();
-})();
-
-/* modal-scrollbar.js */
-(() => {
-  "use strict";
-  const desktop = matchMedia("(min-width: 761px) and (hover: hover) and (pointer: fine)");
-  const root = document.documentElement;
-  const rail = document.createElement("div");
-  rail.id = "modal-scroll-rail";
-  rail.setAttribute("popover", "manual");
-  rail.setAttribute("role", "scrollbar");
-  rail.setAttribute("aria-orientation", "vertical");
-  rail.setAttribute("aria-label", "モーダルをスクロール");
-  rail.tabIndex = 0;
-  const thumb = document.createElement("span");
-  thumb.className = "modal-scroll-thumb";
-  thumb.setAttribute("aria-hidden", "true");
-  rail.append(thumb);
-  let modal = null, target = null, frame = 0, drag = null;
-  let trackHeight = 0, thumbHeight = 0, thumbTop = 0, nextId = 0, sequence = 0;
-  const order = new WeakMap();
-  const canPopover = typeof rail.showPopover === "function";
-  const resize = new ResizeObserver(schedule);
-  function scrollable(node) {
-    return node instanceof HTMLElement && node !== rail && !rail.contains(node) &&
-      node.clientHeight > 0 && node.scrollHeight > node.clientHeight + 1 &&
-      /auto|scroll/.test(getComputedStyle(node).overflowY);
-  }
-  function hideRail() {
-    if (target) target.classList.remove("external-modal-scroll");
-    if (rail.isConnected && canPopover) {
-      try { rail.hidePopover(); } catch (_) {}
-    }
-    if (drag && rail.hasPointerCapture(drag.id)) rail.releasePointerCapture(drag.id);
-    drag = null;
-  }
-  function clear() {
-    hideRail();
-    resize.disconnect();
-    rail.remove();
-    modal = target = null;
-  }
-  function schedule() {
-    if (!frame) frame = requestAnimationFrame(update);
-  }
-  function update() {
-    frame = 0;
-    const dialogs = [...document.querySelectorAll("dialog[open]")].filter(d => d.matches(":modal"));
-    dialogs.forEach(d => { if (!order.has(d)) order.set(d, ++sequence); });
-    const active = dialogs.sort((a, b) => order.get(a) - order.get(b)).at(-1);
-    root.classList.toggle("album-modal-open", Boolean(active));
-    if (!active) { clear(); return; }
-    if (active !== modal) {
-      clear();
-      modal = active;
-      resize.observe(active);
-    }
-    if (!canPopover) {
-      hideRail();
-      target = null;
-      return;
-    }
-    const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
-    const cardBody = active.id === "detail" ? active.querySelector(".modal-body") : null;
-    const scroller = cardBody
-      ? (scrollable(cardBody) ? cardBody : null)
-      : scrollable(target) && active.contains(target) ? target
-      : candidates.includes(active) ? active
-      : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
-    if (!scroller) { hideRail(); target = null; return; }
-    if (target !== scroller) {
-      hideRail();
-      resize.disconnect();
-      target = scroller;
-      resize.observe(active);
-      if (target !== active) resize.observe(target);
-      if (target.firstElementChild) resize.observe(target.firstElementChild);
-    }
-    // 内部のスクロール領域に追従し、画面内に収めます。
-    const rect = target.getBoundingClientRect();
-    const box = active.getBoundingClientRect();
-    const vv = window.visualViewport;
-    const left = vv?.offsetLeft || 0, top = vv?.offsetTop || 0;
-    const width = vv?.width || innerWidth, height = vv?.height || innerHeight;
-    const y = Math.max(top + 8, box.top + 8);
-    const bottom = Math.min(top + height - 8, box.bottom - 8);
-    trackHeight = Math.max(0, bottom - y);
-    const max = Math.max(0, target.scrollHeight - target.clientHeight);
-    if (!max || trackHeight < 40) { hideRail(); return; }
-    if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
-    rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 8)) + "px";
-    rail.style.top = y + "px";
-    rail.style.height = trackHeight + "px";
-    try { if (!rail.matches(":popover-open")) rail.showPopover(); }
-    catch (_) { hideRail(); return; }
-    // 表示に成功した場合だけ、その領域の標準バーを隠します。
-    target.classList.add("external-modal-scroll");
-    if (!target.id) target.id = "modal-scroll-target-" + ++nextId;
-    rail.setAttribute("aria-controls", target.id);
-    rail.setAttribute("aria-valuemin", "0");
-    rail.setAttribute("aria-valuemax", String(Math.round(max)));
-    rail.setAttribute("aria-valuenow", String(Math.round(target.scrollTop)));
-    thumbHeight = Math.min(trackHeight, Math.max(28, trackHeight * target.clientHeight / target.scrollHeight));
-    thumbTop = (trackHeight - thumbHeight) * Math.min(1, Math.max(0, target.scrollTop / max));
-    thumb.style.height = thumbHeight + "px";
-    thumb.style.transform = "translateY(" + thumbTop + "px)";
-  }
-  function move(y, offset) {
-    if (!target) return;
-    const ratio = (y - rail.getBoundingClientRect().top - offset) / Math.max(1, trackHeight - thumbHeight);
-    target.scrollTop = Math.max(0, Math.min(1, ratio)) * Math.max(0, target.scrollHeight - target.clientHeight);
-    schedule();
-  }
-  rail.addEventListener("pointerdown", e => {
-    if (e.button !== 0 || !target) return;
-    e.preventDefault();
-    rail.focus({ preventScroll: true });
-    const y = e.clientY - rail.getBoundingClientRect().top;
-    drag = { id: e.pointerId, offset: y >= thumbTop && y <= thumbTop + thumbHeight ? y - thumbTop : thumbHeight / 2 };
-    rail.setPointerCapture(e.pointerId);
-    move(e.clientY, drag.offset);
-  });
-  rail.addEventListener("pointermove", e => { if (drag?.id === e.pointerId) move(e.clientY, drag.offset); });
-  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) rail.addEventListener(type, () => { drag = null; });
-  rail.addEventListener("wheel", e => {
-    if (!target) return;
-    e.preventDefault();
-    target.scrollTop += e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? target.clientHeight : 1);
-    schedule();
-  }, { passive: false });
-  rail.addEventListener("keydown", e => {
-    if (!target || !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) return;
-    e.preventDefault(); e.stopPropagation();
-    if (e.key === "Home") target.scrollTop = 0;
-    else if (e.key === "End") target.scrollTop = target.scrollHeight;
-    else target.scrollTop += (e.key.endsWith("Up") ? -1 : 1) * (e.key.startsWith("Page") ? target.clientHeight * .85 : 40);
-    schedule();
-  });
-  new MutationObserver(records => {
-    let changed = false;
-    for (const record of records) {
-      if (record.target === rail || rail.contains(record.target)) continue;
-      if (record.attributeName === "open" && record.target instanceof HTMLDialogElement) {
-        if (record.target.open) order.set(record.target, ++sequence);
-        else order.delete(record.target);
-      }
-      changed = true;
-    }
-    if (changed) schedule();
-  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["open", "hidden"] });
-  document.addEventListener("scroll", e => {
-    if (!modal) return;
-    if (modal.contains(e.target) && scrollable(e.target) && e.target !== target) {
-      hideRail(); target = e.target;
-      resize.observe(target);
-    }
-    schedule();
-  }, true);
-  document.addEventListener("load", () => { if (modal) schedule(); }, true);
-  document.addEventListener("close", schedule, true);
-  addEventListener("resize", schedule, { passive: true });
-  desktop.addEventListener("change", schedule);
-  window.visualViewport?.addEventListener("resize", schedule, { passive: true });
-  window.visualViewport?.addEventListener("scroll", schedule, { passive: true });
-  schedule();
 })();
 
 /* ownership-export.js */
@@ -5219,8 +4699,10 @@ init();
       onSuccess(r.data);
     } catch (error) {
       if (g === generation && user === current()) {
-        $("share-settings-status").textContent = window.CARD_ERROR.message(error);
-        if (deleteDialog.open) deleteStatus.textContent = window.CARD_ERROR.message(error);
+        $("share-settings-status").textContent =
+          window.CARD_ERROR.message(error);
+        if (deleteDialog.open)
+          deleteStatus.textContent = window.CARD_ERROR.message(error);
       }
     } finally {
       if (g === generation && user === current()) {
@@ -6227,10 +5709,19 @@ init();
   function markInventoryChange(key) {
     inventoryChanges.set(key, ++inventoryRevision);
   }
-  function preserveInventoryChanges(nextParts, nextFull, nextFavorites, revision) {
+  function preserveInventoryChanges(
+    nextParts,
+    nextFull,
+    nextFavorites,
+    revision,
+  ) {
     for (const [key, changedAt] of inventoryChanges) {
-      if (changedAt <= revision && !quantityQueues.has(key) &&
-          !(key.startsWith("favorite:") && favoriteBusy.has(key.slice(9)))) continue;
+      if (
+        changedAt <= revision &&
+        !quantityQueues.has(key) &&
+        !(key.startsWith("favorite:") && favoriteBusy.has(key.slice(9)))
+      )
+        continue;
       if (key.startsWith("favorite:")) {
         const id = key.slice(9);
         if (favorites.has(id)) nextFavorites.add(id);
@@ -6289,8 +5780,10 @@ init();
     const mobile = window.innerWidth <= 760;
     const anchor = $(mobile ? "menu-toggle" : "game-switch");
     if (mobile) {
-      if (anchor.previousElementSibling !== mobileRoute) anchor.before(mobileRoute);
-    } else if (anchor.nextElementSibling !== mobileRoute) anchor.after(mobileRoute);
+      if (anchor.previousElementSibling !== mobileRoute)
+        anchor.before(mobileRoute);
+    } else if (anchor.nextElementSibling !== mobileRoute)
+      anchor.after(mobileRoute);
   }
   placeRoute();
   const panel = document.createElement("section");
@@ -6326,7 +5819,13 @@ init();
     return full(c) || partsComplete(c);
   }
   function ownershipClass(c) {
-    return full(c) ? "is-owned" : partsComplete(c) ? "is-parts-complete" : got(c) ? "is-partial" : "";
+    return full(c)
+      ? "is-owned"
+      : partsComplete(c)
+        ? "is-parts-complete"
+        : got(c)
+          ? "is-partial"
+          : "";
   }
   function quantity(c, part = null) {
     return (
@@ -6368,8 +5867,12 @@ init();
   }
   function state(c) {
     return full(c) ||
-      (window.CARD_UI_SETTINGS?.get("versePartsAsOwned") !== false && partsComplete(c))
-      ? "full" : got(c) ? "partial" : "none";
+      (window.CARD_UI_SETTINGS?.get("versePartsAsOwned") !== false &&
+        partsComplete(c))
+      ? "full"
+      : got(c)
+        ? "partial"
+        : "none";
   }
   const compact = (value) =>
     String(value || "")
@@ -6384,6 +5887,7 @@ init();
         (!favoriteOnly || favorites.has(c.id)) &&
         (!duplicateOnly || duplicate(c)) &&
         (trade()?.matches("coordinate", c.id) ?? true) &&
+        (window.CARD_QR?.matches("coordinate", c.id, c.part_ids) ?? true) &&
         appearances(c).some(
           (a) =>
             (!series || a.series === series) && (!group || a.group === group),
@@ -6503,7 +6007,9 @@ init();
     if (c.image)
       return `<span class="verse-full-image"><img src="${esc(large ? c.image : c.thumbnail || c.image)}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
 
-    const images = c.part_ids.map((id) => parts.get(id)).filter((part) => part?.image);
+    const images = c.part_ids
+      .map((id) => parts.get(id))
+      .filter((part) => part?.image);
     if (!images.length)
       return '<span class="verse-image-unavailable" role="img" aria-label="コーデ画像未取得">画像未取得</span>';
     return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(part.image)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
@@ -6561,6 +6067,8 @@ init();
       ["favorite", "お気に入り", favoriteOnly ? "登録済み" : ""],
       ["duplicate", "重複", duplicateOnly ? "重複あり" : ""],
     ].filter((x) => x[2]);
+    const qr = window.CARD_QR?.entry("coordinate");
+    if (qr) entries.push([qr.key, qr.label, qr.value]);
     const item = trade()?.entry("coordinate");
     if (item) entries.push(["trade", item.label, item.value]);
     $("verse-filter-summary").textContent = entries.length
@@ -6734,7 +6242,14 @@ init();
       catalog?.version,
       ready,
       family,
-      visible.map((c) => [c.id, full(c), got(c), state(c), duplicate(c), favorites.has(c.id)]),
+      visible.map((c) => [
+        c.id,
+        full(c),
+        got(c),
+        state(c),
+        duplicate(c),
+        favorites.has(c.id),
+      ]),
     ]);
     if (listKey !== cardListKey) {
       cardListKey = listKey;
@@ -6742,7 +6257,7 @@ init();
         .slice((page - 1) * perPage, page * perPage)
         .map(
           (c, index) =>
-            `<article class="verse-card ${ownershipClass(c)}" data-verse-card="${esc(c.id)}">${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c, false, index < 6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || "コード未取得")}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`,
+            `<article class="verse-card ${ownershipClass(c)}" data-verse-card="${esc(c.id)}">${window.CARD_QR?.badge("coordinate", c.id, c.part_ids) || ""}${favoriteButton(c)}${partialBadge(c)}<button type="button" class="verse-card-detail" data-verse-detail="${esc(c.id)}"><span class="verse-card-picture">${image(c, false, index < 6)}${duplicateBadge(c)}</span><span class="verse-code">${esc(c.code || "コード未取得")}</span><strong>${esc(c.name)}</strong></button>${ownedButton(c)}</article>`,
         )
         .join("");
     }
@@ -6758,12 +6273,26 @@ init();
     const c = catalog.coordinates.find((c) => c.id === selected);
     if (!c) return;
     $("verse-detail-content").innerHTML =
-      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}${trade()?.markup("coordinate", c.id) || ""}</div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
-        .map((id) => {
-          const p = parts.get(id);
-          return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? "BP未取得" : p.buzz + " バズパワー"}</strong></div>${ownControl(c, id)}${trade()?.markup("part", id) || ""}</article>`;
-        })
-        .join("") || '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'}</div>`;
+      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate", c.id, c.name) || ""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${
+        c.part_ids
+          .map((id) => {
+            const p = parts.get(id);
+            return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? "BP未取得" : p.buzz + " バズパワー"}</strong></div>${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${
+              window.CARD_QR?.button(
+                "part",
+                id,
+                c.name + " ／ " + p.slot,
+                c.part_ids.map((pid) => ({
+                  kind: "part",
+                  id: String(pid),
+                  name: c.name + " ／ " + (parts.get(pid)?.slot || pid),
+                })),
+              ) || ""
+            }</div></article>`;
+          })
+          .join("") ||
+        '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'
+      }</div>`;
   }
   function openDetail(id) {
     if (!catalog?.coordinates.some((c) => c.id === id)) return;
@@ -6781,7 +6310,10 @@ init();
       if (!c) return;
       a.classList.toggle("is-owned", full(c));
       a.classList.toggle("is-parts-complete", !full(c) && partsComplete(c));
-      a.classList.toggle("is-partial", !full(c) && !partsComplete(c) && got(c) > 0);
+      a.classList.toggle(
+        "is-partial",
+        !full(c) && !partsComplete(c) && got(c) > 0,
+      );
       const badge = a.querySelector(".verse-partial");
       const markup = partialBadge(c);
       if (badge) {
@@ -7116,7 +6648,12 @@ init();
       );
       const nextFavorites = new Set(result.data.favorites);
       // 読み込み開始後に編集した項目は、古い応答で巻き戻さない。
-      preserveInventoryChanges(nextParts, nextFull, nextFavorites, task.revision);
+      preserveInventoryChanges(
+        nextParts,
+        nextFull,
+        nextFavorites,
+        task.revision,
+      );
       partQuantities = nextParts;
       fullQuantities = nextFull;
       favorites = nextFavorites;
@@ -7193,7 +6730,8 @@ init();
       $("verse-message").textContent = "";
       render();
     } catch (error) {
-      if (current()) $("verse-message").textContent = window.CARD_ERROR.message(error);
+      if (current())
+        $("verse-message").textContent = window.CARD_ERROR.message(error);
     }
   }
   function reset() {
@@ -7401,6 +6939,7 @@ init();
     series = group = query = "";
     favoriteOnly = duplicateOnly = false;
     trade()?.clear("coordinate");
+    window.CARD_QR?.clear("coordinate");
     ownershipView = "all";
     page = 1;
     $("verse-query").value = "";
@@ -7410,6 +6949,7 @@ init();
     render();
   };
   function clearFilter(key) {
+    if (key === "qr") window.CARD_QR?.clear("coordinate");
     if (key === "trade") trade()?.clear("coordinate");
     if (key === "query") {
       query = "";
@@ -7557,7 +7097,7 @@ init();
       const visible =
         !!currentUser() && host.game() === "aipri" && !host.maintenance();
       button.hidden = !visible;
-      mobileRoute.hidden = !visible;
+      mobileRoute.hidden = !visible || !$("selection").hidden;
       syncImages();
       if (visible) warm();
     },
@@ -8309,8 +7849,7 @@ verseScript.dispatchEvent(new Event("load"));
         "画像を作成しました。「画像を保存」から保存できます。";
     } catch (error) {
       if (current()) {
-        $("trade-export-status").textContent =
-          window.CARD_ERROR.message(error);
+        $("trade-export-status").textContent = window.CARD_ERROR.message(error);
         host.toast("画像を作成できませんでした", "error");
       }
     } finally {
@@ -8332,7 +7871,9 @@ verseScript.dispatchEvent(new Event("load"));
       kind: isVerse ? "coordinate" : "card",
       game: isVerse ? "aipri" : host.game(),
       family: isVerse
-        ? (window.CARD_VERSE.family() === "himitsu" ? "ひみつ" : "おねがい")
+        ? window.CARD_VERSE.family() === "himitsu"
+          ? "ひみつ"
+          : "おねがい"
         : host.family(),
     };
     host.screen("trade-page");
@@ -8498,22 +8039,45 @@ verseScript.dispatchEvent(new Event("load"));
 
 // Update card information without navigating or changing personal records.
 document.addEventListener("card-visibility-updated", () => {
-  const fresh = window.CARD_VISIBILITY.cache(); if (!fresh) return;
-  const currentId = selected?.id, oldSide = side;
-  const dialog = $("detail"), body = dialog?.querySelector(".modal-body");
-  const dialogScroll = dialog?.scrollTop || 0, bodyScroll = body?.scrollTop || 0;
+  const fresh = window.CARD_VISIBILITY.cache();
+  if (!fresh) return;
+  const currentId = selected?.id,
+    oldSide = side;
+  const dialog = $("detail"),
+    body = dialog?.querySelector(".modal-body");
+  const dialogScroll = dialog?.scrollTop || 0,
+    bodyScroll = body?.scrollTop || 0;
   const position = { x: window.scrollX, y: window.scrollY };
   catalogFallback = fresh;
   adminOverrides.clear();
-  catalog = { ...catalog, cards: fresh.cards.map(c => ({ ...c })), updatedAt: fresh.state.updated_at, source: "live" };
+  catalog = {
+    ...catalog,
+    cards: fresh.cards.map((c) => ({ ...c })),
+    updatedAt: fresh.state.updated_at,
+    source: "live",
+  };
   applyPersonalMetadata();
-  if (game) { fillFilters(); render(); }
+  if (game) {
+    fillFilters();
+    render();
+  }
   if (dialog?.open && currentId) {
     openDetail(currentId, lastFocus, true);
-    side = oldSide && selected?.back ? 1 : 0; showSide();
-    dialog.scrollTop = dialogScroll; if (body) body.scrollTop = bodyScroll;
+    side = oldSide && selected?.back ? 1 : 0;
+    showSide();
+    dialog.scrollTop = dialogScroll;
+    if (body) body.scrollTop = bodyScroll;
   }
   if (!$("auth").hidden) art();
-  if ($("trade-page") && !$("trade-page").hidden) window.CARD_TRADE?.renderOutput();
+  if ($("trade-page") && !$("trade-page").hidden)
+    window.CARD_TRADE?.renderOutput();
   window.scrollTo(position.x, position.y);
+});
+
+document.addEventListener("private-qr-changed", () => {
+  if (game) {
+    page = 1;
+    render();
+  }
+  window.CARD_VERSE?.refreshOwnershipFilter();
 });
