@@ -1,7 +1,8 @@
 /* style.css */
 @import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap");
 :root {
-  font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  font-family:
+    "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   color: #403249;
   background: #fff8fc;
   --accent: #d63e84;
@@ -978,7 +979,13 @@ nav {
   overflow: hidden;
   margin: 30px 0 10px;
   padding: 15px 0;
-  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
 }
 .marquee-track {
   display: flex;
@@ -1178,14 +1185,16 @@ nav {
   }
 }
 body {
-  background: radial-gradient(circle at 8% 12%, #fff0f7 0, transparent 32%), #fffafc;
+  background:
+    radial-gradient(circle at 8% 12%, #fff0f7 0, transparent 32%), #fffafc;
 }
 .game-aipri {
   --accent: #247ca4;
   --soft: #e4f7ff;
   --line: #cde8f2;
   --muted: #627c8a;
-  background: radial-gradient(circle at 90% 8%, #def6ff 0, transparent 36%), #f6fcff;
+  background:
+    radial-gradient(circle at 90% 8%, #def6ff 0, transparent 36%), #f6fcff;
 }
 .game-aipri .progress-track span {
   background: #51b6da;
@@ -2230,9 +2239,6 @@ select {
   box-shadow: 0 1px 4px #0002;
   transition: transform 0.2s;
 }
-.cost-toggle input:checked + .switch-track {
-  background: var(--accent);
-}
 .cost-toggle input:checked + .switch-track::before {
   transform: translateX(19px);
 }
@@ -2421,7 +2427,8 @@ input[aria-invalid="true"] {
   box-shadow: none;
   text-decoration: none;
 }
-#nav > :is(#probability-back, #probability-open, #edit-nickname, #logout):hover {
+#nav
+  > :is(#probability-back, #probability-open, #edit-nickname, #logout):hover {
   background: var(--soft);
   color: var(--accent);
 }
@@ -3659,13 +3666,36 @@ select option {
 }
 
 /* Common scrollbar colors, including contact and read-only pages. */
-:root { --scroll-thumb: #d7b8c8; --scroll-thumb-hover: #c598af; }
-html:has(body.game-aipri), html.contact-aipri { --scroll-thumb: #adccdc; --scroll-thumb-hover: #83b1c8; }
-* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
-*::-webkit-scrollbar { width: 9px; height: 9px; }
-*::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
-*::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border: 2px solid transparent; background-clip: padding-box; border-radius: 20px; }
-*::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }
+:root {
+  --scroll-thumb: #d7b8c8;
+  --scroll-thumb-hover: #c598af;
+}
+html:has(body.game-aipri),
+html.contact-aipri {
+  --scroll-thumb: #adccdc;
+  --scroll-thumb-hover: #83b1c8;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-thumb-hover);
+}
 
 /* Scrollbar lifecycle: background stays still; only the active modal scrolls. */
 /* Use the real top-layer state, not the asynchronously updated rail class.
@@ -3684,17 +3714,27 @@ html:has(dialog:modal) {
   z-index: 2147483646;
 }
 /* Insets use inline coordinates; reset the UA popover centering only. */
-#modal-scroll-rail[popover] { right: auto !important; bottom: auto !important; }
+#modal-scroll-rail[popover] {
+  right: auto !important;
+  bottom: auto !important;
+}
 @media (max-width: 760px), (hover: none), (pointer: coarse) {
-  #modal-scroll-rail { display: none !important; }
+  #modal-scroll-rail {
+    display: none !important;
+  }
   :is(dialog, [role="dialog"], [role="alertdialog"]).external-modal-scroll,
   :is(dialog, [role="dialog"], [role="alertdialog"]) .external-modal-scroll {
     scrollbar-width: thin !important;
     scrollbar-color: var(--scroll-thumb, #d7b8c8) transparent !important;
     scrollbar-gutter: auto !important;
   }
-  :is(dialog, [role="dialog"], [role="alertdialog"]).external-modal-scroll::-webkit-scrollbar,
-  :is(dialog, [role="dialog"], [role="alertdialog"]) .external-modal-scroll::-webkit-scrollbar {
+  :is(
+      dialog,
+      [role="dialog"],
+      [role="alertdialog"]
+    ).external-modal-scroll::-webkit-scrollbar,
+  :is(dialog, [role="dialog"], [role="alertdialog"])
+    .external-modal-scroll::-webkit-scrollbar {
     display: block !important;
     width: 9px !important;
     height: 9px !important;
@@ -3702,18 +3742,50 @@ html:has(dialog:modal) {
 }
 
 /* Login entry for the public catalog. */
-#guest-browse-link { display: none; }
-body:has(#auth:not([hidden])) #guest-browse-link { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; padding: 9px 12px; border: 1px solid #d7c9d2; border-radius: 999px; background: #fff; color: #796072; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-body:has(#auth:not([hidden])) #guest-browse-link:hover { background: #fff4f8; }
-@media (max-width: 600px) { body:has(#auth:not([hidden])) #guest-browse-link { font-size: 11px; padding: 8px 9px; } }
-body.guest-browse #public-owner { font-size: 16px; }
+#guest-browse-link {
+  display: none;
+}
+body:has(#auth:not([hidden])) #guest-browse-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 9px 12px;
+  border: 1px solid #d7c9d2;
+  border-radius: 999px;
+  background: #fff;
+  color: #796072;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+body:has(#auth:not([hidden])) #guest-browse-link:hover {
+  background: #fff4f8;
+}
+@media (max-width: 600px) {
+  body:has(#auth:not([hidden])) #guest-browse-link {
+    font-size: 11px;
+    padding: 8px 9px;
+  }
+}
+body.guest-browse #public-owner {
+  font-size: 16px;
+}
 body.guest-browse .public-progress,
 body.guest-browse .public-owned-wrap,
-body.guest-browse #public-scope-note { display: none !important; }
+body.guest-browse #public-scope-note {
+  display: none !important;
+}
 body.guest-browse .public-possession,
 body.guest-browse .public-quantity,
-body.guest-browse .public-partial { display: none !important; }
-body.guest-browse .public-image.is-unowned { filter: none !important; opacity: 1; }
+body.guest-browse .public-partial {
+  display: none !important;
+}
+body.guest-browse .public-image.is-unowned {
+  filter: none !important;
+  opacity: 1;
+}
 
 /* Keep the modal rail outside on mouse and touch devices alike. */
 html.album-modal-open body #modal-scroll-rail[popover]:popover-open {
