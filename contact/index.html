@@ -1,21 +1,20 @@
 <!doctype html>
 <html lang="ja">
-  <head
-    ><meta charset="utf-8" /><meta
-      name="viewport"
-      content="width=device-width,initial-scale=1"
-    /><meta name="robots" content="noindex,nofollow" /><meta
-      name="referrer"
-      content="no-referrer"
-    /><title>カードアルバム</title></head
-  >
-  <body
-    ><script>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>カードアルバム</title>
+  </head>
+  <body>
+    <script>
       const destination = new URL("../", location.href);
       destination.search = location.search;
       destination.searchParams.set("view", "contact");
       destination.hash = location.hash;
-      location.replace(destination.href);</script
-    ><noscript>JavaScriptを有効にして開いてください。</noscript></body
-  >
+      location.replace(destination.href);
+    </script>
+    <noscript>JavaScriptを有効にして開いてください。</noscript>
+  </body>
 </html>
