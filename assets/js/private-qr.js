@@ -888,3 +888,65 @@
     if (!document.hidden) refresh(true);
   });
 })();
+
+// お知らせ・返信・個別通知を合わせて、最新5件だけを初期表示する。
+(() => {
+  let owner, expanded=false, scheduled=false, section=null, output=null;
+  const user=()=>window.CARD_VERSE_HOST?.session()?.user?.id;
+  const sources=()=>['album-qr-limit-notices','album-contact-replies','album-notices'].map(id=>document.getElementById(id)).filter(Boolean);
+  function loaders() {
+    return sources().flatMap(source=>[...source.querySelectorAll('button.album-news-history')]).filter(button=>
+      !button.hidden && !button.disabled &&
+      (button.hasAttribute('aria-expanded') ? button.getAttribute('aria-expanded')==='false' : !button.parentElement.hidden));
+  }
+  function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;render();});}
+  function render(){
+    const current=user();
+    if(current!==owner){
+      const hadOwner=!!owner;owner=current;expanded=false;
+      output?.replaceChildren();
+      if(hadOwner)for(const source of sources())if(source.id!=='album-notices')source.replaceChildren();
+    }
+    const anchor=document.getElementById('album-notices');
+    if(!anchor||!current)return;
+    section=anchor.closest('.album-news-box');if(!section)return;
+    if(!output?.isConnected){
+      output=document.createElement('div');output.id='album-combined-notices';
+      const list=document.createElement('div');list.dataset.noticeItems='';list.id='album-combined-notice-history';
+      const status=document.createElement('p');status.className='album-news-empty';status.dataset.noticeStatus='';status.setAttribute('role','status');
+      const more=document.createElement('button');more.type='button';more.className='album-news-history';more.dataset.noticeMore='';more.textContent='さらに過去の情報を確認する';
+      const toggle=document.createElement('button');toggle.type='button';toggle.className='album-news-history';toggle.dataset.noticeToggle='';toggle.setAttribute('aria-controls','album-combined-notice-history');
+      for(const button of [more,toggle])button.style.cssText='display:block;margin:10px 0 0 auto;padding:4px 0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:11px;line-height:1.6;box-shadow:none';
+      more.onclick=()=>{for(const button of loaders())button.click();schedule();};
+      toggle.onclick=()=>{
+        expanded=!expanded;
+        if(expanded){const initial=document.querySelector('#album-notices > button[aria-expanded="false"]');if(initial&&!initial.disabled)initial.click();}
+        render();
+      };
+      output.append(list,status,more,toggle);section.querySelector('h2').after(output);
+    }
+    const feeds=sources();for(const source of feeds)if(!source.hidden)source.hidden=true;
+    const nodes=feeds.flatMap(source=>[...source.querySelectorAll('.album-news-item')]);
+    nodes.sort((a,b)=>(Date.parse(b.querySelector('time')?.dateTime)||0)-(Date.parse(a.querySelector('time')?.dateTime)||0));
+    const list=output.querySelector('[data-notice-items]');
+    const key=node=>(node.querySelector('time')?.dateTime||'')+'|'+node.textContent;
+    const opens=new Set([...list.querySelectorAll('details[open]')].map(key));
+    const signature=nodes.map(node=>node.outerHTML).join('');
+    if(list.dataset.signature!==signature){
+      list.dataset.signature=signature;list.replaceChildren(...nodes.map(node=>{const clone=node.cloneNode(true);clone.open=opens.has(key(node));return clone;}));
+    }
+    [...list.children].forEach((node,index)=>{node.hidden=index>=5&&!expanded;});
+    const remaining=list.children.length>5||loaders().length>0;
+    const toggle=output.querySelector('[data-notice-toggle]'),more=output.querySelector('[data-notice-more]');
+    toggle.hidden=!remaining;toggle.setAttribute('aria-expanded',String(expanded));toggle.textContent=expanded?'折りたたむ':'過去の情報も確認する';
+    more.hidden=!expanded||loaders().length===0;
+    const status=output.querySelector('[data-notice-status]');
+    const errors=feeds.flatMap(source=>[...source.querySelectorAll('[role="status"]')]).map(node=>node.textContent).filter(text=>/できません|読み込めません/.test(text));
+    status.textContent=errors.join('\n')||(!nodes.length?'現在、掲載情報はありません':'');status.hidden=!status.textContent;
+  }
+  new MutationObserver(records=>{
+    if(records.some(record=>!output?.contains(record.target)))schedule();
+  }).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden','disabled','aria-expanded']});
+  setInterval(()=>{if(user()!==owner)schedule();},500);
+  schedule();
+})();
