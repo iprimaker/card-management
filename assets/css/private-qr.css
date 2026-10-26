@@ -582,3 +582,11 @@ body.game-aipri .album-id-card {
 #verse-qr-filter {
   min-width: 0;
 }
+
+.qr-capture-footer:empty { display: none; }
+.private-qr-dialog .qr-manual-link { margin: 16px auto 0; padding: 6px 0; border: 0; background: transparent; color: var(--accent, #8870ab); font: inherit; font-size: 12px; box-shadow: none; }
+.qr-manual-form { display: grid; gap: 14px; margin-top: 18px; text-align: left; }
+.qr-manual-form label { display: grid; gap: 8px; font-size: 13px; }
+.qr-manual-form textarea { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; border: 1px solid #ddd6e8; border-radius: 12px; background: #fff; color: #443b50; font: inherit; font-size: 16px; resize: vertical; overflow-wrap: anywhere; }
+.qr-manual-form [role="status"]:empty { display: none; }
+.private-qr-dialog .qr-manual-form button[type="submit"] { width: 100%; margin: 0; }
