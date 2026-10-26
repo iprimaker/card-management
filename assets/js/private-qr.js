@@ -351,6 +351,7 @@
         filters[kind] = e.target.value;
         document.dispatchEvent(new Event("private-qr-changed"));
       };
+      if (kind === "coordinate") label.id = "verse-qr-filter";
       root.append(label);
     }
     for (const s of document.querySelectorAll("[data-qr-filter]"))
@@ -373,7 +374,7 @@
   manager.className = "qr-manager-dialog";
   manager.setAttribute("aria-labelledby", "qr-manager-title");
   manager.innerHTML =
-    '<div class="qr-manager-heading"><h2 id="qr-manager-title">登録済みQRコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><p data-status role="status" aria-live="polite"></p><div data-entries></div><div class="qr-manager-footer"><button type="button" data-delete-all disabled>一括削除（セーブコードを除く）</button><p>カード・コーデ・パーツのQRコードを削除します。</p></div>';
+    '<div class="qr-manager-heading"><h2 id="qr-manager-title">登録済みQRコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="qr-manager-filters" role="group" aria-label="タグで絞り込み"></div><p data-status role="status" aria-live="polite"></p><div data-entries></div><div class="qr-manager-footer"><button type="button" data-delete-all disabled>一括削除（セーブ・フレカを除く）</button><p>カード・コーデ・パーツのQRコードを削除します。</p><details class="qr-limit-help"><summary>QRコードの登録上限を増やすには</summary><p>アルバムを継続してご利用いただいている方など、アルバムの利用状況に応じて登録上限を増やす場合があります。利用状況が高いほど上限増加の対象となる場合がありますが、自動的な増加をお約束するものではありません。上限を変更した際は、個別のお知らせでご案内します。</p></details></div>';
   document.body.append(manager);
   manager.querySelector("[data-close]").onclick = () => manager.close();
   const confirmation = document.createElement("dialog");
@@ -426,10 +427,61 @@
       managing = false;
     }
   }
+  let managerFilter = "all";
+  function tagKey(row) {
+    if (row.kind === "save")
+      return row.series === "friend"
+        ? "friend"
+        : row.series === "aikatsu"
+          ? "aikatsu-save"
+          : "aipri-save";
+    const family =
+      row.series === "おねがい"
+        ? "onegai"
+        : row.series === "ひみつ"
+          ? "himitsu"
+          : row.series;
+    return row.kind === "coordinate" || row.kind === "part"
+      ? family + "-verse"
+      : family;
+  }
+  const tagLabels = {
+    aikatsu: "アイカツ",
+    onegai: "おねがい",
+    himitsu: "ひみつ",
+    aipri: "アイプリ",
+    "onegai-verse": "おねがいV",
+    "himitsu-verse": "ひみつV",
+    "aipri-verse": "アイプリV",
+    "aikatsu-save": "アイカツセーブ",
+    "aipri-save": "アイプリセーブ",
+    friend: "フレカ",
+  };
   function renderManager() {
     const root = manager.querySelector("[data-entries]");
     root.replaceChildren();
-    for (const row of managedRows) {
+    const available = [...new Set(managedRows.map(tagKey))];
+    if (managerFilter !== "all" && !available.includes(managerFilter))
+      managerFilter = "all";
+    const filterRoot = manager.querySelector(".qr-manager-filters");
+    filterRoot.replaceChildren();
+    for (const value of ["all", ...available]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent =
+        value === "all" ? "すべて" : tagLabels[value] || "未取得";
+      button.dataset.qrTagFilter = value;
+      button.setAttribute("aria-pressed", String(value === managerFilter));
+      button.onclick = () => {
+        managerFilter = value;
+        renderManager();
+      };
+      filterRoot.append(button);
+    }
+    const visibleRows = managedRows.filter(
+      (row) => managerFilter === "all" || tagKey(row) === managerFilter,
+    );
+    for (const row of visibleRows) {
       const item = document.createElement("div");
       item.className = "qr-manager-row";
       const text = document.createElement("span");
@@ -460,17 +512,16 @@
       };
       const tag = document.createElement("small");
       tag.className = "qr-manager-tag";
-      const series = row.kind === "save" ? "save" : row.series;
-      const labels = {aikatsu:"アイカツ",onegai:"おねがい",himitsu:"ひみつ",おねがい:"おねがい",ひみつ:"ひみつ",aipri:"アイプリ",save:"セーブコード"};
-      tag.textContent = labels[series] || "シリーズ未取得";
-      tag.dataset.series = series || "aipri";
+      const series = tagKey(row);
+      tag.textContent = tagLabels[series] || "シリーズ未取得";
+      tag.dataset.series = series;
       const label = document.createElement("div");
       label.className = "qr-manager-label";
-      label.append(tag,text);
+      label.append(tag, text);
       item.append(label, qr, del);
       root.append(item);
     }
-    if (!managedRows.length) {
+    if (!visibleRows.length) {
       const empty = document.createElement("p");
       empty.className = "qr-manager-empty";
       empty.textContent = "QRコードはまだ登録されていません。";
@@ -520,6 +571,7 @@
   }
   manager.addEventListener("close", () => {
     managerRequest++;
+    managerFilter = "all";
     managedRows = [];
     managerOwner = null;
     manager.querySelector("[data-entries]").replaceChildren();
@@ -529,7 +581,7 @@
     if (!user || user !== managerOwner || managing) return;
     if (
       !(await confirmRemoval(
-        "セーブコードを除く、すべての登録済みQRコードを削除します。所持記録とセーブコードは残ります。",
+        "セーブコード・フレカを除く、すべての登録済みQRコードを削除します。絞り込みに関係なく削除します。所持記録・セーブコード・フレカは残ります。",
       )) ||
       uid() !== user
     )
@@ -542,7 +594,8 @@
       if (uid() !== user) return;
       await load();
       await reloadManager();
-      managerStatus.textContent = "セーブコードを除くQRコードを削除しました。";
+      managerStatus.textContent =
+        "セーブコード・フレカを除くQRコードを削除しました。";
     } catch (e) {
       if (uid() === user) managerStatus.textContent = err(e);
     } finally {
@@ -604,7 +657,11 @@
         n(result.data.count) +
         "件登録中　うち" +
         n(result.data.save_count) +
-        "件セーブコード）";
+        "件セーブコード" +
+        (result.data.friend_count
+          ? "・" + n(result.data.friend_count) + "件フレカ"
+          : "") +
+        "）";
       p.append(primary, detail);
     } catch {
       if (request === remainingRequest && user === uid())
@@ -636,6 +693,7 @@
     managerUser = uid();
     remainingRequest++;
     managerRequest++;
+    managerFilter = "all";
     managedRows = [];
     managerOwner = null;
     manager.querySelector("[data-entries]").replaceChildren();
@@ -737,4 +795,96 @@
     display,
     icon,
   };
+})();
+
+// 個別上限の変更通知：公開お知らせと分けて本人分だけ取得。
+(() => {
+  let owner = null,
+    token = 0,
+    loading = false,
+    last = 0;
+  const host = () => window.CARD_VERSE_HOST;
+  async function refresh(force = false) {
+    const user = host()?.session()?.user?.id;
+    let box = document.getElementById("album-qr-limit-notices");
+    if (user !== owner) {
+      owner = user;
+      token++;
+      loading = false;
+      last = 0;
+      box?.replaceChildren();
+    }
+    if (
+      !user ||
+      host()?.maintenance() ||
+      document.getElementById("selection")?.hidden
+    )
+      return;
+    const anchor = document.getElementById("album-contact-replies");
+    if (!anchor) return;
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "album-qr-limit-notices";
+      anchor.before(box);
+    }
+    if (loading || (!force && Date.now() - last < 60000)) return;
+    loading = true;
+    const request = ++token;
+    try {
+      const all = [];
+      for (let offset = 0; ; offset += 100) {
+        const r = await host()
+          .client()
+          .from("card_qr_limit_notices")
+          .select("id,title,body,created_at")
+          .eq("recipient_id", user)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(offset, offset + 99);
+        if (request !== token || user !== host()?.session()?.user?.id) return;
+        if (r.error) throw r.error;
+        all.push(...r.data);
+        if (r.data.length < 100) break;
+      }
+      box.replaceChildren();
+      for (const row of all) {
+        const item = document.createElement("details");
+        item.className = "album-news-item";
+        const summary = document.createElement("summary"),
+          time = document.createElement("time"),
+          title = document.createElement("span"),
+          body = document.createElement("p");
+        time.dateTime = row.created_at;
+        time.textContent = new Date(row.created_at).toLocaleDateString(
+          "ja-JP",
+          { timeZone: "Asia/Tokyo" },
+        );
+        const tag=document.createElement("small");
+        tag.className="contact-reply-tag qr-limit-notice-tag";
+        tag.textContent="通知";
+        title.append(tag,document.createTextNode(row.title));
+        body.textContent = row.body;
+        body.style.whiteSpace = "pre-wrap";
+        const arrow=document.createElementNS("http://www.w3.org/2000/svg","svg");
+        arrow.setAttribute("viewBox","0 0 20 20");arrow.setAttribute("aria-hidden","true");
+        const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+        path.setAttribute("d","m6 8 4 4 4-4");arrow.append(path);
+        summary.append(time, title, arrow);
+        item.append(summary, body);
+        box.append(item);
+      }
+      last = Date.now();
+    } catch {
+      if (request === token && !box.children.length) {
+        box.textContent =
+          "個別のお知らせを読み込めませんでした。時間をおいて再度お試しください。";
+      }
+    } finally {
+      if (request === token) loading = false;
+    }
+  }
+  setInterval(() => refresh(), 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refresh(true);
+  });
 })();
