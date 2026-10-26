@@ -40,13 +40,16 @@
     '<button class="qr-close" aria-label="閉じる">×</button><div data-content></div>';
   document.body.append(dialog);
   const content = dialog.querySelector("[data-content]");
+  const captureFooter = document.createElement("div");
+  captureFooter.className = "qr-capture-footer";
+  dialog.append(captureFooter);
   dialog.querySelector(".qr-close").onclick = () => dialog.close();
   function stop() {
     scanToken++;
     if (stream) stream.getTracks().forEach((t) => t.stop());
     stream = null;
   }
-  dialog.addEventListener("close", stop);
+  dialog.addEventListener("close", () => { stop(); captureFooter.replaceChildren(); });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && stream) dialog.close();
   });
@@ -199,8 +202,10 @@
     };
   }
   async function scan(t, onRead) {
-    const u = uid();
+    const u = uid(), token = ++scanToken;
+    if (!u || !dialog.open) return;
     const status = await db().rpc("card_qr_status");
+    if (uid() !== u || token !== scanToken || !dialog.open) return;
     if (status.error) throw status.error;
     if (status.data?.limit !== null && status.data.count >= status.data.limit) {
       message(
@@ -217,13 +222,12 @@
     content.innerHTML =
       '<p>QRコードを枠内に映してください</p><div class="qr-camera-frame"><video autoplay playsinline muted></video><span class="qr-camera-guide" aria-hidden="true"></span></div><p role="status"></p>';
     const video = content.querySelector("video");
-    const token = ++scanToken;
     try {
       const incoming = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
-      if (token !== scanToken || !dialog.open) {
+      if (uid() !== u || token !== scanToken || !dialog.open) {
         incoming.getTracks().forEach((t) => t.stop());
         return;
       }
@@ -249,6 +253,7 @@
             inversionAttempts: "attemptBoth",
           });
         if (result?.data) {
+          captureFooter.replaceChildren();
           stop();
           message("QRコードを保存しています…");
           try {
@@ -278,6 +283,7 @@
       };
       requestAnimationFrame(tick);
     } catch (e) {
+      if (uid() !== u || token !== scanToken || !dialog.open) return;
       stop();
       message(
         e?.name === "NotAllowedError"
@@ -740,20 +746,70 @@
     ))
       select.value = "all";
   }
-  async function capture(onRead) {
-    if (!uid()) throw Error("ログインしてください");
+  async function capture(onRead, options = {}) {
+    const user = uid();
+    if (!user) throw Error("ログインしてください");
     dialog.showModal();
     message("カメラを準備しています…");
+    const operation = ++scanToken;
+    captureFooter.replaceChildren();
+    if (options.allowManualURL === true) {
+      const fallback = document.createElement("button");
+      fallback.type = "button";
+      fallback.className = "qr-manual-link";
+      fallback.textContent = "読み取れない場合はこちら";
+      captureFooter.append(fallback);
+      fallback.onclick = () => {
+        if (uid() !== user || !dialog.open) return;
+        stop();
+        captureFooter.replaceChildren();
+        content.innerHTML = '<h2>URLを直接入力</h2><p>QRコードに含まれるURLを入力してください。</p><form class="qr-manual-form"><label>URL<textarea name="url" rows="3" maxlength="2048" required inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://"></textarea></label><p role="status" aria-live="polite"></p><button type="submit">登録する</button></form>';
+        const form = content.querySelector("form"), input = form.elements.url;
+        let saving = false;
+        form.onsubmit = async (event) => {
+          event.preventDefault();
+          if (saving || uid() !== user || !dialog.open) return;
+          const payload = input.value.trim(), status = form.querySelector('[role="status"]');
+          try {
+            const url = new URL(payload);
+            if (!/^https?:$/.test(url.protocol) || !url.hostname || /[\s\u0000-\u001f\u007f]/.test(payload) || payload.length > 2048) throw Error();
+          } catch {
+            status.textContent = "http:// または https:// で始まるURLを入力してください。";
+            input.focus();
+            return;
+          }
+          saving = true;
+          const button = form.querySelector('[type="submit"]');
+          button.disabled = true;
+          status.textContent = "登録しています…";
+          try {
+            await onRead(payload);
+            if (uid() === user && dialog.open) dialog.close();
+          } catch (error) {
+            if (uid() === user && dialog.open && form.isConnected) status.textContent = err(error);
+          } finally {
+            saving = false;
+            button.disabled = false;
+          }
+        };
+        input.focus();
+      };
+    }
     const closed = new Promise((resolve) =>
       dialog.addEventListener("close", resolve, { once: true }),
     );
+    const prepare = (async () => {
     try {
       await load();
-      await ensureLibraries();
-      if (dialog.open) await scan(null, onRead);
+      if (uid() === user && operation === scanToken && dialog.open) {
+        await ensureLibraries();
+        if (uid() === user && operation === scanToken && dialog.open) await scan(null, onRead);
+      }
     } catch (e) {
-      message(err(e));
+      if (uid() === user && (scanToken === operation || scanToken === operation + 1) && dialog.open) message(err(e));
     }
+    })();
+    await Promise.race([prepare, closed]);
     await closed;
   }
   async function display(payload, title, onDelete) {
