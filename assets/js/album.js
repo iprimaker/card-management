@@ -3898,7 +3898,9 @@ function resetContactReplyNews() {
   const previous = loadContactReplyNews.state;
   if (previous) previous.cancelled = true;
   loadContactReplyNews.state = null;
-  document.getElementById("album-contact-replies")?.replaceChildren();
+  const box = document.getElementById("album-contact-replies");
+  box?.replaceChildren();
+  if (box) delete box.dataset.noticeOwner;
 }
 function loadContactReplyNews() {
   const box = document.getElementById("album-contact-replies");
@@ -3910,6 +3912,7 @@ function loadContactReplyNews() {
   const previous = loadContactReplyNews.state;
   if (previous?.owner === user && previous.flight) return previous.flight;
   if (previous) previous.cancelled = true;
+  box.dataset.noticeOwner = user;
   const state = { owner: user, cancelled: false, flight: null };
   loadContactReplyNews.state = state;
   const current = () => !state.cancelled && loadContactReplyNews.state === state &&
