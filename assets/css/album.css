@@ -180,7 +180,9 @@
     font-weight: 600;
   }
   #collection .card-display-toolbar .album-select-trigger:hover,
-  #collection .card-display-toolbar .album-select-trigger[aria-expanded="true"] {
+  #collection
+    .card-display-toolbar
+    .album-select-trigger[aria-expanded="true"] {
     background: #fff;
   }
   .mobile-column-label {
@@ -449,7 +451,11 @@ body.game-aipri .signup-id-reference {
 .card-trade-tag[data-side="want"][data-priority="true"] {
   background: #327b9e;
 }
-body.display-grayscale #cards .card:not(.owned) .card-image-frame > :is(img, canvas),
+body.display-grayscale
+  #cards
+  .card:not(.owned)
+  .card-image-frame
+  > :is(img, canvas),
 body.display-grayscale
   #verse-cards
   .verse-card:not(.is-owned)
@@ -457,8 +463,13 @@ body.display-grayscale
   :is(img, canvas) {
   filter: grayscale(1);
 }
-body.display-hideText #cards .card[data-card-layout="rows"] :is(.card-text-trigger, .card-code-row),
-body.display-hideText #verse-cards :is(.verse-code, .verse-card-detail > strong) {
+body.display-hideText
+  #cards
+  .card[data-card-layout="rows"]
+  :is(.card-text-trigger, .card-code-row),
+body.display-hideText
+  #verse-cards
+  :is(.verse-code, .verse-card-detail > strong) {
   display: none;
 }
 body.display-hideText #cards .card,
@@ -1032,7 +1043,10 @@ dialog {
   transform: translateX(0);
   box-shadow: 0 1px 3px #48334020;
 }
-#display-settings-dialog .display-settings-options button[aria-checked="true"] span {
+#display-settings-dialog
+  .display-settings-options
+  button[aria-checked="true"]
+  span {
   transform: translateX(18px);
 }
 .ownership-share-dialog .share-series-panel {
@@ -1135,8 +1149,13 @@ dialog *,
     scrollbar-width: none;
     scrollbar-gutter: auto;
   }
-  :is(dialog, [role="dialog"], [role="alertdialog"]).external-modal-scroll::-webkit-scrollbar,
-  :is(dialog, [role="dialog"], [role="alertdialog"]) .external-modal-scroll::-webkit-scrollbar {
+  :is(
+      dialog,
+      [role="dialog"],
+      [role="alertdialog"]
+    ).external-modal-scroll::-webkit-scrollbar,
+  :is(dialog, [role="dialog"], [role="alertdialog"])
+    .external-modal-scroll::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
@@ -1150,8 +1169,13 @@ dialog *,
   scrollbar-width: none;
   scrollbar-gutter: auto;
 }
-:is(dialog, [role="dialog"], [role="alertdialog"]).external-modal-scroll::-webkit-scrollbar,
-:is(dialog, [role="dialog"], [role="alertdialog"]) .external-modal-scroll::-webkit-scrollbar {
+:is(
+    dialog,
+    [role="dialog"],
+    [role="alertdialog"]
+  ).external-modal-scroll::-webkit-scrollbar,
+:is(dialog, [role="dialog"], [role="alertdialog"])
+  .external-modal-scroll::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
