@@ -826,6 +826,7 @@
       loading = false;
       last = 0;
       box?.replaceChildren();
+      if (box) box.dataset.noticeOwner = user || "";
     }
     if (
       !user ||
@@ -838,6 +839,7 @@
     if (!box) {
       box = document.createElement("div");
       box.id = "album-qr-limit-notices";
+      box.dataset.noticeOwner = user;
       anchor.before(box);
     }
     if (loading || (!force && Date.now() - last < 60000)) return;
@@ -924,6 +926,7 @@
       .filter(Boolean);
   function loaders() {
     return sources()
+      .filter((source) => source.id === "album-notices" || source.dataset.noticeOwner === user())
       .flatMap((source) => [
         ...source.querySelectorAll("button.album-news-history"),
       ])
@@ -947,14 +950,15 @@
   function render() {
     const current = user();
     if (current !== owner) {
-      const hadOwner = !!owner;
       owner = current;
       expanded = false;
-      output?.replaceChildren();
-      if (hadOwner)
-        for (const source of sources())
-          if (source.id !== "album-notices") source.replaceChildren();
+      const list = output?.querySelector("[data-notice-items]");
+      if (list) {
+        list.replaceChildren();
+        delete list.dataset.signature;
+      }
     }
+    if (output) output.hidden = !current;
     const anchor = document.getElementById("album-notices");
     if (!anchor || !current) return;
     section = anchor.closest(".album-news-box");
@@ -1001,7 +1005,9 @@
     }
     const feeds = sources();
     for (const source of feeds) if (!source.hidden) source.hidden = true;
-    const nodes = feeds.flatMap((source) => [
+    const nodes = feeds.filter((source) =>
+      source.id === "album-notices" || source.dataset.noticeOwner === current
+    ).flatMap((source) => [
       ...source.querySelectorAll(".album-news-item"),
     ]);
     nodes.sort(
@@ -1036,6 +1042,7 @@
     more.hidden = !expanded || loaders().length === 0;
     const status = output.querySelector("[data-notice-status]");
     const errors = feeds
+      .filter((source) => source.id === "album-notices" || source.dataset.noticeOwner === current)
       .flatMap((source) => [...source.querySelectorAll('[role="status"]')])
       .map((node) => node.textContent)
       .filter((text) => /できません|読み込めません/.test(text));
