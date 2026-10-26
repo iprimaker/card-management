@@ -4,7 +4,8 @@
   const rootURL = new URL("./", location.href);
   const pageURL = new URL(rootURL);
   pageURL.searchParams.set("view", "card-registration");
-  const isPage = new URLSearchParams(location.search).get("view") === "card-registration";
+  const isPage =
+    new URLSearchParams(location.search).get("view") === "card-registration";
 
   if (!isPage) {
     const selection = document.getElementById("selection");
@@ -14,10 +15,16 @@
     link.className = "registration-fab";
     link.href = pageURL.href;
     link.setAttribute("aria-label", "カード登録情報を見る");
-    link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="12" height="15" rx="2"/><path d="M9 2h9a2 2 0 0 1 2 2v12M8 10h4m-4 4h4"/></svg><span>カード<br>登録情報</span>';
+    link.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="12" height="15" rx="2"/><path d="M9 2h9a2 2 0 0 1 2 2v12M8 10h4m-4 4h4"/></svg><span>カード<br>登録情報</span>';
     document.body.append(link);
-    const update = () => { link.hidden = selection.hidden; };
-    new MutationObserver(update).observe(selection, { attributes: true, attributeFilter: ["hidden"] });
+    const update = () => {
+      link.hidden = selection.hidden;
+    };
+    new MutationObserver(update).observe(selection, {
+      attributes: true,
+      attributeFilter: ["hidden"],
+    });
     update();
     return;
   }
@@ -27,7 +34,9 @@
   const sharedFooter = document.querySelector("body > footer");
   const sharedInfoDialog = document.getElementById("info-dialog");
   if (!sharedHeader || !sharedFooter || !sharedInfoDialog) {
-    throw new Error("共通ヘッダー・フッターを読み込めませんでした。再読み込みしてください。");
+    throw new Error(
+      "共通ヘッダー・フッターを読み込めませんでした。再読み込みしてください。",
+    );
   }
   sharedHeader.remove();
   sharedFooter.remove();
@@ -78,7 +87,9 @@
       body.scrollTop = 0;
     });
   });
-  document.getElementById("legal-close").addEventListener("click", () => sharedInfoDialog.close());
+  document
+    .getElementById("legal-close")
+    .addEventListener("click", () => sharedInfoDialog.close());
 
   const config = window.APP_CONFIG;
   const status = document.getElementById("registration-status");
@@ -89,11 +100,15 @@
   let loading = false;
   let initialized = false;
   const shown = new Set();
-  const number = (value) => Number.isSafeInteger(Number(value)) && Number(value) >= 0
-    ? new Intl.NumberFormat("ja-JP").format(Number(value)) : "—";
+  const number = (value) =>
+    Number.isSafeInteger(Number(value)) && Number(value) >= 0
+      ? new Intl.NumberFormat("ja-JP").format(Number(value))
+      : "—";
 
   function renderCounts(counts) {
-    document.getElementById("registration-total").textContent = number(counts.cards);
+    document.getElementById("registration-total").textContent = number(
+      counts.cards,
+    );
     const root = document.getElementById("registration-counts");
     root.replaceChildren();
     for (const [label, key, unit] of [
@@ -113,7 +128,9 @@
       item.append(name, amount);
       root.append(item);
     }
-    document.querySelector(".registration-stats").setAttribute("aria-busy", "false");
+    document
+      .querySelector(".registration-stats")
+      .setAttribute("aria-busy", "false");
   }
 
   function renderEntry(entry) {
@@ -123,21 +140,36 @@
     const titleText = String(entry.summary || "カード情報を更新");
     const badge = document.createElement("span");
     badge.className = "registration-entry-kind";
-    const kind = titleText.includes("既存登録分") ? "existing"
-      : titleText.includes("更新") ? "updated"
-        : /追加|登録（/.test(titleText) ? "added" : "notice";
+    const kind = titleText.includes("既存登録分")
+      ? "existing"
+      : titleText.includes("更新")
+        ? "updated"
+        : /追加|登録（/.test(titleText)
+          ? "added"
+          : "notice";
     details.dataset.kind = kind;
-    badge.textContent = { existing: "既存登録", updated: "情報更新", added: "追加登録", notice: "お知らせ" }[kind];
+    badge.textContent = {
+      existing: "既存登録",
+      updated: "情報更新",
+      added: "追加登録",
+      notice: "お知らせ",
+    }[kind];
     const meta = document.createElement("span");
     meta.className = "registration-entry-meta";
     const id = document.createElement("span");
     id.className = "registration-entry-id";
-    id.textContent = "REG-" + String(entry.display_number ?? entry.id).padStart(6, "0");
+    id.textContent =
+      "REG-" + String(entry.display_number ?? entry.id).padStart(6, "0");
     const time = document.createElement("time");
     const date = new Date(entry.updated_on);
     if (Number.isFinite(date.getTime())) {
       time.dateTime = date.toISOString();
-      time.textContent = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+      time.textContent = new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(date);
     } else time.textContent = "日付未設定";
     meta.append(time, id, badge);
     const title = document.createElement("strong");
@@ -171,12 +203,29 @@
     status.hidden = false;
     status.textContent = "登録情報を読み込んでいます…";
     try {
-      if (!config?.supabaseUrl || !config?.supabaseKey || !window.supabase?.createClient) throw new Error("configuration");
-      db ||= window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      if (
+        !config?.supabaseUrl ||
+        !config?.supabaseKey ||
+        !window.supabase?.createClient
+      )
+        throw new Error("configuration");
+      db ||= window.supabase.createClient(
+        config.supabaseUrl,
+        config.supabaseKey,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        },
+      );
+      const { data, error } = await db.rpc("card_album_registration_feed", {
+        p_before: cursor,
+        p_limit: 20,
       });
-      const { data, error } = await db.rpc("card_album_registration_feed", { p_before: cursor, p_limit: 20 });
-      if (error || !data || !Array.isArray(data.updates)) throw error || new Error("response");
+      if (error || !data || !Array.isArray(data.updates))
+        throw error || new Error("response");
       renderCounts(data.counts || {});
       for (const entry of data.updates) {
         if (shown.has(String(entry.id))) continue;
@@ -189,9 +238,13 @@
       status.hidden = shown.size > 0;
       status.textContent = "登録履歴はまだありません。";
     } catch {
-      status.textContent = "登録情報を読み込めませんでした。時間をおいて、もう一度お試しください。";
+      status.textContent =
+        "登録情報を読み込めませんでした。時間をおいて、もう一度お試しください。";
       retry.hidden = false;
-      if (!initialized) document.querySelector(".registration-stats").setAttribute("aria-busy", "false");
+      if (!initialized)
+        document
+          .querySelector(".registration-stats")
+          .setAttribute("aria-busy", "false");
     } finally {
       loading = false;
       more.disabled = false;
