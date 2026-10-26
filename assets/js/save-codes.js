@@ -337,7 +337,7 @@
         if (r.error) throw r.error;
         saved = true;
         document.dispatchEvent(new Event("private-qr-changed"));
-      });
+      }, { allowManualURL: true });
       if (saved && uid() === u) {
         selectedType = details.p_series;
         formDialog.close();
