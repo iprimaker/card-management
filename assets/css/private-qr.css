@@ -457,14 +457,52 @@ body.game-aipri .album-id-card {
   background: var(--surface, #fff);
   font-size: 12px;
 }
-#display-settings-dialog .display-account-actions > .qr-remaining-row:hover { background: var(--soft, #faf5fc); }
-.qr-manager-label { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; align-items: center; gap: 5px 8px; }
-.qr-manager-label > span { min-width: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
-.qr-manager-tag { flex: none; display: inline-block; padding: 3px 6px; border-radius: 5px; background: #f0eafa; color: #80628f; font-size: 10px; line-height: 1.5; white-space: nowrap; }
-.qr-manager-tag[data-series="aikatsu"] { background: #fff0e0; color: #a97436; }
-.qr-manager-tag[data-series="onegai"], .qr-manager-tag[data-series="おねがい"] { background: #eaf7fc; color: #49899b; }
-.qr-manager-tag[data-series="save"] { background: #eef1f5; color: #738095; }
-@media (max-width:760px) { .qr-manager-label > span { font-size: 12px; } }
+#display-settings-dialog .display-account-actions > .qr-remaining-row:hover {
+  background: var(--soft, #faf5fc);
+}
+.qr-manager-label {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+}
+.qr-manager-label > span {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.qr-manager-tag {
+  flex: none;
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #f0eafa;
+  color: #80628f;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.qr-manager-tag[data-series="aikatsu"] {
+  background: #fff0e0;
+  color: #a97436;
+}
+.qr-manager-tag[data-series="onegai"],
+.qr-manager-tag[data-series="おねがい"] {
+  background: #eaf7fc;
+  color: #49899b;
+}
+.qr-manager-tag[data-series="save"] {
+  background: #eef1f5;
+  color: #738095;
+}
+@media (max-width: 760px) {
+  .qr-manager-label > span {
+    font-size: 12px;
+  }
+}
 /* バース一覧：お気に入りの星の下へQRタグを配置 */
 #verse-cards .verse-card > .private-qr-tag {
   top: 44px;
@@ -477,3 +515,70 @@ body.game-aipri .album-id-card {
   }
 }
 
+.private-qr-dialog:is(:focus, :focus-visible),
+.qr-manager-dialog:is(:focus, :focus-visible) {
+  outline: none !important;
+}
+.private-qr-dialog [data-code] {
+  border: 0;
+  box-shadow: none;
+}
+.qr-manager-confirm-actions button:is(:hover, :focus, :focus-visible, :active) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.qr-manager-confirm-actions [data-cancel]:is(:hover, :focus, :active) {
+  background: #fff;
+}
+.qr-manager-confirm-actions [data-confirm]:is(:hover, :focus, :active) {
+  background: #ba7085;
+}
+.qr-manager-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 17px 0 8px;
+}
+.qr-manager-filters button {
+  padding: 5px 9px;
+  border: 1px solid #e9e0ef;
+  border-radius: 999px;
+  background: #fff;
+  color: #9687a2;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.qr-manager-filters button[aria-pressed="true"] {
+  color: #80539e;
+  background: #f1eafa;
+  border-color: #ded0ec;
+}
+.qr-manager-tag[data-series="friend"] {
+  background: #eaf5ef;
+  color: #65957d;
+}
+.qr-manager-tag[data-series="aikatsu-save"] {
+  background: #fff0e0;
+  color: #a97436;
+}
+.qr-manager-tag[data-series="onegai-verse"] {
+  background: #eaf7fc;
+  color: #49899b;
+}
+.qr-limit-help {
+  margin-top: 20px;
+  text-align: left;
+  border-top: 1px solid #eee7f2;
+  padding-top: 14px;
+}
+.qr-limit-help summary {
+  font-size: 12px;
+  color: #8b7c97;
+  cursor: pointer;
+}
+.qr-limit-help p {
+  margin-bottom: 0;
+}
+#verse-qr-filter {
+  min-width: 0;
+}
