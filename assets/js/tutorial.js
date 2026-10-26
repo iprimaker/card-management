@@ -841,10 +841,11 @@
   // Normal album/Verse scrolling must not wait for an inactive guide handler.
   function setScrollBlocking(enabled) {
     for (const name of ["wheel", "touchmove"]) {
-      if (enabled) document.addEventListener(name, blockOutside, {
-        capture: true,
-        passive: false,
-      });
+      if (enabled)
+        document.addEventListener(name, blockOutside, {
+          capture: true,
+          passive: false,
+        });
       else document.removeEventListener(name, blockOutside, true);
     }
   }
