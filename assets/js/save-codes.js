@@ -54,12 +54,27 @@
   formDialog.className = "save-codes-dialog save-codes-editor";
   formDialog.setAttribute("aria-labelledby", "save-code-add-title");
   formDialog.innerHTML =
-    '<div class="save-codes-heading"><h2 id="save-code-add-title">セーブ・フレカを登録</h2><button type="button" data-close aria-label="閉じる">×</button></div><form><label>種別<select name="series"><option value="aikatsu">アイカツ！アンコール</option><option value="aipri">アイプリ</option><option value="friend">フレンドカード</option></select></label><label>マイキャラネーム<input name="character_name" maxlength="40" required autocomplete="off"></label><label data-manual hidden>ID（任意）<input name="display_id" maxlength="200" autocomplete="off" placeholder="わかる場合だけ入力"></label><label data-birthday hidden>マイキャラの誕生日（任意）<span class="save-birthday-fields"><select name="birth_month" aria-label="誕生月"><option value="">月</option></select><select name="birth_day" aria-label="誕生日の日"><option value="">日</option></select></span></label><label data-memo hidden>メモ（任意）<textarea name="memo" maxlength="1000" rows="3" placeholder="自由にメモを入力できます"></textarea></label><p data-help>アイカツはQRコードの読み取り結果をIDとして表示します。</p><p role="status" data-status aria-live="polite"></p><button type="submit" class="primary">QRコードを読み取る</button></form>';
+    '<div class="save-codes-heading"><h2 id="save-code-add-title">セーブ・フレカを登録</h2><button type="button" data-close aria-label="閉じる">×</button></div><form><label>種別<select name="series"><option value="aikatsu">アイカツ！アンコール</option><option value="aipri">アイプリ</option><option value="friend">フレンドカード</option></select></label><label>マイキャラネーム<input name="character_name" maxlength="40" required autocomplete="off"></label><label data-manual hidden>ID（任意）<input name="display_id" maxlength="200" autocomplete="off" placeholder="わかる場合だけ入力"></label><label data-birthday hidden>マイキャラの誕生日（任意）<span class="save-birthday-fields"><select name="birth_month" aria-label="誕生月"><option value="">月</option></select><select name="birth_day" aria-label="誕生日の日"><option value="">日</option></select></span></label><label data-memo hidden>メモ（任意）<textarea name="memo" maxlength="1000" rows="3" placeholder="自由にメモを入力できます"></textarea></label><p data-help>アイカツはQRコードの読み取り結果をIDとして表示します。</p><section class="save-qr-consent" aria-label="QR登録規約への同意"><button type="button" class="save-qr-terms-link" data-qr-terms-open aria-haspopup="dialog" aria-controls="save-qr-terms-dialog">QRコード登録規約</button><label class="save-qr-consent-check"><input type="checkbox" name="qr_terms_consent" required><span>QRコード登録規約に同意する</span></label></section><p role="status" data-status aria-live="polite"></p><button type="submit" class="primary" disabled>QRコードを読み取る</button></form>';
   document.body.append(formDialog);
+  const termsDialog = document.createElement("dialog");
+  termsDialog.id = "save-qr-terms-dialog";
+  termsDialog.className = "save-codes-dialog save-qr-terms-dialog";
+  termsDialog.setAttribute("aria-labelledby", "save-qr-terms-title");
+  termsDialog.innerHTML = '<div class="save-codes-heading"><h2 id="save-qr-terms-title">QRコード登録規約</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="save-qr-terms-body"><h3>1．登録できる情報</h3><p>ご自身が所有するセーブカード、または持ち主から登録の許可を得たフレンドカードのQRコードを登録してください。読み取り内容を直接入力する場合も同様です。</p><h3>2．禁止事項</h3><p>持ち主の許可のない登録、なりすまし、不正に入手した情報の登録は禁止します。また、登録情報の無断公開・配布・販売や、不正利用を禁止します。</p><h3>3．登録情報の保存</h3><p>QRコードの読み取り結果と、マイキャラネーム・ID・誕生日・メモなどの登録情報は、暗号化して保存します。撮影した画像は保存しません。登録したQRコードは、登録したアカウントからのみ表示できます。</p><h3>4．情報の取り扱い</h3><p>QRコードには、ゲームのデータやマイキャラに関する大切な情報が含まれる場合があります。画面の共有やスクリーンショットによる情報の流出にご注意ください。</p><p>不正利用がご心配な方は、誕生日などの任意項目を空欄のまま登録してください。また、パスワードや連絡先など、登録に不要な個人情報は入力しないでください。</p><h3>5．登録上限と削除</h3><p>登録件数は、カード・コーデなどのQRコードと共通の上限に含まれます。上限が現在の登録件数を下回っても、登録済みの情報を自動で削除することはありません。登録件数が上限未満になるまで、新しい登録はできません。不要になった情報は、ご自身で削除できます。</p><h3>6．ご利用にあたって</h3><p>本機能はQR情報を保管・表示するための補助機能です。ゲーム公式のサービスや、ゲームデータのバックアップ機能ではありません。元のカードは大切に保管してください。登録したQRコードのゲーム機などでの読み取りや動作を保証するものではありません。</p><p>以上の内容を確認し、同意したうえで登録してください。</p></div>';
+  document.body.append(termsDialog);
+  formDialog.querySelector("[data-qr-terms-open]").onclick = () => {
+    if (!termsDialog.open) {
+      termsDialog.showModal();
+      termsDialog.scrollTop = 0;
+    }
+  };
+  formDialog.addEventListener("close", () => {
+    if (termsDialog.open) termsDialog.close();
+  });
   const form = formDialog.querySelector("form"),
     f = form.elements,
     status = list.querySelector("[data-status]");
-  for (const modal of [list, formDialog])
+  for (const modal of [list, formDialog, termsDialog])
     modal.querySelector("[data-close]").onclick = () => modal.close();
   function place() {
     const anchor = document.getElementById(
@@ -284,6 +299,7 @@
   };
   list.querySelector("[data-new]").onclick = () => {
     form.reset();
+    form.querySelector("[type=submit]").disabled = true;
     f.birth_day.setCustomValidity("");
     f.series.value = selectedType;
     f.series.dispatchEvent(new Event("change"));
@@ -303,9 +319,12 @@
           ? "アイカツはQRコードの読み取り結果をIDとして表示します。"
           : "アイプリのIDは任意です。QRの読み取り結果からIDを推測・変換しません。";
   };
+  f.qr_terms_consent.onchange = () => {
+    form.querySelector("[type=submit]").disabled = busy || !f.qr_terms_consent.checked;
+  };
   form.onsubmit = async (e) => {
     e.preventDefault();
-    if (busy || !uid() || !form.reportValidity()) return;
+    if (busy || !uid() || !f.qr_terms_consent.checked || !form.reportValidity()) return;
     const u = uid(),
       name = f.character_name.value.trim();
     if (!name || (f.series.value === "aipri" && !validBirthday(f))) return;
@@ -323,6 +342,7 @@
     try {
       await window.CARD_QR.capture(async (payload) => {
         if (uid() !== u) throw Error("ログインしてください");
+        if (!f.qr_terms_consent.checked) throw Error("QRコード登録規約への同意が必要です");
         const r = await db().rpc("card_save_code_add", {
           ...details,
           p_payload: payload,
@@ -340,7 +360,7 @@
       formDialog.querySelector("[data-status]").textContent = error(e);
     } finally {
       busy = false;
-      submit.disabled = false;
+      submit.disabled = !f.qr_terms_consent.checked;
     }
   };
 
