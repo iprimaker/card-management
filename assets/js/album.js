@@ -6315,7 +6315,7 @@ init();
     <div id="verse-active-filters" class="verse-active-filters"></div>
     <div class="verse-owned-tabs owned-tabs" role="group" aria-label="コーデの所持状態"><span class="verse-owned-slider owned-tabs-slider" aria-hidden="true"></span><button type="button" data-verse-view="all">すべて</button><button type="button" data-verse-view="full">持っている</button><button type="button" data-verse-view="partial">一部持っている</button><button type="button" data-verse-view="none">持っていない</button></div>
     <p id="verse-message" role="status"></p><div class="verse-list-toolbar"><h2 id="verse-found"></h2><div class="verse-display-controls"><label class="verse-display-count display-count"><span>表示件数</span><select id="verse-size"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">すべて</option></select></label><div class="verse-column-control"><span>コーデの並び</span><div class="verse-column-segment" role="group" aria-label="スマホのコーデ列数"><button type="button" data-verse-columns="2">2列</button><button type="button" data-verse-columns="3">3列</button></div></div></div></div>
-    <div id="verse-cards" class="verse-cards"></div><p id="verse-empty" hidden><strong>見つかりませんでした</strong><span>条件を変えて探してみてください</span></p><nav id="verse-pages" class="verse-pages" aria-label="コーデ一覧のページ"></nav>
+    <div id="verse-cards" class="verse-cards"></div><p id="verse-empty" hidden><strong>見つかりませんでした</strong><span>条件を変えて探してみてください</span></p><section id="verse-related-search" class="verse-related-search" aria-label="別シリーズの検索結果" hidden><p data-related-message role="status"></p><button type="button" data-verse-related-family></button><small>フリーワードを引き継ぎ、ほかの絞り込みを解除して表示します。</small></section><nav id="verse-pages" class="verse-pages" aria-label="コーデ一覧のページ"></nav>
     <div class="verse-sync"><button id="verse-sync" type="button" class="catalog-update-text" aria-label="コーデ情報を更新する">コーデ情報の更新</button></div>`;
   $("collection").after(panel);
   window.CARD_QR?.mountFilters?.();
@@ -6388,6 +6388,27 @@ init();
       .toLowerCase()
       .replaceAll("だん", "弾")
       .replace(/[\s_-]/g, "");
+  function matchesQuery(c, needle = compact(query)) {
+    return !needle || compact(
+      [c.name, c.code, ...appearances(c).map((a) => a.group)].join(" "),
+    ).includes(needle);
+  }
+  function renderRelatedSearch(hasResults) {
+    const hint = $("verse-related-search"),
+      needle = compact(query),
+      target = family === "onegai" ? "himitsu" : "onegai",
+      count = !hasResults && needle
+        ? (catalog?.coordinates || []).filter((c) => c.family === target && matchesQuery(c, needle)).length
+        : 0;
+    hint.hidden = count === 0;
+    if (!count) return;
+    const label = target === "himitsu" ? "ひみつのアイプリバース" : "おねがいアイプリバース";
+    hint.querySelector("[data-related-message]").textContent =
+      `同じフリーワードに該当するコーデが、${label}で見つかりました。`;
+    const link = hint.querySelector("[data-verse-related-family]");
+    link.dataset.verseRelatedFamily = target;
+    link.textContent = `${label}で見る（${count}件）`;
+  }
   function filtered(includeOwnership = true) {
     const needle = compact(query);
     return pool().filter(
@@ -6400,10 +6421,7 @@ init();
           (a) =>
             (!series || a.series === series) && (!group || a.group === group),
         ) &&
-        (!needle ||
-          compact(
-            [c.name, c.code, ...appearances(c).map((a) => a.group)].join(" "),
-          ).includes(needle)) &&
+        matchesQuery(c, needle) &&
         (!includeOwnership ||
           ownershipView === "all" ||
           state(c) === ownershipView),
@@ -6761,6 +6779,7 @@ init();
         .join("");
     }
     $("verse-empty").hidden = rows.length > 0;
+    renderRelatedSearch(rows.length > 0);
     renderPages(pageCount);
     renderCollection();
     renderDetail();
@@ -7231,6 +7250,7 @@ init();
     selected = null;
     if (dialog.open) dialog.close();
     $("verse-cards").replaceChildren();
+    $("verse-related-search").hidden = true;
     $("verse-collection-list").replaceChildren();
     $("verse-detail-content").replaceChildren();
     $("verse-percent").textContent = "—";
@@ -7311,19 +7331,23 @@ init();
       renderCollection();
       return;
     }
+    const related = e.target.closest("[data-verse-related-family]");
     const f = e.target.closest("[data-verse-family]");
-    if (f) {
-      family = f.dataset.verseFamily;
-      series = group = query = collectionSeries = "";
+    if (f || related) {
+      const inheritedQuery = related ? query : "";
+      family = related ? related.dataset.verseRelatedFamily : f.dataset.verseFamily;
+      series = group = collectionSeries = "";
+      query = inheritedQuery;
+      if (related) window.CARD_QR?.clear("coordinate");
       collectionFilter = ownershipView = "all";
       favoriteOnly = duplicateOnly = false;
       trade()?.clear("coordinate");
       page = 1;
-      $("verse-query").value = "";
+      $("verse-query").value = inheritedQuery;
       $("verse-favorite-filter").value = "all";
       $("verse-duplicate-filter").value = "all";
       if (catalog) {
-        fillFilters(true);
+        fillFilters(!related);
         render();
       }
       return;
