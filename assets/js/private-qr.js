@@ -82,12 +82,9 @@
     loading = (async () => {
       const all = [];
       for (let offset = 0; ; offset += 500) {
-        const r = await db()
-          .from("card_private_qr")
-          .select("kind,target_id,payload")
-          .eq("user_id", u)
-          .range(offset, offset + 499);
+        const r = await db().rpc("card_qr_list", { p_offset: offset });
         if (r.error) throw r.error;
+        if (!Array.isArray(r.data)) throw Error("QR情報を読み込めませんでした");
         all.push(...r.data);
         if (r.data.length < 500) break;
       }
