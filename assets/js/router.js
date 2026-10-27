@@ -163,7 +163,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261027-qr-terms-modal-v1";
+  const version = "20261027-verse-cross-search-v1";
   const requested = new URLSearchParams(location.search).get("view");
   const page = ["shared", "browse", "contact", "card-registration"].includes(
     requested,
@@ -257,6 +257,7 @@
           "private-qr",
           "login-position",
           "save-codes",
+          "verse-search-hint",
         ]
       : [page === "browse" ? "shared" : page]
     ).map(stylesheet),
