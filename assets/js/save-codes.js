@@ -95,16 +95,9 @@
     try {
       const all = [];
       for (let offset = 0; ; offset += 500) {
-        const r = await db()
-          .from("card_save_codes")
-          .select(
-            "id,series,character_name,payload,display_id,birthday,memo,created_at",
-          )
-          .eq("user_id", u)
-          .order("created_at")
-          .order("id")
-          .range(offset, offset + 499);
+        const r = await db().rpc("card_save_code_list", { p_offset: offset });
         if (r.error) throw r.error;
+        if (!Array.isArray(r.data)) throw Error("登録情報を読み込めませんでした");
         all.push(...r.data);
         if (r.data.length < 500) break;
       }
