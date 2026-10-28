@@ -449,7 +449,7 @@
         ? "friend"
         : row.series === "aikatsu"
           ? "aikatsu-save"
-          : "aipri-save";
+          : row.series === "primagi" ? "primagi-save" : "aipri-save";
     const family =
       row.series === "おねがい"
         ? "onegai"
@@ -467,9 +467,11 @@
     aipri: "アイプリ",
     "onegai-verse": "おねがいV",
     "himitsu-verse": "ひみつV",
+    "primagi-verse": "プリマジ",
     "aipri-verse": "アイプリV",
     "aikatsu-save": "アイカツセーブ",
     "aipri-save": "アイプリセーブ",
+    "primagi-save": "プリマジセーブ",
     friend: "フレカ",
   };
   function renderManager() {
