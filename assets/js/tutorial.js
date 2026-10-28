@@ -303,11 +303,11 @@
         next: "始める",
       },
       {
-        selector: "#selection [data-game]",
+        selector: '#selection [data-game="aikatsu"],#selection [data-game="aipri"]',
         multi: true,
-        action: "#selection [data-game]",
+        action: '#selection [data-game="aikatsu"],#selection [data-game="aipri"]',
         title: "アルバムを選ぶ",
-        text: "アイカツかアイプリを選んでください。好きな方で練習できます。",
+        text: "このガイドではアイカツかアイプリで基本操作を練習します。プリマジはコーデ詳細から所持・お気に入り・QRを管理できます。",
         skipIf: () => visible($("collection")) || visible($("verse")),
       },
       {
@@ -496,7 +496,7 @@
     }
     const step = steps[chapter][index];
     if (step.skipIf?.()) {
-      if (step.multi) host.prepareTutorial?.();
+      if (step.multi) host.prepareTutorial?.(which);
       advance();
       return;
     }
@@ -650,7 +650,7 @@
     if (!host.session() || host.maintenance()) return;
     chooser.close();
     $("display-settings-dialog")?.close();
-    host.prepareTutorial?.();
+    host.prepareTutorial?.(which);
     if (host.game()) host.back();
     owner = host.session().user.id;
     chapter = which;
@@ -758,7 +758,7 @@
       clickPending = false;
       if (!active || steps[chapter][index] !== step) return;
       if (!step.ready || step.ready()) {
-        if (step.multi) host.prepareTutorial?.();
+        if (step.multi) host.prepareTutorial?.(which);
         advance();
       } else schedule();
     }, 180);
