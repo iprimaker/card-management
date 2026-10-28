@@ -163,7 +163,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261029-signup-paused-v1";
+  const version = "20261029-auth-catalog-v1";
   const requested = new URLSearchParams(location.search).get("view");
   const page = ["shared", "browse", "contact", "card-registration"].includes(
     requested,
@@ -292,6 +292,7 @@
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
     .then(() => script("primagi.js"))
+    .then(() => script("verse-catalog-cache.js"))
     .then(() => script("site-common.js"))
     .then(() => { window.CARD_SITE_COMMON.init(page); window.CARD_SHARED_PAGE_READY=page; })
     .then(() => (page === "album" ? script("private-qr.js") : undefined))
