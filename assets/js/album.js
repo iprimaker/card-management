@@ -1063,6 +1063,55 @@ let albumIdentity = "";
 let signupReservation = null;
 let signupStep = "id";
 let signupBusy = false;
+let signupRegistrationAllowed = null;
+let signupRegistrationMessage = "受付状況を確認しています…";
+let signupRegistrationFlight = null, signupRegistrationFreshUntil = 0, signupRegistrationTimer;
+function renderSignupRegistrationAvailability() {
+  $("issue-album-id").hidden = !!signupReservation || signupRegistrationAllowed !== true;
+  $("issue-album-id").disabled = signupBusy;
+  const status = $("signup-registration-status");
+  status.hidden = !!signupReservation || signupRegistrationAllowed === true;
+  status.textContent = signupRegistrationMessage;
+}
+function scheduleSignupRegistrationCheck() {
+  clearTimeout(signupRegistrationTimer);
+  if (mode !== "signup" || document.hidden || navigator.onLine === false || $("auth").hidden || signupReservation) return;
+  signupRegistrationTimer = setTimeout(() => {if(mode === "signup" && !document.hidden && !$("auth").hidden && !signupReservation)void refreshSignupRegistrationStatus();}, 60000 + Math.random()*12000);
+}
+async function refreshSignupRegistrationStatus({force=false}={}) {
+  if (!db) return;
+  if (signupRegistrationFlight) return signupRegistrationFlight;
+  if (!force && Date.now() < signupRegistrationFreshUntil) {
+    renderSignupRegistrationAvailability();scheduleSignupRegistrationCheck();return;
+  }
+  signupRegistrationFlight = (async () => {
+    const controller = new AbortController(), timeout = setTimeout(() => controller.abort(),10000);
+    try {
+      let request = db.rpc("card_album_registration_status");
+      if (typeof request.abortSignal === "function") request = request.abortSignal(controller.signal);
+      const {data,error} = await request;
+      if (error || typeof data?.allowed !== "boolean") throw Error("registration status unavailable");
+      signupRegistrationAllowed = data.allowed;
+      signupRegistrationMessage = data.allowed ? "" : "現在、新規登録の受付を停止しています。";
+    } catch {
+      signupRegistrationAllowed = null;
+      signupRegistrationMessage = "受付状況を確認できませんでした。時間をおいて再度お試しください。";
+    } finally {
+      clearTimeout(timeout);
+      signupRegistrationFreshUntil = Date.now()+30000;
+      renderSignupRegistrationAvailability();scheduleSignupRegistrationCheck();
+    }
+  })().finally(() => {signupRegistrationFlight=null;});
+  return signupRegistrationFlight;
+}
+document.addEventListener("visibilitychange", () => {
+  clearTimeout(signupRegistrationTimer);
+  if (!document.hidden && mode === "signup" && !$("auth").hidden) void refreshSignupRegistrationStatus();
+});
+window.addEventListener("online", () => {
+  if (mode === "signup" && !$("auth").hidden) void refreshSignupRegistrationStatus();
+});
+
 try {
   localStorage.removeItem("card-album-id-reservation");
 } catch {}
@@ -1103,7 +1152,8 @@ function authMode(m) {
   $("auth-message").textContent = "";
   updateLoginIdentifier();
   resetPasswordVisibility();
-  if (m === "signup") renderSignupStep(signupStep);
+  if (m === "signup") {renderSignupStep(signupStep);void refreshSignupRegistrationStatus();}
+  else clearTimeout(signupRegistrationTimer);
 }
 function translatedError(e) {
   const raw = typeof e === "string" ? e : String(e?.message || "");
@@ -2259,6 +2309,7 @@ function configureAlbumAuth(remember = albumRememberSession) {
     global: { fetch: accountGuardFetch },
   });
   db = client;
+  if (mode === "signup") void refreshSignupRegistrationStatus();
   albumAuthSubscription = client.auth.onAuthStateChange((event, session) => {
     setTimeout(() => {
       if (db === client) authChanged(event, session);
@@ -2523,7 +2574,7 @@ function renderSignupStep(step) {
     .forEach((el) =>
       el.classList.toggle("active", el.dataset.signupMarker === step),
     );
-  $("issue-album-id").hidden = !!signupReservation;
+  renderSignupRegistrationAvailability();
   $("signup-password-start").hidden = !signupReservation;
   $("issued-id-panel").hidden = !signupReservation;
   $("issued-album-id").textContent = signupReservation?.album_id || "";
@@ -2548,16 +2599,19 @@ async function copyAlbumID(id) {
 $("issue-album-id").onclick = async () => {
   if (!db || signupBusy) return;
   signupBusy = true;
-  $("issue-album-id").disabled = true;
+  renderSignupRegistrationAvailability();
   try {
+    await refreshSignupRegistrationStatus({force:true});
+    if (signupRegistrationAllowed !== true) return;
     signupReservation = await albumAuth({ action: "reserve" });
-
     renderSignupStep("id");
   } catch (error) {
-    $("signup-message").textContent = window.CARD_ERROR.message(error);
+    await refreshSignupRegistrationStatus({force:true});
+    if (signupRegistrationAllowed !== false)
+      $("signup-message").textContent = window.CARD_ERROR.message(error);
   } finally {
     signupBusy = false;
-    $("issue-album-id").disabled = false;
+    renderSignupRegistrationAvailability();
     $("signup-password-start").disabled = !signupReservation;
   }
 };
