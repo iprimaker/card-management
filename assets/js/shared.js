@@ -501,7 +501,9 @@ function songFilterValue(value) {
         partMap = new Map();
       if (snap.scope.startsWith("verse-")) {
         const c =
-          verseCatalog || (await client.rpc("card_verse_catalog_cached", { p_version: null }));
+          window.CARD_VERSE_CATALOG
+            ? {data:await window.CARD_VERSE_CATALOG.load(client),error:null}
+            : verseCatalog || (await client.rpc("card_verse_catalog_cached", { p_version: null }));
         if (c.error || !Array.isArray(c.data?.coordinates) || !Array.isArray(c.data?.parts))
           throw Error("コーデ情報を取得できませんでした。");
         verseCatalog = c;
