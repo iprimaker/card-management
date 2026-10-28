@@ -187,7 +187,7 @@
     const sources = [
       ...new Set(cards.flatMap((c) => (c.image ? [c.image] : c.collage || []))),
     ];
-    if (cards.some((c) => !c.image && !c.collage?.length))
+    if (cards.some((c) => !c.image && !c.collage?.length && !["coordinate","part"].includes(c.kind)))
       throw Error(
         "画像が未登録のカードがあります。カード情報を確認してください。",
       );
@@ -282,7 +282,7 @@
             CELL_HEIGHT - 6,
             card.kind !== "coordinate",
           );
-        else {
+        else if (card.collage?.length) {
           const cols = card.collage.length === 1 ? 1 : 2;
           const rows = Math.ceil(card.collage.length / cols);
           card.collage.forEach((url, i) =>
@@ -296,6 +296,11 @@
               true,
             ),
           );
+        }
+        else {
+          context.font="500 18px sans-serif";
+          const caption="画像なし",width=context.measureText(caption).width;
+          text(context,caption,x+(CELL_WIDTH-width)/2,y+CELL_HEIGHT/2,18,"#897d83",CELL_WIDTH-20);
         }
         const quantity = `${card.quantity}枚`;
         context.font = "600 17px sans-serif";
