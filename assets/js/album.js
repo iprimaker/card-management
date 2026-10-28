@@ -1339,6 +1339,7 @@ async function authChanged(event, next) {
   if (maintenanceActive) next = null;
   const previous = session?.user.id;
   session = next;
+  if (previous !== session?.user.id) stopAccountRequests();
   if (previous !== session?.user.id) accountPresenceSent = 0;
   if (next) {
     accountPresenceLoggingOut = false;
@@ -2210,6 +2211,13 @@ function updateModalOwnership() {
   );
 }
 let loginRequiredAt = 0;
+let accountRequestEpoch = 0;
+const accountRequests = new Set();
+function stopAccountRequests() {
+  accountRequestEpoch++;
+  for (const controller of accountRequests) controller.abort();
+  accountRequests.clear();
+}
 function requireEditingSession() {
   if (session?.user?.id) return true;
   showLoginRequired();
@@ -2255,18 +2263,52 @@ function isAccountEditRequest(input, options = {}) {
     )
   );
 }
-async function accountGuardFetch(input, options) {
+function isPrivateAccountRequest(input, options = {}) {
+  if (isAccountEditRequest(input, options)) return true;
+  const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url,location.href);
+  if (url.origin !== new URL(window.APP_CONFIG.supabaseUrl).origin || !url.pathname.startsWith("/rest/v1/")) return false;
+  const name = decodeURIComponent(url.pathname.split("/").pop());
+  if (url.pathname.startsWith("/rest/v1/rpc/"))
+    return /^(?:card_account_presence_touch|card_album_touch_activity|card_verse_my_inventory)$/.test(name) ||
+      /^card_(?:qr_|save_code_|contact_reply_)/.test(name);
+  return new Set(["card_ownership","card_favorites","card_album_ids","card_personal_metadata",
+    "card_verse_ownership","card_verse_coordinate_ownership","card_verse_favorites",
+    "card_contacts","card_contact_replies","card_qr_limit_notices","card_album_shares",
+    "card_private_qr","card_save_codes"]).has(name);
+}
+function accountLoginResponse() {
+  return Response.json({code:"PGRST301",message:"ログインしてください"},{status:401});
+}
+async function accountGuardFetch(input, options = {}) {
   const editing = isAccountEditRequest(input, options);
-  if (editing && !requireEditingSession()) {
-    return Response.json(
-      { code: "PGRST301", message: "ログインしてください" },
-      { status: 401 },
-    );
+  const privateRequest = isPrivateAccountRequest(input, options);
+  if (!privateRequest) return window.CARD_MAINTENANCE.fetch(input,options);
+  if (!session?.user?.id) {
+    if (editing) showLoginRequired();
+    return accountLoginResponse();
   }
-  const response = await window.CARD_MAINTENANCE.fetch(input, options);
-  if (editing && response.status === 401 && !maintenanceActive) {
-    void db?.auth.signOut({ scope: "local" }).catch(() => {});
+  const uid=session.user.id, epoch=accountRequestEpoch, token=session.access_token;
+  const controller=new AbortController();
+  const callerSignal=options.signal || (input instanceof Request ? input.signal : null);
+  const abort=()=>controller.abort();
+  if(callerSignal?.aborted)abort();
+  else callerSignal?.addEventListener("abort",abort,{once:true});
+  accountRequests.add(controller);
+  let response;
+  try {
+    await window.CARD_MAINTENANCE.check();
+    if(controller.signal.aborted)throw new DOMException("通信を中断しました","AbortError");
+    if(epoch!==accountRequestEpoch || session?.user?.id!==uid)return accountLoginResponse();
+    response=await window.CARD_MAINTENANCE.fetch(input,{...options,signal:controller.signal});
+  } finally {
+    accountRequests.delete(controller);
+    callerSignal?.removeEventListener("abort",abort);
+  }
+  if(epoch!==accountRequestEpoch || session?.user?.id!==uid) return accountLoginResponse();
+  if(response.status===401 && session?.access_token===token && !maintenanceActive){
+    const client=db;
     showLoginRequired();
+    void client?.auth.signOut({scope:"local"}).catch(()=>{});
   }
   return response;
 }
@@ -7155,7 +7197,7 @@ init();
   function hydrateCatalog() {
     if (catalog) return;
     try {
-      const data = JSON.parse(localStorage.getItem(cacheKey) || "null");
+      const data = window.CARD_VERSE_CATALOG ? window.CARD_VERSE_CATALOG.peek() : JSON.parse(localStorage.getItem(cacheKey) || "null");
       if (Array.isArray(data?.coordinates) && Array.isArray(data?.parts)) {
         catalog = data;
         parts = new Map(data.parts.map((p) => [p.id, p]));
@@ -7164,10 +7206,10 @@ init();
   }
   async function readCatalog(force = false) {
     if (!force && catalog && Date.now() - checkedAt < 300000) return;
-    hydrateCatalog();
-    const r = await host.client().rpc("card_verse_catalog_cached", {
-      p_version: catalog?.version || null,
-    });
+    if(!window.CARD_VERSE_CATALOG)hydrateCatalog();
+    const r = window.CARD_VERSE_CATALOG
+      ? {data:await window.CARD_VERSE_CATALOG.load(host.client(),{force}),error:null}
+      : await host.client().rpc("card_verse_catalog_cached",{p_version:catalog?.version||null});
     if (r.error || !r.data)
       throw Error("バース用SQLを導入してから、もう一度開いてください。");
     const data = r.data.omitted ? catalog : r.data;
@@ -7176,7 +7218,7 @@ init();
     catalog = { ...data, updated_at: r.data.updated_at || data.updated_at };
     parts = new Map(data.parts.map((p) => [p.id, p]));
     checkedAt = Date.now();
-    if (!r.data.omitted)
+    if (!r.data.omitted && !window.CARD_VERSE_CATALOG)
       try {
         localStorage.setItem(cacheKey, JSON.stringify(catalog));
       } catch {}
