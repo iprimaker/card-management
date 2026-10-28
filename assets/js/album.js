@@ -5501,7 +5501,7 @@ init();
         ),
       ]
         .filter(Boolean)
-        .sort((a, b) => b.localeCompare(a, "ja", { numeric: true }));
+        .sort((a, b) => scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterRank(b)-window.CARD_PRIMAGI.chapterRank(a) || b.localeCompare(a,"ja",{numeric:true}) : b.localeCompare(a, "ja", { numeric: true }));
       if (!options.length) throw Error();
       seriesOptions.set(scope, options);
       list.replaceChildren(
@@ -5513,7 +5513,7 @@ init();
           input.value = value;
           label.append(
             input,
-            document.createTextNode(value.replaceAll("弾", "だん")),
+            document.createTextNode((scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value).replaceAll("弾", "だん")),
           );
           return label;
         }),
@@ -6328,7 +6328,7 @@ init();
     );
   const familyName = (value) => (value === "primagi" ? "ワッチャプリマジ！" : value === "onegai" ? "おねがい" : "ひみつの");
   const seriesName = value => value === "primagi" ? "ワッチャプリマジ！" : familyName(value) + "アイプリ";
-  const displayLabel = (value) => String(value || "").replaceAll("弾", "だん");
+  const displayLabel = (value) => (family === "primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : String(value || "")).replaceAll("弾", "だん");
   const cacheKey =
     "card-verse-public:" + new URL(window.APP_CONFIG.supabaseUrl).hostname;
   let catalog = null,
@@ -6562,7 +6562,7 @@ init();
         const url = representative(b.dataset.verseFamily);
         if (b.dataset.imageKey === url) return;
         b.dataset.imageKey = url;
-        b.innerHTML = `<span class="verse-family-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.image(url))}" alt="" loading="eager" decoding="async"></span><span class="verse-family-label"><strong>${familyName(b.dataset.verseFamily)}アイプリ</strong></span>`;
+        b.innerHTML = `<span class="verse-family-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.verseImage(url))}" alt="" loading="eager" decoding="async"></span><span class="verse-family-label"><strong>${familyName(b.dataset.verseFamily)}アイプリ</strong></span>`;
       });
     const backImage =
       host.representativeCard?.(family === "onegai" ? "おねがい" : "ひみつ") ||
@@ -6591,7 +6591,7 @@ init();
         node === mobileRoute
           ? "verse-nav-link verse-mobile-route"
           : "verse-nav-link";
-      node.innerHTML = `<span class="verse-nav-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.image(url))}" alt="" loading="eager" decoding="async"></span><span>${label}</span><span class="verse-nav-chevron" aria-hidden="true">›</span>`;
+      node.innerHTML = `<span class="verse-nav-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.verseImage(url))}" alt="" loading="eager" decoding="async"></span><span>${label}</span><span class="verse-nav-chevron" aria-hidden="true">›</span>`;
     }
   }
   function options(id, values, value, label) {
@@ -6612,7 +6612,7 @@ init();
       ...new Set(all.flatMap((c) => appearances(c).map((a) => a.series))),
     ].sort((a, b) => {
       const rank = (label) =>
-        label.includes("オールスター") ? 300 + Number(label.match(/\d+/)?.[0] || 0) : label.startsWith("スタジオ") ? 200 + Number(label.match(/\d+/)?.[0] || 0) : /^第\d+章/.test(label) ? Number(label.match(/\d+/)?.[0] || 0) : label.startsWith("おねがい")
+        family === "primagi" ? window.CARD_PRIMAGI.chapterRank(label) : label.includes("オールスター") ? 300 + Number(label.match(/\d+/)?.[0] || 0) : label.startsWith("スタジオ") ? 200 + Number(label.match(/\d+/)?.[0] || 0) : /^第\d+章/.test(label) ? Number(label.match(/\d+/)?.[0] || 0) : label.startsWith("おねがい")
           ? 100 + Number(label.match(/\d+/)?.[0] || 0)
           : label.startsWith("リング")
             ? 50 + Number(label.match(/\d+/)?.[0] || 0)
@@ -6647,13 +6647,14 @@ init();
   }
 
   function image(c, large = false, eager = false) {
-    if (c.image)
-      return `<span class="verse-full-image"><img src="${esc(window.CARD_PRIMAGI.image(large ? c.image : c.thumbnail || c.image, large ? 900 : 420))}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
+    const fullImage=large ? window.CARD_PRIMAGI.verseImage(c.image)||window.CARD_PRIMAGI.verseImage(c.thumbnail) : window.CARD_PRIMAGI.verseImage(c.thumbnail)||window.CARD_PRIMAGI.verseImage(c.image);
+    if (fullImage)
+      return `<span class="verse-full-image"><img src="${esc(fullImage)}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
 
-    const images = c.part_ids.map((id) => parts.get(id)).filter((part) => part?.image);
+    const images = c.part_ids.map((id) => parts.get(id)).filter((part) => window.CARD_PRIMAGI.verseImage(part?.image));
     if (!images.length)
-      return '<span class="verse-image-unavailable" role="img" aria-label="コーデ画像未取得">画像未取得</span>';
-    return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(window.CARD_PRIMAGI.image(part.image))}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
+      return '<span class="verse-image-unavailable catalog-image-unavailable" role="img" aria-label="画像なし">画像なし</span>';
+    return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(window.CARD_PRIMAGI.verseImage(part.image))}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
   }
   function ownedButton(c, part = null, modal = false) {
     const active = part === null ? full(c) : owned.has(part);
@@ -6695,7 +6696,7 @@ init();
     $("verse-collection-list").innerHTML = all
       .map(
         (c) =>
-          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame"><img src="${esc(window.CARD_PRIMAGI.image(parts.get(id)?.image))}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async"></span></button>`).join("")}</div></article>`,
+          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(parts.get(id)?.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(parts.get(id)?.image))}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async">` : `<span class="catalog-image-unavailable">画像なし</span>`}</span></button>`).join("")}</div></article>`,
       )
       .join("");
     $("verse-collection-empty").hidden = all.length > 0;
@@ -6912,7 +6913,7 @@ init();
       `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${seriesName(c.family)}</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>${c.family === "primagi" ? "章" : "だん数"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>${c.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate",c.id,c.name)||""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
         .map((id) => {
           const p = parts.get(id);
-          return `<article><span class="verse-part-image-frame"><img src="${esc(window.CARD_PRIMAGI.image(p.image, 700))}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? (c.family === "primagi" ? "ワッチャ未取得" : "BP未取得") : p.buzz + (c.family === "primagi" ? " ワッチャ" : " バズパワー")}</strong></div>${c.family === "primagi" ? `<p class="primagi-part-name">${esc(p.metadata?.name || "未取得")}</p><p class="primagi-part-code">${esc((p.codes || []).join(" ／ "))} · ${esc(p.metadata?.rarity || "未取得")}</p>` : ""}${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${window.CARD_QR?.button("part",id,c.name+" ／ "+p.slot,c.part_ids.map(pid=>({kind:"part",id:String(pid),name:c.name+" ／ "+(parts.get(pid)?.slot||pid)})))||""}</div></article>`;
+          return `<article><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(p.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p.image))}" alt="${esc(p.slot)}" loading="eager" decoding="async">` : `<span class="catalog-image-unavailable">画像なし</span>`}</span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? (c.family === "primagi" ? "ワッチャ未取得" : "BP未取得") : p.buzz + (c.family === "primagi" ? " ワッチャ" : " バズパワー")}</strong></div>${c.family === "primagi" ? `<p class="primagi-part-name">${esc(p.metadata?.name || "未取得")}</p><p class="primagi-part-code">${esc((p.codes || []).join(" ／ "))} · ${esc(p.metadata?.rarity || "未取得")}</p>` : ""}${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${window.CARD_QR?.button("part",id,c.name+" ／ "+p.slot,c.part_ids.map(pid=>({kind:"part",id:String(pid),name:c.name+" ／ "+(parts.get(pid)?.slot||pid)})))||""}</div></article>`;
         })
         .join("") || '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'}</div>`;
   }
@@ -7754,7 +7755,7 @@ verseScript.dispatchEvent(new Event("load"));
   "use strict";
   const host = window.CARD_TRADE_HOST;
   const exporterURL = new URL(
-    "./trade-image-export.js?v=20261018-trade-share-polish",
+    "./trade-image-export.js?v=20261029-no-card-photos-v1",
     document.currentScript.src,
   ).href;
   let exportSheets = [],
@@ -8138,7 +8139,7 @@ verseScript.dispatchEvent(new Event("load"));
           id,
           code: c.family === "primagi" ? (p.codes || []).join(" / ") : prev?.code || c.code || "",
           name: p.metadata?.name || p.name || c.name,
-          image: p.image,
+          image: window.CARD_PRIMAGI.verseImage(p.image),
           series: [...new Set([...(prev?.series || []), ...series])],
           groups: [...new Set([...(prev?.groups || []), ...groups])],
           rarity: p.rarity || c.rarity || "",
@@ -8151,8 +8152,8 @@ verseScript.dispatchEvent(new Event("load"));
         id: c.id,
         code: c.code,
         name: c.name,
-        image: c.image || c.thumbnail,
-        collage: c.part_ids.map((id) => partMap.get(id)?.image).filter(Boolean),
+        image: window.CARD_PRIMAGI.verseImage(c.image) || window.CARD_PRIMAGI.verseImage(c.thumbnail),
+        collage: c.part_ids.map((id) => window.CARD_PRIMAGI.verseImage(partMap.get(id)?.image)).filter(Boolean),
         series,
         groups,
         rarity: c.rarity || "",
@@ -8186,8 +8187,8 @@ verseScript.dispatchEvent(new Event("load"));
     $(id).innerHTML =
       '<option value="">すべて</option>' +
       [...new Set(rows.filter(Boolean))]
-        .sort((a, b) => b.localeCompare(a, "ja", { numeric: true }))
-        .map((v) => `<option value="${esc(v)}">${esc(v)}</option>`)
+        .sort((a, b) => id === "trade-series" && origin?.game === "primagi" ? window.CARD_PRIMAGI.chapterRank(b)-window.CARD_PRIMAGI.chapterRank(a) || b.localeCompare(a,"ja",{numeric:true}) : b.localeCompare(a, "ja", { numeric: true }))
+        .map((v) => `<option value="${esc(v)}">${esc(origin?.game === "primagi" ? window.CARD_PRIMAGI.chapterLabel(v) : v)}</option>`)
         .join("");
   }
   function title() {
@@ -8264,11 +8265,11 @@ verseScript.dispatchEvent(new Event("load"));
     true,
   );
   function image(c) {
-    const frame = (url, rotate) =>
-      `<span class="trade-shot-image" data-rotate="${rotate}"><img src="${esc(window.CARD_PRIMAGI.image(url))}" alt="${esc(c.name)}" loading="eager" decoding="async"></span>`;
-    return c.image
-      ? frame(c.image, c.kind !== "coordinate")
-      : `<span class="trade-collage">${(c.collage || []).map((url) => frame(url, true)).join("")}</span>`;
+    const source=url=>c.kind==="card"?window.CARD_PRIMAGI.image(url):window.CARD_PRIMAGI.verseImage(url);
+    const frame=(url,rotate)=>`<span class="trade-shot-image" data-rotate="${rotate}"><img src="${esc(source(url))}" alt="${esc(c.name)}" loading="eager" decoding="async"></span>`;
+    if(source(c.image))return frame(c.image,c.kind!=="coordinate");
+    const images=(c.collage||[]).filter(url=>source(url));
+    return images.length?`<span class="trade-collage">${images.map(url=>frame(url,true)).join("")}</span>`:`<span class="catalog-image-unavailable">画像なし</span>`;
   }
   function renderOutput() {
     if (!origin || panel.hidden) return;
