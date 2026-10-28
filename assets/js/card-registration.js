@@ -103,6 +103,8 @@
       ["おねがいバース", "verse_onegai", "コーデ"],
       ["ひみつバース", "verse_himitsu", "コーデ"],
       ["バース構成パーツ", "verse_parts", "点"],
+      ["ワッチャプリマジ！", "primagi", "コーデ"],
+      ["プリマジ構成パーツ", "primagi_parts", "点"],
     ]) {
       const item = document.createElement("div");
       item.dataset.series = key;
@@ -177,7 +179,10 @@
       });
       const { data, error } = await db.rpc("card_album_registration_feed", { p_before: cursor, p_limit: 20 });
       if (error || !data || !Array.isArray(data.updates)) throw error || new Error("response");
-      renderCounts(data.counts || {});
+      const counts = { ...(data.counts || {}) };
+      const primagi = await db.rpc("card_primagi_catalog_counts");
+      if (!primagi.error && primagi.data) Object.assign(counts, primagi.data);
+      renderCounts(counts);
       for (const entry of data.updates) {
         if (shown.has(String(entry.id))) continue;
         renderEntry(entry);
