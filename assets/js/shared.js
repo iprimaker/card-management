@@ -147,6 +147,7 @@
         ? "partial"
         : "no";
   }
+  const chapterLabel = value => scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value;
   function series(c) {
     const labels = verse()
       ? [...new Set((c.appearances || []).map((a) => a.series))]
@@ -235,19 +236,20 @@ function songFilterValue(value) {
         const options = [...new Set(rows.flatMap((c) => fieldValues(c, key)).filter(Boolean))].sort(
           (a, b) =>
             key === "series"
-              ? String(b).localeCompare(String(a), "ja", { numeric: true })
+              ? scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterRank(b)-window.CARD_PRIMAGI.chapterRank(a) || String(b).localeCompare(String(a),"ja",{numeric:true}) : String(b).localeCompare(String(a), "ja", { numeric: true })
               : String(a).localeCompare(String(b), "ja", { numeric: true }),
         );
         if (filters[key] && !options.includes(filters[key])) options.unshift(filters[key]);
-        return `<label>${esc(label)}<select data-public-filter="${key}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}" ${v === filters[key] ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
+        return `<label>${esc(label)}<select data-public-filter="${key}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}" ${v === filters[key] ? "selected" : ""}>${esc(chapterLabel(v))}</option>`).join("")}</select></label>`;
       })
       .join("");
   }
   function image(c, large = false) {
-    const url = verse() ? c.image || c.thumbnail : side && large ? c.back : c.front;
+    const url = verse() ? window.CARD_PRIMAGI.verseImage(c.image) || window.CARD_PRIMAGI.verseImage(c.thumbnail) : side && large ? c.back : c.front;
     if (url)
       return `<img src="${esc(window.CARD_PRIMAGI.image(url, large ? 900 : 420))}" alt="${esc(c.name || c.code)}" loading="${large ? "eager" : "lazy"}" decoding="async">`;
-    return `<span class="public-collage">${(c.part_ids || []).map((id) => `<img src="${esc(window.CARD_PRIMAGI.image(parts.get(id)?.image || ""))}" alt="" loading="lazy">`).join("")}</span>`;
+    const images=(c.part_ids||[]).map(id=>window.CARD_PRIMAGI.verseImage(parts.get(id)?.image)).filter(Boolean);
+    return images.length?`<span class="public-collage">${images.map(url=>`<img src="${esc(url)}" alt="" loading="lazy">`).join("")}</span>`:`<span class="catalog-image-unavailable">画像なし</span>`;
   }
   function renderScopeNote() {
     if (browseOnly) return;
@@ -257,7 +259,7 @@ function songFilterValue(value) {
     const selected = snapshot?.series_filter;
     note.hidden = !Array.isArray(selected);
     if (note.hidden) return;
-    const labels = [...new Set(selected.map((value) => String(value).replaceAll("弾", "だん")))];
+    const labels = [...new Set(selected.map((value) => chapterLabel(String(value)).replaceAll("弾", "だん")))];
     const caption = document.createElement("span");
     caption.className = "public-scope-caption";
     caption.textContent = "公開範囲";
@@ -277,7 +279,7 @@ function songFilterValue(value) {
     list.className = "public-scope-list";
     for (const label of labels) {
       const item = document.createElement("span");
-      item.textContent = label;
+      item.textContent = chapterLabel(label);
       list.append(item);
     }
     details.append(summary, list);
@@ -349,7 +351,7 @@ function songFilterValue(value) {
         .filter(([, v]) => v)
         .map(
           ([key, value]) =>
-            `<button class="filter-chip" type="button" data-public-clear="${esc(key)}">${esc(fields().find(([k]) => k === key)?.[1] || key)}：${esc(value)}<span aria-hidden="true">×</span></button>`,
+            `<button class="filter-chip" type="button" data-public-clear="${esc(key)}">${esc(fields().find(([k]) => k === key)?.[1] || key)}：${esc(chapterLabel(value))}<span aria-hidden="true">×</span></button>`,
         )
         .join("") +
       ($("public-query").value.trim()
@@ -419,13 +421,13 @@ function songFilterValue(value) {
     $("public-detail-content").innerHTML =
       `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2>${browseOnly ? "" : `<p class="public-possession is-${verse() ? (ownsFull(c) ? "yes" : "no") : state(c)}">${verse() ? (ownsFull(c) ? "フルコーデ持ってる" : "フルコーデ未所持") : held ? "持っている" : "持っていない"}</p>`}<dl>${rows
         .filter(([, v]) => v)
-        .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
+        .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(chapterLabel(v))}</dd>`)
         .join("")}</dl></div></div>${
         verse()
           ? `<h3>${browseOnly ? "構成パーツ" : "パーツごとの所持状況"}</h3><div class="public-modal-parts">${c.part_ids
               .map((id) => {
                 const p = parts.get(id);
-                return `<article><img src="${esc(window.CARD_PRIMAGI.image(p?.image || "", 700))}" alt="${esc(p?.slot)}"><span>${esc(p?.slot)}${scope === "verse-primagi" ? " · " + esc(p?.metadata?.name || "未取得") : ""} ／ ${p?.buzz == null ? (scope === "verse-primagi" ? "ワッチャ未取得" : "BP未取得") : `${p.buzz} ${scope === "verse-primagi" ? "ワッチャ" : "バズパワー"}`}</span>${browseOnly ? "" : `<small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small>`}</article>`;
+                return `<article>${window.CARD_PRIMAGI.verseImage(p?.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p?.image))}" alt="${esc(p?.slot)}">` : `<span class="catalog-image-unavailable">画像なし</span>`}<span>${esc(p?.slot)}${scope === "verse-primagi" ? " · " + esc(p?.metadata?.name || "未取得") : ""} ／ ${p?.buzz == null ? (scope === "verse-primagi" ? "ワッチャ未取得" : "BP未取得") : `${p.buzz} ${scope === "verse-primagi" ? "ワッチャ" : "バズパワー"}`}</span>${browseOnly ? "" : `<small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small>`}</article>`;
               })
               .join("")}</div>`
           : ""
@@ -542,7 +544,7 @@ function songFilterValue(value) {
         if (!scopeFilters.has(scope)) {
           const rank = (t) => {
             const x = String(t).normalize("NFKC");
-            if (scope === "verse-primagi") return (x.includes("オールスター") ? 300 : x.startsWith("スタジオ") ? 200 : 0) + Number(x.match(/第(\d+)章/)?.[1] || 0);
+            if (scope === "verse-primagi") return window.CARD_PRIMAGI.chapterRank(x);
             const
               n = x.match(/(\d+)\s*(?:だん|弾)/);
             return n ? (x.includes("リング") ? 1000000 : 0) + Number(n[1]) : -1;
@@ -766,7 +768,7 @@ function songFilterValue(value) {
     if (!$("public-progress-details").open) return;
     const rank = (t) => {
       const x = String(t).normalize("NFKC");
-            if (scope === "verse-primagi") return (x.includes("オールスター") ? 300 : x.startsWith("スタジオ") ? 200 : 0) + Number(x.match(/第(\d+)章/)?.[1] || 0);
+            if (scope === "verse-primagi") return window.CARD_PRIMAGI.chapterRank(x);
             const
         n = x.match(/(\d+)\s*(?:だん|弾)/);
       return n ? (x.includes("リング") ? 1000000 : 0) + Number(n[1]) : -1;
@@ -782,7 +784,7 @@ function songFilterValue(value) {
           got = rows.filter(full).length,
           rate = rows.length ? (got / rows.length) * 100 : 0,
           unit = verse() ? "コーデ" : "枚";
-        return `<div class="public-series-rate"><div><span>${esc(label)}</span><strong>${rate.toFixed(1)}%</strong></div><div class="public-progress-track"><span style="width:${rate}%"></span></div><p>取得済 ${got}${unit} ／ 未取得 ${rows.length - got}${unit}</p></div>`;
+        return `<div class="public-series-rate"><div><span>${esc(chapterLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="public-progress-track"><span style="width:${rate}%"></span></div><p>取得済 ${got}${unit} ／ 未取得 ${rows.length - got}${unit}</p></div>`;
       })
       .join("");
   }
