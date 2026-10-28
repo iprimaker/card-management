@@ -27,7 +27,7 @@ window.SITE_INFO = {
   },
   about: {
     title: "このサイトについて",
-    body: `<p>カードアルバムは、アイカツ！アンコールとアイプリのカードを探して、集めたカードを記録するための非公式サイトです。</p>
+    body: `<p>カードアルバムは、アイカツ！アンコール・アイプリ・ワッチャプリマジ！のカードを探して、集めたカードを記録するための非公式サイトです。</p>
       <h3>できること</h3><ul><li>作品や種類ごとのカード検索・絞り込み</li><li>表面・裏面の閲覧</li><li>所持カードの登録と取得率の確認</li></ul>
       <h3>公式サービスとの関係</h3><p>本サイトは作品・ゲームの公式運営とは関係ありません。作品名、カード画像などの権利は各権利者に帰属します。掲載内容について公式運営へお問い合わせいただくことはお控えください。</p>
       <h3>情報の更新</h3><p>カード情報は定期的に更新します。未掲載・誤記・反映の遅れがある場合は、公式情報もあわせてご確認ください。</p>
@@ -1031,6 +1031,7 @@ function toast(s, kind = "normal") {
   }, 3500);
 }
 function randomizeAuthTheme() {
+  document.body.classList.remove("game-primagi");
   document.body.classList.toggle(
     "game-aipri",
     crypto.getRandomValues(new Uint8Array(1))[0] < 128,
@@ -1573,6 +1574,7 @@ function chooseGame(g) {
   if (!session) return;
   closeMenu();
   game = g;
+  document.body.classList.toggle("game-primagi", g === "primagi");
   filters = {};
   ownershipFilter = "all";
   favoriteFilter = duplicateFilter = false;
@@ -1582,6 +1584,7 @@ function chooseGame(g) {
   document.body.classList.toggle("game-aipri", g === "aipri");
   $("aipri-families").hidden = g !== "aipri";
   updateHeader();
+  if (g === "primagi") { history.replaceState(null,"","#primagi"); window.CARD_VERSE.open("primagi"); return; }
   screen("collection");
   setLatestSeries();
   resetReveal($("filter-panel").querySelector(".filter-content"), false);
@@ -1648,6 +1651,7 @@ function renderSeriesProgress() {
     .join("");
 }
 function fillFilters() {
+  if (game === "primagi") return;
   for (const card of catalog.cards)
     if (card.game === "aipri") card.rarity = displayRarity(card);
   const cards = albumCards();
@@ -1820,6 +1824,7 @@ function renderPageNumbers(total) {
 }
 function render(keepCardNodes = false) {
   if (!game) return;
+  if (game === "primagi") { window.CARD_VERSE?.refreshTrade(); return; }
   renderActiveFilters();
   syncFavoriteFilter();
   syncDuplicateFilter();
@@ -3049,6 +3054,7 @@ function updateHeader() {
     : "カードアルバム";
   const selectedGame = game || "aikatsu";
   $("game-switch").classList.toggle("is-aipri", selectedGame === "aipri");
+  $("game-switch").classList.toggle("is-primagi", selectedGame === "primagi");
   document
     .querySelectorAll("#game-switch [data-game]")
     .forEach((b) =>
@@ -4097,6 +4103,7 @@ window.CARD_VERSE_HOST = {
     );
   },
   cards: (family) => {
+    if (family === "primagi") { game = null; document.body.classList.remove("game-primagi"); screen("selection"); updateHeader(); history.replaceState(null,"",location.pathname); return; }
     aipriFamily = family;
     chooseGame("aipri");
   },
@@ -4104,7 +4111,8 @@ window.CARD_VERSE_HOST = {
 const verseScript = document.createElement("script");
 window.CARD_TRADE_HOST = {
   closeTutorialMenu: () => closeMenu(),
-  prepareTutorial() {
+  prepareTutorial(chapter = "basic") {
+    if (game === "primagi" && chapter !== "share") chooseGame("aipri");
     filters = {};
     ownershipFilter = "all";
     favoriteFilter = duplicateFilter = false;
@@ -4137,6 +4145,7 @@ window.CARD_TRADE_HOST = {
   screen,
   toast,
   back: () => {
+    if (game === "primagi") { window.CARD_VERSE.open("primagi"); return; }
     if (!game) {
       screen("selection");
       return;
@@ -4779,7 +4788,7 @@ init();
     try {
       sessionStorage.setItem(
         "card-active-theme",
-        document.body.classList.contains("game-aipri") ? "aipri" : "aikatsu",
+        document.body.classList.contains("game-primagi") ? "primagi" : document.body.classList.contains("game-aipri") ? "aipri" : "aikatsu",
       );
     } catch {}
   }
@@ -4795,7 +4804,7 @@ init();
     if (url.origin === location.origin && /\/contact\/?$/.test(url.pathname)) {
       url.searchParams.set(
         "theme",
-        document.body.classList.contains("game-aipri") ? "aipri" : "aikatsu",
+        document.body.classList.contains("game-primagi") ? "primagi" : document.body.classList.contains("game-aipri") ? "aipri" : "aikatsu",
       );
       link.href = url.href;
     }
@@ -4984,6 +4993,7 @@ init();
       himitsu: "ひみつのアイプリ",
       "verse-onegai": "おねがいアイプリバース",
       "verse-himitsu": "ひみつのアイプリバース",
+      "verse-primagi": "ワッチャプリマジ！",
     };
   let owner = null,
     scopes = [],
@@ -5124,6 +5134,7 @@ init();
     himitsu: "ひみつ",
     "verse-onegai": "おねがいバース",
     "verse-himitsu": "ひみつバース",
+      "verse-primagi": "プリマジ",
   };
   $("share-send").onclick = async () => {
     if (
@@ -5853,7 +5864,8 @@ init();
     try {
       const host = new URL(image.getAttribute("src") || "", location.href)
         .hostname;
-      return host === "aipri.jp" || host === "dcd.aikatsu.com";
+      return host === "aipri.jp" || host === "dcd.aikatsu.com" ||
+        host === "www.takaratomy-arts.co.jp";
     } catch {
       return false;
     }
@@ -6221,7 +6233,8 @@ init();
           "'": "&#39;",
         })[c],
     );
-  const familyName = (value) => (value === "onegai" ? "おねがい" : "ひみつの");
+  const familyName = (value) => (value === "primagi" ? "ワッチャプリマジ！" : value === "onegai" ? "おねがい" : "ひみつの");
+  const seriesName = value => value === "primagi" ? "ワッチャプリマジ！" : familyName(value) + "アイプリ";
   const displayLabel = (value) => String(value || "").replaceAll("弾", "だん");
   const cacheKey =
     "card-verse-public:" + new URL(window.APP_CONFIG.supabaseUrl).hostname;
@@ -6255,6 +6268,7 @@ init();
       else target.delete(id);
     }
   }
+  let primagiRarity = "";
   let family = "onegai",
     series = "",
     group = "",
@@ -6311,7 +6325,7 @@ init();
     <div class="verse-families" role="group" aria-label="アイプリのシリーズ"><button type="button" data-verse-family="onegai"></button><button type="button" data-verse-family="himitsu"></button></div>
     <div class="progress-card verse-progress"><div><span>コーデ総取得率</span><strong id="verse-percent">—</strong></div><div class="progress-track"><span id="verse-progress-bar"></span></div><div class="progress-bottom"><p id="verse-count"></p><button id="verse-progress-details" class="text-button" type="button" aria-expanded="false" aria-controls="verse-series-progress" aria-label="だんごとの取得率を表示"><span class="progress-chevron" aria-hidden="true"></span></button></div><div id="verse-series-progress" hidden></div><div id="verse-filtered-rate"></div></div>
     <details id="verse-collection"><summary><span>コーデ収集状況</span><span id="verse-collection-count"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-collection-select">だん数<select id="verse-collection-series"></select></label><div class="verse-collection-options"><button type="button" data-verse-collection="complete" aria-pressed="false">収集済のみ</button><button type="button" data-verse-collection="one-away" aria-pressed="false">あと1つで完成</button></div><div id="verse-collection-list"></div><p id="verse-collection-empty" hidden>該当するコーデがありません</p></div></details>
-    <details id="verse-filters"><summary><span>コーデを絞り込む</span><span id="verse-filter-summary" class="filter-summary"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-search"><span>フリーワード検索<button type="button" class="filter-clear" data-verse-clear="query">解除</button></span><input id="verse-query" type="search" placeholder="コーデ名・コード・キャンペーン名" autocomplete="off"></label><div class="verse-filter-grid"><label><span>だん数<button type="button" class="filter-clear" data-verse-clear="series">解除</button></span><select id="verse-series"></select></label><label><span>ガチャ・キャンペーン<button type="button" class="filter-clear" data-verse-clear="group">解除</button></span><select id="verse-group"></select></label><label><span>お気に入り<button type="button" class="filter-clear" data-verse-clear="favorite">解除</button></span><select id="verse-favorite-filter"><option value="all">すべて</option><option value="only">お気に入りのみ</option></select></label><label><span>重複<button type="button" class="filter-clear" data-verse-clear="duplicate">解除</button></span><select id="verse-duplicate-filter"><option value="all">すべて</option><option value="only">重複あり</option></select></label><label id="verse-qr-filter" for="verse-qr-select"><span class="filter-label">QRコード<button type="button" class="filter-clear" data-qr-clear="coordinate">解除</button></span><select id="verse-qr-select" data-qr-filter="coordinate" disabled><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label></div><div class="verse-clear-row"><button id="verse-clear" type="button" class="text-button">全ての絞り込みを解除</button></div></div></details>
+    <details id="verse-filters"><summary><span>コーデを絞り込む</span><span id="verse-filter-summary" class="filter-summary"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-search"><span>フリーワード検索<button type="button" class="filter-clear" data-verse-clear="query">解除</button></span><input id="verse-query" type="search" placeholder="コーデ名・コード・キャンペーン名" autocomplete="off"></label><div class="verse-filter-grid"><label id="primagi-rarity-field" hidden><span>レアリティ<button type="button" class="filter-clear" data-verse-clear="primagi-rarity">解除</button></span><select id="primagi-rarity"></select></label><label><span>だん数<button type="button" class="filter-clear" data-verse-clear="series">解除</button></span><select id="verse-series"></select></label><label><span>ガチャ・キャンペーン<button type="button" class="filter-clear" data-verse-clear="group">解除</button></span><select id="verse-group"></select></label><label><span>お気に入り<button type="button" class="filter-clear" data-verse-clear="favorite">解除</button></span><select id="verse-favorite-filter"><option value="all">すべて</option><option value="only">お気に入りのみ</option></select></label><label><span>重複<button type="button" class="filter-clear" data-verse-clear="duplicate">解除</button></span><select id="verse-duplicate-filter"><option value="all">すべて</option><option value="only">重複あり</option></select></label><label id="verse-qr-filter" for="verse-qr-select"><span class="filter-label">QRコード<button type="button" class="filter-clear" data-qr-clear="coordinate">解除</button></span><select id="verse-qr-select" data-qr-filter="coordinate" disabled><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label></div><div class="verse-clear-row"><button id="verse-clear" type="button" class="text-button">全ての絞り込みを解除</button></div></div></details>
     <div id="verse-active-filters" class="verse-active-filters"></div>
     <div class="verse-owned-tabs owned-tabs" role="group" aria-label="コーデの所持状態"><span class="verse-owned-slider owned-tabs-slider" aria-hidden="true"></span><button type="button" data-verse-view="all">すべて</button><button type="button" data-verse-view="full">持っている</button><button type="button" data-verse-view="partial">一部持っている</button><button type="button" data-verse-view="none">持っていない</button></div>
     <p id="verse-message" role="status"></p><div class="verse-list-toolbar"><h2 id="verse-found"></h2><div class="verse-display-controls"><label class="verse-display-count display-count"><span>表示件数</span><select id="verse-size"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">すべて</option></select></label><div class="verse-column-control"><span>コーデの並び</span><div class="verse-column-segment" role="group" aria-label="スマホのコーデ列数"><button type="button" data-verse-columns="2">2列</button><button type="button" data-verse-columns="3">3列</button></div></div></div></div>
@@ -6390,10 +6404,11 @@ init();
       .replace(/[\s_-]/g, "");
   function matchesQuery(c, needle = compact(query)) {
     return !needle || compact(
-      [c.name, c.code, ...appearances(c).map((a) => a.group)].join(" "),
+      [c.name, c.code, ...(c.part_ids || []).map(id => parts.get(id)?.metadata?.name || ""), ...appearances(c).map((a) => a.group)].join(" "),
     ).includes(needle);
   }
   function renderRelatedSearch(hasResults) {
+    if (family === "primagi") { $("verse-related-search").hidden = true; return; }
     const hint = $("verse-related-search"),
       needle = compact(query),
       target = family === "onegai" ? "himitsu" : "onegai",
@@ -6413,6 +6428,7 @@ init();
     const needle = compact(query);
     return pool().filter(
       (c) =>
+        (family !== "primagi" || !primagiRarity || c.rarity.split(" ／ ").includes(primagiRarity)) &&
         (!favoriteOnly || favorites.has(c.id)) &&
         (!duplicateOnly || duplicate(c)) &&
         (trade()?.matches("coordinate", c.id) ?? true) &&
@@ -6443,12 +6459,17 @@ init();
   }
   function syncImages() {
     const showPanel = !panel.hidden;
+    panel.querySelector(".verse-families").hidden = family === "primagi";
+    panel.querySelector('[data-verse-clear="series"]').parentElement.firstChild.textContent = family === "primagi" ? "章" : "だん数";
+    panel.querySelector('[data-verse-clear="group"]').parentElement.firstChild.textContent = family === "primagi" ? "入手方法" : "ガチャ・キャンペーン";
+    panel.querySelector('.verse-collection-select').firstChild.textContent = family === "primagi" ? "章" : "だん数";
+    panel.querySelector(".eyebrow").textContent = family === "primagi" ? "PRIMAGI COORDINATES" : "AIPRI VERSE";
     if (showPanel)
       panel.querySelectorAll("[data-verse-family]").forEach((b) => {
         const url = representative(b.dataset.verseFamily);
         if (b.dataset.imageKey === url) return;
         b.dataset.imageKey = url;
-        b.innerHTML = `<span class="verse-family-image" aria-hidden="true"><img src="${esc(url)}" alt="" loading="eager" decoding="async"></span><span class="verse-family-label"><strong>${familyName(b.dataset.verseFamily)}アイプリ</strong></span>`;
+        b.innerHTML = `<span class="verse-family-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.image(url))}" alt="" loading="eager" decoding="async"></span><span class="verse-family-label"><strong>${familyName(b.dataset.verseFamily)}アイプリ</strong></span>`;
       });
     const backImage =
       host.representativeCard?.(family === "onegai" ? "おねがい" : "ひみつ") ||
@@ -6460,7 +6481,8 @@ init();
         representative(host.family() === "ひみつ" ? "himitsu" : "onegai"),
         "バースへ",
       ]);
-    if (showPanel) links.push([$("verse-back"), backImage, "カード一覧へ"]);
+    if (showPanel && family !== "primagi") links.push([$("verse-back"), backImage, "カード一覧へ"]);
+    if (showPanel && family === "primagi") { $("verse-back").textContent = "アルバム選択へ"; delete $("verse-back").dataset.imageKey; }
     if (!mobileRoute.hidden)
       links.push([
         mobileRoute,
@@ -6476,7 +6498,7 @@ init();
         node === mobileRoute
           ? "verse-nav-link verse-mobile-route"
           : "verse-nav-link";
-      node.innerHTML = `<span class="verse-nav-image" aria-hidden="true"><img src="${esc(url)}" alt="" loading="eager" decoding="async"></span><span>${label}</span><span class="verse-nav-chevron" aria-hidden="true">›</span>`;
+      node.innerHTML = `<span class="verse-nav-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.image(url))}" alt="" loading="eager" decoding="async"></span><span>${label}</span><span class="verse-nav-chevron" aria-hidden="true">›</span>`;
     }
   }
   function options(id, values, value, label) {
@@ -6491,11 +6513,13 @@ init();
   }
   function fillFilters(latest = false) {
     const all = pool();
+    $("primagi-rarity-field").hidden = family !== "primagi";
+    options("primagi-rarity", all.flatMap(c => c.rarity.split(" ／ ")), primagiRarity, "すべて");
     const labels = [
       ...new Set(all.flatMap((c) => appearances(c).map((a) => a.series))),
     ].sort((a, b) => {
       const rank = (label) =>
-        label.startsWith("おねがい")
+        label.includes("オールスター") ? 300 + Number(label.match(/\d+/)?.[0] || 0) : label.startsWith("スタジオ") ? 200 + Number(label.match(/\d+/)?.[0] || 0) : /^第\d+章/.test(label) ? Number(label.match(/\d+/)?.[0] || 0) : label.startsWith("おねがい")
           ? 100 + Number(label.match(/\d+/)?.[0] || 0)
           : label.startsWith("リング")
             ? 50 + Number(label.match(/\d+/)?.[0] || 0)
@@ -6531,12 +6555,12 @@ init();
 
   function image(c, large = false, eager = false) {
     if (c.image)
-      return `<span class="verse-full-image"><img src="${esc(large ? c.image : c.thumbnail || c.image)}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
+      return `<span class="verse-full-image"><img src="${esc(window.CARD_PRIMAGI.image(large ? c.image : c.thumbnail || c.image, large ? 900 : 420))}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
 
     const images = c.part_ids.map((id) => parts.get(id)).filter((part) => part?.image);
     if (!images.length)
       return '<span class="verse-image-unavailable" role="img" aria-label="コーデ画像未取得">画像未取得</span>';
-    return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(part.image)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
+    return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(window.CARD_PRIMAGI.image(part.image))}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
   }
   function ownedButton(c, part = null, modal = false) {
     const active = part === null ? full(c) : owned.has(part);
@@ -6578,7 +6602,7 @@ init();
     $("verse-collection-list").innerHTML = all
       .map(
         (c) =>
-          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame"><img src="${esc(parts.get(id)?.image)}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async"></span></button>`).join("")}</div></article>`,
+          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame"><img src="${esc(window.CARD_PRIMAGI.image(parts.get(id)?.image))}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async"></span></button>`).join("")}</div></article>`,
       )
       .join("");
     $("verse-collection-empty").hidden = all.length > 0;
@@ -6586,7 +6610,8 @@ init();
   function renderActiveFilters() {
     const entries = [
       ["query", "検索", query],
-      ["series", "だん数", displayLabel(series)],
+      ["series", family === "primagi" ? "章" : "だん数", displayLabel(series)],
+      ["primagi-rarity", "レアリティ", family === "primagi" ? primagiRarity : ""],
       ["group", "ガチャ・キャンペーン", group],
       ["favorite", "お気に入り", favoriteOnly ? "登録済み" : ""],
       ["duplicate", "重複", duplicateOnly ? "重複あり" : ""],
@@ -6737,7 +6762,7 @@ init();
     }
     control.innerHTML = trade()?.filterMarkup("coordinate") || "";
     $("verse-title").textContent =
-      (family === "himitsu" ? "ひみつの" : "おねがい") + "アイプリバース";
+      family === "primagi" ? "ワッチャプリマジ！" : (family === "himitsu" ? "ひみつの" : "おねがい") + "アイプリバース";
     panel.querySelectorAll("[data-verse-family]").forEach((b) => {
       const active = b.dataset.verseFamily === family;
       b.classList.toggle("active", active);
@@ -6791,10 +6816,10 @@ init();
     const c = catalog.coordinates.find((c) => c.id === selected);
     if (!c) return;
     $("verse-detail-content").innerHTML =
-      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${familyName(c.family)}アイプリ</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>だん数</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>ガチャ・キャンペーン</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate",c.id,c.name)||""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
+      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${seriesName(c.family)}</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>${c.family === "primagi" ? "章" : "だん数"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>${c.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate",c.id,c.name)||""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
         .map((id) => {
           const p = parts.get(id);
-          return `<article><span class="verse-part-image-frame"><img src="${esc(p.image)}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? "BP未取得" : p.buzz + " バズパワー"}</strong></div>${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${window.CARD_QR?.button("part",id,c.name+" ／ "+p.slot,c.part_ids.map(pid=>({kind:"part",id:String(pid),name:c.name+" ／ "+(parts.get(pid)?.slot||pid)})))||""}</div></article>`;
+          return `<article><span class="verse-part-image-frame"><img src="${esc(window.CARD_PRIMAGI.image(p.image, 700))}" alt="${esc(p.slot)}" loading="eager" decoding="async"></span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? (c.family === "primagi" ? "ワッチャ未取得" : "BP未取得") : p.buzz + (c.family === "primagi" ? " ワッチャ" : " バズパワー")}</strong></div>${c.family === "primagi" ? `<p class="primagi-part-name">${esc(p.metadata?.name || "未取得")}</p><p class="primagi-part-code">${esc((p.codes || []).join(" ／ "))} · ${esc(p.metadata?.rarity || "未取得")}</p>` : ""}${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${window.CARD_QR?.button("part",id,c.name+" ／ "+p.slot,c.part_ids.map(pid=>({kind:"part",id:String(pid),name:c.name+" ／ "+(parts.get(pid)?.slot||pid)})))||""}</div></article>`;
         })
         .join("") || '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'}</div>`;
   }
@@ -7170,7 +7195,7 @@ init();
     if (
       !currentUser() ||
       host.maintenance() ||
-      host.game() !== "aipri" ||
+      !["aipri","primagi"].includes(host.game()) ||
       Date.now() - lastWarmAt < 30000
     )
       return;
@@ -7178,14 +7203,15 @@ init();
     hydrateCatalog();
     Promise.all([ensureCatalog(), ensureInventory()])
       .then(() => {
-        if (currentUser() && host.game() === "aipri" && !host.maintenance())
+        if (currentUser() && ["aipri","primagi"].includes(host.game()) && !host.maintenance())
           syncImages();
       })
       .catch(() => {});
   }
   async function open(value) {
     if (!currentUser() || host.maintenance()) return;
-    family = value === "himitsu" ? "himitsu" : "onegai";
+    family = value === "primagi" ? "primagi" : value === "himitsu" ? "himitsu" : "onegai";
+    primagiRarity = "";
     series = group = query = collectionSeries = "";
     collectionFilter = ownershipView = "all";
     favoriteOnly = duplicateOnly = false;
@@ -7195,7 +7221,8 @@ init();
     $("verse-favorite-filter").value = "all";
     $("verse-duplicate-filter").value = "all";
     host.screen("verse");
-    document.body.classList.add("game-aipri");
+    document.body.classList.toggle("game-aipri",family !== "primagi");
+    document.body.classList.toggle("game-primagi",family === "primagi");
     const uid = currentUser(),
       g = generation,
       view = ++viewGeneration;
@@ -7260,11 +7287,11 @@ init();
   button.onclick = () =>
     open(host.family() === "ひみつ" ? "himitsu" : "onegai");
   $("verse-back").onclick = () =>
-    host.cards(family === "himitsu" ? "ひみつ" : "おねがい");
+    host.cards(family === "primagi" ? "primagi" : family === "himitsu" ? "ひみつ" : "おねがい");
   mobileRoute.onclick = () =>
     panel.hidden
       ? open(host.family() === "ひみつ" ? "himitsu" : "onegai")
-      : host.cards(family === "himitsu" ? "ひみつ" : "おねがい");
+      : host.cards(family === "primagi" ? "primagi" : family === "himitsu" ? "ひみつ" : "おねがい");
   $("verse-close").onclick = () => dialog.close();
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) {
@@ -7436,6 +7463,7 @@ init();
     render();
   };
   $("verse-clear").onclick = () => {
+    primagiRarity = "";
     series = group = query = "";
     favoriteOnly = duplicateOnly = false;
     trade()?.clear("coordinate");
@@ -7448,7 +7476,9 @@ init();
     fillFilters();
     render();
   };
+  $("primagi-rarity").onchange = () => { primagiRarity = $("primagi-rarity").value; page = 1; render(); };
   function clearFilter(key) {
+    if (key === "primagi-rarity") { primagiRarity = ""; $("primagi-rarity").value = ""; }
     if(key === "qr") window.CARD_QR?.clear("coordinate");
     if (key === "trade") trade()?.clear("coordinate");
     if (key === "query") {
@@ -7595,9 +7625,9 @@ init();
     },
     syncNavigation() {
       const visible =
-        !!currentUser() && host.game() === "aipri" && !host.maintenance();
-      button.hidden = !visible;
-      mobileRoute.hidden = !visible;
+        !!currentUser() && ["aipri","primagi"].includes(host.game()) && !host.maintenance();
+      button.hidden = !visible || host.game() === "primagi";
+      mobileRoute.hidden = !visible || host.game() === "primagi";
       syncImages();
       if (visible) warm();
     },
@@ -7999,7 +8029,7 @@ verseScript.dispatchEvent(new Event("load"));
     const data = host.verse();
     if (!data) return [];
     const coords = data.coordinates.filter(
-      (c) => c.family === (origin.family === "ひみつ" ? "himitsu" : "onegai"),
+      (c) => c.family === (origin.family === "primagi" ? "primagi" : origin.family === "ひみつ" ? "himitsu" : "onegai"),
     );
     const partMap = new Map(data.parts.map((p) => [p.id, p])),
       parts = new Map();
@@ -8013,8 +8043,8 @@ verseScript.dispatchEvent(new Event("load"));
         parts.set(id, {
           kind: "part",
           id,
-          code: prev?.code || c.code || "",
-          name: p.name || c.name,
+          code: c.family === "primagi" ? (p.codes || []).join(" / ") : prev?.code || c.code || "",
+          name: p.metadata?.name || p.name || c.name,
           image: p.image,
           series: [...new Set([...(prev?.series || []), ...series])],
           groups: [...new Set([...(prev?.groups || []), ...groups])],
@@ -8068,6 +8098,7 @@ verseScript.dispatchEvent(new Event("load"));
         .join("");
   }
   function title() {
+    if (origin?.game === "primagi") return "ワッチャプリマジ！";
     return origin.game === "aikatsu"
       ? "アイカツアンコール"
       : (origin.family === "ひみつ" ? "ひみつのアイプリ" : "おねがいアイプリ") +
@@ -8141,7 +8172,7 @@ verseScript.dispatchEvent(new Event("load"));
   );
   function image(c) {
     const frame = (url, rotate) =>
-      `<span class="trade-shot-image" data-rotate="${rotate}"><img src="${esc(url)}" alt="${esc(c.name)}" loading="eager" decoding="async"></span>`;
+      `<span class="trade-shot-image" data-rotate="${rotate}"><img src="${esc(window.CARD_PRIMAGI.image(url))}" alt="${esc(c.name)}" loading="eager" decoding="async"></span>`;
     return c.image
       ? frame(c.image, c.kind !== "coordinate")
       : `<span class="trade-collage">${(c.collage || []).map((url) => frame(url, true)).join("")}</span>`;
@@ -8370,9 +8401,9 @@ verseScript.dispatchEvent(new Event("load"));
     const isVerse = host.isVerse();
     origin = {
       kind: isVerse ? "coordinate" : "card",
-      game: isVerse ? "aipri" : host.game(),
+      game: isVerse ? (window.CARD_VERSE.family() === "primagi" ? "primagi" : "aipri") : host.game(),
       family: isVerse
-        ? (window.CARD_VERSE.family() === "himitsu" ? "ひみつ" : "おねがい")
+        ? (window.CARD_VERSE.family() === "primagi" ? "primagi" : window.CARD_VERSE.family() === "himitsu" ? "ひみつ" : "おねがい")
         : host.family(),
     };
     host.screen("trade-page");
@@ -8443,7 +8474,7 @@ verseScript.dispatchEvent(new Event("load"));
   button.onclick = open;
   $("trade-back").onclick = () => {
     if (origin?.kind === "coordinate")
-      window.CARD_VERSE.open(origin.family === "ひみつ" ? "himitsu" : "onegai");
+      window.CARD_VERSE.open(origin.family === "primagi" ? "primagi" : origin.family === "ひみつ" ? "himitsu" : "onegai");
     else host.back();
   };
   $("trade-query").oninput = renderOutput;
