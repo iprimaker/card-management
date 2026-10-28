@@ -1060,6 +1060,23 @@ function screen(id) {
   window.scrollTo({ top: 0, left: 0, behavior: "instant" });
 }
 let albumIdentity = "";
+// Invitation proof stays in memory only; reloading cannot resume a claim.
+let invitationPage = new URLSearchParams(location.search).get("view") === "invite";
+let invitationToken = invitationPage ? new URLSearchParams(location.hash.slice(1)).get("invite") : null;
+let invitationStarted = false, invitationEnded = false;
+const invitationNotice = "こちらでの登録は1度のみ可能です。再読み込み・ページを閉じる・再アクセスすると登録手続きを再開できません。招待URLの再発行はいたしかねます。";
+if (invitationPage) {
+  history.replaceState(null, "", location.pathname + location.search);
+  $("auth-normal-panel").querySelector("h2").textContent = "招待からアルバムを作成";
+  $("login-tab").parentElement.hidden = true;
+  const note = document.createElement("p");
+  note.id = "invitation-notice"; note.className = "id-save-note"; note.textContent = invitationNotice;
+  $("signup-flow").prepend(note);
+  document.querySelector(".id-expiry-note").textContent = "このままパスワード設定に進んでください。再読み込みせず、24時間以内に登録を完了してください。";
+  const back = document.createElement("a");
+  back.id = "invitation-login-link"; back.href = location.pathname; back.textContent = "ログイン画面へ"; back.className = "text-button";
+  $("auth-normal-panel").append(back);
+}
 let signupReservation = null;
 let signupStep = "id";
 let signupBusy = false;
@@ -1067,6 +1084,13 @@ let signupRegistrationAllowed = null;
 let signupRegistrationMessage = "受付状況を確認しています…";
 let signupRegistrationFlight = null, signupRegistrationFreshUntil = 0, signupRegistrationTimer;
 function renderSignupRegistrationAvailability() {
+  if (invitationPage) {
+    $("issue-album-id").hidden = true;
+    const status = $("signup-registration-status");
+    status.hidden = !!signupReservation;
+    status.textContent = invitationEnded ? "登録手続きは終了しました。この招待URLでは再開できません。" : "招待URLを確認し、アルバムIDを割り当てています…";
+    return;
+  }
   $("issue-album-id").hidden = !!signupReservation || signupRegistrationAllowed !== true;
   $("issue-album-id").disabled = signupBusy;
   const status = $("signup-registration-status");
@@ -1079,7 +1103,7 @@ function scheduleSignupRegistrationCheck() {
   signupRegistrationTimer = setTimeout(() => {if(mode === "signup" && !document.hidden && !$("auth").hidden && !signupReservation)void refreshSignupRegistrationStatus();}, 60000 + Math.random()*12000);
 }
 async function refreshSignupRegistrationStatus({force=false}={}) {
-  if (!db) return;
+  if (!db || invitationPage) return;
   if (signupRegistrationFlight) return signupRegistrationFlight;
   if (!force && Date.now() < signupRegistrationFreshUntil) {
     renderSignupRegistrationAvailability();scheduleSignupRegistrationCheck();return;
@@ -1117,6 +1141,7 @@ try {
 } catch {}
 window.addEventListener("pagehide", () => {
   signupReservation = null;
+  if (invitationPage) { invitationToken = null; invitationEnded = true; }
   try {
     localStorage.removeItem("card-album-id-reservation");
   } catch {}
@@ -1125,7 +1150,35 @@ window.addEventListener("pagehide", () => {
 window.addEventListener("pageshow", (event) => {
   if (event.persisted && mode === "signup") renderSignupStep("id");
 });
+async function startInvitationRegistration(existingSession) {
+  if (invitationStarted) return;
+  invitationStarted = true;
+  screen("auth");
+  const token = invitationToken; invitationToken = null;
+  try {
+    if (existingSession) throw Error("ログイン中は招待登録を開始できません。ログアウトしてから招待URLを開いてください。");
+    if (!token || !/^[0-9a-f]{64}$/.test(token) || invitationEnded) throw Error("この招待URLは利用できません。使用済み、期限切れ、または無効なURLです。");
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
+    let result;
+    try {
+      let request = db.rpc("card_album_invitation_claim", {p_token:token});
+      if (typeof request.abortSignal === "function") request = request.abortSignal(controller.signal);
+      result = await request;
+    } finally { clearTimeout(timer); }
+    if (invitationEnded) return;
+    if (result.error) throw Error("招待URLの確認を完了できませんでした。通信状態を確認してください。IDの割り当てが完了していた場合、同じURLは利用できません。");
+    if (result.data?.error) throw Error(result.data.error);
+    if (!/^[A-HJ-NP-Z0-9]{12}$/.test(result.data?.album_id || "") || !/^[0-9a-f]{64}$/.test(result.data?.reservation_token || "")) throw Error("招待URLを確認できませんでした。時間をおいてお試しください。");
+    signupReservation = result.data;
+    renderSignupStep("id");
+  } catch (error) {
+    invitationEnded = true;
+    renderSignupStep("id");
+    $("signup-registration-status").textContent = error.message;
+  }
+}
 function authMode(m) {
+  if (invitationPage) m = "signup";
   if (m === "signup" && mode !== "signup") {
     signupReservation = null;
     signupStep = "id";
@@ -2397,6 +2450,7 @@ async function init() {
     const { data, error } = await db.auth.getSession();
     if (error) throw error;
     await authChanged("INITIAL_SESSION", data.session);
+    if (invitationPage) await startInvitationRegistration(data.session);
     if (!callbackError && confirmationCallback) {
       const checked = await db.auth.getUser();
       if (checked.error) throw checked.error;
@@ -2601,8 +2655,8 @@ $("auth-form").onsubmit = async (event) => {
 };
 function updateLoginIdentifier() {
   const isEmail = $("email").value.includes("@");
-  $("forgot").hidden = mode !== "login";
-  $("resend").hidden = mode !== "login" || !isEmail || !pendingSignupEmail;
+  $("forgot").hidden = invitationPage || mode !== "login";
+  $("resend").hidden = invitationPage || mode !== "login" || !isEmail || !pendingSignupEmail;
 }
 $("email").addEventListener("input", updateLoginIdentifier);
 function renderSignupStep(step) {
@@ -2639,7 +2693,7 @@ async function copyAlbumID(id) {
   }
 }
 $("issue-album-id").onclick = async () => {
-  if (!db || signupBusy) return;
+  if (!db || signupBusy || invitationPage) return;
   signupBusy = true;
   renderSignupRegistrationAvailability();
   try {
@@ -2705,6 +2759,16 @@ $("signup-nickname-form").onsubmit = async (event) => {
     });
     await applyAlbumSession(result);
     signupReservation = null;
+    if (invitationPage) {
+      invitationPage = false; invitationEnded = true;
+      const url = new URL(location.href); url.searchParams.delete("view");
+      history.replaceState(null,"",url.pathname+url.search);
+      $("login-tab").parentElement.hidden = false;
+      $("invitation-notice")?.remove();
+      $("invitation-login-link")?.remove();
+      document.querySelector(".id-expiry-note").textContent = "このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。";
+      $("auth-normal-panel").querySelector("h2").textContent = "カードアルバムへようこそ";
+    }
     try {
       localStorage.removeItem("card-album-id-reservation");
     } catch {}
@@ -3788,7 +3852,7 @@ for (const input of document.querySelectorAll('input[type="password"]')) {
   });
   wrapper.append(button);
 }
-authMode(location.hash === "#signup" ? "signup" : "login");
+authMode(invitationPage || location.hash === "#signup" ? "signup" : "login");
 let maintenanceActive = false;
 let maintenanceSigningOut = false;
 async function applyMaintenance(status) {
@@ -6328,7 +6392,8 @@ init();
     );
   const familyName = (value) => (value === "primagi" ? "ワッチャプリマジ！" : value === "onegai" ? "おねがい" : "ひみつの");
   const seriesName = value => value === "primagi" ? "ワッチャプリマジ！" : familyName(value) + "アイプリ";
-  const displayLabel = (value) => (family === "primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : String(value || "")).replaceAll("弾", "だん");
+  const displayLabel = (value) => String(value || "").replaceAll("弾", "だん");
+  const chapterDisplayLabel = value => displayLabel(family === "primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value);
   const cacheKey =
     "card-verse-public:" + new URL(window.APP_CONFIG.supabaseUrl).hostname;
   let catalog = null,
@@ -6599,7 +6664,7 @@ init();
       `<option value="">${label}</option>` +
       [...new Set(values)]
         .map(
-          (v) => `<option value="${esc(v)}">${esc(displayLabel(v))}</option>`,
+          (v) => `<option value="${esc(v)}">${esc(id === "verse-series" || id === "verse-collection-series" ? chapterDisplayLabel(v) : displayLabel(v))}</option>`,
         )
         .join("");
     $(id).value = value;
@@ -6704,7 +6769,7 @@ init();
   function renderActiveFilters() {
     const entries = [
       ["query", "検索", query],
-      ["series", family === "primagi" ? "章" : "だん数", displayLabel(series)],
+      ["series", family === "primagi" ? "章" : "だん数", chapterDisplayLabel(series)],
       ["primagi-rarity", "レアリティ", family === "primagi" ? primagiRarity : ""],
       ["group", "ガチャ・キャンペーン", group],
       ["favorite", "お気に入り", favoriteOnly ? "登録済み" : ""],
@@ -6722,7 +6787,7 @@ init();
         entries
           .map(
             ([key, label, value]) =>
-              `<button type="button" class="filter-chip" data-verse-clear="${key}" aria-label="${esc(label)}を解除"><span>${esc(label)}：<strong>${esc(displayLabel(value))}</strong></span><span class="filter-chip-close" aria-hidden="true">×</span></button>`,
+              `<button type="button" class="filter-chip" data-verse-clear="${key}" aria-label="${esc(label)}を解除"><span>${esc(label)}：<strong>${esc(key === "series" ? chapterDisplayLabel(value) : displayLabel(value))}</strong></span><span class="filter-chip-close" aria-hidden="true">×</span></button>`,
           )
           .join("")
       : '<span class="no-active-filters">絞り込みなし</span>';
@@ -6763,7 +6828,7 @@ init();
           ),
           n = rows.filter(collected).length,
           rate = rows.length ? (n / rows.length) * 100 : 0;
-        return `<div class="progress-card progress-card-small"><div><span>${esc(displayLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="progress-track"><span style="width:${rate}%"></span></div><p>収集済 ${n}コーデ ／ 未収集 ${rows.length - n}コーデ</p></div>`;
+        return `<div class="progress-card progress-card-small"><div><span>${esc(chapterDisplayLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="progress-track"><span style="width:${rate}%"></span></div><p>収集済 ${n}コーデ ／ 未収集 ${rows.length - n}コーデ</p></div>`;
       })
       .join("");
   }
@@ -6910,7 +6975,7 @@ init();
     const c = catalog.coordinates.find((c) => c.id === selected);
     if (!c) return;
     $("verse-detail-content").innerHTML =
-      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${seriesName(c.family)}</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>${c.family === "primagi" ? "章" : "だん数"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>${c.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate",c.id,c.name)||""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
+      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${seriesName(c.family)}</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>${c.family === "primagi" ? "章" : "だん数"}</dt><dd>${esc(chapterDisplayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>${c.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate",c.id,c.name)||""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${c.part_ids
         .map((id) => {
           const p = parts.get(id);
           return `<article><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(p.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p.image))}" alt="${esc(p.slot)}" loading="eager" decoding="async">` : `<span class="catalog-image-unavailable">画像なし</span>`}</span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? (c.family === "primagi" ? "ワッチャ未取得" : "BP未取得") : p.buzz + (c.family === "primagi" ? " ワッチャ" : " バズパワー")}</strong></div>${c.family === "primagi" ? `<p class="primagi-part-name">${esc(p.metadata?.name || "未取得")}</p><p class="primagi-part-code">${esc((p.codes || []).join(" ／ "))} · ${esc(p.metadata?.rarity || "未取得")}</p>` : ""}${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${window.CARD_QR?.button("part",id,c.name+" ／ "+p.slot,c.part_ids.map(pid=>({kind:"part",id:String(pid),name:c.name+" ／ "+(parts.get(pid)?.slot||pid)})))||""}</div></article>`;
@@ -8188,7 +8253,7 @@ verseScript.dispatchEvent(new Event("load"));
       '<option value="">すべて</option>' +
       [...new Set(rows.filter(Boolean))]
         .sort((a, b) => id === "trade-series" && origin?.game === "primagi" ? window.CARD_PRIMAGI.chapterRank(b)-window.CARD_PRIMAGI.chapterRank(a) || b.localeCompare(a,"ja",{numeric:true}) : b.localeCompare(a, "ja", { numeric: true }))
-        .map((v) => `<option value="${esc(v)}">${esc(origin?.game === "primagi" ? window.CARD_PRIMAGI.chapterLabel(v) : v)}</option>`)
+        .map((v) => `<option value="${esc(v)}">${esc(origin?.game === "primagi" && id === "trade-series" ? window.CARD_PRIMAGI.chapterLabel(v) : v)}</option>`)
         .join("");
   }
   function title() {
