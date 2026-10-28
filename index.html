@@ -9,9 +9,9 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
-    <link rel="stylesheet" href="./assets/css/base.css?v=20261028-primagi-official-v3" />
-    <script defer src="./assets/js/router.js?v=20261028-primagi-official-v3"></script>
-      <script defer src="./assets/js/login-position.js?v=20261028-primagi-official-v3"></script>
+    <link rel="stylesheet" href="./assets/css/base.css?v=20261029-signup-paused-v1" />
+    <script defer src="./assets/js/router.js?v=20261029-signup-paused-v1"></script>
+      <script defer src="./assets/js/login-position.js?v=20261029-signup-paused-v1"></script>
   </head>
   <body>
     <template id="page-album" data-body-class="">
@@ -127,7 +127,8 @@
                 </ol>
                 <section id="signup-id-step">
                   <h3>あなたのアルバムID</h3>
-                  <button class="primary" id="issue-album-id" type="button">
+                  <p class="muted" id="signup-registration-status" role="status" aria-live="polite">受付状況を確認しています…</p>
+                  <button class="primary" id="issue-album-id" type="button" hidden>
                     アルバムIDを発行
                   </button>
                   <div hidden="" id="issued-id-panel">
