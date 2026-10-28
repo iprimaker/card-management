@@ -91,3 +91,8 @@ body.game-primagi #verse .verse-partial.is-parts-complete,
 body.game-primagi.public-share .public-partial.is-parts-complete{background:#eee0a1;color:#75601b}
 body.game-primagi.public-share .public-card.is-verse.is-parts-complete{background:#fff9d9;border-color:#d7c974}
 body.game-primagi.public-share .public-card.is-verse.is-owned{background:#fff2b6;border-color:#d0b34d}
+
+.catalog-image-unavailable{display:grid;place-items:center;width:100%;aspect-ratio:3/4;min-height:70px;border-radius:10px;background:var(--soft,#f6f6f6);color:var(--muted,#777);font-size:12px;text-align:center}
+.verse-part-image-frame>.catalog-image-unavailable,.public-modal-parts .catalog-image-unavailable{height:100%;min-height:0;aspect-ratio:1}
+.public-image>.catalog-image-unavailable,.public-modal-image>.catalog-image-unavailable{height:100%;min-height:0}
+.trade-sheet-grid .catalog-image-unavailable{height:var(--trade-image-height,100px);max-height:100px;min-height:0;font-size:10px}
