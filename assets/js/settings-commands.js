@@ -84,7 +84,7 @@
         Object.entries(definition.types).filter(
           ([k]) =>
             k !== "parts" ||
-            ["all", "verse-onegai", "verse-himitsu"].includes(scope.value),
+            ["all", "verse-onegai", "verse-himitsu", "verse-primagi"].includes(scope.value),
         ),
       ),
     );
@@ -160,7 +160,7 @@
       for (const [t, description] of Object.entries(def.types)) {
         if (
           t === "parts" &&
-          !["all", "verse-onegai", "verse-himitsu"].includes(s)
+          !["all", "verse-onegai", "verse-himitsu", "verse-primagi"].includes(s)
         )
           continue;
         const row = document.createElement("div");
@@ -231,7 +231,7 @@
       !definition ||
       !Object.hasOwn(definition.types, type) ||
       (type === "parts" &&
-        !["all", "verse-onegai", "verse-himitsu"].includes(scope))
+        !["all", "verse-onegai", "verse-himitsu", "verse-primagi"].includes(scope))
     )
       throw Error(
         "この組み合わせは使用できません。入力補助から選んでください。",
