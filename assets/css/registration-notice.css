@@ -1,14 +1,21 @@
-/* Invitation-only registration: follows the existing registration switch. */
-.registration-invitation[hidden] { display: none !important; }
-#signup-flow.registration-paused > .signup-steps,
-#signup-flow.registration-paused #signup-id-step > h3 { display: none; }
-.registration-invitation { padding: 4px 0 10px; }
-.registration-invitation h3 { margin: 0 0 18px; font-size: 1.16rem; line-height: 1.5; }
-.registration-invitation p { margin: 0 0 14px; font-size: .94rem; line-height: 1.9; color: #525363; overflow-wrap: anywhere; }
-.registration-x-link { display: flex; align-items: center; gap: 13px; box-sizing: border-box; width: 100%; min-height: 60px; margin-top: 24px; padding: 12px 18px; border: 1px solid #1d1d24; border-radius: 14px; background: #1d1d24; color: #fff !important; text-decoration: none !important; font-size: .94rem; font-weight: 600; line-height: 1.5; transition: background .15s; }
-.registration-x-link:hover { background: #34343d; }
-.registration-x-link:focus-visible { outline: 3px solid #9198b6; outline-offset: 3px; }
-.registration-x-link svg { flex: 0 0 19px; }
-.registration-x-link small { display: block; color: #d0d0d8; font-size: .76rem; font-weight: 400; }
-.registration-x-arrow { margin-left: auto; font-size: 1.2rem; }
-@media (max-width: 480px) { .registration-invitation p { font-size: .9rem; } .registration-x-link { margin-top: 20px; } }
+/* 招待制の新規登録案内。受付状態・ID発行の制御は既存の処理を使う。 */
+.registration-invitation[hidden]{display:none!important}
+#signup-flow.registration-paused>.signup-steps,
+#signup-flow.registration-paused #signup-id-step>h3{display:none}
+#signup-flow.invitation-only #signup-id-step{gap:0}
+#signup-flow .registration-invitation{padding:4px 0 0;text-align:left;min-width:0}
+.registration-invitation-badge{display:inline-flex;align-items:center;min-height:26px;padding:4px 10px;margin-bottom:12px;border-radius:999px;background:var(--soft,#ffedf5);color:var(--accent,#d63e84);font-size:11px;font-weight:700;line-height:1.4;letter-spacing:.04em}
+#signup-flow .registration-invitation h3{margin:0 0 12px;padding:0;background:transparent;font-size:21px;font-weight:800;line-height:1.6;letter-spacing:.015em;color:inherit}
+#signup-flow .registration-invitation p{padding:0;background:transparent;overflow-wrap:anywhere}
+#signup-flow .registration-invitation-intro{margin:0;color:var(--muted,#77697b);font-size:13px;line-height:1.9}
+#signup-flow .registration-invitation-steps{list-style:none;margin:22px 0;padding:18px 0;border-block:1px solid var(--line,#efdce7);display:grid;gap:15px}
+.registration-invitation-steps li{display:flex;align-items:flex-start;gap:10px;padding:0;font-size:13px;font-weight:500;line-height:1.8}
+.registration-invitation-number{display:grid;place-items:center;flex:0 0 23px;min-height:23px;margin-top:1px;border-radius:50%;background:var(--soft,#ffedf5);color:var(--accent,#d63e84);font-size:11px;font-weight:700;line-height:1}
+.registration-x-link{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;margin:0;padding:12px 16px;border:1px solid #26232b;border-radius:12px;background:#26232b;color:#fff!important;text-decoration:none!important;font-size:13px;font-weight:700;line-height:1.6;transition:background .15s}
+.registration-x-link:hover{background:#3b3541}
+.registration-x-link:focus-visible{outline:3px solid var(--accent,#d63e84);outline-offset:3px}
+.registration-x-link>svg{flex-shrink:0}
+#signup-flow .registration-x-link small{display:block;margin:0;color:#d8d3dc;font-size:11px;font-weight:400;line-height:1.5}
+.registration-x-arrow{margin-left:auto;flex:0 0 18px}
+#signup-flow .registration-invitation-note{margin:16px 0 0;color:var(--muted,#77697b);font-size:11px;line-height:1.8}
+@media(max-width:480px){#signup-flow .registration-invitation h3{font-size:20px}#signup-flow .registration-invitation-steps{margin:18px 0;padding:16px 0;gap:13px}.registration-x-link{min-height:60px;padding:12px 14px}}
