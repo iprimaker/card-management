@@ -19,3 +19,14 @@
 .registration-x-arrow{margin-left:auto;flex:0 0 18px}
 #signup-flow .registration-invitation-note{margin:16px 0 0;color:var(--muted,#77697b);font-size:11px;line-height:1.8}
 @media(max-width:480px){#signup-flow .registration-invitation h3{font-size:20px}#signup-flow .registration-invitation-steps{margin:18px 0;padding:16px 0;gap:13px}.registration-x-link{min-height:60px;padding:12px 14px}}
+/* 招待URLからは通常ログインと分けた単独の登録ページを初期表示する。 */
+body.invitation-route .auth>.intro,
+body.invitation-route #auth-form,
+body.invitation-route #auth-normal-panel>.tabs,
+body.invitation-route #guest-browse-link{display:none!important}
+body.invitation-route .auth{display:block!important;width:100%;max-width:540px;min-height:0!important;margin:0 auto;padding:32px 18px 48px;align-self:auto}
+body.invitation-route .auth-panel{width:100%;max-width:none;margin:0;justify-self:auto}
+body.invitation-route #auth-normal-panel>h2{margin:0 0 22px;font-size:22px;line-height:1.6}
+body.invitation-route #invitation-notice{font-size:12px;line-height:1.8;margin:0 0 20px;text-align:left}
+body.invitation-route #signup-registration-status{font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+@media(max-width:480px){body.invitation-route .auth{padding:24px 14px 36px}body.invitation-route #auth-normal-panel>h2{font-size:20px}}
