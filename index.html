@@ -9,9 +9,10 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
-    <link rel="stylesheet" href="./assets/css/base.css?v=20261029-invitation-v1" />
-    <script defer src="./assets/js/router.js?v=20261029-invitation-v1"></script>
-      <script defer src="./assets/js/login-position.js?v=20261029-invitation-v1"></script>
+    <link rel="stylesheet" href="./assets/css/base.css?v=20261030-invite-notice-v1" />
+    <link rel="stylesheet" href="./assets/css/registration-notice.css?v=20261030-invite-notice-v1" />
+    <script defer src="./assets/js/router.js?v=20261030-invite-notice-v1"></script>
+      <script defer src="./assets/js/login-position.js?v=20261030-invite-notice-v1"></script>
   </head>
   <body>
     <template id="page-album" data-body-class="">
@@ -128,6 +129,16 @@
                 <section id="signup-id-step">
                   <h3>あなたのアルバムID</h3>
                   <p class="muted" id="signup-registration-status" role="status" aria-live="polite">受付状況を確認しています…</p>
+                  <section id="signup-invitation-notice" class="registration-invitation" aria-labelledby="invitation-notice-title" hidden>
+                    <h3 id="invitation-notice-title">招待による新規登録</h3>
+                    <p>システムの過負荷対策として、現在は招待にてのみ新規登録を受け付けております。</p>
+                    <p>新規登録をご希望の方は、制作者のアカウントをフォローの上、DMにてご連絡ください。</p>
+                    <a class="registration-x-link" href="https://x.com/coccot_" target="_blank" rel="noopener noreferrer">
+                      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.5 22H2.3l8.2-9.4L.8 2h6.5l4.5 6.7L18.9 2Zm-1.1 18h1.7L6.4 3.9H4.6L17.8 20Z"/></svg>
+                      <span>制作者のXを開く<small>@coccot_</small></span>
+                      <span class="registration-x-arrow" aria-hidden="true">↗</span>
+                    </a>
+                  </section>
                   <button class="primary" id="issue-album-id" type="button" hidden>
                     アルバムIDを発行
                   </button>
