@@ -163,8 +163,9 @@
 })();
 (() => {
   "use strict";
-  const version = "20261030-site-docs-v1";
+  const version = "20261030-invite-direct-v1";
   const requested = new URLSearchParams(location.search).get("view");
+  const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
     requested,
   )
@@ -189,7 +190,7 @@
           : page === "card-registration"
             ? "カード登録情報｜カードアルバム"
             : "カードアルバム";
-  if (page === "shared" || page === "browse") {
+  if (page === "shared" || page === "browse" || invitationRoute) {
     for (const [name, content] of [
       ["referrer", "no-referrer"],
       ["robots", "noindex,nofollow"],
@@ -219,6 +220,21 @@
   document.body.className = template.dataset.bodyClass;
   if (page === "browse") document.body.classList.add("guest-browse");
   document.body.replaceChildren(template.content.cloneNode(true));
+  // 招待URLは、この同期処理の時点で専用画面にする。後続JSを待つ間もログイン欄を見せない。
+  if (invitationRoute) {
+    document.body.classList.add("invitation-route");
+    document.title = "招待からアルバムを作成｜カードアルバム";
+    document.getElementById("auth-normal-panel").querySelector("h2").textContent = "招待からアルバムを作成";
+    document.getElementById("login-tab").parentElement.hidden = true;
+    document.getElementById("auth-form").hidden = true;
+    document.getElementById("signup-flow").hidden = false;
+    document.getElementById("signup-registration-status").textContent = "招待登録画面を準備しています…";
+    document.getElementById("issue-album-id").hidden = true;
+    document.getElementById("guest-browse-link").hidden = true;
+    document.querySelector('[data-signup-marker="id"]').textContent = "ID確認";
+    const brand = document.querySelector(".wordmark");
+    brand.removeAttribute("href"); brand.setAttribute("aria-label", "カードアルバム");
+  }
   function script(file) {
     return new Promise((resolve, reject) => {
       const node = document.createElement("script");
@@ -281,7 +297,7 @@
     () => window.CARD_VISIBILITY.ready,
   );
   const preview =
-    page === "album"
+    page === "album" && !invitationRoute
       ? visibilityModule
           .then(() => script("startup.js"))
           .then(() => {
@@ -316,10 +332,16 @@
     })
     .catch((error) => {
       document.body.style.visibility = initialVisibility;
-      const status = document.createElement("p");
-      status.setAttribute("role", "alert");
-      status.textContent = window.CARD_ERROR.message(error);
-      document.body.prepend(status);
+      if (invitationRoute) {
+        const status = document.getElementById("signup-registration-status");
+        status.hidden = false;
+        status.textContent = "招待登録画面を準備できませんでした。通信状態をご確認ください。ページを閉じると手続きを再開できない場合があります。";
+      } else {
+        const status = document.createElement("p");
+        status.setAttribute("role", "alert");
+        status.textContent = window.CARD_ERROR.message(error);
+        document.body.prepend(status);
+      }
     });
 
 })();

@@ -940,6 +940,7 @@ function authResult(ok, message) {
   $("auth-result-icon").textContent = ok ? "✓" : "!";
   $("auth-result-next").textContent =
     ok && session ? "アルバムを開く" : "ログイン画面へ";
+  $("auth-result-next").hidden = invitationPage && !session;
   screen("auth-result");
 }
 const siteBase = new URL("./", location.href),
@@ -1038,9 +1039,7 @@ if (invitationPage) {
   note.id = "invitation-notice"; note.className = "id-save-note"; note.textContent = invitationNotice;
   $("signup-flow").prepend(note);
   document.querySelector(".id-expiry-note").textContent = "このままパスワード設定に進んでください。再読み込みせず、24時間以内に登録を完了してください。";
-  const back = document.createElement("a");
-  back.id = "invitation-login-link"; back.href = location.pathname; back.textContent = "ログイン画面へ"; back.className = "text-button";
-  $("auth-normal-panel").append(back);
+
 }
 let signupReservation = null;
 let signupStep = "id";
@@ -1361,6 +1360,9 @@ document.addEventListener("visibilitychange", () => {
 });
 
 async function authChanged(event, next) {
+  // 招待の確認中・エラー時は既存セッションによって通常画面へ切り替えない。
+  // 新規作成の完了処理ではauthResultShowingを立ててからセッションを反映する。
+  if (invitationPage && !authResultShowing) { screen("auth"); return; }
   if (maintenanceActive) next = null;
   const previous = session?.user.id;
   session = next;
@@ -2397,10 +2399,18 @@ $("remember-session").addEventListener("change", () => {
 
 async function init() {
   const initialCards = loadInitialCatalog();
-  buildMarquee();
+  if (!invitationPage) buildMarquee();
   try {
     configureAlbumAuth();
     await window.CARD_MAINTENANCE.check();
+    if (invitationPage) {
+      const { data, error } = await db.auth.getSession();
+      if (error) throw error;
+      await startInvitationRegistration(data.session);
+      await initialCards;
+      await fetchCatalog();
+      return;
+    }
     if (callbackError) {
       authResult(
         false,
@@ -2422,7 +2432,6 @@ async function init() {
     const { data, error } = await db.auth.getSession();
     if (error) throw error;
     await authChanged("INITIAL_SESSION", data.session);
-    if (invitationPage) await startInvitationRegistration(data.session);
     if (!callbackError && confirmationCallback) {
       const checked = await db.auth.getUser();
       if (checked.error) throw checked.error;
@@ -2444,7 +2453,11 @@ async function init() {
       openProbabilities();
     }
   } catch (e) {
-    if (confirmationCallback || callbackError)
+    if (invitationPage) {
+      invitationEnded = true;
+      $("signup-registration-status").hidden = false;
+      $("signup-registration-status").textContent = "招待登録を開始できませんでした。" + translatedError(e);
+    } else if (confirmationCallback || callbackError)
       authResult(
         false,
         "確認を完了できませんでした。" +
@@ -2737,7 +2750,12 @@ $("signup-nickname-form").onsubmit = async (event) => {
       history.replaceState(null,"",url.pathname+url.search);
       $("login-tab").parentElement.hidden = false;
       $("invitation-notice")?.remove();
-      $("invitation-login-link")?.remove();
+      document.body.classList.remove("invitation-route");
+      document.title = "カードアルバム";
+      document.querySelector(".wordmark").setAttribute("href", "./");
+      document.querySelector(".wordmark").setAttribute("aria-label", "カードアルバムのトップへ");
+      document.querySelector('[data-signup-marker="id"]').textContent = "ID発行";
+      $("guest-browse-link").hidden = !!session;
       document.querySelector(".id-expiry-note").textContent = "このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。";
       $("auth-normal-panel").querySelector("h2").textContent = "カードアルバムへようこそ";
     }
@@ -3492,6 +3510,7 @@ $("auth-art").addEventListener(
   true,
 );
 function buildMarquee() {
+  if (invitationPage) return;
   const groups = $("auth-art").querySelectorAll(".marquee-group");
   if (groups.length !== 2) return;
   const signature = catalog.cards.map(c => c.id + "|" + c.front + "|" + !!c._visibility?.image).join(";");
