@@ -49,8 +49,9 @@
       if(snapshot&&status.fingerprint===fingerprint){lastSuccess=Date.now();failures=0;retryAt=0;schedule(status);return snapshot;}
       const {data,error}=await rpc('card_visibility_display_catalog');
       if(error||!Array.isArray(data?.cards))throw Error('公開設定を確認できませんでした。通信状態を確認して再読み込みしてください。');
+      const oldFingerprint=fingerprint;
       snapshot=data;fingerprint=status.fingerprint;lastSuccess=Date.now();failures=0;retryAt=0;
-      const next=mark();const changed=stamp!==undefined&&next!==stamp;stamp=next;
+      const next=mark();const changed=stamp!==undefined&&(next!==stamp||oldFingerprint!==fingerprint);stamp=next;
       if(changed)document.dispatchEvent(new CustomEvent('card-visibility-updated'));
       schedule(data);return data;
     })().catch(error=>{

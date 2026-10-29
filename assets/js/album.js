@@ -1081,9 +1081,14 @@ let signupReservation = null;
 let signupStep = "id";
 let signupBusy = false;
 let signupRegistrationAllowed = null;
+let signupInvitationAllowed = false;
 let signupRegistrationMessage = "受付状況を確認しています…";
 let signupRegistrationFlight = null, signupRegistrationFreshUntil = 0, signupRegistrationTimer;
 function renderSignupRegistrationAvailability() {
+  const inviteOnly = !invitationPage && !signupReservation && signupRegistrationAllowed === false && signupInvitationAllowed;
+  $("signup-invitation-notice").hidden = !inviteOnly;
+  $("signup-flow").classList.toggle("invitation-only", inviteOnly);
+  $("signup-flow").classList.toggle("registration-paused", !invitationPage && !signupReservation && signupRegistrationAllowed === false);
   if (invitationPage) {
     $("issue-album-id").hidden = true;
     const status = $("signup-registration-status");
@@ -1094,7 +1099,7 @@ function renderSignupRegistrationAvailability() {
   $("issue-album-id").hidden = !!signupReservation || signupRegistrationAllowed !== true;
   $("issue-album-id").disabled = signupBusy;
   const status = $("signup-registration-status");
-  status.hidden = !!signupReservation || signupRegistrationAllowed === true;
+  status.hidden = !!signupReservation || signupRegistrationAllowed === true || inviteOnly;
   status.textContent = signupRegistrationMessage;
 }
 function scheduleSignupRegistrationCheck() {
@@ -1111,14 +1116,16 @@ async function refreshSignupRegistrationStatus({force=false}={}) {
   signupRegistrationFlight = (async () => {
     const controller = new AbortController(), timeout = setTimeout(() => controller.abort(),10000);
     try {
-      let request = db.rpc("card_album_registration_status");
+      let request = db.rpc("card_album_registration_status_v2");
       if (typeof request.abortSignal === "function") request = request.abortSignal(controller.signal);
       const {data,error} = await request;
       if (error || typeof data?.allowed !== "boolean") throw Error("registration status unavailable");
       signupRegistrationAllowed = data.allowed;
-      signupRegistrationMessage = data.allowed ? "" : "現在、新規登録の受付を停止しています。";
+      signupInvitationAllowed = data.invitation_allowed === true;
+      signupRegistrationMessage = data.allowed ? "" : (data.message || "現在、新規登録の受付を停止しています。");
     } catch {
       signupRegistrationAllowed = null;
+      signupInvitationAllowed = false;
       signupRegistrationMessage = "受付状況を確認できませんでした。時間をおいて再度お試しください。";
     } finally {
       clearTimeout(timeout);
@@ -7728,6 +7735,22 @@ init();
       syncUpdateText();
     }
   };
+  // Refresh public pictures at a visibility boundary, keeping personal state and the current page.
+  let visibilityPictureFlight = null;
+  document.addEventListener("card-visibility-updated", () => {
+    checkedAt = 0;
+    if ((panel.hidden && !dialog.open) || visibilityPictureFlight || !host.client()) return;
+    visibilityPictureFlight = (async () => {
+      await readCatalog(true);
+      if (panel.hidden && !dialog.open) return;
+      const scroll = {x:window.scrollX,y:window.scrollY}, ds=dialog.scrollTop;
+      const content=$("verse-detail-content"), cs=content.scrollTop;
+      fillFilters(); render();
+      dialog.scrollTop=ds; content.scrollTop=cs;
+      window.scrollTo(scroll.x,scroll.y);
+      window.CARD_TRADE?.renderOutput?.();
+    })().catch(()=>{}).finally(()=>{visibilityPictureFlight=null;});
+  });
   window.CARD_VERSE = {
     refreshOwnershipFilter() {
       if (!panel.hidden) {

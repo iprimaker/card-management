@@ -240,7 +240,7 @@ function songFilterValue(value) {
               : String(a).localeCompare(String(b), "ja", { numeric: true }),
         );
         if (filters[key] && !options.includes(filters[key])) options.unshift(filters[key]);
-        return `<label>${esc(label)}<select data-public-filter="${key}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}" ${v === filters[key] ? "selected" : ""}>${esc(chapterLabel(v))}</option>`).join("")}</select></label>`;
+        return `<label>${esc(label)}<select data-public-filter="${key}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}" ${v === filters[key] ? "selected" : ""}>${esc(key === "series" ? chapterLabel(v) : v)}</option>`).join("")}</select></label>`;
       })
       .join("");
   }
@@ -351,7 +351,7 @@ function songFilterValue(value) {
         .filter(([, v]) => v)
         .map(
           ([key, value]) =>
-            `<button class="filter-chip" type="button" data-public-clear="${esc(key)}">${esc(fields().find(([k]) => k === key)?.[1] || key)}：${esc(chapterLabel(value))}<span aria-hidden="true">×</span></button>`,
+            `<button class="filter-chip" type="button" data-public-clear="${esc(key)}">${esc(fields().find(([k]) => k === key)?.[1] || key)}：${esc(key === "series" ? chapterLabel(value) : value)}<span aria-hidden="true">×</span></button>`,
         )
         .join("") +
       ($("public-query").value.trim()
@@ -421,7 +421,7 @@ function songFilterValue(value) {
     $("public-detail-content").innerHTML =
       `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2>${browseOnly ? "" : `<p class="public-possession is-${verse() ? (ownsFull(c) ? "yes" : "no") : state(c)}">${verse() ? (ownsFull(c) ? "フルコーデ持ってる" : "フルコーデ未所持") : held ? "持っている" : "持っていない"}</p>`}<dl>${rows
         .filter(([, v]) => v)
-        .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(chapterLabel(v))}</dd>`)
+        .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(k === "章" || k === "だん数" || k === "弾数" ? chapterLabel(v) : v)}</dd>`)
         .join("")}</dl></div></div>${
         verse()
           ? `<h3>${browseOnly ? "構成パーツ" : "パーツごとの所持状況"}</h3><div class="public-modal-parts">${c.part_ids
@@ -448,6 +448,24 @@ function songFilterValue(value) {
       dialog.scrollTop = ds; content.scrollTop = cs;
     }
     window.scrollTo(scroll.x, scroll.y);
+  });
+  let visibilityPictureFlight = null;
+  document.addEventListener("card-visibility-updated", () => {
+    if (!client || !scope?.startsWith("verse-") || !snapshot || visibilityPictureFlight) return;
+    const wanted=scope, current=generation;
+    visibilityPictureFlight=(async()=>{
+      const data=await window.CARD_VERSE_CATALOG.load(client,{force:true});
+      if(scope!==wanted || generation!==current)return;
+      verseCatalog={data,error:null};
+      let rows=data.coordinates.filter(c=>c.family===scope.slice(6));
+      if(Array.isArray(snapshot.visible_ids)){const visible=new Set(snapshot.visible_ids);rows=rows.filter(c=>visible.has(c.id));}
+      const scroll={x:window.scrollX,y:window.scrollY}, dialog=$("public-detail"), content=$("public-detail-content");
+      const ds=dialog.scrollTop, cs=content.scrollTop, selectedId=selected?.id;
+      items=rows;parts=new Map(data.parts.filter(p=>p.family===scope.slice(6)).map(p=>[p.id,p]));
+      fillFields();render();fillBanner();
+      if(selectedId&&dialog.open){selected=items.find(c=>c.id===selectedId)||selected;detail();dialog.scrollTop=ds;content.scrollTop=cs;}
+      window.scrollTo(scroll.x,scroll.y);
+    })().catch(()=>{}).finally(()=>{visibilityPictureFlight=null;});
   });
   async function load(wanted = scope, quiet = false) {
     if (Date.now() < shareReadBlockedUntil) {

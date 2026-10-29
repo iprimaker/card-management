@@ -1,7 +1,7 @@
 /* Public catalog only. Ownership, favorites, QR and account data never enter this cache. */
 (() => {
   "use strict";
-  const key="card-verse-public:"+new URL(window.APP_CONFIG.supabaseUrl).hostname;
+  const key="card-verse-public:v2:"+new URL(window.APP_CONFIG.supabaseUrl).hostname;
   const valid=data=>typeof data?.version==="string"&&Array.isArray(data.coordinates)&&Array.isArray(data.parts);
   let snapshot=null,flight=null,checkedAt=0,retryAt=0,failures=0,lastError,hydrated=false;
   function hydrate(){
@@ -42,5 +42,6 @@
     }).finally(()=>{flight=null});
     return flight;
   }
+  document.addEventListener("card-visibility-updated",()=>{checkedAt=0;});
   window.CARD_VERSE_CATALOG=Object.freeze({load,peek(){hydrate();return snapshot;}});
 })();
