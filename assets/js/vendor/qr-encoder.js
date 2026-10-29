@@ -396,6 +396,9 @@ var qrcode = function() {
       case 'Alphanumeric' :
         newData = qrAlphaNum(data);
         break;
+      case 'ByteRaw' :
+        newData = qr8BitByte(data, true);
+        break;
       case 'Byte' :
         newData = qr8BitByte(data);
         break;
@@ -1724,11 +1727,19 @@ var qrcode = function() {
   // qr8BitByte
   //---------------------------------------------------------------------
 
-  var qr8BitByte = function(data) {
+  var qr8BitByte = function(data, rawBytes) {
 
     var _mode = QRMode.MODE_8BIT_BYTE;
     var _data = data;
-    var _bytes = qrcode.stringToBytes(data);
+    // Primagi binary payload: bypass text encoding only for explicit ByteRaw mode.
+    var _bytes;
+    if (rawBytes) {
+      if (!data || !Number.isInteger(data.length) || data.length < 1 || data.length > 1500) throw new Error('Invalid raw QR bytes');
+      _bytes = Array.prototype.slice.call(data);
+      for (var b = 0; b < _bytes.length; b++) if (!Number.isInteger(_bytes[b]) || _bytes[b] < 0 || _bytes[b] > 255) throw new Error('Invalid raw QR byte');
+    } else {
+      _bytes = qrcode.stringToBytes(data);
+    }
 
     var _this = {};
 
