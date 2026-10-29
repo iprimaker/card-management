@@ -163,7 +163,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261030-primagi-qr-v1";
+  const version = "20261030-card-qr-character-v1";
   const requested = new URLSearchParams(location.search).get("view");
   const page = ["shared", "browse", "contact", "card-registration"].includes(
     requested,

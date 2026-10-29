@@ -4245,6 +4245,7 @@ const confirmPasswordButton = $("signup-password-form").querySelector(
 if (confirmPasswordButton)
   confirmPasswordButton.textContent = "パスワードを確定する";
 window.CARD_VERSE_HOST = {
+  cardCharacter: (id) => catalog.cards.find(c => c.id === id)?.character || "",
   client: () => db,
   session: () => session,
   family: () => aipriFamily,

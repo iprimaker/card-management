@@ -154,6 +154,16 @@
     );
     draw();
   }
+  function appendCardCharacter(target) {
+    if (target?.kind !== "card") return;
+    const name = content.querySelector("[data-name]");
+    if (!name) return;
+    const label = document.createElement("p");
+    label.className = "qr-card-character";
+    label.style.cssText = "margin:6px 0 16px;font-size:.88rem;line-height:1.6;color:#706879;overflow-wrap:anywhere";
+    label.textContent = "キャラ名：" + (host()?.cardCharacter?.(String(target.id)) || "未取得");
+    name.insertAdjacentElement("afterend", label);
+  }
   function draw() {
     const t = targets[current],
       payload = rows.get(key(t));
@@ -177,6 +187,7 @@
         "このQR情報は表示できません。削除して再登録してください。";
     }
     content.querySelector("[data-name]").textContent = t.name;
+    appendCardCharacter(t);
     content.querySelector("[data-position]").textContent =
       current + 1 + " / " + targets.length;
     content.querySelector(".qr-navigation").hidden = targets.length < 2;
@@ -536,7 +547,7 @@
       qr.setAttribute("aria-label", row.name + "のQRコードを表示");
       qr.onclick = () => {
         if (uid() !== managerOwner || managing) return;
-        display(row.payload, row.name, () => removeManaged(row), row.kind !== "save" && row.series === "primagi");
+        display(row.payload, row.name, () => removeManaged(row), row.kind !== "save" && row.series === "primagi", {kind:row.kind,id:row.target_id});
       };
       const del = document.createElement("button");
       del.type = "button";
@@ -839,7 +850,7 @@
     await Promise.race([prepare, closed]);
     await closed;
   }
-  async function display(payload, title, onDelete, allowBinary = false) {
+  async function display(payload, title, onDelete, allowBinary = false, target = null) {
     const user = uid();
     if (!user) return;
     dialog.showModal();
@@ -856,6 +867,7 @@
         scalable: true,
       });
       content.querySelector("[data-name]").textContent = title;
+      appendCardCharacter(target);
       if (onDelete) {
         const b = document.createElement("button");
         b.dataset.delete = "";
