@@ -9,10 +9,9 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
-    <link rel="stylesheet" href="./assets/css/base.css?v=20261030-invite-direct-v1" />
-    <link rel="stylesheet" href="./assets/css/registration-notice.css?v=20261030-invite-direct-v1" />
-    <script defer src="./assets/js/router.js?v=20261030-invite-direct-v1"></script>
-      <script defer src="./assets/js/login-position.js?v=20261030-invite-direct-v1"></script>
+    <link rel="stylesheet" href="./assets/css/base.css?v=20261030-registration-30min-v2" />
+    <script defer src="./assets/js/router.js?v=20261030-registration-30min-v2"></script>
+    <script defer src="./assets/js/login-position.js?v=20261030-registration-30min-v2"></script>
   </head>
   <body>
     <template id="page-album" data-body-class="">
@@ -21,7 +20,9 @@
           <img alt="" class="header-card" hidden="" id="header-card" />
           <span id="header-title">カードアルバム</span>
         </a>
-        <a id="guest-browse-link" class="guest-browse-link" href="./?view=browse">ログインせずに利用</a>
+        <a id="guest-browse-link" class="guest-browse-link" href="./?view=browse"
+          >ログインせずに利用</a
+        >
         <button
           aria-controls="nav"
           aria-expanded="false"
@@ -36,7 +37,8 @@
           <div aria-label="作品を切り替える" class="game-switch" id="game-switch" role="group">
             <span aria-hidden="true" class="game-switch-slider"></span>
             <button aria-pressed="false" data-game="aikatsu">アイカツ！</button>
-            <button aria-pressed="false" data-game="aipri">アイプリ</button><button type="button" data-game="primagi" aria-pressed="false">プリマジ</button>
+            <button aria-pressed="false" data-game="aipri">アイプリ</button
+            ><button type="button" data-game="primagi" aria-pressed="false">プリマジ</button>
           </div>
           <button hidden="" id="ownership-export-open" type="button"> 所持状況を共有 </button>
           <button hidden="" id="probability-open">確率確認</button>
@@ -128,21 +130,61 @@
                 </ol>
                 <section id="signup-id-step">
                   <h3>あなたのアルバムID</h3>
-                  <p class="muted" id="signup-registration-status" role="status" aria-live="polite">受付状況を確認しています…</p>
-                  <section id="signup-invitation-notice" class="registration-invitation" aria-labelledby="invitation-notice-title" hidden>
+                  <p class="muted" id="signup-registration-status" role="status" aria-live="polite"
+                    >受付状況を確認しています…</p
+                  >
+                  <section
+                    id="signup-invitation-notice"
+                    class="registration-invitation"
+                    aria-labelledby="invitation-notice-title"
+                    hidden
+                  >
                     <span class="registration-invitation-badge">招待受付中</span>
                     <h3 id="invitation-notice-title">新規登録は招待制です</h3>
-                    <p class="registration-invitation-intro">システムへの負荷を抑えるため、現在は招待による新規登録のみ受け付けています。</p>
+                    <p class="registration-invitation-intro"
+                      >システムへの負荷を抑えるため、現在は招待による新規登録のみ受け付けています。</p
+                    >
                     <ol class="registration-invitation-steps" aria-label="招待のお申し込み方法">
-                      <li><span class="registration-invitation-number" aria-hidden="true">1</span><span>制作者のXアカウントをフォロー</span></li>
-                      <li><span class="registration-invitation-number" aria-hidden="true">2</span><span>DMで新規登録を希望する旨をご連絡ください</span></li>
+                      <li
+                        ><span class="registration-invitation-number" aria-hidden="true">1</span
+                        ><span>制作者のXアカウントをフォロー</span></li
+                      >
+                      <li
+                        ><span class="registration-invitation-number" aria-hidden="true">2</span
+                        ><span>DMで新規登録を希望する旨をご連絡ください</span></li
+                      >
                     </ol>
-                    <a class="registration-x-link" href="https://x.com/coccot_" target="_blank" rel="noopener noreferrer">
-                      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.5 22H2.3l8.2-9.4L.8 2h6.5l4.5 6.7L18.9 2Zm-1.1 18h1.7L6.4 3.9H4.6L17.8 20Z"/></svg>
+                    <a
+                      class="registration-x-link"
+                      href="https://x.com/coccot_"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+                        <path
+                          fill="currentColor"
+                          d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.5 22H2.3l8.2-9.4L.8 2h6.5l4.5 6.7L18.9 2Zm-1.1 18h1.7L6.4 3.9H4.6L17.8 20Z"
+                        />
+                      </svg>
                       <span>制作者のXを開く<small>@coccot_</small></span>
-                      <svg class="registration-x-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+                      <svg
+                        class="registration-x-arrow"
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M7 17 17 7M7 7h10v10" />
+                      </svg>
                     </a>
-                    <p class="registration-invitation-note">招待URLをお持ちの方は、そのURLから登録へお進みください。</p>
+                    <p class="registration-invitation-note"
+                      >招待URLをお持ちの方は、そのURLから登録へお進みください。</p
+                    >
                   </section>
                   <button class="primary" id="issue-album-id" type="button" hidden>
                     アルバムIDを発行
@@ -156,7 +198,7 @@
                       ログインにはこのIDの入力が必要になります。スクショなどで保存してください。
                     </p>
                     <p class="muted id-expiry-note">
-                      このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。
+                      アルバムID発行から30分以内に登録を完了してください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。
                     </p>
                   </div>
                   <button
@@ -453,7 +495,12 @@
           <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
             >アイカツ！公式</a
           ><a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
-          <a href="https://www.takaratomy-arts.co.jp/specials/primagi/" target="_blank" rel="noopener noreferrer">プリマジ公式</a>
+          <a
+            href="https://www.takaratomy-arts.co.jp/specials/primagi/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >プリマジ公式</a
+          >
         </div>
         <div class="footer-links">
           <a class="contact-footer-link" href="./contact/">お問い合わせ</a>
@@ -619,13 +666,13 @@
               ><input autocomplete="name" id="contact-name" maxlength="40" type="text" /></label
             ><label
               >お問い合わせの種類<select id="contact-category">
-<option value="question">使い方についての質問</option>
-<option value="correction">カード情報の修正・追加依頼</option>
-<option value="coordinate">コーデ情報の修正・追加依頼</option>
-<option value="bug">不具合についての報告</option>
-<option value="feature">機能追加依頼</option>
-<option value="other">その他</option>
-</select></label
+                <option value="question">使い方についての質問</option>
+                <option value="correction">カード情報の修正・追加依頼</option>
+                <option value="coordinate">コーデ情報の修正・追加依頼</option>
+                <option value="bug">不具合についての報告</option>
+                <option value="feature">機能追加依頼</option>
+                <option value="other">その他</option>
+              </select></label
             ><label
               >お問い合わせ内容<textarea
                 id="contact-message"
@@ -666,9 +713,16 @@
       </main>
       <footer>
         <div>
-          <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank">アイカツ！公式</a>
+          <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
+            >アイカツ！公式</a
+          >
           <a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
-          <a href="https://www.takaratomy-arts.co.jp/specials/primagi/" target="_blank" rel="noopener noreferrer">プリマジ公式</a>
+          <a
+            href="https://www.takaratomy-arts.co.jp/specials/primagi/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >プリマジ公式</a
+          >
         </div>
         <div class="footer-links">
           <button data-info="terms">利用規約</button
@@ -774,7 +828,12 @@
           <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
             >アイカツ！公式</a
           ><a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
-          <a href="https://www.takaratomy-arts.co.jp/specials/primagi/" target="_blank" rel="noopener noreferrer">プリマジ公式</a>
+          <a
+            href="https://www.takaratomy-arts.co.jp/specials/primagi/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >プリマジ公式</a
+          >
         </div>
         <div class="footer-links">
           <button data-share-info="terms" type="button">利用規約</button
