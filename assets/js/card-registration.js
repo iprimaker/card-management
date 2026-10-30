@@ -14,10 +14,16 @@
     link.className = "registration-fab";
     link.href = pageURL.href;
     link.setAttribute("aria-label", "カード登録情報を見る");
-    link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="12" height="15" rx="2"/><path d="M9 2h9a2 2 0 0 1 2 2v12M8 10h4m-4 4h4"/></svg><span>カード<br>登録情報</span>';
+    link.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="12" height="15" rx="2"/><path d="M9 2h9a2 2 0 0 1 2 2v12M8 10h4m-4 4h4"/></svg><span>カード<br>登録情報</span>';
     document.body.append(link);
-    const update = () => { link.hidden = selection.hidden; };
-    new MutationObserver(update).observe(selection, { attributes: true, attributeFilter: ["hidden"] });
+    const update = () => {
+      link.hidden = selection.hidden;
+    };
+    new MutationObserver(update).observe(selection, {
+      attributes: true,
+      attributeFilter: ["hidden"],
+    });
     update();
     return;
   }
@@ -89,8 +95,10 @@
   let loading = false;
   let initialized = false;
   const shown = new Set();
-  const number = (value) => Number.isSafeInteger(Number(value)) && Number(value) >= 0
-    ? new Intl.NumberFormat("ja-JP").format(Number(value)) : "—";
+  const number = (value) =>
+    Number.isSafeInteger(Number(value)) && Number(value) >= 0
+      ? new Intl.NumberFormat("ja-JP").format(Number(value))
+      : "—";
 
   function renderCounts(counts) {
     document.getElementById("registration-total").textContent = number(counts.cards);
@@ -125,11 +133,20 @@
     const titleText = String(entry.summary || "カード情報を更新");
     const badge = document.createElement("span");
     badge.className = "registration-entry-kind";
-    const kind = titleText.includes("既存登録分") ? "existing"
-      : titleText.includes("更新") ? "updated"
-        : /追加|登録（/.test(titleText) ? "added" : "notice";
+    const kind = titleText.includes("既存登録分")
+      ? "existing"
+      : titleText.includes("更新")
+        ? "updated"
+        : /追加|登録（/.test(titleText)
+          ? "added"
+          : "notice";
     details.dataset.kind = kind;
-    badge.textContent = { existing: "既存登録", updated: "情報更新", added: "追加登録", notice: "お知らせ" }[kind];
+    badge.textContent = {
+      existing: "既存登録",
+      updated: "情報更新",
+      added: "追加登録",
+      notice: "お知らせ",
+    }[kind];
     const meta = document.createElement("span");
     meta.className = "registration-entry-meta";
     const id = document.createElement("span");
@@ -139,7 +156,12 @@
     const date = new Date(entry.updated_on);
     if (Number.isFinite(date.getTime())) {
       time.dateTime = date.toISOString();
-      time.textContent = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+      time.textContent = new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(date);
     } else time.textContent = "日付未設定";
     meta.append(time, id, badge);
     const title = document.createElement("strong");
@@ -173,11 +195,20 @@
     status.hidden = false;
     status.textContent = "登録情報を読み込んでいます…";
     try {
-      if (!config?.supabaseUrl || !config?.supabaseKey || !window.supabase?.createClient) throw new Error("configuration");
+      if (!config?.supabaseUrl || !config?.supabaseKey || !window.supabase?.createClient)
+        throw new Error("configuration");
       db ||= window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
-        auth: { storageKey: "card-registration-anonymous", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        auth: {
+          storageKey: "card-registration-anonymous",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
       });
-      const { data, error } = await db.rpc("card_album_registration_feed", { p_before: cursor, p_limit: 20 });
+      const { data, error } = await db.rpc("card_album_registration_feed", {
+        p_before: cursor,
+        p_limit: 20,
+      });
       if (error || !data || !Array.isArray(data.updates)) throw error || new Error("response");
       const counts = { ...(data.counts || {}) };
       const primagi = await db.rpc("card_primagi_catalog_counts");
@@ -196,7 +227,8 @@
     } catch {
       status.textContent = "登録情報を読み込めませんでした。時間をおいて、もう一度お試しください。";
       retry.hidden = false;
-      if (!initialized) document.querySelector(".registration-stats").setAttribute("aria-busy", "false");
+      if (!initialized)
+        document.querySelector(".registration-stats").setAttribute("aria-busy", "false");
     } finally {
       loading = false;
       more.disabled = false;

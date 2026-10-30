@@ -9,9 +9,7 @@
   function raise(node) {
     if (!node || node.hidden) return;
     const dialogs = [...document.querySelectorAll("dialog[open]")];
-    const host = latestDialog?.open
-      ? latestDialog
-      : dialogs.at(-1) || document.body;
+    const host = latestDialog?.open ? latestDialog : dialogs.at(-1) || document.body;
     // Place the notification inside the active modal's non-inert subtree first.
     if (node.parentElement !== host) host.append(node);
     Object.assign(node.style, {
@@ -37,8 +35,7 @@
   window.CARD_TOAST_LAYER = Object.freeze({ raise, hide });
   new MutationObserver((records) => {
     for (const record of records) {
-      if (record.target.tagName === "DIALOG" && record.target.open)
-        latestDialog = record.target;
+      if (record.target.tagName === "DIALOG" && record.target.open) latestDialog = record.target;
     }
     const node = document.getElementById("toast");
     if (node && !node.hidden) {
@@ -121,28 +118,17 @@
     "過去の情報を読み込めませんでした。もう一度お試しください。",
   ]);
   function message(error) {
-    const text =
-      typeof error === "string" ? error : String(error?.message || "");
+    const text = typeof error === "string" ? error : String(error?.message || "");
     const code = String(error?.code || "");
     if (/Invalid login credentials/i.test(text))
       return "アルバムIDまたはパスワードが正しくありません。";
     if (/Email not confirmed/i.test(text))
       return "確認メールのリンクを開いてからログインしてください。";
-    if (
-      /rate.?limit|too many|送信回数|リクエスト.*多/i.test(text) ||
-      code === "429"
-    )
+    if (/rate.?limit|too many|送信回数|リクエスト.*多/i.test(text) || code === "429")
       return "操作が集中しています。しばらく時間をおいてからお試しください。";
-    if (
-      /timeout|timed.?out|abort|タイムアウト/i.test(text) ||
-      error?.name === "AbortError"
-    )
+    if (/timeout|timed.?out|abort|タイムアウト/i.test(text) || error?.name === "AbortError")
       return "通信に時間がかかっています。時間をおいて、もう一度お試しください。";
-    if (
-      /load.?failed|failed.?to.?load|fetch|network|offline|lode.?falede/i.test(
-        text,
-      )
-    )
+    if (/load.?failed|failed.?to.?load|fetch|network|offline|lode.?falede/i.test(text))
       return "接続できませんでした。通信状態を確認して、もう一度お試しください。";
     if (/JWT|token.*expired|session.*expired|PGRST301/i.test(text + code))
       return "ログインの有効期限が切れました。もう一度ログインしてください。";
@@ -163,21 +149,14 @@
 })();
 (() => {
   "use strict";
-  const version = "20261030-invite-direct-v1";
+  const version = "20261030-registration-30min-v2";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
-  const page = ["shared", "browse", "contact", "card-registration"].includes(
-    requested,
-  )
+  const page = ["shared", "browse", "contact", "card-registration"].includes(requested)
     ? requested
     : "album";
   const template = document.getElementById(
-    "page-" +
-      (page === "card-registration"
-        ? "album"
-        : page === "browse"
-          ? "shared"
-          : page),
+    "page-" + (page === "card-registration" ? "album" : page === "browse" ? "shared" : page),
   );
   const rootURL = new URL("./", location.href);
   document.title =
@@ -212,7 +191,15 @@
     } catch {}
   }
   if (page === "contact") {
-    const theme = new URLSearchParams(location.search).get("theme") || (() => { try { return sessionStorage.getItem("card-active-theme"); } catch { return ""; } })();
+    const theme =
+      new URLSearchParams(location.search).get("theme") ||
+      (() => {
+        try {
+          return sessionStorage.getItem("card-active-theme");
+        } catch {
+          return "";
+        }
+      })();
     document.documentElement.classList.toggle("contact-primagi", theme === "primagi");
   }
   const initialVisibility = document.body.style.visibility;
@@ -224,31 +211,29 @@
   if (invitationRoute) {
     document.body.classList.add("invitation-route");
     document.title = "招待からアルバムを作成｜カードアルバム";
-    document.getElementById("auth-normal-panel").querySelector("h2").textContent = "招待からアルバムを作成";
+    document.getElementById("auth-normal-panel").querySelector("h2").textContent =
+      "招待からアルバムを作成";
     document.getElementById("login-tab").parentElement.hidden = true;
     document.getElementById("auth-form").hidden = true;
     document.getElementById("signup-flow").hidden = false;
-    document.getElementById("signup-registration-status").textContent = "招待登録画面を準備しています…";
+    document.getElementById("signup-registration-status").textContent =
+      "招待登録画面を準備しています…";
     document.getElementById("issue-album-id").hidden = true;
     document.getElementById("guest-browse-link").hidden = true;
     document.querySelector('[data-signup-marker="id"]').textContent = "ID確認";
     const brand = document.querySelector(".wordmark");
-    brand.removeAttribute("href"); brand.setAttribute("aria-label", "カードアルバム");
+    brand.removeAttribute("href");
+    brand.setAttribute("aria-label", "カードアルバム");
   }
   function script(file) {
     return new Promise((resolve, reject) => {
       const node = document.createElement("script");
       const assetVersion = version;
-      node.src = new URL(
-        "assets/js/" + file + "?v=" + assetVersion,
-        rootURL,
-      ).href;
+      node.src = new URL("assets/js/" + file + "?v=" + assetVersion, rootURL).href;
       node.async = false;
       node.onload = resolve;
       node.onerror = () =>
-        reject(
-          Error("ファイルを読み込めませんでした。再読み込みしてください。"),
-        );
+        reject(Error("ファイルを読み込めませんでした。再読み込みしてください。"));
       document.head.append(node);
     });
   }
@@ -256,74 +241,52 @@
     return new Promise((resolve, reject) => {
       const node = document.createElement("link");
       node.rel = "stylesheet";
-      node.href = new URL(
-        "assets/css/" + file + ".css?v=" + version,
-        rootURL,
-      ).href;
+      node.href = new URL("assets/css/" + file + ".css?v=" + version, rootURL).href;
       node.onload = resolve;
       node.onerror = () =>
-        reject(
-          Error("表示ファイルを読み込めませんでした。再読み込みしてください。"),
-        );
+        reject(Error("表示ファイルを読み込めませんでした。再読み込みしてください。"));
       document.head.append(node);
     });
   }
   const styles = Promise.all(
     (page === "album" || page === "card-registration"
-      ? [
-          "album",
-          "features",
-          "card-registration",
-          "private-qr",
-          "login-position",
-          "save-codes",
-          "verse-search-hint",
-        ]
+      ? ["album"]
       : [page === "browse" ? "shared" : page]
-    ).concat("primagi").map(stylesheet),
+    )
+      .concat("primagi")
+      .map(stylesheet),
   );
   styles.then(
     () => {
-      if (page !== "card-registration")
-        document.body.style.visibility = initialVisibility;
+      if (page !== "card-registration") document.body.style.visibility = initialVisibility;
     },
     () => {},
   );
-  const visibilityModule = Promise.all([
-    script("vendor/supabase.js"),
-    script("config.js"),
-  ]).then(() => script("card-visibility.js"));
-  const dependencies = visibilityModule.then(
-    () => window.CARD_VISIBILITY.ready,
+  const visibilityModule = Promise.all([script("vendor/supabase.js"), script("config.js")]).then(
+    () => script("card-visibility.js"),
   );
+  const dependencies = visibilityModule.then(() => window.CARD_VISIBILITY.ready);
   const preview =
     page === "album" && !invitationRoute
       ? visibilityModule
           .then(() => script("startup.js"))
           .then(() => {
-            window.CARD_STARTUP_PREVIEW.paint(
-              document.getElementById("auth-art"),
-            );
+            window.CARD_STARTUP_PREVIEW.paint(document.getElementById("auth-art"));
           })
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
-    .then(() => script("primagi.js"))
-    .then(() => script("verse-catalog-cache.js"))
     .then(() => script("site-common.js"))
-    .then(() => { window.CARD_SITE_COMMON.init(page); window.CARD_SHARED_PAGE_READY=page; })
+    .then(() => {
+      window.CARD_SITE_COMMON.init(page);
+      window.CARD_SHARED_PAGE_READY = page;
+    })
     .then(() => (page === "album" ? script("private-qr.js") : undefined))
     .then(() =>
       page === "card-registration"
         ? script("card-registration.js")
         : script((page === "browse" ? "shared" : page) + ".js"),
     )
-    .then(() =>
-      page === "album"
-        ? script("command-definitions.js").then(() =>
-            script("settings-commands.js"),
-          )
-        : undefined,
-    )
+    .then(() => (page === "album" ? script("settings-commands.js") : undefined))
     .then(() => (page === "album" ? script("save-codes.js") : undefined))
     .then(() => (page === "album" ? script("tutorial.js") : undefined))
     .then(() => (page === "album" ? script("card-registration.js") : undefined))
@@ -335,7 +298,8 @@
       if (invitationRoute) {
         const status = document.getElementById("signup-registration-status");
         status.hidden = false;
-        status.textContent = "招待登録画面を準備できませんでした。通信状態をご確認ください。ページを閉じると手続きを再開できない場合があります。";
+        status.textContent =
+          "招待登録画面を準備できませんでした。通信状態をご確認ください。ページを閉じると手続きを再開できない場合があります。";
       } else {
         const status = document.createElement("p");
         status.setAttribute("role", "alert");
@@ -343,5 +307,4 @@
         document.body.prepend(status);
       }
     });
-
 })();

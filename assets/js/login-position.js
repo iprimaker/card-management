@@ -6,12 +6,7 @@
   function update() {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
-      if (
-        auth.hidden ||
-        getComputedStyle(auth).display === "none" ||
-        innerWidth <= 760
-      )
-        return;
+      if (auth.hidden || getComputedStyle(auth).display === "none" || innerWidth <= 760) return;
       const h = intro.getBoundingClientRect().height,
         authTop = auth.getBoundingClientRect().top + scrollY,
         viewport = document.documentElement.clientHeight;

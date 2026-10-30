@@ -62,7 +62,8 @@
   termsDialog.id = "save-qr-terms-dialog";
   termsDialog.className = "save-codes-dialog save-qr-terms-dialog";
   termsDialog.setAttribute("aria-labelledby", "save-qr-terms-title");
-  termsDialog.innerHTML = '<div class="save-codes-heading"><h2 id="save-qr-terms-title">QRコード登録規約</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="save-qr-terms-body"><h3>1．登録できる情報</h3><p>ご自身が所有するセーブカード、または持ち主から登録の許可を得たフレンドカードのQRコードを登録してください。読み取り内容を直接入力する場合も同様です。</p><h3>2．禁止事項</h3><p>持ち主の許可のない登録、なりすまし、不正に入手した情報の登録は禁止します。また、登録情報の無断公開・配布・販売や、不正利用を禁止します。</p><h3>3．登録情報の保存</h3><p>QRコードの読み取り結果と、マイキャラネーム・ID・誕生日・メモなどの登録情報は、暗号化して保存します。撮影した画像は保存しません。登録したQRコードは、登録したアカウントからのみ表示できます。</p><h3>4．情報の取り扱い</h3><p>QRコードには、ゲームのデータやマイキャラに関する大切な情報が含まれる場合があります。画面の共有やスクリーンショットによる情報の流出にご注意ください。</p><p>不正利用がご心配な方は、誕生日などの任意項目を空欄のまま登録してください。また、パスワードや連絡先など、登録に不要な個人情報は入力しないでください。</p><h3>5．登録上限と削除</h3><p>登録件数は、カード・コーデなどのQRコードと共通の上限に含まれます。上限が現在の登録件数を下回っても、登録済みの情報を自動で削除することはありません。登録件数が上限未満になるまで、新しい登録はできません。不要になった情報は、ご自身で削除できます。</p><h3>6．ご利用にあたって</h3><p>本機能はQR情報を保管・表示するための補助機能です。ゲーム公式のサービスや、ゲームデータのバックアップ機能ではありません。元のカードは大切に保管してください。登録したQRコードのゲーム機などでの読み取りや動作を保証するものではありません。</p><p>以上の内容を確認し、同意したうえで登録してください。</p></div>';
+  termsDialog.innerHTML =
+    '<div class="save-codes-heading"><h2 id="save-qr-terms-title">QRコード登録規約</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="save-qr-terms-body"><h3>1．登録できる情報</h3><p>ご自身が所有するセーブカード、または持ち主から登録の許可を得たフレンドカードのQRコードを登録してください。読み取り内容を直接入力する場合も同様です。</p><h3>2．禁止事項</h3><p>持ち主の許可のない登録、なりすまし、不正に入手した情報の登録は禁止します。また、登録情報の無断公開・配布・販売や、不正利用を禁止します。</p><h3>3．登録情報の保存</h3><p>QRコードの読み取り結果と、マイキャラネーム・ID・誕生日・メモなどの登録情報は、暗号化して保存します。撮影した画像は保存しません。登録したQRコードは、登録したアカウントからのみ表示できます。</p><h3>4．情報の取り扱い</h3><p>QRコードには、ゲームのデータやマイキャラに関する大切な情報が含まれる場合があります。画面の共有やスクリーンショットによる情報の流出にご注意ください。</p><p>不正利用がご心配な方は、誕生日などの任意項目を空欄のまま登録してください。また、パスワードや連絡先など、登録に不要な個人情報は入力しないでください。</p><h3>5．登録上限と削除</h3><p>登録件数は、カード・コーデなどのQRコードと共通の上限に含まれます。上限が現在の登録件数を下回っても、登録済みの情報を自動で削除することはありません。登録件数が上限未満になるまで、新しい登録はできません。不要になった情報は、ご自身で削除できます。</p><h3>6．ご利用にあたって</h3><p>本機能はQR情報を保管・表示するための補助機能です。ゲーム公式のサービスや、ゲームデータのバックアップ機能ではありません。元のカードは大切に保管してください。登録したQRコードのゲーム機などでの読み取りや動作を保証するものではありません。</p><p>以上の内容を確認し、同意したうえで登録してください。</p></div>';
   document.body.append(termsDialog);
   formDialog.querySelector("[data-qr-terms-open]").onclick = () => {
     if (!termsDialog.open) {
@@ -79,9 +80,7 @@
   for (const modal of [list, formDialog, termsDialog])
     modal.querySelector("[data-close]").onclick = () => modal.close();
   function place() {
-    const anchor = document.getElementById(
-      innerWidth <= 760 ? "menu-toggle" : "game-switch",
-    );
+    const anchor = document.getElementById(innerWidth <= 760 ? "menu-toggle" : "game-switch");
     if (!anchor) return;
     if (innerWidth <= 760) {
       if (anchor.previousElementSibling !== button) anchor.before(button);
@@ -89,10 +88,7 @@
   }
   function sync() {
     place();
-    const show =
-      !!uid() &&
-      !document.getElementById("selection")?.hidden &&
-      !host()?.maintenance();
+    const show = !!uid() && !document.getElementById("selection")?.hidden && !host()?.maintenance();
     if (button.hidden === show) button.hidden = !show;
     const old = document.getElementById("verse-mobile-route");
     if (show && old && !old.hidden) old.hidden = true;
@@ -133,8 +129,7 @@
       await navigator.clipboard.writeText(value);
       status.textContent = "IDをコピーしました。";
     } catch {
-      status.textContent =
-        "コピーできませんでした。IDを長押ししてコピーしてください。";
+      status.textContent = "コピーできませんでした。IDを長押ししてコピーしてください。";
     }
   }
   async function remove(row) {
@@ -177,11 +172,13 @@
     });
   }
   function normalizedType(value) {
-    return value === "primagi" ? "primagi" : value === "friend"
-      ? "friend"
-      : value === "aikatsu"
-        ? "aikatsu"
-        : "aipri";
+    return value === "primagi"
+      ? "primagi"
+      : value === "friend"
+        ? "friend"
+        : value === "aikatsu"
+          ? "aikatsu"
+          : "aipri";
   }
   function render() {
     const root = list.querySelector("[data-list]");
@@ -191,10 +188,7 @@
       ["aikatsu", "aipri", "primagi", "friend"].indexOf(selectedType),
     );
     for (const tab of tabs.children)
-      tab.setAttribute(
-        "aria-pressed",
-        String(tab.dataset.saveType === selectedType),
-      );
+      tab.setAttribute("aria-pressed", String(tab.dataset.saveType === selectedType));
     if (!rows.some((row) => normalizedType(row.series) === selectedType)) {
       const p = document.createElement("p");
       p.className = "save-codes-empty";
@@ -202,9 +196,7 @@
       root.append(p);
       return;
     }
-    for (const [key, label] of Object.entries(series).filter(
-      ([key]) => key === selectedType,
-    )) {
+    for (const [key, label] of Object.entries(series).filter(([key]) => key === selectedType)) {
       const items = rows.filter((r) => normalizedType(r.series) === key);
       if (!items.length) continue;
       const section = document.createElement("section");
@@ -225,7 +217,9 @@
             ? "フレカ"
             : key === "aikatsu"
               ? "アイカツ"
-              : key === "primagi" ? "プリマジ" : "アイプリ";
+              : key === "primagi"
+                ? "プリマジ"
+                : "アイプリ";
         const name = document.createElement("strong");
         name.textContent = row.character_name;
         const qr = document.createElement("button");
@@ -256,7 +250,7 @@
           }
         };
         top.append(tag, name, qr, del);
-        const id = ["aikatsu","primagi"].includes(key) ? row.payload : row.display_id;
+        const id = ["aikatsu", "primagi"].includes(key) ? row.payload : row.display_id;
         const idButton = document.createElement("button");
         idButton.type = "button";
         idButton.className = "save-code-id";
@@ -282,10 +276,7 @@
               Number(row.birthday.slice(3)) +
               "日"
             : "誕生日を設定";
-          birthday.setAttribute(
-            "aria-label",
-            row.character_name + "の誕生日を変更",
-          );
+          birthday.setAttribute("aria-label", row.character_name + "の誕生日を変更");
           birthday.onclick = () => editBirthday(row);
           article.append(birthday);
         }
@@ -317,7 +308,7 @@
     form.querySelector("[data-help]").textContent =
       type === "friend"
         ? "フレンドカードのQRコードを読み取って登録します。"
-        : ["aikatsu","primagi"].includes(type)
+        : ["aikatsu", "primagi"].includes(type)
           ? "アイカツ・プリマジはQRコードの読み取り結果をそのまま表示します。"
           : "アイプリのIDは任意です。QRの読み取り結果からIDを推測・変換しません。";
   };
@@ -342,17 +333,20 @@
     submit.disabled = true;
     let saved = false;
     try {
-      await window.CARD_QR.capture(async (payload) => {
-        if (uid() !== u) throw Error("ログインしてください");
-        if (!f.qr_terms_consent.checked) throw Error("QRコード登録規約への同意が必要です");
-        const r = await db().rpc("card_save_code_add", {
-          ...details,
-          p_payload: payload,
-        });
-        if (r.error) throw r.error;
-        saved = true;
-        document.dispatchEvent(new Event("private-qr-changed"));
-      }, { allowManualURL: true });
+      await window.CARD_QR.capture(
+        async (payload) => {
+          if (uid() !== u) throw Error("ログインしてください");
+          if (!f.qr_terms_consent.checked) throw Error("QRコード登録規約への同意が必要です");
+          const r = await db().rpc("card_save_code_add", {
+            ...details,
+            p_payload: payload,
+          });
+          if (r.error) throw r.error;
+          saved = true;
+          document.dispatchEvent(new Event("private-qr-changed"));
+        },
+        { allowManualURL: true },
+      );
       if (saved && uid() === u) {
         selectedType = details.p_series;
         formDialog.close();
@@ -372,26 +366,20 @@
       [fields.birth_month, 12],
       [fields.birth_day, 31],
     ]) {
-      for (let n = 1; n <= count; n++)
-        field.add(new Option(String(n), String(n)));
+      for (let n = 1; n <= count; n++) field.add(new Option(String(n), String(n)));
       field.onchange = () => fields.birth_day.setCustomValidity("");
     }
   }
   function readBirthday(fields) {
     return fields.birth_month.value && fields.birth_day.value
-      ? fields.birth_month.value.padStart(2, "0") +
-          "-" +
-          fields.birth_day.value.padStart(2, "0")
+      ? fields.birth_month.value.padStart(2, "0") + "-" + fields.birth_day.value.padStart(2, "0")
       : null;
   }
   function validBirthday(fields) {
     const m = Number(fields.birth_month.value),
       d = Number(fields.birth_day.value);
-    const valid =
-      (!m && !d) || (m && d && new Date(2000, m - 1, d).getMonth() === m - 1);
-    fields.birth_day.setCustomValidity(
-      valid ? "" : "誕生日の月日を確認してください。",
-    );
+    const valid = (!m && !d) || (m && d && new Date(2000, m - 1, d).getMonth() === m - 1);
+    fields.birth_day.setCustomValidity(valid ? "" : "誕生日の月日を確認してください。");
     if (!valid) fields.birth_day.reportValidity();
     return !!valid;
   }
@@ -405,8 +393,7 @@
   const birthdayForm = birthdayDialog.querySelector("form");
   setupBirthday(birthdayForm);
   let editing = null;
-  birthdayDialog.querySelector("[data-close]").onclick = () =>
-    birthdayDialog.close();
+  birthdayDialog.querySelector("[data-close]").onclick = () => birthdayDialog.close();
   birthdayDialog.addEventListener("close", () => {
     editing = null;
     birthdayForm.reset();
@@ -428,13 +415,7 @@
   }
   birthdayForm.onsubmit = async (event) => {
     event.preventDefault();
-    if (
-      busy ||
-      !editing ||
-      uid() !== rowsOwner ||
-      !validBirthday(birthdayForm.elements)
-    )
-      return;
+    if (busy || !editing || uid() !== rowsOwner || !validBirthday(birthdayForm.elements)) return;
     const row = editing,
       u = uid(),
       birthday = readBirthday(birthdayForm.elements);
@@ -452,8 +433,7 @@
       render();
       birthdayDialog.close();
     } catch (e) {
-      if (uid() === u)
-        birthdayForm.querySelector("[data-status]").textContent = error(e);
+      if (uid() === u) birthdayForm.querySelector("[data-status]").textContent = error(e);
     } finally {
       busy = false;
       submit.disabled = false;

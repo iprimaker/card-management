@@ -37,9 +37,7 @@ const albumSessionStorage = (() => {
   function options(remember = remembered()) {
     const area = remember ? "localStorage" : "sessionStorage";
 
-    const storageKey = remember
-      ? baseKey
-      : `${baseKey}-private-${crypto.randomUUID()}`;
+    const storageKey = remember ? baseKey : `${baseKey}-private-${crypto.randomUUID()}`;
     const savedKey = remember ? baseKey : `${baseKey}-session`;
     const mapKey = (key) => savedKey + key.slice(storageKey.length);
     return {
@@ -78,9 +76,7 @@ async function updateContactIdentity() {
   email.closest("label").hidden = !!contactSession;
   email.required = !contactSession;
   document.getElementById("contact-album-field").hidden = !contactSession;
-  document.getElementById("contact-album-id").textContent = contactSession
-    ? "確認中…"
-    : "";
+  document.getElementById("contact-album-id").textContent = contactSession ? "確認中…" : "";
   if (needsIdentity) {
     const { data: id, error } = await contactDB.rpc("card_album_my_id");
     if (generation !== contactIdentityGeneration) return;
@@ -92,9 +88,7 @@ async function updateContactIdentity() {
       contactAlbumID || "IDを確認できませんでした";
   }
   if (!needsIdentity)
-    document.getElementById("contact-album-id").textContent = contactSession
-      ? contactAlbumID
-      : "";
+    document.getElementById("contact-album-id").textContent = contactSession ? contactAlbumID : "";
   if (!contactSession) resolvedContactUser = null;
 }
 const contactIdentityReady = updateContactIdentity().catch(() => {});
@@ -145,9 +139,7 @@ document.querySelectorAll("[data-info]").forEach(
       const info = window.SITE_INFO[button.dataset.info];
       $("info-title").textContent = info.title;
       $("info-body").innerHTML = info.body;
-      for (const placeholder of $("info-body").querySelectorAll(
-        "[data-contact]",
-      )) {
+      for (const placeholder of $("info-body").querySelectorAll("[data-contact]")) {
         const a = document.createElement("a");
         a.href = location.href;
         a.textContent = "お問い合わせフォームへ";

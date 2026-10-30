@@ -4,8 +4,7 @@
   if (!host) return;
   const $ = (id) => document.getElementById(id);
   const version = 1;
-  const key = () =>
-    `card-album-tutorial-v${version}:${host.session()?.user.id || ""}`;
+  const key = () => `card-album-tutorial-v${version}:${host.session()?.user.id || ""}`;
   let memory = {},
     active = false,
     chapter = "basic",
@@ -43,16 +42,12 @@
   const exportControls = new Map();
   function lockImageExport(locked) {
     if (locked) {
-      document
-        .querySelectorAll("#trade-export-buttons button")
-        .forEach((button) => {
-          if (!exportControls.has(button))
-            exportControls.set(button, button.disabled);
-          button.disabled = true;
-        });
+      document.querySelectorAll("#trade-export-buttons button").forEach((button) => {
+        if (!exportControls.has(button)) exportControls.set(button, button.disabled);
+        button.disabled = true;
+      });
     } else {
-      for (const [button, disabled] of exportControls)
-        button.disabled = disabled;
+      for (const [button, disabled] of exportControls) button.disabled = disabled;
       exportControls.clear();
     }
   }
@@ -90,13 +85,8 @@
   function args(data) {
     return {
       p_seen: !!data.seen || !!data.chapter || !!data.completed?.length,
-      p_chapter: ["basic", "trade", "share"].includes(data.chapter)
-        ? data.chapter
-        : null,
-      p_step:
-        Number.isInteger(data.index) && data.index >= 0 && data.index <= 50
-          ? data.index
-          : 0,
+      p_chapter: ["basic", "trade", "share"].includes(data.chapter) ? data.chapter : null,
+      p_step: Number.isInteger(data.index) && data.index >= 0 && data.index <= 50 ? data.index : 0,
       p_completed: [
         ...new Set(
           (Array.isArray(data.completed) ? data.completed : []).filter((x) =>
@@ -127,10 +117,7 @@
       } catch {
         if (uid() === user) {
           loadFailedUser = user;
-          host.toast(
-            "使い方の履歴を取得できませんでした。詳細設定から再試行できます。",
-            "error",
-          );
+          host.toast("使い方の履歴を取得できませんでした。詳細設定から再試行できます。", "error");
         }
         return false;
       } finally {
@@ -145,19 +132,11 @@
     saveTimer = null;
     if (saveFlight) return saveFlight;
     const task = queuedSave;
-    if (
-      !task ||
-      uid() !== task.user ||
-      loadedUser !== task.user ||
-      host.maintenance()
-    )
-      return;
+    if (!task || uid() !== task.user || loadedUser !== task.user || host.maintenance()) return;
     queuedSave = null;
     saveFlight = (async () => {
       try {
-        const { error } = await host
-          .client()
-          .rpc("card_album_tutorial_save", args(task.data));
+        const { error } = await host.client().rpc("card_album_tutorial_save", args(task.data));
         if (error) throw error;
         saveWarning = false;
       } catch {
@@ -195,11 +174,7 @@
   function remember(data) {
     if (data.targetType && data.targetType !== "card") return;
     const id = data.cardId || data.targetId;
-    if (
-      !id ||
-      !["ownership", "favorite", "trade"].includes(data.kind) ||
-      data.before === undefined
-    )
+    if (!id || !["ownership", "favorite", "trade"].includes(data.kind) || data.before === undefined)
       return;
     const after =
       data.kind === "ownership"
@@ -216,8 +191,7 @@
       before: previous ? previous.before : data.before,
       after,
     };
-    if (JSON.stringify(value.before) === JSON.stringify(value.after))
-      practice.delete(idKey);
+    if (JSON.stringify(value.before) === JSON.stringify(value.after)) practice.delete(idKey);
     else practice.set(idKey, value);
   }
   const review = document.createElement("dialog");
@@ -248,15 +222,11 @@
   review.querySelector("[data-review-restore]").onclick = async () => {
     if (restoreBusy || host.session()?.user.id !== reviewOwner) return;
     restoreBusy = true;
-    review
-      .querySelectorAll("button")
-      .forEach((button) => (button.disabled = true));
+    review.querySelectorAll("button").forEach((button) => (button.disabled = true));
     try {
-      const { data, error } = await host
-        .client()
-        .rpc("card_album_tutorial_restore", {
-          p_changes: [...practice.values()],
-        });
+      const { data, error } = await host.client().rpc("card_album_tutorial_restore", {
+        p_changes: [...practice.values()],
+      });
       if (error || data?.error) throw error || Error(data.error);
       if (host.session()?.user.id !== reviewOwner) return;
       const skipped = data.skipped || 0;
@@ -275,9 +245,7 @@
         "記録を戻せませんでした。再試行するか、そのまま残すを選んでください。";
     } finally {
       restoreBusy = false;
-      review
-        .querySelectorAll("button")
-        .forEach((button) => (button.disabled = false));
+      review.querySelectorAll("button").forEach((button) => (button.disabled = false));
     }
   };
   const visible = (node) =>
@@ -286,11 +254,7 @@
     node.getClientRects().length > 0 &&
     getComputedStyle(node).visibility !== "hidden";
   function find(selector) {
-    return (
-      [...document.querySelectorAll(selector || "__no_tour_target__")].find(
-        visible,
-      ) || null
-    );
+    return [...document.querySelectorAll(selector || "__no_tour_target__")].find(visible) || null;
   }
   function menuTarget() {
     return find("#menu-toggle") ? "#menu-toggle" : "#header-other > summary";
@@ -453,9 +417,7 @@
   steps.trade.unshift(steps.basic[1]);
   steps.share.unshift(steps.basic[1]);
   function selector(step) {
-    return typeof step.selector === "function"
-      ? step.selector()
-      : step.selector;
+    return typeof step.selector === "function" ? step.selector() : step.selector;
   }
   function mountOverlay() {
     const modal = [...document.querySelectorAll("dialog[open]")].at(-1);
@@ -486,11 +448,7 @@
   function position() {
     tick = null;
     if (!active) return;
-    if (
-      !host.session() ||
-      host.session().user.id !== owner ||
-      host.maintenance()
-    ) {
+    if (!host.session() || host.session().user.id !== owner || host.maintenance()) {
       stop(false);
       return;
     }
@@ -557,13 +515,8 @@
     const tipHeight = tip.getBoundingClientRect().height;
     let y = rect ? rect.bottom + 16 : top + (height - tipHeight) / 2;
     if (step.multi)
-      y =
-        Math.max(
-          rect?.bottom || 0,
-          second?.getBoundingClientRect().bottom || 0,
-        ) + 16;
-    if (rect && y + tipHeight > top + height - 12)
-      y = rect.top - tipHeight - 14;
+      y = Math.max(rect?.bottom || 0, second?.getBoundingClientRect().bottom || 0) + 16;
+    if (rect && y + tipHeight > top + height - 12) y = rect.top - tipHeight - 14;
     Object.assign(tip.style, {
       left: `${Math.max(left + 12, Math.min(rect?.left || left + (width - Math.min(340, width - 24)) / 2, left + width - Math.min(340, width - 24) - 12))}px`,
       top: `${Math.max(top + 12, Math.min(y, top + height - tipHeight - 12))}px`,
@@ -585,10 +538,8 @@
   function show() {
     const step = steps[chapter][index];
     if (
-      (step.success === "ownership" &&
-        $("modal-owned")?.getAttribute("aria-pressed") === "true") ||
-      (step.success === "favorite" &&
-        $("modal-favorite")?.getAttribute("aria-pressed") === "true")
+      (step.success === "ownership" && $("modal-owned")?.getAttribute("aria-pressed") === "true") ||
+      (step.success === "favorite" && $("modal-favorite")?.getAttribute("aria-pressed") === "true")
     ) {
       advance();
       return;
@@ -686,8 +637,7 @@
     if (!host.session() || host.maintenance()) return;
     if (pendingOperations) {
       exitRequested = true;
-      tip.querySelector("[data-tour-hint]").textContent =
-        "記録の保存が終わるまでお待ちください。";
+      tip.querySelector("[data-tour-hint]").textContent = "記録の保存が終わるまでお待ちください。";
       return;
     }
     if (practice.size) {
@@ -728,8 +678,7 @@
   chooser.addEventListener("cancel", () => save({ pending: false }));
   tip.querySelector("[data-tour-chapters]").onclick = () => chooseChapters();
   tip.querySelector("[data-tour-next]").onclick = () => {
-    if (active && !steps[chapter][index].action && pendingOperations === 0)
-      advance();
+    if (active && !steps[chapter][index].action && pendingOperations === 0) advance();
   };
   document.addEventListener(
     "keydown",
@@ -745,13 +694,7 @@
   document.addEventListener("click", (event) => {
     if (!active || tip.contains(event.target)) return;
     const step = steps[chapter][index];
-    if (
-      step.success ||
-      !step.action ||
-      !event.target.closest(step.action) ||
-      clickPending
-    )
-      return;
+    if (step.success || !step.action || !event.target.closest(step.action) || clickPending) return;
     clickPending = true;
     timer = setTimeout(() => {
       timer = null;
@@ -771,9 +714,7 @@
     remember(data);
     const expected = step.success;
     if (
-      (expected === "ownership" &&
-        data.kind === "ownership" &&
-        data.quantity > 0) ||
+      (expected === "ownership" && data.kind === "ownership" && data.quantity > 0) ||
       (expected === "quantity" && data.kind === "ownership") ||
       (expected === "favorite" && data.kind === "favorite" && data.enabled) ||
       (expected === "trade" && data.kind === "trade" && data.level > 0)
@@ -808,9 +749,9 @@
     if (node.closest("#trade-export-buttons")) return false;
     if (tip.contains(node)) return true;
     const step = steps[chapter]?.[index];
-    const roots = [
-      ...document.querySelectorAll(selector(step) || "__no_tour_target__"),
-    ].filter(visible);
+    const roots = [...document.querySelectorAll(selector(step) || "__no_tour_target__")].filter(
+      visible,
+    );
     if (roots.some((root) => root === node || root.contains(node))) return true;
     const menu = node.closest(".album-select-menu");
     return (
@@ -828,14 +769,7 @@
     if (event.cancelable) event.preventDefault();
     event.stopImmediatePropagation();
   }
-  for (const name of [
-    "pointerdown",
-    "click",
-    "dblclick",
-    "contextmenu",
-    "keydown",
-    "submit",
-  ])
+  for (const name of ["pointerdown", "click", "dblclick", "contextmenu", "keydown", "submit"])
     document.addEventListener(name, blockOutside, true);
   // A non-passive document touchmove listener belongs only to an active tour.
   // Normal album/Verse scrolling must not wait for an inactive guide handler.
@@ -942,10 +876,7 @@
         .catch(() => {
           if (uid() === user) {
             loadFailedUser = user;
-            host.toast(
-              "初回ガイドを開始できませんでした。詳細設定から再試行できます。",
-              "error",
-            );
+            host.toast("初回ガイドを開始できませんでした。詳細設定から再試行できます。", "error");
           }
         })
         .finally(() => (claiming = false));
@@ -985,11 +916,7 @@
   document.addEventListener(
     "toggle",
     (event) => {
-      if (
-        active &&
-        event.target?.id === "modal-scroll-rail" &&
-        event.newState === "open"
-      ) {
+      if (active && event.target?.id === "modal-scroll-rail" && event.newState === "open") {
         requestAnimationFrame(() => {
           if (!active || tip.hidden || !tip.showPopover) return;
           try {

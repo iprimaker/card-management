@@ -1,38 +1,52 @@
 /* catalog-cache.js */
 (() => {
- window.PUBLIC_CATALOG_CACHE = {
-  peek: () => window.CARD_VISIBILITY.cache(),
-  invalidate() {},
-  async load() { await window.CARD_VISIBILITY.refresh(); return window.CARD_VISIBILITY.cache(); }
- };
+  window.PUBLIC_CATALOG_CACHE = {
+    peek: () => window.CARD_VISIBILITY.cache(),
+    invalidate() {},
+    async load() {
+      await window.CARD_VISIBILITY.refresh();
+      return window.CARD_VISIBILITY.cache();
+    },
+  };
 })();
 
 /* Native shared-page images avoid canvas allocation and scroll-time redraw cycles. */
 (() => {
-  const frames=".public-image,.public-banner-image,.public-modal-image,.verse-part-image-frame";
+  const frames = ".public-image,.public-banner-image,.public-modal-image,.verse-part-image-frame";
   function normalize(image) {
-    if(!(image instanceof HTMLImageElement))return;
+    if (!(image instanceof HTMLImageElement)) return;
     image.removeAttribute("data-low-resolution");
-    const parent=image.parentElement;
-    if(parent?.matches(frames)&&!image.closest("dialog")&&image.complete&&image.naturalWidth){
-      const landscape=image.naturalWidth>image.naturalHeight;
-      if(parent.classList.contains("landscape")!==landscape)parent.classList.toggle("landscape",landscape);
+    const parent = image.parentElement;
+    if (
+      parent?.matches(frames) &&
+      !image.closest("dialog") &&
+      image.complete &&
+      image.naturalWidth
+    ) {
+      const landscape = image.naturalWidth > image.naturalHeight;
+      if (parent.classList.contains("landscape") !== landscape)
+        parent.classList.toggle("landscape", landscape);
     }
   }
-  function scan(root){if(root instanceof HTMLImageElement)normalize(root);else root.querySelectorAll?.("img").forEach(normalize)}
-  document.querySelectorAll("canvas.low-resolution-image").forEach(canvas=>canvas.remove());
-  document.addEventListener("load",event=>normalize(event.target),true);
-  new MutationObserver(records=>{
-    for(const record of records){
-      if(record.type==="attributes")normalize(record.target);
-      else for(const node of record.addedNodes)if(node.nodeType===1)scan(node);
+  function scan(root) {
+    if (root instanceof HTMLImageElement) normalize(root);
+    else root.querySelectorAll?.("img").forEach(normalize);
+  }
+  document.querySelectorAll("canvas.low-resolution-image").forEach((canvas) => canvas.remove());
+  document.addEventListener("load", (event) => normalize(event.target), true);
+  new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.type === "attributes") normalize(record.target);
+      else for (const node of record.addedNodes) if (node.nodeType === 1) scan(node);
     }
-  }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["src"]});
+  }).observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["src"],
+  });
   scan(document);
 })();
-
-
-;
 
 /* public-share.js */
 (() => {
@@ -58,7 +72,14 @@
         .toLowerCase()
         .replace(/[\s‐‑–—−_-]/g, "");
   const browseOnly = new URLSearchParams(location.search).get("view") === "browse";
-  const browseScopes = ["aikatsu", "onegai", "himitsu", "verse-onegai", "verse-himitsu", "verse-primagi"];
+  const browseScopes = [
+    "aikatsu",
+    "onegai",
+    "himitsu",
+    "verse-onegai",
+    "verse-himitsu",
+    "verse-primagi",
+  ];
   const token = browseOnly ? "" : location.hash.slice(1);
   let verseCatalog = null,
     publicCatalog = null,
@@ -92,7 +113,8 @@
     pendingRefresh = false;
     unavailable();
     $("public-unavailable").hidden = true;
-    $("public-status").textContent = `アクセスが集中しています。${seconds}秒ほど待ってから再読み込みしてください。`;
+    $("public-status").textContent =
+      `アクセスが集中しています。${seconds}秒ほど待ってから再読み込みしてください。`;
   }
   const scopeFilters = new Map();
   const verse = () => scope?.startsWith("verse-");
@@ -116,7 +138,15 @@
     $("public-status").textContent = "";
   }
   function rarity(c) {
-    if (c.game === "aipri" && /^OP-?132$/i.test(String(c.code || "").normalize("NFKC").trim())) return "SP";
+    if (
+      c.game === "aipri" &&
+      /^OP-?132$/i.test(
+        String(c.code || "")
+          .normalize("NFKC")
+          .trim(),
+      )
+    )
+      return "SP";
     if (c.game === "aipri") {
       const code = String(c.code || "").toUpperCase();
       if (code.endsWith("P")) return "パラレル";
@@ -128,10 +158,13 @@
     return verse() ? (fullQuantities.get(c.id) || 0) > 0 : (quantities.get(c.id) || 0) > 0;
   }
   function ownsAllParts(c) {
-    return verse() && c.part_ids?.length > 0 && c.part_ids.every((id) => (quantities.get(id) || 0) > 0);
+    return (
+      verse() && c.part_ids?.length > 0 && c.part_ids.every((id) => (quantities.get(id) || 0) > 0)
+    );
   }
   function partBadge(c) {
-    if (browseOnly || !verse() || !c.part_ids.some((id) => (quantities.get(id) || 0) > 0)) return "";
+    if (browseOnly || !verse() || !c.part_ids.some((id) => (quantities.get(id) || 0) > 0))
+      return "";
     return `<span class="public-partial ${ownsAllParts(c) ? "is-parts-complete" : ""}">${ownsAllParts(c) ? "パーツコンプ" : "パーツ一部獲得"}</span>`;
   }
   function full(c) {
@@ -147,7 +180,8 @@
         ? "partial"
         : "no";
   }
-  const chapterLabel = value => scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value;
+  const chapterLabel = (value) =>
+    scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value;
   function series(c) {
     const labels = verse()
       ? [...new Set((c.appearances || []).map((a) => a.series))]
@@ -173,6 +207,7 @@
       ? [
           ["series", scope === "verse-primagi" ? "章" : "だん数"],
           ["group", scope === "verse-primagi" ? "入手方法" : "ガチャ・キャンペーン"],
+          ...(scope === "verse-primagi" ? [["primagi-verse-compat", "アイプリバース対応"]] : []),
         ]
       : scope === "aikatsu"
         ? [
@@ -191,25 +226,31 @@
             ["songs", "遊べる曲"],
           ];
   }
-function songFilterValue(value) {
-  let song = String(value || "").trim();
-  const personal = song.match(/^(.+?のひみつマイソング♪)/u);
-  if (personal) return personal[1];
-  song = song.replace(/(?:～|〜)まんかい\s*ver\.?[～〜]?/giu, "");
-  // 歌手・人数・バージョンはカード情報に残し、曲の選択肢だけをまとめる。
-  while (/[（(][^()（）]*[）)]\s*$/u.test(song))
-    song = song.replace(/\s*[（(][^()（）]*[）)]\s*$/u, "");
-  return song.replace(/^わいるど[☆★]?すたー/u, "わいるどすたー").trim();
-}
+  function songFilterValue(value) {
+    let song = String(value || "").trim();
+    const personal = song.match(/^(.+?のひみつマイソング♪)/u);
+    if (personal) return personal[1];
+    song = song.replace(/(?:～|〜)まんかい\s*ver\.?[～〜]?/giu, "");
+    // 歌手・人数・バージョンはカード情報に残し、曲の選択肢だけをまとめる。
+    while (/[（(][^()（）]*[）)]\s*$/u.test(song))
+      song = song.replace(/\s*[（(][^()（）]*[）)]\s*$/u, "");
+    return song.replace(/^わいるど[☆★]?すたー/u, "わいるどすたー").trim();
+  }
 
   function fieldValues(c, key) {
+    if (key === "primagi-verse-compat") {
+      const api = window.CARD_PRIMAGI_VERSE_COMPAT;
+      return [api.labels[api.coordinateStatus(c, parts)]];
+    }
     return key === "series"
       ? series(c)
       : key === "group"
         ? groups(c)
         : key === "rarity"
           ? [rarity(c)]
-          : key === "songs" ? values(c.songs).map(songFilterValue) : values(c[key]);
+          : key === "songs"
+            ? values(c.songs).map(songFilterValue)
+            : values(c[key]);
   }
   function filtered(includeOwned = true) {
     const q = normal($("public-query").value);
@@ -217,7 +258,14 @@ function songFilterValue(value) {
       (c) =>
         (!q ||
           normal(
-            [c.code, c.name, c.character, ...(c.part_ids || []).map(id => parts.get(id)?.metadata?.name || ""), ...values(c.songs), ...groups(c)].join(" "),
+            [
+              c.code,
+              c.name,
+              c.character,
+              ...(c.part_ids || []).map((id) => parts.get(id)?.metadata?.name || ""),
+              ...values(c.songs),
+              ...groups(c),
+            ].join(" "),
           ).includes(q)) &&
         Object.entries(filters).every(
           ([key, value]) => !value || fieldValues(c, key).includes(value),
@@ -236,7 +284,10 @@ function songFilterValue(value) {
         const options = [...new Set(rows.flatMap((c) => fieldValues(c, key)).filter(Boolean))].sort(
           (a, b) =>
             key === "series"
-              ? scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterRank(b)-window.CARD_PRIMAGI.chapterRank(a) || String(b).localeCompare(String(a),"ja",{numeric:true}) : String(b).localeCompare(String(a), "ja", { numeric: true })
+              ? scope === "verse-primagi"
+                ? window.CARD_PRIMAGI.chapterRank(b) - window.CARD_PRIMAGI.chapterRank(a) ||
+                  String(b).localeCompare(String(a), "ja", { numeric: true })
+                : String(b).localeCompare(String(a), "ja", { numeric: true })
               : String(a).localeCompare(String(b), "ja", { numeric: true }),
         );
         if (filters[key] && !options.includes(filters[key])) options.unshift(filters[key]);
@@ -245,11 +296,19 @@ function songFilterValue(value) {
       .join("");
   }
   function image(c, large = false) {
-    const url = verse() ? window.CARD_PRIMAGI.verseImage(c.image) || window.CARD_PRIMAGI.verseImage(c.thumbnail) : side && large ? c.back : c.front;
+    const url = verse()
+      ? window.CARD_PRIMAGI.verseImage(c.image) || window.CARD_PRIMAGI.verseImage(c.thumbnail)
+      : side && large
+        ? c.back
+        : c.front;
     if (url)
       return `<img src="${esc(window.CARD_PRIMAGI.image(url, large ? 900 : 420))}" alt="${esc(c.name || c.code)}" loading="${large ? "eager" : "lazy"}" decoding="async">`;
-    const images=(c.part_ids||[]).map(id=>window.CARD_PRIMAGI.verseImage(parts.get(id)?.image)).filter(Boolean);
-    return images.length?`<span class="public-collage">${images.map(url=>`<img src="${esc(url)}" alt="" loading="lazy">`).join("")}</span>`:`<span class="catalog-image-unavailable">画像なし</span>`;
+    const images = (c.part_ids || [])
+      .map((id) => window.CARD_PRIMAGI.verseImage(parts.get(id)?.image))
+      .filter(Boolean);
+    return images.length
+      ? `<span class="public-collage">${images.map((url) => `<img src="${esc(url)}" alt="" loading="lazy">`).join("")}</span>`
+      : `<span class="catalog-image-unavailable">画像なし</span>`;
   }
   function renderScopeNote() {
     if (browseOnly) return;
@@ -259,7 +318,9 @@ function songFilterValue(value) {
     const selected = snapshot?.series_filter;
     note.hidden = !Array.isArray(selected);
     if (note.hidden) return;
-    const labels = [...new Set(selected.map((value) => chapterLabel(String(value)).replaceAll("弾", "だん")))];
+    const labels = [
+      ...new Set(selected.map((value) => chapterLabel(String(value)).replaceAll("弾", "だん"))),
+    ];
     const caption = document.createElement("span");
     caption.className = "public-scope-caption";
     caption.textContent = "公開範囲";
@@ -298,7 +359,9 @@ function songFilterValue(value) {
     );
     const limit = size === "all" ? Math.max(1, all.length) : size;
     $("public-title").textContent = labels[scope];
-    $("public-owner").textContent = browseOnly ? "カードアルバム｜カード検索" : (snapshot.nickname || "ゲスト") + "のカードアルバム";
+    $("public-owner").textContent = browseOnly
+      ? "カードアルバム｜カード検索"
+      : (snapshot.nickname || "ゲスト") + "のカードアルバム";
     const subset = filtered(false),
       subsetGot = subset.filter(full).length,
       unit = verse() ? "コーデ" : "枚";
@@ -421,7 +484,10 @@ function songFilterValue(value) {
     $("public-detail-content").innerHTML =
       `<div class="public-modal-layout"><div><div class="public-modal-image">${image(c, true)}</div>${!verse() ? `<div class="public-side-switch" role="group" aria-label="表面・裏面"><button type="button" data-public-side="0" aria-pressed="${!side}">表面</button><button type="button" data-public-side="1" aria-pressed="${!!side}" ${!c.back ? "disabled" : ""}>裏面</button></div>` : ""}</div><div><span class="public-code">${esc(c.code || "コード記載なし")}</span><h2>${esc(c.name || "カード名未取得")}</h2>${browseOnly ? "" : `<p class="public-possession is-${verse() ? (ownsFull(c) ? "yes" : "no") : state(c)}">${verse() ? (ownsFull(c) ? "フルコーデ持ってる" : "フルコーデ未所持") : held ? "持っている" : "持っていない"}</p>`}<dl>${rows
         .filter(([, v]) => v)
-        .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(k === "章" || k === "だん数" || k === "弾数" ? chapterLabel(v) : v)}</dd>`)
+        .map(
+          ([k, v]) =>
+            `<dt>${esc(k)}</dt><dd>${esc(k === "章" || k === "だん数" || k === "弾数" ? chapterLabel(v) : v)}</dd>`,
+        )
         .join("")}</dl></div></div>${
         verse()
           ? `<h3>${browseOnly ? "構成パーツ" : "パーツごとの所持状況"}</h3><div class="public-modal-parts">${c.part_ids
@@ -436,53 +502,98 @@ function songFilterValue(value) {
   document.addEventListener("card-visibility-updated", () => {
     publicCatalog = window.CARD_VISIBILITY.cache();
     if (!publicCatalog || !scope || scope.startsWith("verse-")) return;
-    const byId = new Map(publicCatalog.cards.map(c => [c.id, c]));
+    const byId = new Map(publicCatalog.cards.map((c) => [c.id, c]));
     const scroll = { x: window.scrollX, y: window.scrollY };
-    const dialog = $("public-detail"), content = $("public-detail-content");
-    const ds = dialog.scrollTop, cs = content.scrollTop, selectedId = selected?.id;
-    items = publicCatalog.cards.filter(c => scope === "aikatsu" ? c.game === "aikatsu" : c.game === "aipri" && [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family));
-    if (Array.isArray(snapshot?.visible_ids)) { const visible = new Set(snapshot.visible_ids); items = items.filter(c => visible.has(c.id)); }
-    fillFields(); render(); fillBanner();
+    const dialog = $("public-detail"),
+      content = $("public-detail-content");
+    const ds = dialog.scrollTop,
+      cs = content.scrollTop,
+      selectedId = selected?.id;
+    items = publicCatalog.cards.filter((c) =>
+      scope === "aikatsu"
+        ? c.game === "aikatsu"
+        : c.game === "aipri" &&
+          [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family),
+    );
+    if (Array.isArray(snapshot?.visible_ids)) {
+      const visible = new Set(snapshot.visible_ids);
+      items = items.filter((c) => visible.has(c.id));
+    }
+    fillFields();
+    render();
+    fillBanner();
     if (selectedId && dialog.open) {
-      selected = byId.get(selectedId) || selected; if (!selected.back) side = 0; detail();
-      dialog.scrollTop = ds; content.scrollTop = cs;
+      selected = byId.get(selectedId) || selected;
+      if (!selected.back) side = 0;
+      detail();
+      dialog.scrollTop = ds;
+      content.scrollTop = cs;
     }
     window.scrollTo(scroll.x, scroll.y);
   });
   let visibilityPictureFlight = null;
   document.addEventListener("card-visibility-updated", () => {
     if (!client || !scope?.startsWith("verse-") || !snapshot || visibilityPictureFlight) return;
-    const wanted=scope, current=generation;
-    visibilityPictureFlight=(async()=>{
-      const data=await window.CARD_VERSE_CATALOG.load(client,{force:true});
-      if(scope!==wanted || generation!==current)return;
-      verseCatalog={data,error:null};
-      let rows=data.coordinates.filter(c=>c.family===scope.slice(6));
-      if(Array.isArray(snapshot.visible_ids)){const visible=new Set(snapshot.visible_ids);rows=rows.filter(c=>visible.has(c.id));}
-      const scroll={x:window.scrollX,y:window.scrollY}, dialog=$("public-detail"), content=$("public-detail-content");
-      const ds=dialog.scrollTop, cs=content.scrollTop, selectedId=selected?.id;
-      items=rows;parts=new Map(data.parts.filter(p=>p.family===scope.slice(6)).map(p=>[p.id,p]));
-      fillFields();render();fillBanner();
-      if(selectedId&&dialog.open){selected=items.find(c=>c.id===selectedId)||selected;detail();dialog.scrollTop=ds;content.scrollTop=cs;}
-      window.scrollTo(scroll.x,scroll.y);
-    })().catch(()=>{}).finally(()=>{visibilityPictureFlight=null;});
+    const wanted = scope,
+      current = generation;
+    visibilityPictureFlight = (async () => {
+      const data = await window.CARD_VERSE_CATALOG.load(client, { force: true });
+      if (scope !== wanted || generation !== current) return;
+      verseCatalog = { data, error: null };
+      let rows = data.coordinates.filter((c) => c.family === scope.slice(6));
+      if (Array.isArray(snapshot.visible_ids)) {
+        const visible = new Set(snapshot.visible_ids);
+        rows = rows.filter((c) => visible.has(c.id));
+      }
+      const scroll = { x: window.scrollX, y: window.scrollY },
+        dialog = $("public-detail"),
+        content = $("public-detail-content");
+      const ds = dialog.scrollTop,
+        cs = content.scrollTop,
+        selectedId = selected?.id;
+      items = rows;
+      parts = new Map(data.parts.filter((p) => p.family === scope.slice(6)).map((p) => [p.id, p]));
+      fillFields();
+      render();
+      fillBanner();
+      if (selectedId && dialog.open) {
+        selected = items.find((c) => c.id === selectedId) || selected;
+        detail();
+        dialog.scrollTop = ds;
+        content.scrollTop = cs;
+      }
+      window.scrollTo(scroll.x, scroll.y);
+    })()
+      .catch(() => {})
+      .finally(() => {
+        visibilityPictureFlight = null;
+      });
   });
   async function load(wanted = scope, quiet = false) {
     if (Date.now() < shareReadBlockedUntil) {
-      $("public-status").textContent = `アクセスが集中しています。あと${Math.ceil((shareReadBlockedUntil - Date.now()) / 1000)}秒ほど待ってから再読み込みしてください。`;
+      $("public-status").textContent =
+        `アクセスが集中しています。あと${Math.ceil((shareReadBlockedUntil - Date.now()) / 1000)}秒ほど待ってから再読み込みしてください。`;
       return;
     }
     const g = ++generation;
     busy = true;
     if (!quiet) {
-      $("public-status").textContent = browseOnly ? "カード情報を読み込み中…" : "所持状況を読み込み中…";
+      $("public-status").textContent = browseOnly
+        ? "カード情報を読み込み中…"
+        : "所持状況を読み込み中…";
       $("public-album").hidden = true;
       selected = null;
       if ($("public-detail").open) $("public-detail").close();
     }
     try {
       const r = browseOnly
-        ? { data: { available: true, scope: browseScopes.includes(wanted) ? wanted : "aikatsu", scopes: browseScopes } }
+        ? {
+            data: {
+              available: true,
+              scope: browseScopes.includes(wanted) ? wanted : "aikatsu",
+              scopes: browseScopes,
+            },
+          }
         : await client.rpc("card_album_share_read", {
             p_token: token,
             p_scope: wanted || null,
@@ -520,10 +631,9 @@ function songFilterValue(value) {
       let rows,
         partMap = new Map();
       if (snap.scope.startsWith("verse-")) {
-        const c =
-          window.CARD_VERSE_CATALOG
-            ? {data:await window.CARD_VERSE_CATALOG.load(client),error:null}
-            : verseCatalog || (await client.rpc("card_verse_catalog_cached", { p_version: null }));
+        const c = window.CARD_VERSE_CATALOG
+          ? { data: await window.CARD_VERSE_CATALOG.load(client), error: null }
+          : verseCatalog || (await client.rpc("card_verse_catalog_cached", { p_version: null }));
         if (c.error || !Array.isArray(c.data?.coordinates) || !Array.isArray(c.data?.parts))
           throw Error("コーデ情報を取得できませんでした。");
         verseCatalog = c;
@@ -563,8 +673,7 @@ function songFilterValue(value) {
           const rank = (t) => {
             const x = String(t).normalize("NFKC");
             if (scope === "verse-primagi") return window.CARD_PRIMAGI.chapterRank(x);
-            const
-              n = x.match(/(\d+)\s*(?:だん|弾)/);
+            const n = x.match(/(\d+)\s*(?:だん|弾)/);
             return n ? (x.includes("リング") ? 1000000 : 0) + Number(n[1]) : -1;
           };
           const latest = [...new Set(items.flatMap(series))]
@@ -786,9 +895,8 @@ function songFilterValue(value) {
     if (!$("public-progress-details").open) return;
     const rank = (t) => {
       const x = String(t).normalize("NFKC");
-            if (scope === "verse-primagi") return window.CARD_PRIMAGI.chapterRank(x);
-            const
-        n = x.match(/(\d+)\s*(?:だん|弾)/);
+      if (scope === "verse-primagi") return window.CARD_PRIMAGI.chapterRank(x);
+      const n = x.match(/(\d+)\s*(?:だん|弾)/);
       return n ? (x.includes("リング") ? 1000000 : 0) + Number(n[1]) : -1;
     };
     const labels = [...new Set(items.flatMap(series))]
@@ -808,19 +916,23 @@ function songFilterValue(value) {
   }
   let pagingWidth = document.documentElement.clientWidth;
   let pagingResizeFrame = null;
-  window.addEventListener("resize", () => {
-    const width = document.documentElement.clientWidth;
-    if (width === pagingWidth) return;
-    pagingWidth = width;
-    if (pagingResizeFrame !== null) cancelAnimationFrame(pagingResizeFrame);
-    pagingResizeFrame = requestAnimationFrame(() => {
-      pagingResizeFrame = null;
-      if (snapshot) {
-        const count = filtered().length;
-        renderPages(Math.max(1, Math.ceil(count / (size === "all" ? Math.max(1, count) : size))));
-      }
-    });
-  }, { passive: true });
+  window.addEventListener(
+    "resize",
+    () => {
+      const width = document.documentElement.clientWidth;
+      if (width === pagingWidth) return;
+      pagingWidth = width;
+      if (pagingResizeFrame !== null) cancelAnimationFrame(pagingResizeFrame);
+      pagingResizeFrame = requestAnimationFrame(() => {
+        pagingResizeFrame = null;
+        if (snapshot) {
+          const count = filtered().length;
+          renderPages(Math.max(1, Math.ceil(count / (size === "all" ? Math.max(1, count) : size))));
+        }
+      });
+    },
+    { passive: true },
+  );
   $("public-progress-details").addEventListener("toggle", renderProgressDetails);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopLive();
@@ -846,7 +958,8 @@ function songFilterValue(value) {
     $("public-refresh").setAttribute("aria-label", "カード情報を再読み込み");
     $("public-status").textContent = "カード情報を読み込み中…";
     $("public-unavailable").querySelector("h1").textContent = "カード情報を表示できません";
-    $("public-unavailable").querySelector("p").textContent = "通信環境を確認して再読み込みしてください。";
+    $("public-unavailable").querySelector("p").textContent =
+      "通信環境を確認して再読み込みしてください。";
     $("public-owner").setAttribute("aria-label", "ログイン画面へ戻る");
   }
   if (!browseOnly && !/^[0-9a-f]{64}$/.test(token)) {
@@ -857,7 +970,14 @@ function songFilterValue(value) {
     client = window.supabase.createClient(
       window.APP_CONFIG.supabaseUrl,
       window.APP_CONFIG.supabaseKey,
-      { auth: { storageKey: "card-public-album-anonymous", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+      {
+        auth: {
+          storageKey: "card-public-album-anonymous",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      },
     );
     load();
   } catch {
@@ -881,20 +1001,34 @@ function songFilterValue(value) {
   thumb.className = "modal-scroll-thumb";
   thumb.setAttribute("aria-hidden", "true");
   rail.append(thumb);
-  let modal = null, target = null, frame = 0, drag = null;
-  let trackHeight = 0, thumbHeight = 0, thumbTop = 0, nextId = 0, sequence = 0;
+  let modal = null,
+    target = null,
+    frame = 0,
+    drag = null;
+  let trackHeight = 0,
+    thumbHeight = 0,
+    thumbTop = 0,
+    nextId = 0,
+    sequence = 0;
   const order = new WeakMap();
   const canPopover = typeof rail.showPopover === "function";
   const resize = new ResizeObserver(schedule);
   function scrollable(node) {
-    return node instanceof HTMLElement && node !== rail && !rail.contains(node) &&
-      node.clientHeight > 0 && node.scrollHeight > node.clientHeight + 1 &&
-      /auto|scroll/.test(getComputedStyle(node).overflowY);
+    return (
+      node instanceof HTMLElement &&
+      node !== rail &&
+      !rail.contains(node) &&
+      node.clientHeight > 0 &&
+      node.scrollHeight > node.clientHeight + 1 &&
+      /auto|scroll/.test(getComputedStyle(node).overflowY)
+    );
   }
   function hideRail() {
     if (target) target.classList.remove("external-modal-scroll");
     if (rail.isConnected && canPopover) {
-      try { rail.hidePopover(); } catch (_) {}
+      try {
+        rail.hidePopover();
+      } catch (_) {}
     }
     if (drag && rail.hasPointerCapture(drag.id)) rail.releasePointerCapture(drag.id);
     drag = null;
@@ -910,11 +1044,18 @@ function songFilterValue(value) {
   }
   function update() {
     frame = 0;
-    const dialogs = [...document.querySelectorAll("dialog[open]")].filter(d => d.matches(":modal"));
-    dialogs.forEach(d => { if (!order.has(d)) order.set(d, ++sequence); });
+    const dialogs = [...document.querySelectorAll("dialog[open]")].filter((d) =>
+      d.matches(":modal"),
+    );
+    dialogs.forEach((d) => {
+      if (!order.has(d)) order.set(d, ++sequence);
+    });
     const active = dialogs.sort((a, b) => order.get(a) - order.get(b)).at(-1);
     root.classList.toggle("album-modal-open", Boolean(active));
-    if (!active) { clear(); return; }
+    if (!active) {
+      clear();
+      return;
+    }
     if (active !== modal) {
       clear();
       modal = active;
@@ -928,11 +1069,21 @@ function songFilterValue(value) {
     const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
     const cardBody = active.id === "detail" ? active.querySelector(".modal-body") : null;
     const scroller = cardBody
-      ? (scrollable(cardBody) ? cardBody : null)
-      : scrollable(target) && active.contains(target) ? target
-      : candidates.includes(active) ? active
-      : candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
-    if (!scroller) { hideRail(); target = null; return; }
+      ? scrollable(cardBody)
+        ? cardBody
+        : null
+      : scrollable(target) && active.contains(target)
+        ? target
+        : candidates.includes(active)
+          ? active
+          : candidates.sort(
+              (a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight,
+            )[0];
+    if (!scroller) {
+      hideRail();
+      target = null;
+      return;
+    }
     if (target !== scroller) {
       hideRail();
       resize.disconnect();
@@ -945,19 +1096,28 @@ function songFilterValue(value) {
     const rect = target.getBoundingClientRect();
     const box = active.getBoundingClientRect();
     const vv = window.visualViewport;
-    const left = vv?.offsetLeft || 0, top = vv?.offsetTop || 0;
-    const width = vv?.width || innerWidth, height = vv?.height || innerHeight;
+    const left = vv?.offsetLeft || 0,
+      top = vv?.offsetTop || 0;
+    const width = vv?.width || innerWidth,
+      height = vv?.height || innerHeight;
     const y = Math.max(top + 8, box.top + 8);
     const bottom = Math.min(top + height - 8, box.bottom - 8);
     trackHeight = Math.max(0, bottom - y);
     const max = Math.max(0, target.scrollHeight - target.clientHeight);
-    if (!max || trackHeight < 40) { hideRail(); return; }
+    if (!max || trackHeight < 40) {
+      hideRail();
+      return;
+    }
     if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
     rail.style.left = Math.max(left + 2, Math.min(left + width - 10, box.right + 8)) + "px";
     rail.style.top = y + "px";
     rail.style.height = trackHeight + "px";
-    try { if (!rail.matches(":popover-open")) rail.showPopover(); }
-    catch (_) { hideRail(); return; }
+    try {
+      if (!rail.matches(":popover-open")) rail.showPopover();
+    } catch (_) {
+      hideRail();
+      return;
+    }
     // 表示に成功した場合だけ、その領域の標準バーを隠します。
     target.classList.add("external-modal-scroll");
     if (!target.id) target.id = "modal-scroll-target-" + ++nextId;
@@ -965,43 +1125,66 @@ function songFilterValue(value) {
     rail.setAttribute("aria-valuemin", "0");
     rail.setAttribute("aria-valuemax", String(Math.round(max)));
     rail.setAttribute("aria-valuenow", String(Math.round(target.scrollTop)));
-    thumbHeight = Math.min(trackHeight, Math.max(28, trackHeight * target.clientHeight / target.scrollHeight));
+    thumbHeight = Math.min(
+      trackHeight,
+      Math.max(28, (trackHeight * target.clientHeight) / target.scrollHeight),
+    );
     thumbTop = (trackHeight - thumbHeight) * Math.min(1, Math.max(0, target.scrollTop / max));
     thumb.style.height = thumbHeight + "px";
     thumb.style.transform = "translateY(" + thumbTop + "px)";
   }
   function move(y, offset) {
     if (!target) return;
-    const ratio = (y - rail.getBoundingClientRect().top - offset) / Math.max(1, trackHeight - thumbHeight);
-    target.scrollTop = Math.max(0, Math.min(1, ratio)) * Math.max(0, target.scrollHeight - target.clientHeight);
+    const ratio =
+      (y - rail.getBoundingClientRect().top - offset) / Math.max(1, trackHeight - thumbHeight);
+    target.scrollTop =
+      Math.max(0, Math.min(1, ratio)) * Math.max(0, target.scrollHeight - target.clientHeight);
     schedule();
   }
-  rail.addEventListener("pointerdown", e => {
+  rail.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 || !target) return;
     e.preventDefault();
     rail.focus({ preventScroll: true });
     const y = e.clientY - rail.getBoundingClientRect().top;
-    drag = { id: e.pointerId, offset: y >= thumbTop && y <= thumbTop + thumbHeight ? y - thumbTop : thumbHeight / 2 };
+    drag = {
+      id: e.pointerId,
+      offset: y >= thumbTop && y <= thumbTop + thumbHeight ? y - thumbTop : thumbHeight / 2,
+    };
     rail.setPointerCapture(e.pointerId);
     move(e.clientY, drag.offset);
   });
-  rail.addEventListener("pointermove", e => { if (drag?.id === e.pointerId) move(e.clientY, drag.offset); });
-  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) rail.addEventListener(type, () => { drag = null; });
-  rail.addEventListener("wheel", e => {
-    if (!target) return;
+  rail.addEventListener("pointermove", (e) => {
+    if (drag?.id === e.pointerId) move(e.clientY, drag.offset);
+  });
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+    rail.addEventListener(type, () => {
+      drag = null;
+    });
+  rail.addEventListener(
+    "wheel",
+    (e) => {
+      if (!target) return;
+      e.preventDefault();
+      target.scrollTop +=
+        e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? target.clientHeight : 1);
+      schedule();
+    },
+    { passive: false },
+  );
+  rail.addEventListener("keydown", (e) => {
+    if (!target || !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key))
+      return;
     e.preventDefault();
-    target.scrollTop += e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? target.clientHeight : 1);
-    schedule();
-  }, { passive: false });
-  rail.addEventListener("keydown", e => {
-    if (!target || !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) return;
-    e.preventDefault(); e.stopPropagation();
+    e.stopPropagation();
     if (e.key === "Home") target.scrollTop = 0;
     else if (e.key === "End") target.scrollTop = target.scrollHeight;
-    else target.scrollTop += (e.key.endsWith("Up") ? -1 : 1) * (e.key.startsWith("Page") ? target.clientHeight * .85 : 40);
+    else
+      target.scrollTop +=
+        (e.key.endsWith("Up") ? -1 : 1) *
+        (e.key.startsWith("Page") ? target.clientHeight * 0.85 : 40);
     schedule();
   });
-  new MutationObserver(records => {
+  new MutationObserver((records) => {
     let changed = false;
     for (const record of records) {
       if (record.target === rail || rail.contains(record.target)) continue;
@@ -1012,16 +1195,33 @@ function songFilterValue(value) {
       changed = true;
     }
     if (changed) schedule();
-  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["open", "hidden"] });
-  document.addEventListener("scroll", e => {
-    if (!modal) return;
-    if (modal.contains(e.target) && scrollable(e.target) && e.target !== target) {
-      hideRail(); target = e.target;
-      resize.observe(target);
-    }
-    schedule();
-  }, true);
-  document.addEventListener("load", () => { if (modal) schedule(); }, true);
+  }).observe(document.body, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["open", "hidden"],
+  });
+  document.addEventListener(
+    "scroll",
+    (e) => {
+      if (!modal) return;
+      if (modal.contains(e.target) && scrollable(e.target) && e.target !== target) {
+        hideRail();
+        target = e.target;
+        resize.observe(target);
+      }
+      schedule();
+    },
+    true,
+  );
+  document.addEventListener(
+    "load",
+    () => {
+      if (modal) schedule();
+    },
+    true,
+  );
   document.addEventListener("close", schedule, true);
   addEventListener("resize", schedule, { passive: true });
   desktop.addEventListener("change", schedule);
@@ -1364,13 +1564,27 @@ function songFilterValue(value) {
 })();
 
 (() => {
-  const banner=document.getElementById("public-banner"),track=document.getElementById("public-banner-cards");
-  if(!banner||!track)return;
-  let timer=0,paused=false;
-  function pause(){clearTimeout(timer);if(!paused){paused=true;track.style.animationPlayState="paused";}}
-  function resume(){clearTimeout(timer);timer=setTimeout(()=>{paused=false;track.style.animationPlayState="";},180);}
-  document.addEventListener("touchstart",pause,{passive:true});
-  document.addEventListener("touchmove",pause,{passive:true});
-  document.addEventListener("touchend",resume,{passive:true});
-  document.addEventListener("touchcancel",resume,{passive:true});
+  const banner = document.getElementById("public-banner"),
+    track = document.getElementById("public-banner-cards");
+  if (!banner || !track) return;
+  let timer = 0,
+    paused = false;
+  function pause() {
+    clearTimeout(timer);
+    if (!paused) {
+      paused = true;
+      track.style.animationPlayState = "paused";
+    }
+  }
+  function resume() {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      paused = false;
+      track.style.animationPlayState = "";
+    }, 180);
+  }
+  document.addEventListener("touchstart", pause, { passive: true });
+  document.addEventListener("touchmove", pause, { passive: true });
+  document.addEventListener("touchend", resume, { passive: true });
+  document.addEventListener("touchcancel", resume, { passive: true });
 })();

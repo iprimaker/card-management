@@ -1,3 +1,120 @@
+/* ===== assets/js/command-definitions.js ===== */
+// Add command definitions here. Database operations must also be permitted by the RPC.
+window.CARD_COMMANDS = {
+  scopes: {
+    all: "全シリーズ",
+    aikatsu: "アイカツ",
+    onegai: "おねがい",
+    himitsu: "ひみつ",
+    "verse-onegai": "おねがいバース",
+    "verse-himitsu": "ひみつバース",
+  },
+  actions: {
+    read: {
+      label: "確認・お楽しみ（変更なし）",
+      types: {
+        summary: "収集サマリー",
+        duplicates: "重複カードを確認",
+        favorites: "お気に入り数を確認",
+        trade: "譲・求の件数を確認",
+        random: "今日のランダムカード",
+        next: "次に集めるカードを抽選",
+      },
+    },
+    reset: {
+      label: "解除・リセット",
+      rpc: "card_album_reset_records",
+      types: {
+        all: "所持・お気に入り・譲求",
+        ownership: "所持記録",
+        favorites: "お気に入り",
+        trade: "譲・求",
+        offer: "譲のみ",
+        want: "求のみ",
+      },
+      warning:
+        "元に戻せません。バースの共通パーツを削除すると、他のだんの収集状況にも反映されます。",
+    },
+    set: {
+      label: "一括登録・設定",
+      rpc: "card_album_set_records",
+      types: {
+        ownership: "持っているにする",
+        parts: "バース全パーツを持っているにする",
+        favorites: "お気に入りにする",
+        offer: "譲にする",
+        want: "求にする",
+        "priority-offer": "優先譲にする",
+        "priority-want": "優先求にする",
+      },
+      warning:
+        "既存の所持数は減らさず、未所持を1枚にします。ownershipはバースのフルコーデだけ、partsはパーツだけを登録します。譲と求は入れ替わり、通常・優先も指定値に変更します。",
+    },
+  },
+};
+
+// Public command tokens are independent of database names and UI headings.
+window.CARD_COMMANDS.codes = {
+  actions: { read: "A01", set: "A02", reset: "A03", check: "A04" },
+  scopes: {
+    all: "T00",
+    aikatsu: "T01",
+    onegai: "T02",
+    himitsu: "T03",
+    "verse-onegai": "T04",
+    "verse-himitsu": "T05",
+  },
+  types: {
+    all: "D00",
+    ownership: "D01",
+    parts: "D02",
+    favorites: "D03",
+    trade: "D04",
+    offer: "D05",
+    want: "D06",
+    "priority-offer": "D07",
+    "priority-want": "D08",
+    summary: "D09",
+    duplicates: "D10",
+    random: "D11",
+    next: "D12",
+  },
+};
+window.CARD_COMMANDS.help = {
+  set: {
+    ownership:
+      "未所持のカード・フルコーデを1枚として登録します。すでに1枚以上あるものの枚数は変えません。バースのパーツ数は変更しません。",
+    parts:
+      "対象のバース構成パーツを未所持なら1枚として登録します。フルコーデの枚数は変更しません。共通パーツは他のだんにも反映されます。",
+    favorites: "対象をお気に入りに追加します。所持数・譲求は変更しません。",
+    offer:
+      "対象を通常の譲に設定します。求の設定は解除され、優先指定も通常になります。所持数は変更しません。",
+    want: "対象を通常の求に設定します。譲の設定は解除され、優先指定も通常になります。所持数は変更しません。",
+    "priority-offer": "対象を優先の譲に設定します。求の設定は解除されます。所持数は変更しません。",
+    "priority-want": "対象を優先の求に設定します。譲の設定は解除されます。所持数は変更しません。",
+  },
+  reset: {
+    all: "対象の所持記録・お気に入り・譲求をまとめて削除します。アカウントやカード情報は残ります。元に戻せません。",
+    ownership:
+      "対象の所持記録を削除して0枚にします。お気に入りと譲求は残ります。バースはフルコーデと構成パーツが対象です。",
+    favorites: "対象のお気に入りだけを解除します。所持数と譲求は残ります。",
+    trade: "対象の譲・求と優先指定を解除します。所持数とお気に入りは残ります。",
+    offer: "対象の譲と優先譲だけを解除します。求・所持数・お気に入りは残ります。",
+    want: "対象の求と優先求だけを解除します。譲・所持数・お気に入りは残ります。",
+  },
+  read: {
+    summary:
+      "対象の種類数・直接所持登録の種類数・合計枚数を確認します。バースはパーツからの収集判定を含みません。記録は変更しません。",
+    duplicates:
+      "2枚以上登録している種類数と、2枚目以降の合計枚数を確認します。バースはフルコーデの直接所持のみです。",
+    favorites: "対象のお気に入り登録数を確認します。記録は変更しません。",
+    trade:
+      "対象の譲・求・優先指定の件数を確認します。バースはフルコーデのみです。記録は変更しません。",
+    random: "対象の中からランダムに1件を表示します。所持やお気に入りへの登録は行いません。",
+    next: "直接所持登録がないカード・フルコーデからランダムに収集候補を表示します。バースのパーツによる完成判定は含みません。",
+  },
+};
+/* ===== assets/js/settings-commands.js ===== */
 (() => {
   const host = window.CARD_TRADE_HOST,
     defs = window.CARD_COMMANDS,
@@ -21,34 +138,22 @@
     type = $("[data-type]"),
     action = $("[data-action]");
   const codes = defs.codes;
-  const reverse = (table, token) =>
-    Object.keys(table).find((key) => table[key] === token);
+  const reverse = (table, token) => Object.keys(table).find((key) => table[key] === token);
   function commandText(action, scope, type, series = "S00") {
-    return [
-      codes.actions[action],
-      codes.scopes[scope],
-      codes.types[type],
-      series,
-    ].join(" ");
+    return [codes.actions[action], codes.scopes[scope], codes.types[type], series].join(" ");
   }
   async function seriesChoices(target) {
     const labels = new Set();
-    const keys =
-      target === "all"
-        ? Object.keys(defs.scopes).filter((x) => x !== "all")
-        : [target];
+    const keys = target === "all" ? Object.keys(defs.scopes).filter((x) => x !== "all") : [target];
     for (const key of keys)
       for (const item of await window.CARD_SHARE_HOST.scopeItems(key)) {
         const values =
           item.appearances?.map((x) => x.series) ||
           (Array.isArray(item.series) ? item.series : [item.series]);
-        for (const value of values || [])
-          if (typeof value === "string" && value) labels.add(value);
+        for (const value of values || []) if (typeof value === "string" && value) labels.add(value);
       }
     const choices = new Map([["S00", null]]);
-    for (const label of [...labels].sort((a, b) =>
-      b.localeCompare(a, "ja", { numeric: true }),
-    )) {
+    for (const label of [...labels].sort((a, b) => b.localeCompare(a, "ja", { numeric: true }))) {
       const bytes = new TextEncoder().encode(label);
       const hash = await crypto.subtle.digest("SHA-256", bytes);
       const token =
@@ -76,8 +181,7 @@
   }
   options(scope, defs.scopes);
   function fillTypes() {
-    const definition =
-      defs.actions[action.value === "check" ? "reset" : action.value];
+    const definition = defs.actions[action.value === "check" ? "reset" : action.value];
     options(
       type,
       Object.fromEntries(
@@ -101,18 +205,12 @@
       if (id !== seriesRequest) return;
       options(
         select,
-        Object.fromEntries(
-          [...choices].map(([token, label]) => [
-            token,
-            label || "すべてのだん",
-          ]),
-        ),
+        Object.fromEntries([...choices].map(([token, label]) => [token, label || "すべてのだん"])),
       );
     } catch (e) {
       if (id === seriesRequest) {
         options(select, { S00: "すべてのだん" });
-        result.textContent =
-          "だんの候補を取得できませんでした。もう一度対象を選んでください。";
+        result.textContent = "だんの候補を取得できませんでした。もう一度対象を選んでください。";
       }
     } finally {
       if (id === seriesRequest) select.disabled = false;
@@ -129,15 +227,9 @@
       result.textContent = "だんの読み込みが終わるまでお待ちください。";
       return;
     }
-    input.value = commandText(
-      action.value,
-      scope.value,
-      type.value,
-      series || "S00",
-    );
+    input.value = commandText(action.value, scope.value, type.value, series || "S00");
     input.focus();
-    result.textContent =
-      "コマンドを入力欄へ出力しました。まだ実行していません。";
+    result.textContent = "コマンドを入力欄へ出力しました。まだ実行していません。";
   };
   async function copy(text) {
     try {
@@ -158,10 +250,7 @@
     group.append(summary);
     for (const [s, label] of Object.entries(defs.scopes))
       for (const [t, description] of Object.entries(def.types)) {
-        if (
-          t === "parts" &&
-          !["all", "verse-onegai", "verse-himitsu", "verse-primagi"].includes(s)
-        )
+        if (t === "parts" && !["all", "verse-onegai", "verse-himitsu", "verse-primagi"].includes(s))
           continue;
         const row = document.createElement("div");
         row.className = "command-list-row";
@@ -214,10 +303,7 @@
   }
   async function parse() {
     const text = input.value.trim().toUpperCase();
-    if (
-      text.length > 100 ||
-      !/^A[0-9]{2} T[0-9]{2} D[0-9]{2} S(?:00|[0-9A-F]{16})$/.test(text)
-    )
+    if (text.length > 100 || !/^A[0-9]{2} T[0-9]{2} D[0-9]{2} S(?:00|[0-9A-F]{16})$/.test(text))
       throw Error(
         "専用の英数字コマンドを入力してください。HTML・SQL・スクリプトは使用できません。",
       );
@@ -233,16 +319,12 @@
       (type === "parts" &&
         !["all", "verse-onegai", "verse-himitsu", "verse-primagi"].includes(scope))
     )
-      throw Error(
-        "この組み合わせは使用できません。入力補助から選んでください。",
-      );
+      throw Error("この組み合わせは使用できません。入力補助から選んでください。");
     let series = null;
     if (seriesToken !== "S00") {
       const choices = await seriesChoices(scope);
       if (!choices.has(seriesToken))
-        throw Error(
-          "だんのコードが見つかりません。入力補助から選び直してください。",
-        );
+        throw Error("だんのコードが見つかりません。入力補助から選び直してください。");
       series = choices.get(seriesToken);
     }
     return {
@@ -256,18 +338,14 @@
     const scope = cmd.args.p_scope,
       series = cmd.args.p_series;
     let catalog = [];
-    const keys =
-      scope === "all"
-        ? Object.keys(defs.scopes).filter((x) => x !== "all")
-        : [scope];
+    const keys = scope === "all" ? Object.keys(defs.scopes).filter((x) => x !== "all") : [scope];
     for (const key of keys) {
       const items = await window.CARD_SHARE_HOST.scopeItems(key);
       for (const item of items) {
         const labels =
           item.appearances?.map((x) => x.series) ||
           (Array.isArray(item.series) ? item.series : [item.series]);
-        if (!series || labels?.includes(series))
-          catalog.push({ ...item, _scope: key });
+        if (!series || labels?.includes(series)) catalog.push({ ...item, _scope: key });
       }
     }
     async function rows(table, columns) {
@@ -285,51 +363,32 @@
         if (data.length < 1000) return all;
       }
     }
-    const cardIds = new Set(
-        catalog.filter((x) => !x._scope.startsWith("verse-")).map((x) => x.id),
-      ),
-      fullIds = new Set(
-        catalog.filter((x) => x._scope.startsWith("verse-")).map((x) => x.id),
-      );
+    const cardIds = new Set(catalog.filter((x) => !x._scope.startsWith("verse-")).map((x) => x.id)),
+      fullIds = new Set(catalog.filter((x) => x._scope.startsWith("verse-")).map((x) => x.id));
     if (cmd.args.p_type === "random") {
       const c = catalog[Math.floor(Math.random() * catalog.length)];
-      return c
-        ? `今日の1枚：${c.code || ""} ${c.name || ""}`
-        : "対象がありません。";
+      return c ? `今日の1枚：${c.code || ""} ${c.name || ""}` : "対象がありません。";
     }
     if (cmd.args.p_type === "favorites") {
       const a = cardIds.size ? await rows("card_favorites", "card_id") : [],
-        b = fullIds.size
-          ? await rows("card_verse_favorites", "coordinate_id")
-          : [];
+        b = fullIds.size ? await rows("card_verse_favorites", "coordinate_id") : [];
       return `お気に入り：${a.filter((x) => cardIds.has(x.card_id)).length + b.filter((x) => fullIds.has(x.coordinate_id)).length}件`;
     }
     if (cmd.args.p_type === "trade") {
-      const a = (
-        await rows("card_trade_requests", "kind,target_id,side,priority")
-      ).filter((x) =>
+      const a = (await rows("card_trade_requests", "kind,target_id,side,priority")).filter((x) =>
         x.kind === "card"
           ? cardIds.has(x.target_id)
           : x.kind === "coordinate" && fullIds.has(x.target_id),
       );
       return `譲：${a.filter((x) => x.side === "offer").length}件 ／ 求：${a.filter((x) => x.side === "want").length}件 ／ 優先：${a.filter((x) => x.priority === 2).length}件`;
     }
-    const a = cardIds.size
-        ? await rows("card_ownership", "card_id,quantity")
-        : [],
+    const a = cardIds.size ? await rows("card_ownership", "card_id,quantity") : [],
       b = fullIds.size
-        ? await rows(
-            "card_verse_coordinate_ownership",
-            "coordinate_id,quantity",
-          )
+        ? await rows("card_verse_coordinate_ownership", "coordinate_id,quantity")
         : [];
     const owned = new Map([
-      ...a
-        .filter((x) => cardIds.has(x.card_id))
-        .map((x) => [x.card_id, x.quantity]),
-      ...b
-        .filter((x) => fullIds.has(x.coordinate_id))
-        .map((x) => [x.coordinate_id, x.quantity]),
+      ...a.filter((x) => cardIds.has(x.card_id)).map((x) => [x.card_id, x.quantity]),
+      ...b.filter((x) => fullIds.has(x.coordinate_id)).map((x) => [x.coordinate_id, x.quantity]),
     ]);
     if (cmd.args.p_type === "next") {
       const missing = catalog.filter((x) => !(owned.get(x.id) > 0));
@@ -344,11 +403,8 @@
 バースはフルコーデの直接登録数です。パーツからの収集判定は含みません。`;
   }
   async function rpc(cmd, execute) {
-    if (execute && !cmd.confirmationToken)
-      throw Error("内容を確認し直してください。");
-    const name = execute
-      ? "card_album_command_execute"
-      : "card_album_command_prepare";
+    if (execute && !cmd.confirmationToken) throw Error("内容を確認し直してください。");
+    const name = execute ? "card_album_command_execute" : "card_album_command_prepare";
     const args = execute
       ? { p_token: cmd.confirmationToken }
       : { p_action: cmd.action, ...cmd.args };
@@ -363,11 +419,9 @@
     return data;
   }
 
-  const counts = (d) =>
-    `所持 ${d.ownership}件 ／ お気に入り ${d.favorites}件 ／ 譲求 ${d.trade}件`;
+  const counts = (d) => `所持 ${d.ownership}件 ／ お気に入り ${d.favorites}件 ／ 譲求 ${d.trade}件`;
   async function execute(cmd, user) {
-    if (!auth() || host.session()?.user.id !== user)
-      throw Error("ログイン状態が変わりました。");
+    if (!auth() || host.session()?.user.id !== user) throw Error("ログイン状態が変わりました。");
     const data = await rpc(cmd, true);
     if (host.session()?.user.id !== user) return;
     result.textContent = "実行しました。" + counts(data);
@@ -427,8 +481,7 @@
     try {
       await execute(pending.cmd, pending.user);
     } catch (e) {
-      dialog.querySelector("[data-error]").textContent =
-        window.CARD_ERROR.message(e);
+      dialog.querySelector("[data-error]").textContent = window.CARD_ERROR.message(e);
     } finally {
       busy = false;
       confirm.disabled = false;

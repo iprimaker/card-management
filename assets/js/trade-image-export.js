@@ -41,10 +41,7 @@
     rendered.delete(key);
     rendered.set(key, blob);
     renderedBytes += blob.size;
-    while (
-      rendered.size > RENDER_CACHE_LIMIT ||
-      renderedBytes > RENDER_CACHE_BYTES
-    ) {
+    while (rendered.size > RENDER_CACHE_LIMIT || renderedBytes > RENDER_CACHE_BYTES) {
       const oldest = rendered.keys().next().value;
       renderedBytes -= rendered.get(oldest).size;
       rendered.delete(oldest);
@@ -103,9 +100,7 @@
       url.protocol === "https:" &&
       url.origin !== location.origin &&
       ![...url.searchParams.keys()].some((key) =>
-        /token|signature|credential|authorization|api.?key|^sig$|^key$/i.test(
-          key,
-        ),
+        /token|signature|credential|authorization|api.?key|^sig$|^key$/i.test(key),
       );
     const proxy = new URL("https://wsrv.nl/");
     proxy.search = new URLSearchParams({
@@ -171,12 +166,7 @@
     context.restore();
   }
 
-  async function create(
-    sheet,
-    title,
-    progress = () => {},
-    current = () => true,
-  ) {
+  async function create(sheet, title, progress = () => {}, current = () => true) {
     if (!sheet.cards?.length || sheet.cards.length > CAPACITY)
       throw Error("1画像に配置できるカードは1〜36枚です。");
     const cards = sheet.cards.map((card) => ({
@@ -184,13 +174,11 @@
       collage: card.collage ? [...card.collage] : card.collage,
     }));
     sheet = { ...sheet, cards };
-    const sources = [
-      ...new Set(cards.flatMap((c) => (c.image ? [c.image] : c.collage || []))),
-    ];
-    if (cards.some((c) => !c.image && !c.collage?.length && !["coordinate","part"].includes(c.kind)))
-      throw Error(
-        "画像が未登録のカードがあります。カード情報を確認してください。",
-      );
+    const sources = [...new Set(cards.flatMap((c) => (c.image ? [c.image] : c.collage || [])))];
+    if (
+      cards.some((c) => !c.image && !c.collage?.length && !["coordinate", "part"].includes(c.kind))
+    )
+      throw Error("画像が未登録のカードがあります。カード情報を確認してください。");
     if (!current()) throw Error("画像の作成を中止しました。");
     const key = outputKey(sheet, title);
     const cached = rendered.get(key);
@@ -209,36 +197,29 @@
       if (failed || !current()) throw Error("画像の作成を中止しました。");
     };
     await Promise.all(
-      Array.from(
-        { length: Math.min(IMAGE_CONCURRENCY, sources.length) },
-        async () => {
-          while (next < sources.length) {
-            assertCurrent();
-            const source = sources[next++];
-            try {
-              images.set(source, await exportImage(source));
-            } catch (error) {
-              failed = true;
-              throw error;
-            }
-            assertCurrent();
-            progress(++done, sources.length);
+      Array.from({ length: Math.min(IMAGE_CONCURRENCY, sources.length) }, async () => {
+        while (next < sources.length) {
+          assertCurrent();
+          const source = sources[next++];
+          try {
+            images.set(source, await exportImage(source));
+          } catch (error) {
+            failed = true;
+            throw error;
           }
-        },
-      ),
+          assertCurrent();
+          progress(++done, sources.length);
+        }
+      }),
     );
     if (document.fonts?.ready) await document.fonts.ready;
     assertCurrent();
     const rows = Math.ceil(cards.length / COLS);
     const canvas = document.createElement("canvas");
     canvas.width = WIDTH;
-    canvas.height =
-      HEADER + rows * CELL_HEIGHT + (rows - 1) * GAP + MARGIN + 38;
+    canvas.height = HEADER + rows * CELL_HEIGHT + (rows - 1) * GAP + MARGIN + 38;
     const context = canvas.getContext("2d", { alpha: false });
-    if (!context)
-      throw Error(
-        "画像を作成できません。このブラウザでは画像出力を利用できません。",
-      );
+    if (!context) throw Error("画像を作成できません。このブラウザでは画像出力を利用できません。");
     try {
       context.fillStyle = "#fffafc";
       context.fillRect(0, 0, canvas.width, canvas.height);
@@ -246,16 +227,7 @@
       context.imageSmoothingQuality = "medium";
       const offer = sheet.side === "offer",
         accent = offer ? "#aa6c68" : "#4e8eae";
-      text(
-        context,
-        `${title}　交換`,
-        MARGIN,
-        30,
-        26,
-        "#625961",
-        WIDTH - MARGIN * 2,
-        600,
-      );
+      text(context, `${title}　交換`, MARGIN, 30, 26, "#625961", WIDTH - MARGIN * 2, 600);
       text(
         context,
         `${offer ? "譲れる" : "欲しい"}${sheet.kind === "coordinate" ? "コーデ" : "カード"}`,
@@ -296,27 +268,24 @@
               true,
             ),
           );
-        }
-        else {
-          context.font="500 18px sans-serif";
-          const caption="画像なし",width=context.measureText(caption).width;
-          text(context,caption,x+(CELL_WIDTH-width)/2,y+CELL_HEIGHT/2,18,"#897d83",CELL_WIDTH-20);
+        } else {
+          context.font = "500 18px sans-serif";
+          const caption = "画像なし",
+            width = context.measureText(caption).width;
+          text(
+            context,
+            caption,
+            x + (CELL_WIDTH - width) / 2,
+            y + CELL_HEIGHT / 2,
+            18,
+            "#897d83",
+            CELL_WIDTH - 20,
+          );
         }
         const quantity = `${card.quantity}枚`;
         context.font = "600 17px sans-serif";
-        const badgeWidth = Math.min(
-          CELL_WIDTH - 12,
-          context.measureText(quantity).width + 20,
-        );
-        rounded(
-          context,
-          x + CELL_WIDTH - badgeWidth - 5,
-          y + 5,
-          badgeWidth,
-          27,
-          10,
-          "#fffffff2",
-        );
+        const badgeWidth = Math.min(CELL_WIDTH - 12, context.measureText(quantity).width + 20);
+        rounded(context, x + CELL_WIDTH - badgeWidth - 5, y + 5, badgeWidth, 27, 10, "#fffffff2");
         text(
           context,
           quantity,
@@ -329,28 +298,9 @@
         );
         const serial = String(card.code || "コード記載なし");
         context.font = "500 14px sans-serif";
-        const codeWidth = Math.min(
-          CELL_WIDTH - 10,
-          context.measureText(serial).width + 12,
-        );
-        rounded(
-          context,
-          x + 5,
-          y + CELL_HEIGHT - 26,
-          codeWidth,
-          21,
-          4,
-          "#ffffffeb",
-        );
-        text(
-          context,
-          serial,
-          x + 11,
-          y + CELL_HEIGHT - 15,
-          14,
-          "#4f454c",
-          codeWidth - 12,
-        );
+        const codeWidth = Math.min(CELL_WIDTH - 10, context.measureText(serial).width + 12);
+        rounded(context, x + 5, y + CELL_HEIGHT - 26, codeWidth, 21, 4, "#ffffffeb");
+        text(context, serial, x + 11, y + CELL_HEIGHT - 15, 14, "#4f454c", codeWidth - 12);
         if (card.priority) {
           context.beginPath();
           context.roundRect(x + 2, y + 2, CELL_WIDTH - 4, CELL_HEIGHT - 4, 5);
@@ -373,19 +323,12 @@
       const blob = await new Promise((resolve, reject) => {
         try {
           canvas.toBlob(
-            (blob) =>
-              blob
-                ? resolve(blob)
-                : reject(Error("画像を作成できませんでした。")),
+            (blob) => (blob ? resolve(blob) : reject(Error("画像を作成できませんでした。"))),
             "image/jpeg",
             0.7,
           );
         } catch {
-          reject(
-            Error(
-              "画像の保存が制限されています。画像の配信設定をご確認ください。",
-            ),
-          );
+          reject(Error("画像の保存が制限されています。画像の配信設定をご確認ください。"));
         }
       });
       assertCurrent();
