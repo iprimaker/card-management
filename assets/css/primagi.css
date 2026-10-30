@@ -1,0 +1,513 @@
+/* Third album. Existing card rarity and login preview styles remain unchanged. */
+body.game-primagi {
+  --accent: #8b6500;
+  --accent-dark: #735200;
+  --accent-light: #fff1b8;
+  --line: #e9dfbf;
+  --muted: #756b50;
+  background: #fffcf3;
+  color: #342e1d;
+}
+.game-switch {
+  min-width: 312px;
+}
+.game-switch-slider {
+  width: calc((100% - 8px) / 3);
+}
+.game-switch.is-primagi .game-switch-slider {
+  transform: translateX(200%);
+}
+.game-switch.is-primagi button[aria-pressed="true"] {
+  color: #8b6500;
+}
+.game-primagi .verse-progress {
+  background: #fff;
+}
+.game-primagi .progress-track > span,
+.game-primagi .verse-owned.is-owned {
+  background: #d9b432;
+  color: #302707;
+}
+.game-primagi .verse-owned-tabs,
+.game-primagi .verse-active-filters {
+  --accent: #8b6500;
+}
+.game-primagi .verse-card {
+  border-color: #e9dfbf;
+}
+.game-primagi .verse-heading .eyebrow {
+  color: #8b6500;
+  letter-spacing: 0.12em;
+}
+.game-primagi .verse-families {
+  display: none;
+}
+.primagi-part-name {
+  font-weight: 700;
+  margin: 10px 0 3px;
+  line-height: 1.5;
+}
+.primagi-part-code {
+  font-size: 0.75rem;
+  color: #756b50;
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.game-primagi .verse-code {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.game-primagi #verse-detail {
+  --accent: #8b6500;
+}
+@media (max-width: 760px) {
+  .game-switch {
+    min-width: 0;
+    width: 246px;
+    max-width: 100%;
+    padding: 3px;
+  }
+  .game-switch button {
+    padding: 7px 6px;
+    font-size: 0.8rem;
+  }
+  .game-switch-slider {
+    left: 3px;
+    top: 3px;
+    bottom: 3px;
+    width: calc((100% - 6px) / 3);
+  }
+  .game-primagi .verse-heading h1 {
+    font-size: 1.45rem;
+  }
+  .game-primagi .verse-code {
+    font-size: 0.7rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-switch-slider {
+    transition: none;
+  }
+}
+.save-type-tabs {
+  grid-template-columns: repeat(4, 1fr);
+}
+.save-type-tabs::before {
+  width: calc((100% - 17px) / 4);
+  transform: translateX(calc(var(--save-type-index, 0) * (100% + 3px)));
+}
+.save-code-series[data-series="primagi"] {
+  background: #fff0b8;
+  color: #795900;
+}
+.private-qr-manager [data-series="primagi-verse"],
+.private-qr-manager [data-series="primagi-save"] {
+  background: #fff0b8;
+  color: #795900;
+}
+.game-primagi #verse,
+.game-primagi #verse-detail {
+  --accent: #8b6500;
+  --soft: #fff4c8;
+  --line: #e9dfbf;
+  --muted: #756b50;
+}
+.game-primagi #verse #verse-back {
+  display: inline-flex !important;
+  flex: none;
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  color: #795900;
+  border-color: #e1ce89;
+}
+.game-primagi #verse .verse-heading {
+  flex-wrap: wrap;
+}
+.game-primagi #verse .verse-card.is-owned {
+  background: #fff2b6;
+  border-color: #d0b34d;
+}
+.game-primagi #verse .verse-owned-tabs {
+  border-color: #e9dfbf;
+}
+.game-primagi #verse .verse-owned-slider {
+  background: #fff0b8;
+  border-color: #e1ce89;
+}
+.game-primagi header .brand {
+  color: #8b6500;
+}
+.game-primagi #verse .filter-chip {
+  background: #fff5cd;
+  border-color: #e7d99f;
+}
+.game-primagi #verse .progress-track {
+  background: #f2ead0;
+}
+.game-primagi .wordmark,
+.game-primagi #verse summary,
+.game-primagi #verse .verse-progress strong,
+.game-primagi #verse-filtered-rate strong,
+.game-primagi #verse-total {
+  color: #8b6500;
+}
+.game-primagi #verse-collection,
+.game-primagi #verse-filters,
+.game-primagi #verse-total {
+  border-color: #e9dfbf;
+}
+.game-primagi #verse .verse-chevron,
+.game-primagi #verse .progress-track span {
+  background: #c29b21;
+}
+.game-primagi #verse label,
+.game-primagi #verse .verse-progress p,
+.game-primagi #verse-collection-count,
+.game-primagi #verse-filtered-rate,
+.game-primagi #verse .verse-code,
+.game-primagi #verse .verse-sync button {
+  color: #756b50;
+}
+.game-primagi #verse-back {
+  background: #fffdf4;
+}
+.contact-primagi body {
+  --accent: #8b6500;
+  --soft: #fff4c8;
+  --line: #e9dfbf;
+  background: #fffcf3;
+}
+.contact-primagi .contact-brand,
+.contact-primagi a {
+  color: #8b6500;
+}
+
+.game-switch button {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  min-width: 0;
+}
+@media (min-width: 761px) {
+  .game-switch button {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+.game-primagi #verse .verse-progress {
+  background: #fff;
+}
+
+/* Primagi palette applies to all related views and dialogs. */
+body.game-primagi {
+  --soft: #fff4c8;
+  --accent-light: #fff4c8;
+  --line: #e9dfbf;
+  --muted: #756b50;
+  --primagi-ink: #795900;
+  --primagi-soft: #fff7dc;
+  --primagi-selected: #f4d66a;
+}
+body.game-primagi :is(button, a, input, select, textarea):focus-visible {
+  outline-color: #a37800;
+}
+body.game-primagi #verse-progress-details {
+  color: var(--accent);
+}
+body.game-primagi :is(#verse-detail, #public-detail) {
+  color: #342e1d;
+}
+body.game-primagi
+  :is(
+    .verse-close,
+    .verse-modal-info dt,
+    .verse-coordinate h3,
+    .verse-part-stats,
+    .verse-quantity-value
+  ) {
+  color: var(--muted);
+}
+body.game-primagi :is(.verse-owned, .verse-quantity, .verse-modal-parts, .verse-coordinate) {
+  border-color: var(--line);
+}
+body.game-primagi :is(.verse-owned, .verse-quantity button, .verse-modal-favorite) {
+  color: var(--primagi-ink);
+}
+body.game-primagi :is(.verse-owned:hover, .verse-quantity button:hover, .verse-close:active) {
+  background: var(--primagi-soft);
+}
+body.game-primagi :is(#verse, #verse-detail) .verse-owned.is-owned {
+  background: var(--primagi-selected);
+  border-color: #d0b34d;
+  color: #604900;
+}
+body.game-primagi #verse-detail .verse-owned.is-duplicate {
+  background: #ffe7ad;
+  border-color: #d9b36b;
+  color: #805b17;
+}
+body.game-primagi #verse-detail .verse-owned.is-duplicate:hover {
+  background: #ffdf94;
+}
+body.game-primagi .verse-slot-tag {
+  background: #fff0b8;
+  color: var(--primagi-ink);
+}
+body.game-primagi :is(.verse-image-collage, .verse-part-image-frame) {
+  background: #fffdf4;
+}
+body.game-primagi .verse-coordinate.is-complete {
+  background: var(--primagi-soft);
+  border-color: #d0b34d;
+}
+body.game-primagi .verse-coordinate.is-complete h3 {
+  color: var(--accent);
+}
+body.game-primagi .verse-pages [aria-current="page"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+body.game-primagi :is(#verse-empty, #public-empty) {
+  background: var(--primagi-soft);
+  color: var(--muted);
+}
+body.game-primagi #verse-empty strong {
+  color: #635322;
+}
+body.game-primagi :is(.verse-image-unavailable, .verse-data-unavailable) {
+  background: var(--primagi-soft);
+  color: var(--muted);
+  border-color: var(--line);
+}
+body.game-primagi .private-qr-button {
+  color: var(--accent);
+  border-color: var(--line);
+}
+body.game-primagi .private-qr-button.is-registered {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Offer/want and priority retain distinct shades within the yellow palette. */
+body.game-primagi .trade-toggles button {
+  color: var(--primagi-ink);
+  border-color: var(--line);
+}
+body.game-primagi .trade-toggles [data-trade-side="offer"][aria-pressed="true"] {
+  background: #ffe1a6;
+  border-color: #d3ad60;
+  color: #805700;
+}
+body.game-primagi .trade-toggles [data-trade-side="want"][aria-pressed="true"] {
+  background: #fff0ae;
+  border-color: #c8b44b;
+  color: #706000;
+}
+body.game-primagi .trade-toggles [data-trade-side="offer"][data-priority="true"] {
+  background: #edbe5c;
+  border-color: #b68b35;
+  color: #624100;
+}
+body.game-primagi .trade-toggles [data-trade-side="want"][data-priority="true"] {
+  background: #e3ce58;
+  border-color: #aa962f;
+  color: #514600;
+}
+body.game-primagi
+  :is(
+    .trade-intro,
+    .trade-text-note,
+    .trade-step-heading p,
+    .trade-filter-panel summary small,
+    .trade-sheet-heading small,
+    .trade-empty,
+    .trade-shot-caption
+  ) {
+  color: var(--muted);
+}
+body.game-primagi :is(.trade-totals > span, .trade-sheet, .trade-review-group) {
+  border-color: var(--line);
+  color: #635322;
+}
+body.game-primagi .trade-totals > span:first-child strong {
+  color: #805700;
+}
+body.game-primagi .trade-totals > span:last-child strong {
+  color: #706000;
+}
+body.game-primagi .trade-sheet-heading strong {
+  background: var(--soft);
+  color: var(--accent);
+}
+body.game-primagi :is(.trade-export-group, .trade-review-group) h3 {
+  color: var(--accent);
+}
+body.game-primagi .trade-export-group button {
+  background: #fff4d6;
+  border-color: #e0c98a;
+  color: #805700;
+}
+body.game-primagi .trade-export-group[data-side="want"] button {
+  background: #fff9d9;
+  border-color: #ddd18b;
+  color: #706000;
+}
+body.game-primagi .trade-review-group {
+  background: #fffdf6;
+}
+body.game-primagi .trade-review-group[data-side="want"] {
+  background: #fffef3;
+  border-color: var(--line);
+}
+body.game-primagi :is(.trade-export-group h3 small, .trade-review-group h3 small) {
+  color: var(--muted);
+}
+
+/* Public share/search uses the same palette, including its empty state. */
+body.game-primagi.public-share #public-empty {
+  background: var(--primagi-soft);
+  border-radius: 18px;
+}
+body.game-primagi :is(.public-possession.is-no, .public-part-state.is-no) {
+  background: #fffdf4;
+  color: var(--muted);
+  border-color: var(--line);
+}
+body.game-primagi .public-signup-banner {
+  background: linear-gradient(125deg, #fff7d9f7, #fffdf6f7 52%, #fff0b8f7);
+  box-shadow: 0 -8px 30px #7959000e;
+}
+body.game-primagi .public-signup-banner::before {
+  background:
+    radial-gradient(circle at 8% 80%, #f4d66a33 0 45px, transparent 46px),
+    radial-gradient(circle at 90% 5%, #f5eab344 0 60px, transparent 61px);
+}
+body.game-primagi .public-signup-banner::after {
+  background: linear-gradient(90deg, #d9b432, #f0d675);
+}
+body.game-primagi .trade-share-area p {
+  color: var(--muted);
+}
+body.game-primagi .card-trade-tag {
+  background: #bf8d27;
+  color: #fff;
+}
+body.game-primagi .card-trade-tag[data-side="want"] {
+  background: #a79329;
+}
+body.game-primagi .card-trade-tag[data-priority="true"] {
+  background: #8c6510;
+}
+body.game-primagi .card-trade-tag[data-side="want"][data-priority="true"] {
+  background: #776713;
+}
+body.game-primagi .private-qr-button:not(.is-registered) {
+  background: var(--primagi-soft);
+}
+body.game-primagi #verse-detail .verse-code {
+  color: var(--muted);
+}
+body.game-primagi .verse-parts-heading {
+  color: var(--accent);
+}
+body.game-primagi #verse :is(select, .verse-search input, .verse-column-segment) {
+  border-color: var(--line);
+  color: var(--primagi-ink);
+}
+body.game-primagi #verse :is(.filter-clear, #verse-clear) {
+  color: var(--accent);
+}
+body.game-primagi #verse :is(.filter-clear, #verse-clear):hover {
+  background: var(--soft);
+  color: var(--primagi-ink);
+}
+body.game-primagi
+  :is(.verse-collection-options button, .verse-owned-tabs button, .verse-column-segment button) {
+  color: var(--muted);
+}
+body.game-primagi
+  :is(
+    .verse-collection-options [aria-pressed="true"],
+    .verse-column-segment [aria-pressed="true"]
+  ) {
+  background: var(--soft);
+  border-color: var(--line);
+  color: var(--accent);
+}
+body.game-primagi .verse-collection-options [aria-pressed="true"]:hover {
+  background: var(--soft);
+}
+body.game-primagi .verse-owned-tabs button.active {
+  color: var(--accent);
+}
+body.game-primagi :is(.verse-note, #verse-message, #verse-filter-summary) {
+  color: var(--muted);
+}
+body.game-primagi .verse-nav-link {
+  background: var(--primagi-soft);
+  border-color: var(--line);
+  color: var(--accent);
+}
+body.game-primagi .verse-nav-link:hover {
+  background: var(--soft);
+  border-color: #d0b34d;
+}
+body.game-primagi .private-qr-tag {
+  background: var(--accent);
+  box-shadow: 0 2px 6px #79590020;
+}
+body.game-primagi .verse-duplicate-tag {
+  background: #fff0d2;
+  border-color: #dfc38c;
+  color: #805b17;
+}
+body.game-primagi #verse-cards .verse-card.is-parts-complete:not(.is-owned),
+body.game-primagi #verse .verse-coordinate.is-parts-complete {
+  background: #fff9d9;
+  border-color: #d7c974;
+}
+body.game-primagi #verse .verse-partial.is-parts-complete,
+body.game-primagi.public-share .public-partial.is-parts-complete {
+  background: #eee0a1;
+  color: #75601b;
+}
+body.game-primagi.public-share .public-card.is-verse.is-parts-complete {
+  background: #fff9d9;
+  border-color: #d7c974;
+}
+body.game-primagi.public-share .public-card.is-verse.is-owned {
+  background: #fff2b6;
+  border-color: #d0b34d;
+}
+
+.catalog-image-unavailable {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 3/4;
+  min-height: 70px;
+  border-radius: 10px;
+  background: var(--soft, #f6f6f6);
+  color: var(--muted, #777);
+  font-size: 12px;
+  text-align: center;
+}
+.verse-part-image-frame > .catalog-image-unavailable,
+.public-modal-parts .catalog-image-unavailable {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: 1;
+}
+.public-image > .catalog-image-unavailable,
+.public-modal-image > .catalog-image-unavailable {
+  height: 100%;
+  min-height: 0;
+}
+.trade-sheet-grid .catalog-image-unavailable {
+  height: var(--trade-image-height, 100px);
+  max-height: 100px;
+  min-height: 0;
+  font-size: 10px;
+}
