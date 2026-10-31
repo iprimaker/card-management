@@ -1,3 +1,14 @@
+/* Remove retired guide progress from this browser without touching other settings. */
+(() => {
+  for (const area of ["localStorage", "sessionStorage"]) {
+    try {
+      const storage = window[area];
+      const keys = Array.from({length: storage.length}, (_, index) => storage.key(index));
+      for (const key of keys) if (/^card-album-tutorial-v\d+:/.test(key || "")) storage.removeItem(key);
+    } catch {}
+  }
+})();
+
 /* ===== Primagi / Aipri Verse compatibility ===== */
 /* Official Aipri Verse migration list. Only exact card IDs are used as evidence. */
 (() => {

@@ -9,7 +9,9 @@
   function raise(node) {
     if (!node || node.hidden) return;
     const dialogs = [...document.querySelectorAll("dialog[open]")];
-    const host = latestDialog?.open ? latestDialog : dialogs.at(-1) || document.body;
+    const host = latestDialog?.open
+      ? latestDialog
+      : dialogs.at(-1) || document.body;
     // Place the notification inside the active modal's non-inert subtree first.
     if (node.parentElement !== host) host.append(node);
     Object.assign(node.style, {
@@ -35,7 +37,8 @@
   window.CARD_TOAST_LAYER = Object.freeze({ raise, hide });
   new MutationObserver((records) => {
     for (const record of records) {
-      if (record.target.tagName === "DIALOG" && record.target.open) latestDialog = record.target;
+      if (record.target.tagName === "DIALOG" && record.target.open)
+        latestDialog = record.target;
     }
     const node = document.getElementById("toast");
     if (node && !node.hidden) {
@@ -51,6 +54,7 @@
 (() => {
   "use strict";
   const safe = new Set([
+    "IDまたはパスワードが異なります。",
     " 一覧への反映に失敗しました。アルバムに戻る前に再読み込みしてください。",
     "2〜8文字で入力してください。",
     "IDを取得できませんでした。時間をおいてお試しください。",
@@ -118,17 +122,33 @@
     "過去の情報を読み込めませんでした。もう一度お試しください。",
   ]);
   function message(error) {
-    const text = typeof error === "string" ? error : String(error?.message || "");
+    const text =
+      typeof error === "string" ? error : String(error?.message || "");
     const code = String(error?.code || "");
-    if (/Invalid login credentials/i.test(text))
-      return "アルバムIDまたはパスワードが正しくありません。";
+    if (
+      code === "invalid_credentials" ||
+      /Invalid login credentials|(?:アルバム)?ID(?:または|か)パスワードが(?:正しくありません|異なります)/i.test(
+        text,
+      )
+    )
+      return "IDまたはパスワードが異なります。";
     if (/Email not confirmed/i.test(text))
       return "確認メールのリンクを開いてからログインしてください。";
-    if (/rate.?limit|too many|送信回数|リクエスト.*多/i.test(text) || code === "429")
+    if (
+      /rate.?limit|too many|送信回数|リクエスト.*多/i.test(text) ||
+      code === "429"
+    )
       return "操作が集中しています。しばらく時間をおいてからお試しください。";
-    if (/timeout|timed.?out|abort|タイムアウト/i.test(text) || error?.name === "AbortError")
+    if (
+      /timeout|timed.?out|abort|タイムアウト/i.test(text) ||
+      error?.name === "AbortError"
+    )
       return "通信に時間がかかっています。時間をおいて、もう一度お試しください。";
-    if (/load.?failed|failed.?to.?load|fetch|network|offline|lode.?falede/i.test(text))
+    if (
+      /load.?failed|failed.?to.?load|fetch|network|offline|lode.?falede/i.test(
+        text,
+      )
+    )
       return "接続できませんでした。通信状態を確認して、もう一度お試しください。";
     if (/JWT|token.*expired|session.*expired|PGRST301/i.test(text + code))
       return "ログインの有効期限が切れました。もう一度ログインしてください。";
@@ -149,14 +169,21 @@
 })();
 (() => {
   "use strict";
-  const version = "20261031-aikatsu-all-browse-v6";
+  const version = "20261031-remember-switch-fix-v14";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
-  const page = ["shared", "browse", "contact", "card-registration"].includes(requested)
+  const page = ["shared", "browse", "contact", "card-registration"].includes(
+    requested,
+  )
     ? requested
     : "album";
   const template = document.getElementById(
-    "page-" + (page === "card-registration" ? "album" : page === "browse" ? "shared" : page),
+    "page-" +
+      (page === "card-registration"
+        ? "album"
+        : page === "browse"
+          ? "shared"
+          : page),
   );
   const rootURL = new URL("./", location.href);
   document.title =
@@ -200,7 +227,10 @@
           return "";
         }
       })();
-    document.documentElement.classList.toggle("contact-primagi", theme === "primagi");
+    document.documentElement.classList.toggle(
+      "contact-primagi",
+      theme === "primagi",
+    );
   }
   const initialVisibility = document.body.style.visibility;
   document.body.style.visibility = "hidden";
@@ -211,8 +241,9 @@
   if (invitationRoute) {
     document.body.classList.add("invitation-route");
     document.title = "招待からアルバムを作成｜カードアルバム";
-    document.getElementById("auth-normal-panel").querySelector("h2").textContent =
-      "招待からアルバムを作成";
+    document
+      .getElementById("auth-normal-panel")
+      .querySelector("h2").textContent = "招待からアルバムを作成";
     document.getElementById("login-tab").parentElement.hidden = true;
     document.getElementById("auth-form").hidden = true;
     document.getElementById("signup-flow").hidden = false;
@@ -229,11 +260,16 @@
     return new Promise((resolve, reject) => {
       const node = document.createElement("script");
       const assetVersion = version;
-      node.src = new URL("assets/js/" + file + "?v=" + assetVersion, rootURL).href;
+      node.src = new URL(
+        "assets/js/" + file + "?v=" + assetVersion,
+        rootURL,
+      ).href;
       node.async = false;
       node.onload = resolve;
       node.onerror = () =>
-        reject(Error("ファイルを読み込めませんでした。再読み込みしてください。"));
+        reject(
+          Error("ファイルを読み込めませんでした。再読み込みしてください。"),
+        );
       document.head.append(node);
     });
   }
@@ -241,10 +277,15 @@
     return new Promise((resolve, reject) => {
       const node = document.createElement("link");
       node.rel = "stylesheet";
-      node.href = new URL("assets/css/" + file + ".css?v=" + version, rootURL).href;
+      node.href = new URL(
+        "assets/css/" + file + ".css?v=" + version,
+        rootURL,
+      ).href;
       node.onload = resolve;
       node.onerror = () =>
-        reject(Error("表示ファイルを読み込めませんでした。再読み込みしてください。"));
+        reject(
+          Error("表示ファイルを読み込めませんでした。再読み込みしてください。"),
+        );
       document.head.append(node);
     });
   }
@@ -258,20 +299,26 @@
   );
   styles.then(
     () => {
-      if (page !== "card-registration") document.body.style.visibility = initialVisibility;
+      if (page !== "card-registration")
+        document.body.style.visibility = initialVisibility;
     },
     () => {},
   );
-  const visibilityModule = Promise.all([script("vendor/supabase.js"), script("config.js")]).then(
-    () => script("card-visibility.js"),
+  const visibilityModule = Promise.all([
+    script("vendor/supabase.js"),
+    script("config.js"),
+  ]).then(() => script("card-visibility.js"));
+  const dependencies = visibilityModule.then(
+    () => window.CARD_VISIBILITY.ready,
   );
-  const dependencies = visibilityModule.then(() => window.CARD_VISIBILITY.ready);
   const preview =
     page === "album" && !invitationRoute
       ? visibilityModule
           .then(() => script("startup.js"))
           .then(() => {
-            window.CARD_STARTUP_PREVIEW.paint(document.getElementById("auth-art"));
+            window.CARD_STARTUP_PREVIEW.paint(
+              document.getElementById("auth-art"),
+            );
           })
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
@@ -289,7 +336,6 @@
     .then(() => (page === "album" ? script("aikatsu-all.js") : undefined))
     .then(() => (page === "album" ? script("settings-commands.js") : undefined))
     .then(() => (page === "album" ? script("save-codes.js") : undefined))
-    .then(() => (page === "album" ? script("tutorial.js") : undefined))
     .then(() => (page === "album" ? script("card-registration.js") : undefined))
     .then(() => {
       document.body.style.visibility = initialVisibility;

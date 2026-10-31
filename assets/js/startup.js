@@ -9,7 +9,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "星宮いちご",
       rarity: "PR",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-01_PR_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=1&sort=1&brand=%E3%82%A8%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%B7%E3%83%A5%E3%82%AC%E3%83%BC",
@@ -45,7 +46,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "霧矢あおい",
       rarity: "PR",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-36_PR.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-36_PR.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-36_PR_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=1&sort=1&brand=%E3%83%95%E3%83%A5%E3%83%BC%E3%83%81%E3%83%A3%E3%83%AA%E3%83%B3%E3%82%B0%E3%82%AC%E3%83%BC%E3%83%AB",
@@ -63,7 +65,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "紫吹蘭",
       rarity: "N",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -81,7 +84,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "星宮いちご",
       rarity: "N",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -99,7 +103,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "音城ノエル",
       rarity: "ER",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-50_ER.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-50_ER.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/E1-50_ER_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629001&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -135,7 +140,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       game: "aikatsu",
       character: "霧矢あおい",
       rarity: "R",
-      front: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R.webp",
+      front:
+        "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R.webp",
       back: "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R_b.webp",
       source:
         "https://dcd.aikatsu.com/encore/cardlist/?search=true&series=629901&display=1&sort=1&brand=%E3%83%8E%E3%83%BC%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89",
@@ -282,16 +288,1017 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       brand: [],
       songs: ["Ring Ring Ring feat. ひまり"],
     },
+    {
+      id: "aikatsu-all:cardlist:52365b5a49757e8e0c6a",
+      system: "cardlist",
+      code: "16 04-01",
+      name: "アイスブルーフリルキャミソール",
+      series: ["2016シリーズ第4弾"],
+      front:
+        "https://card.aikatsu.net/cardlist/images/cardlist/cardimg/1604-01.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/cardlist/index.php?search=true&category=215022",
+      details: {
+        タイプ: ["キュート"],
+        カテゴリー: ["トップス"],
+        レアリティ: ["レア"],
+        ラッキースター: ["2"],
+        "星座・ロマンス・ドリーム・BOOM": ["-"],
+        フィーバー: ["-"],
+        ドレスアピール: ["リズミカルトップス"],
+        アピールポイント: ["350"],
+        ブランド: ["Angely Sugar"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レア",
+      type: ["キュート"],
+      category: ["トップス"],
+      brand: ["Angely Sugar"],
+    },
+    {
+      id: "aikatsu-all:cardlist:a4a7264ab4501123099e",
+      system: "cardlist",
+      code: "15 03-CP11",
+      name: "竹華エメラルドトップス",
+      series: ["2015シリーズ第3弾"],
+      front:
+        "https://card.aikatsu.net/cardlist/images/cardlist/cardimg/1503-CP11.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/cardlist/index.php?search=true&category=215015",
+      details: {
+        タイプ: ["セクシー"],
+        カテゴリー: ["トップス"],
+        レアリティ: ["キャンペーンレア"],
+        ラッキースター: ["2"],
+        "ロマンス・ドリーム": ["かぐや姫"],
+        ドレスアピール: ["リズミカルトップス"],
+        アピールポイント: ["450"],
+        ブランド: ["桜色花伝"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "キャンペーンレア",
+      type: ["セクシー"],
+      category: ["トップス"],
+      brand: ["桜色花伝"],
+    },
+    {
+      id: "aikatsu-all:cardlist:7e602aa11d41985c0185",
+      system: "cardlist",
+      code: "06-21",
+      name: "マリンパティシエシューズ",
+      series: ["第6弾"],
+      front:
+        "https://card.aikatsu.net/cardlist/images/cardlist/cardimg/06-21.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/cardlist/index.php?search=true&category=215006",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["シューズ"],
+        レアリティ: ["ノーマル"],
+        ラッキースター: ["3"],
+        星座: ["-"],
+        ドレスアピール: ["ホッピングシューズ"],
+        アピールポイント: ["300"],
+        ブランド: ["LoLi GoThiC"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ノーマル",
+      type: ["クール"],
+      category: ["シューズ"],
+      brand: ["LoLi GoThiC"],
+    },
+    {
+      id: "aikatsu-all:cardlist:75100bcfa30aa11eed21",
+      system: "cardlist",
+      code: "15 PC-093",
+      name: "メールローズスカート",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/cardlist/images/cardlist/cardimg/15PC-093.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/cardlist/index.php?search=true&category=215901",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["ボトムス"],
+        レアリティ: ["-"],
+        ラッキースター: ["3"],
+        "星座・ロマンス・ドリーム・BOOM": ["-"],
+        フィーバー: ["-"],
+        ドレスアピール: ["ボトムスチャーム"],
+        アピールポイント: ["200"],
+        配布: ["アイカツ！チャーミースウィングアクセサリー"],
+        ブランド: ["LoLi GoThiC"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "-",
+      type: ["クール"],
+      category: ["ボトムス"],
+      brand: ["LoLi GoThiC"],
+    },
+    {
+      id: "aikatsu-all:cardlist:e1de8dbf571ed8a30aa3",
+      system: "cardlist",
+      code: "GC-011",
+      name: "シャイニーブラックスカート",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/cardlist/images/cardlist/cardimg/GC-011.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/cardlist/index.php?search=true&category=215901",
+      details: {
+        タイプ: ["セクシー"],
+        カテゴリー: ["ボトムス"],
+        ブランド: ["ノーブランド"],
+        レアリティ: ["-"],
+        ラッキースター: ["2"],
+        "星座・ロマンス・ドリーム・BOOM": ["-"],
+        フィーバー: ["-"],
+        ドレスアピール: ["ボトムスチャーム"],
+        アピールポイント: ["250"],
+        配布: ["アイカツ！グッドコーデパック"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "-",
+      type: ["セクシー"],
+      category: ["ボトムス"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:cardlist:07eaabddab120035d53d",
+      system: "cardlist",
+      code: "PJ-072",
+      name: "ラッキーパイロットブーツ",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/cardlist/images/cardlist/cardimg/PJ-072.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/cardlist/index.php?search=true&category=215901",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["シューズ"],
+        レアリティ: ["-"],
+        ラッキースター: ["2"],
+        "星座・ロマンス・ドリーム・BOOM": ["-"],
+        フィーバー: ["-"],
+        ドレスアピール: ["ダンシングシューズ"],
+        アピールポイント: ["350"],
+        配布: ["アイカツ！ブランドコレクション3"],
+        ブランド: ["FUTURING GIRL"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "-",
+      type: ["クール"],
+      category: ["シューズ"],
+      brand: ["FUTURING GIRL"],
+    },
+    {
+      id: "aikatsu-all:stars:6745f1ee7ef0c983ceba",
+      system: "stars",
+      code: "N 0-10-★-★",
+      name: "四ツ星学園Ｓ４制服",
+      series: ["四ツ星学園ベーシックドレス"],
+      front:
+        "https://card.aikatsu.net/stars/images/cardlist/card/391000/n0-10-star-star_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/stars/dresslist_detail.php?dress_key=NP01_P00_Qt_N004_WS_W01&parallel=_00",
+      details: {
+        タイプ: ["キュート"],
+        ブランド: ["ノーブランド"],
+        カテゴリー: ["トップス＆ボトムス"],
+        レアリティ: ["ノーマル"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ノーマル",
+      type: ["キュート"],
+      category: ["トップス＆ボトムス"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:stars:a5ad5fbeb199f39ae63b",
+      system: "stars",
+      code: "N 2-45-③-b",
+      name: "アゲハパープルハイヒール",
+      series: ["2弾シーズンサマー"],
+      front:
+        "https://card.aikatsu.net/stars/images/cardlist/card/391002/n2-45-3-b_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/stars/dresslist_detail.php?dress_key=NP02_H02_Se_N001_TBS_S06&parallel=_00",
+      details: {
+        タイプ: ["セクシー"],
+        ブランド: ["ノーブランド"],
+        カテゴリー: ["シューズ"],
+        レアリティ: ["ノーマル"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ノーマル",
+      type: ["セクシー"],
+      category: ["シューズ"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:stars:e201eb04be67d4abd311",
+      system: "stars",
+      code: "N 4-16-①-a",
+      name: "リボンピュアローズブルゾン",
+      series: ["4弾シーズンウィンター"],
+      front:
+        "https://card.aikatsu.net/stars/images/cardlist/card/391004/n4-16-1-a_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/stars/dresslist_detail.php?dress_key=NP04_H04_Qt_N003_TBS_T01&parallel=_00",
+      details: {
+        タイプ: ["キュート"],
+        ブランド: ["ノーブランド"],
+        カテゴリー: ["トップス"],
+        レアリティ: ["ノーマル"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ノーマル",
+      type: ["キュート"],
+      category: ["トップス"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:stars:be93c0ee9687614c31ba",
+      system: "stars",
+      code: "N S2-55",
+      name: "ティーンガールショッピングトップス",
+      series: ["星のツバサ2弾"],
+      front:
+        "https://card.aikatsu.net/stars/images/cardlist/card/391102/ns2-55_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/stars/dresslist_detail.php?dress_key=NP06_H2_N_Se_002_T01&parallel=_00",
+      details: {
+        タイプ: ["セクシー"],
+        ブランド: ["ノーブランド"],
+        カテゴリー: ["トップス"],
+        レアリティ: ["ノーマル"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ノーマル",
+      type: ["セクシー"],
+      category: ["トップス"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:stars:2c5b21266c6265976a9a",
+      system: "stars",
+      code: "P S-125",
+      name: "なでしこニューイヤードレス",
+      series: ["プロモーション 星のツバサシリーズ"],
+      front:
+        "https://card.aikatsu.net/stars/images/cardlist/card/391801/ps-125_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/stars/dresslist_detail.php?dress_key=NP07_H5_CR_Qt_002_W01&parallel=_00",
+      details: {
+        タイプ: ["キュート"],
+        ブランド: ["マイリトルハート"],
+        レアリティ: ["レア"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レア",
+      type: ["キュート"],
+      category: [],
+      brand: ["マイリトルハート"],
+    },
+    {
+      id: "aikatsu-all:stars:1c5565ffec51b5f0fc44",
+      system: "stars",
+      code: "P 129-②-★",
+      name: "フローラルカルテットスターブーツ",
+      series: ["プロモーション"],
+      front:
+        "https://card.aikatsu.net/stars/images/cardlist/card/391901/p129-2-star_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/stars/dresslist_detail.php?dress_key=NP04_P04_Co_R001_WSA_S02&parallel=_00",
+      details: {
+        タイプ: ["クール"],
+        ブランド: ["ノーブランド"],
+        カテゴリー: ["シューズ"],
+        レアリティ: ["レア"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レア",
+      type: ["クール"],
+      category: ["シューズ"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:friends:2fa6f313326c10361466",
+      system: "friends",
+      code: "FJ3-1 JLR",
+      name: "ピュアシャイニングダイヤモンドトップス",
+      series: ["かがやきのジュエル3弾"],
+      front:
+        "https://card.aikatsu.net/friends/images/cardlist/card/458009/fj3-1jlr_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/friends/index.php?search=true&category=458009",
+      details: {
+        タイプ: ["キュート"],
+        カテゴリー: ["トップス"],
+        ブランド: ["ピュアパレット"],
+        ドレスアピール: ["オールジュエリングハーモニー"],
+        アピールポイント: ["950"],
+        レアリティ: ["ジュエリングレア ／ ★★★★"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ジュエリングレア ／ ★★★★",
+      type: ["キュート"],
+      category: ["トップス"],
+      brand: ["ピュアパレット"],
+    },
+    {
+      id: "aikatsu-all:friends:751b4057fc13a41c44fa",
+      system: "friends",
+      code: "FCP-49 P",
+      name: "ピュアシャイニングサファイアスカート",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/friends/images/cardlist/card/458901/fcp-49p_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/friends/index.php?search=true&category=458901",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["ボトムス"],
+        ブランド: ["ピュアパレット"],
+        ドレスアピール: ["オールジュエリングハーモニー"],
+        アピールポイント: ["1000"],
+        レアリティ: ["ジュエリングレア ／ ★★★★"],
+        備考: ["みおちゃんのオールジュエリングドレスGETキャンペーン"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ジュエリングレア ／ ★★★★",
+      type: ["クール"],
+      category: ["ボトムス"],
+      brand: ["ピュアパレット"],
+    },
+    {
+      id: "aikatsu-all:friends:7afd2fd025664d6da311",
+      system: "friends",
+      code: "FCDP-69 P",
+      name: "ディープコーラルシューズ",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/friends/images/cardlist/card/458901/fcdp-69p_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/friends/index.php?search=true&category=458901",
+      details: {
+        タイプ: ["キュート"],
+        カテゴリー: ["シューズ"],
+        ブランド: ["シュガーメロディ"],
+        ドレスアピール: ["ドリームメロディ"],
+        アピールポイント: ["600"],
+        レアリティ: ["レア ／ ★★"],
+        備考: [
+          "データカードダス アイカツフレンズ！ マイベストコーデパック～オールブランド♪～",
+        ],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レア ／ ★★",
+      type: ["キュート"],
+      category: ["シューズ"],
+      brand: ["シュガーメロディ"],
+    },
+    {
+      id: "aikatsu-all:friends:f503b81c7212381d1ffa",
+      system: "friends",
+      code: "FCDK-11 P",
+      name: "シックストレートパンツ",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/friends/images/cardlist/card/458901/fcdk-11p_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/friends/index.php?search=true&category=458901",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["ボトムス"],
+        ブランド: ["マテリアルカラー"],
+        ドレスアピール: ["グラフィカルキューブ"],
+        アピールポイント: ["600"],
+        レアリティ: ["レア ／ ★★"],
+        備考: ["アイカツフレンズ！レアコーデセレクション"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レア ／ ★★",
+      type: ["クール"],
+      category: ["ボトムス"],
+      brand: ["マテリアルカラー"],
+    },
+    {
+      id: "aikatsu-all:friends:cf36438ecc2cf37001d6",
+      system: "friends",
+      code: "F2-62 CP",
+      name: "ストロベリーアイスクリームスカート",
+      series: ["2弾"],
+      front:
+        "https://card.aikatsu.net/friends/images/cardlist/card/458002/f2-62cp_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/friends/index.php?search=true&category=458002",
+      details: {
+        タイプ: ["キュート"],
+        カテゴリー: ["ボトムス"],
+        ブランド: ["シュガーメロディ"],
+        ドレスアピール: ["ドリームメロディ"],
+        アピールポイント: ["500"],
+        レアリティ: ["キャンペーンレア ／ ★★"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "キャンペーンレア ／ ★★",
+      type: ["キュート"],
+      category: ["ボトムス"],
+      brand: ["シュガーメロディ"],
+    },
+    {
+      id: "aikatsu-all:friends:4dc0b2c1ed49eba522c5",
+      system: "friends",
+      code: "F4-79 CP",
+      name: "トリックカーニバルブーツ",
+      series: ["4弾"],
+      front:
+        "https://card.aikatsu.net/friends/images/cardlist/card/458004/f4-79cp_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/friends/index.php?search=true&category=458004",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["シューズ"],
+        ブランド: ["マテリアルカラー"],
+        ドレスアピール: ["パンプキンタワー"],
+        アピールポイント: ["450"],
+        レアリティ: ["キャンペーンレア ／ ★★"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "キャンペーンレア ／ ★★",
+      type: ["クール"],
+      category: ["シューズ"],
+      brand: ["マテリアルカラー"],
+    },
+    {
+      id: "aikatsu-all:onparade:3a6803465f3f52c2fa19",
+      system: "onparade",
+      code: "OD3-1 LPR",
+      name: "コスモス・ハートフルブーケトップス",
+      series: ["ドリームストーリー第3弾"],
+      front:
+        "https://card.aikatsu.net/onparade/images/cardlist/card/491006/od3-1lpr_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/onparade/index.php?search=true&category=491006",
+      details: {
+        タイプ: ["キュート"],
+        カテゴリー: ["トップス"],
+        ブランド: ["コスモス"],
+        学園: ["-"],
+        アピールポイント: ["1050"],
+        レアリティ: ["レジェンドプレミアムレア ／ ★★★★"],
+        ドレスアピール: ["ベストコスモスウィッシュ"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レジェンドプレミアムレア ／ ★★★★",
+      type: ["キュート"],
+      category: ["トップス"],
+      brand: ["コスモス"],
+    },
+    {
+      id: "aikatsu-all:onparade:0f3cdd0df7a756671ca4",
+      system: "onparade",
+      code: "OD1-62 N",
+      name: "ルージュドリームブーツ",
+      series: ["ドリームストーリー第1弾"],
+      front:
+        "https://card.aikatsu.net/onparade/images/cardlist/card/491004/od1-62n_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/onparade/index.php?search=true&category=491004",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["シューズ"],
+        ブランド: ["ノーブランド"],
+        学園: ["ドリームアカデミー"],
+        アピールポイント: ["350"],
+        レアリティ: ["ノーマル ／ ★"],
+        ドレスアピール: ["クールスマイル"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ノーマル ／ ★",
+      type: ["クール"],
+      category: ["シューズ"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:onparade:1625a50b76ac73b54d9b",
+      system: "onparade",
+      code: "OP2-18 R",
+      name: "パープルグラビティブーツ",
+      series: ["第2弾"],
+      front:
+        "https://card.aikatsu.net/onparade/images/cardlist/card/491002/op2-18r_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/onparade/index.php?search=true&category=491002",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["シューズ"],
+        ブランド: ["スイングロック"],
+        学園: ["-"],
+        アピールポイント: ["700"],
+        レアリティ: ["レア ／ ★★"],
+        ドレスアピール: ["パッションビート"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レア ／ ★★",
+      type: ["クール"],
+      category: ["シューズ"],
+      brand: ["スイングロック"],
+    },
+    {
+      id: "aikatsu-all:onparade:1e880d2b2dfff17118ce",
+      system: "onparade",
+      code: "OD3-61 LPR",
+      name: "フォースターラグジュアルコーデ",
+      series: ["フルコーデカード"],
+      front:
+        "https://card.aikatsu.net/onparade/images/cardlist/card/491801/od3-61lpr_00_d3.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/onparade/index.php?search=true&category=491801",
+      details: {
+        タイプ: ["キュート"],
+        カテゴリー: ["トップス＆ボトムス ／ シューズ ／ アクセサリー"],
+        ブランド: ["ノーブランド"],
+        学園: ["四ツ星学園"],
+        アピールポイント: ["3060"],
+        レアリティ: ["レジェンドプレミアムレア ／ ★★★★"],
+        ドレスアピール: ["レジェンドプレミアムシャイニングフォースター"],
+        備考: ["期間限定イベント ドリームスクールグランプリ"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "レジェンドプレミアムレア ／ ★★★★",
+      type: ["キュート"],
+      category: ["トップス＆ボトムス ／ シューズ ／ アクセサリー"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:onparade:06ddfced424cdf0d09d1",
+      system: "onparade",
+      code: "ODP1-88 PR",
+      name: "ドリームアカデミープレミアムティアラ",
+      series: ["アイカツ！マシンプロモーションカード"],
+      front:
+        "https://card.aikatsu.net/onparade/images/cardlist/card/491701/odp1-88pr_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/onparade/index.php?search=true&category=491701",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["アクセサリー"],
+        ブランド: ["ノーブランド"],
+        学園: ["ドリームアカデミー"],
+        アピールポイント: ["500"],
+        レアリティ: ["プレミアムレア ／ ★★★"],
+        アクセ効果: ["クールタイプのアピールポイントがアップするよ！"],
+        備考: ["期間限定イベント 学園代表アイドル決定戦！"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "プレミアムレア ／ ★★★",
+      type: ["クール"],
+      category: ["アクセサリー"],
+      brand: ["ノーブランド"],
+    },
+    {
+      id: "aikatsu-all:onparade:b16782cf67e6972f3732",
+      system: "onparade",
+      code: "OPR-147 P",
+      name: "ピュアシャイニングサファイアスカート",
+      series: ["プロモーションカード"],
+      front:
+        "https://card.aikatsu.net/onparade/images/cardlist/card/491901/opr-147p_00.png",
+      back: null,
+      source:
+        "https://card.aikatsu.net/onparade/index.php?search=true&category=491901",
+      details: {
+        タイプ: ["クール"],
+        カテゴリー: ["ボトムス"],
+        ブランド: ["ピュアパレット"],
+        学園: ["-"],
+        アピールポイント: ["1000"],
+        レアリティ: ["ジュエリングレア ／ ★★★★"],
+        ドレスアピール: ["オールジュエリングハーモニー"],
+        備考: [
+          "WEBで応募！ジュエリングドレスセットキャンペーン かがやきのジュエル3弾セット",
+        ],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "ジュエリングレア ／ ★★★★",
+      type: ["クール"],
+      category: ["ボトムス"],
+      brand: ["ピュアパレット"],
+    },
+    {
+      id: "aikatsu-all:planet:4e17fb8cb28ba27be04e",
+      system: "planet",
+      code: "U3-1 PR",
+      name: "サニーポットマリーゴールド",
+      series: ["ユニットステージ3弾"],
+      front:
+        "https://card.aikatsu.net/planet/images/swinglist/swing/520009/u3-1pr_00.png",
+      back: "https://card.aikatsu.net/planet/images/swinglist/swing/520009/u3-1pr_00_b.png",
+      source:
+        "https://card.aikatsu.net/planet/index.php?search=true&category=520009",
+      details: {
+        タイプ: ["カフェ フラワー"],
+        レアリティ: ["PR"],
+        レベル: ["Lv.9"],
+        スキル: [
+          "ユニットモードだったら、じぶんのドレシアチャンスボーナスがものすごくアップする",
+        ],
+        ユニットタイプ: ["プロミスブーケ"],
+        イラストレーター: ["小林栄"],
+        ユニットスキル: [
+          "ユニットモードでプレイしたとき、パートナーのスイングが同じユニットだったらお互いのレベルを＋１する",
+        ],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "PR",
+      type: ["カフェ フラワー"],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:planet:b57d17b7c18907c0f552",
+      system: "planet",
+      code: "U2-38 CP",
+      name: "リルリボンストーリー",
+      series: ["ユニットステージ2弾"],
+      front:
+        "https://card.aikatsu.net/planet/images/swinglist/swing/520008/u2-38cp_00.png",
+      back: "https://card.aikatsu.net/planet/images/swinglist/swing/520008/u2-38cp_00_b.png",
+      source:
+        "https://card.aikatsu.net/planet/index.php?search=true&category=520008",
+      details: {
+        タイプ: ["フェアリー"],
+        レアリティ: ["CP"],
+        レベル: ["Lv.5"],
+        スキル: ["じぶんのパーフェクトがすごくとりやすい"],
+        ユニットタイプ: ["-"],
+        イラストレーター: ["-"],
+        ユニットスキル: ["-"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "CP",
+      type: ["フェアリー"],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:planet:03cf0110e9a8ec688a93",
+      system: "planet",
+      code: "6-33 N",
+      name: "サイケメタル",
+      series: ["6弾"],
+      front:
+        "https://card.aikatsu.net/planet/images/swinglist/swing/520006/6-33n_00.png",
+      back: "https://card.aikatsu.net/planet/images/swinglist/swing/520006/6-33n_00_b.png",
+      source:
+        "https://card.aikatsu.net/planet/index.php?search=true&category=520006",
+      details: {
+        タイプ: ["ミュージック"],
+        レアリティ: ["N"],
+        レベル: ["Lv.1"],
+        スキル: [
+          "ミュージックのドレシアタイプレベルが７より大きかったら、クライマックスバトルのドレシアゲージがすごくたまりやすい",
+        ],
+        ユニットタイプ: ["-"],
+        イラストレーター: ["BUZZ"],
+        ユニットスキル: ["-"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "N",
+      type: ["ミュージック"],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:planet:6764926993cb1530350b",
+      system: "planet",
+      code: "4-19 N",
+      name: "スケアクロウオズ",
+      series: ["4弾"],
+      front:
+        "https://card.aikatsu.net/planet/images/swinglist/swing/520004/4-19n_00.png",
+      back: "https://card.aikatsu.net/planet/images/swinglist/swing/520004/4-19n_00_b.png",
+      source:
+        "https://card.aikatsu.net/planet/index.php?search=true&category=520004",
+      details: {
+        タイプ: ["ストーリー"],
+        レアリティ: ["N"],
+        レベル: ["Lv.1"],
+        スキル: ["Rのレベル＋１"],
+        ユニットタイプ: ["-"],
+        イラストレーター: ["ナカムラアヤナ"],
+        ユニットスキル: ["-"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "N",
+      type: ["ストーリー"],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:planet:b5bfb7468c41d5cb31f6",
+      system: "planet",
+      code: "2-20 N",
+      name: "ピスタチオバニラマカロン",
+      series: ["2弾"],
+      front:
+        "https://card.aikatsu.net/planet/images/swinglist/swing/520002/2-20n_00.png",
+      back: "https://card.aikatsu.net/planet/images/swinglist/swing/520002/2-20n_00_b.png",
+      source:
+        "https://card.aikatsu.net/planet/index.php?search=true&category=520002",
+      details: {
+        タイプ: ["スウィーツ"],
+        レアリティ: ["N"],
+        レベル: ["Lv.2"],
+        スキル: ["メインバトルにセットしたら、なかまのレベル＋１"],
+        ユニットタイプ: ["-"],
+        イラストレーター: ["-"],
+        ユニットスキル: ["-"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "N",
+      type: ["スウィーツ"],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:planet:e49e65fa7780c50ca4f5",
+      system: "planet",
+      code: "P-75 N",
+      name: "パンプキンメルリ",
+      series: ["プロモーション"],
+      front:
+        "https://card.aikatsu.net/planet/images/swinglist/swing/520901/p-75n_00.png",
+      back: "https://card.aikatsu.net/planet/images/swinglist/swing/520901/p-75n_00_b.png",
+      source:
+        "https://card.aikatsu.net/planet/index.php?search=true&category=520901",
+      details: {
+        タイプ: ["メルティーハウス"],
+        レアリティ: ["N"],
+        レベル: ["Lv.3"],
+        スキル: ["あいてがスウィーツがだったら、じぶんのレベル＋１"],
+        ユニットタイプ: ["-"],
+        イラストレーター: ["ナカムラアヤナ"],
+        ユニットスキル: ["-"],
+        備考: ["このスイングはオリジナルスイングだよ"],
+        入手先: ["アイカツ！デザインマート BY アイカツ！スタイル POP UP STORE"],
+      },
+      game: "aikatsu",
+      character: "",
+      rarity: "N",
+      type: ["メルティーハウス"],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:academy:5801d7a6dc24c7ed2812",
+      system: "academy",
+      code: "P-0-R",
+      name: "P-0-R",
+      series: ["プロモカード"],
+      front: "https://card.aikatsu.net/academy/images/P-0-R_middle.webp",
+      back: null,
+      source: "https://card.aikatsu.net/academy/",
+      details: {
+        ラインナップ: ["プロモカード"],
+        フレーム: ["学園・その他"],
+        カード種別: ["リアルカード"],
+        キャラ名: ["和央パリン / 姫乃みえる / 真未夢メエ"],
+        備考: ["配布場所：劇場\r\nソレイユビジュアルカード"],
+      },
+      game: "aikatsu",
+      character: "和央パリン / 姫乃みえる / 真未夢メエ",
+      rarity: "リアルカード",
+      type: [],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:academy:8c0726d2490cb7f66ddb",
+      system: "academy",
+      code: "SM-34",
+      name: "SM-34",
+      series: ["配信カード"],
+      front: "https://card.aikatsu.net/academy/images/SM-34_middle.webp",
+      back: null,
+      source: "https://card.aikatsu.net/academy/",
+      details: {
+        ラインナップ: ["配信カード"],
+        フレーム: ["真未夢メエ"],
+        カード種別: ["デジタルカード"],
+        キャラ名: ["真未夢メエ"],
+        備考: [
+          "配布場所：真未夢メエ チャンネル メンバーシップ限定コミュニティ\r\nメンバーシップ特典6月",
+        ],
+      },
+      game: "aikatsu",
+      character: "真未夢メエ",
+      rarity: "デジタルカード",
+      type: [],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:academy:281301b3284a6defd016",
+      system: "academy",
+      code: "GM-3-6",
+      name: "GM-3-6",
+      series: ["メモリアルコレクション"],
+      front: "https://card.aikatsu.net/academy/images/GM-3-6_middle.webp",
+      back: null,
+      source: "https://card.aikatsu.net/academy/",
+      details: {
+        ラインナップ: ["メモリアルコレクション"],
+        収録セット: ["3弾"],
+        フレーム: ["真未夢メエ"],
+        カード種別: ["デジタルカード"],
+        キャラ名: ["真未夢メエ"],
+      },
+      game: "aikatsu",
+      character: "真未夢メエ",
+      rarity: "デジタルカード",
+      type: [],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:academy:a63b3271ec29a7a25741",
+      system: "academy",
+      code: "GM-7-9",
+      name: "GM-7-9",
+      series: ["メモリアルコレクション"],
+      front: "https://card.aikatsu.net/academy/images/GM-7-9_middle.webp",
+      back: null,
+      source: "https://card.aikatsu.net/academy/",
+      details: {
+        ラインナップ: ["メモリアルコレクション"],
+        収録セット: ["7弾"],
+        フレーム: ["姫乃みえる"],
+        カード種別: ["デジタルカード"],
+        キャラ名: ["姫乃みえる"],
+      },
+      game: "aikatsu",
+      character: "姫乃みえる",
+      rarity: "デジタルカード",
+      type: [],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:academy:f2c8b05a3f69a76fe0a6",
+      system: "academy",
+      code: "GL-2-4",
+      name: "GL-2-4",
+      series: ["ライブコレクション"],
+      front: "https://card.aikatsu.net/academy/images/GL-2-4_middle.webp",
+      back: null,
+      source: "https://card.aikatsu.net/academy/",
+      details: {
+        ラインナップ: ["ライブコレクション"],
+        収録セット: ["2弾"],
+        フレーム: ["真未夢メエ"],
+        カード種別: ["デジタルカード"],
+        キャラ名: ["真未夢メエ"],
+      },
+      game: "aikatsu",
+      character: "真未夢メエ",
+      rarity: "デジタルカード",
+      type: [],
+      category: [],
+      brand: [],
+    },
+    {
+      id: "aikatsu-all:academy:516c69048aa23abea304",
+      system: "academy",
+      code: "GI-1-7",
+      name: "GI-1-7",
+      series: ["リリックイラストコレクション"],
+      front: "https://card.aikatsu.net/academy/images/GI-1-7_middle.webp",
+      back: null,
+      source: "https://card.aikatsu.net/academy/",
+      details: {
+        ラインナップ: ["リリックイラストコレクション"],
+        収録セット: ["1弾"],
+        フレーム: ["和央パリン"],
+        カード種別: ["デジタルカード"],
+        キャラ名: ["和央パリン"],
+      },
+      game: "aikatsu",
+      character: "和央パリン",
+      rarity: "デジタルカード",
+      type: [],
+      category: [],
+      brand: [],
+    },
   ],
   preferredAipri: ["aipri:OA4-001", "aipri:OA4-005"],
   preferredAikatsu: ["aikatsu:E1-01_PR", "aikatsu:E1-83_N"],
+  weights: {
+    encore: 2,
+    cardlist: 1,
+    stars: 1,
+    friends: 1,
+    onparade: 1,
+    planet: 1,
+    academy: 1,
+    onegai: 2,
+    himitsu: 2,
+  },
+  group(card) {
+    if (card.id?.startsWith("aikatsu-all:")) return card.id.split(":")[1];
+    if (card.game === "aikatsu") return "encore";
+    if (card.game === "aipri")
+      return ["ひみつ", "himitsu"].includes(card.family) ? "himitsu" : "onegai";
+    return "";
+  },
+  sequence(cards) {
+    const shuffle = (rows) => {
+      for (let i = rows.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rows[i], rows[j]] = [rows[j], rows[i]];
+      }
+      return rows;
+    };
+    const pools = Object.fromEntries(
+      Object.keys(this.weights).map((key) => [
+        key,
+        shuffle(cards.filter((c) => this.group(c) === key)),
+      ]),
+    );
+    const positions = Object.fromEntries(
+      Object.keys(this.weights).map((key) => [key, 0]),
+    );
+    const result = [];
+    for (let cycle = 0; cycle < 2; cycle++) {
+      const keys = shuffle(
+        Object.entries(this.weights).flatMap(([key, weight]) =>
+          Array(weight).fill(key),
+        ),
+      );
+      for (const key of keys) {
+        const pool = pools[key];
+        if (pool.length) result.push(pool[positions[key]++ % pool.length]);
+      }
+    }
+    return result;
+  },
   paint(root) {
     if (!root) return;
-    const shuffled = [...window.CARD_VISIBILITY.mask(this.cards)];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+    const shuffled = this.sequence(window.CARD_VISIBILITY.mask(this.cards));
     const groups = root.querySelectorAll(".marquee-group");
     if (groups.length !== 2) return;
     root.addEventListener(
@@ -303,7 +1310,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
             (c) => c.id === img.closest(".marquee-card").dataset.preview,
           ),
           frame = img.closest(".marquee-image-frame");
-        const horizontal = card?.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
+        const horizontal =
+          card?.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
         frame.classList.toggle("landscape", horizontal);
         const width = horizontal ? img.naturalHeight : img.naturalWidth,
           height = horizontal ? img.naturalWidth : img.naturalHeight;
@@ -320,6 +1328,7 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       button.type = "button";
       button.dataset.preview = card.id;
       button.dataset.game = card.game;
+      button.dataset.marqueeGroup = this.group(card);
       button.setAttribute("aria-label", (card.name || card.code) + "の詳細");
       const frame = document.createElement("span");
       frame.className = "marquee-image-frame";
@@ -328,7 +1337,8 @@ window.CARD_STARTUP_PREVIEW = Object.freeze({
       img.decoding = "async";
       img.loading = "eager";
       img.addEventListener("load", () => {
-        const horizontal = card.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
+        const horizontal =
+          card.game === "aikatsu" && img.naturalWidth > img.naturalHeight;
         frame.classList.toggle("landscape", horizontal);
         const width = horizontal ? img.naturalHeight : img.naturalWidth,
           height = horizontal ? img.naturalWidth : img.naturalHeight;

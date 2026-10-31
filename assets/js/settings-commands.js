@@ -123,6 +123,7 @@ window.CARD_COMMANDS.help = {
   const entry = document.createElement("button");
   entry.type = "button";
   entry.className = "command-entry";
+  entry.hidden = true; // Hide the entry while retaining the command system.
   entry.textContent = "コマンドを実行";
   settings.append(entry);
   const panel = document.createElement("section");
