@@ -4005,3 +4005,14 @@ body.invitation-route #signup-registration-status {
     font-size: 20px;
   }
 }
+
+/* Login slideshow: show the card image without a white surrounding tile. */
+#auth-art .marquee-card,
+#auth-art .marquee-image-frame,
+#auth-art .marquee-card img,
+#auth-art .marquee-card canvas {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+#auth-art .marquee-card { padding: 0 !important; }

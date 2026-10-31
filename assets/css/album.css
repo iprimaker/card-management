@@ -181,7 +181,9 @@
     font-weight: 600;
   }
   #collection .card-display-toolbar .album-select-trigger:hover,
-  #collection .card-display-toolbar .album-select-trigger[aria-expanded="true"] {
+  #collection
+    .card-display-toolbar
+    .album-select-trigger[aria-expanded="true"] {
     background: #fff;
   }
   .mobile-column-label {
@@ -450,7 +452,11 @@ body.game-aipri .signup-id-reference {
 .card-trade-tag[data-side="want"][data-priority="true"] {
   background: #327b9e;
 }
-body.display-grayscale #cards .card:not(.owned) .card-image-frame > :is(img, canvas),
+body.display-grayscale
+  #cards
+  .card:not(.owned)
+  .card-image-frame
+  > :is(img, canvas),
 body.display-grayscale
   #verse-cards
   .verse-card:not(.is-owned)
@@ -458,8 +464,13 @@ body.display-grayscale
   :is(img, canvas) {
   filter: grayscale(1);
 }
-body.display-hideText #cards .card[data-card-layout="rows"] :is(.card-text-trigger, .card-code-row),
-body.display-hideText #verse-cards :is(.verse-code, .verse-card-detail > strong) {
+body.display-hideText
+  #cards
+  .card[data-card-layout="rows"]
+  :is(.card-text-trigger, .card-code-row),
+body.display-hideText
+  #verse-cards
+  :is(.verse-code, .verse-card-detail > strong) {
   display: none;
 }
 body.display-hideText #cards .card,
@@ -1033,7 +1044,10 @@ dialog {
   transform: translateX(0);
   box-shadow: 0 1px 3px #48334020;
 }
-#display-settings-dialog .display-settings-options button[aria-checked="true"] span {
+#display-settings-dialog
+  .display-settings-options
+  button[aria-checked="true"]
+  span {
   transform: translateX(18px);
 }
 .ownership-share-dialog .share-series-panel {
@@ -1136,8 +1150,13 @@ dialog *,
     scrollbar-width: none;
     scrollbar-gutter: auto;
   }
-  :is(dialog, [role="dialog"], [role="alertdialog"]).external-modal-scroll::-webkit-scrollbar,
-  :is(dialog, [role="dialog"], [role="alertdialog"]) .external-modal-scroll::-webkit-scrollbar {
+  :is(
+      dialog,
+      [role="dialog"],
+      [role="alertdialog"]
+    ).external-modal-scroll::-webkit-scrollbar,
+  :is(dialog, [role="dialog"], [role="alertdialog"])
+    .external-modal-scroll::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
@@ -1151,8 +1170,13 @@ dialog *,
   scrollbar-width: none;
   scrollbar-gutter: auto;
 }
-:is(dialog, [role="dialog"], [role="alertdialog"]).external-modal-scroll::-webkit-scrollbar,
-:is(dialog, [role="dialog"], [role="alertdialog"]) .external-modal-scroll::-webkit-scrollbar {
+:is(
+    dialog,
+    [role="dialog"],
+    [role="alertdialog"]
+  ).external-modal-scroll::-webkit-scrollbar,
+:is(dialog, [role="dialog"], [role="alertdialog"])
+  .external-modal-scroll::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
@@ -1653,19 +1677,29 @@ body.game-aipri #album-back-to-top:active {
     --card-content-inset: 6px;
     --card-code-height: 26px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-code-link .code {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .card-code-link
+    .code {
     font-size: 9px;
     line-height: 1.35;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-code-row {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .card-code-row {
     gap: 2px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .favorite-button {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .favorite-button {
     flex-basis: 23px;
     width: 23px;
     height: 23px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .favorite-button svg {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .favorite-button
+    svg {
     width: 22px;
     height: 22px;
   }
@@ -1673,7 +1707,9 @@ body.game-aipri #album-back-to-top:active {
     justify-content: flex-start;
     font-size: 9px;
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-text-trigger {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .card-text-trigger {
     padding-bottom: 6px;
   }
   #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-name {
@@ -1683,7 +1719,9 @@ body.game-aipri #album-back-to-top:active {
   #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .card-song {
     font-size: clamp(8.5px, 2.3vw, 10px);
   }
-  #cards[data-mobile-columns="3"] .card[data-card-layout="rows"] .ownership-button {
+  #cards[data-mobile-columns="3"]
+    .card[data-card-layout="rows"]
+    .ownership-button {
     min-height: 30px;
     padding: 4px 2px;
     margin-bottom: 5px;
@@ -5119,7 +5157,8 @@ body.game-aipri #collection #total,
     text-decoration: none !important;
     border-radius: 9px;
   }
-  #nav > :is(#trade-open, #ownership-export-open, #edit-nickname, #logout):hover {
+  #nav
+    > :is(#trade-open, #ownership-export-open, #edit-nickname, #logout):hover {
     background: var(--soft);
   }
 }
@@ -6554,7 +6593,13 @@ body.game-aipri #collection #total,
   flex: 1;
   height: 88px;
   overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
 }
 #public-banner-cards {
   width: max-content;
@@ -7457,7 +7502,10 @@ body.game-aipri #collection #total,
   font-weight: 400;
   white-space: nowrap;
 }
-.public-share .public-display-controls .display-count :is(select, .album-select) {
+.public-share
+  .public-display-controls
+  .display-count
+  :is(select, .album-select) {
   width: auto;
   min-height: 36px;
   height: 36px;
@@ -9109,7 +9157,9 @@ body.game-aipri .album-id-card {
 
 /* 閉じる操作の背景・フォーカスによる強調を除去 */
 .save-codes-dialog .save-codes-heading > [data-close],
-.save-codes-dialog .save-codes-heading > [data-close]:is(:hover, :focus, :focus-visible, :active),
+.save-codes-dialog
+  .save-codes-heading
+  > [data-close]:is(:hover, :focus, :focus-visible, :active),
 .private-qr-dialog > .qr-close,
 .private-qr-dialog > .qr-close:is(:hover, :focus, :focus-visible, :active) {
   outline: none !important;
@@ -9403,4 +9453,106 @@ body.game-aipri .album-id-card {
   font-size: 11px;
   line-height: 1.8;
   margin: 12px 0 0;
+}
+
+/* Login assistance and public card catalog entry. */
+#auth-form .remember-session {
+  margin-left: auto;
+  justify-self: end;
+  align-self: flex-end;
+  justify-content: flex-end;
+}
+#auth #forgot {
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  text-align: right;
+}
+/* Included series are an informational list, separate from public card search. */
+.login-catalog-series {
+  width: 100%;
+  margin-top: 24px;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line, #eadde5);
+  text-align: left;
+}
+#auth .login-catalog-series h2 {
+  margin: 0 0 12px;
+  color: var(--muted, #806d79);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+.login-series-group + .login-series-group { margin-top: 12px; }
+#auth .login-series-group h3 {
+  margin: 0 0 6px;
+  color: var(--muted, #806d79);
+  font-size: 10px;
+  font-weight: 500;
+}
+.login-series-group ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.login-series-group li {
+  color: var(--ink, #594651);
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+body.invitation-route #login-catalog-series { display: none; }
+@media (max-width: 760px) {
+  #auth > .login-catalog-series {
+    grid-column: 1 / -1;
+    box-sizing: border-box;
+    margin-top: 4px;
+    padding: 18px 8px 0;
+  }
+}
+
+/* Keep login preference and password help on one line, with opposite alignment. */
+#auth-form .login-actions-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(4px, 1.5vw, 12px);
+  width: 100%;
+  margin-top: 12px;
+}
+#auth-form .login-actions-row .remember-session,
+#auth-form .login-actions-row #forgot {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: clamp(8px, 2.7vw, 11px);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+#auth-form .login-actions-row .remember-session { gap: 6px; }
+#auth-form .login-actions-row .remember-session input {
+  flex: 0 0 30px;
+  width: 30px;
+  min-width: 30px;
+  max-width: 30px;
+  height: 18px;
+  box-sizing: border-box;
+}
+
+#auth-form .login-actions-row .remember-session {
+  justify-content: flex-start;
+  align-self: center;
+  text-align: left;
+}
+#auth-form .login-actions-row #forgot {
+  margin-left: auto;
+  text-align: right;
 }
