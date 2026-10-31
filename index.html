@@ -9,9 +9,9 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
-    <link rel="stylesheet" href="./assets/css/base.css?v=20261031-aikatsu-all-browse-v6" />
-    <script defer src="./assets/js/router.js?v=20261031-aikatsu-all-browse-v6"></script>
-    <script defer src="./assets/js/login-position.js?v=20261031-aikatsu-all-browse-v6"></script>
+    <link rel="stylesheet" href="./assets/css/base.css?v=20261031-remember-switch-fix-v14" />
+    <script defer src="./assets/js/router.js?v=20261031-remember-switch-fix-v14"></script>
+    <script defer src="./assets/js/login-position.js?v=20261031-remember-switch-fix-v14"></script>
   </head>
   <body>
     <template id="page-album" data-body-class="">
@@ -56,6 +56,18 @@
                 <div aria-hidden="true" class="marquee-group"></div>
               </div>
             </div>
+            <section id="login-catalog-series" class="login-catalog-series" aria-labelledby="login-catalog-series-title">
+              <h2 id="login-catalog-series-title">収録カード・コーデ</h2>
+              <div class="login-series-group"><h3>カード</h3><ul>
+                <li>アイカツ！アンコール</li><li>アイカツ！</li><li>アイカツスターズ！</li>
+                <li>アイカツフレンズ！</li><li>アイカツオンパレード！</li>
+                <li>アイカツプラネット！</li><li>アイカツアカデミー！</li>
+                <li>おねがいアイプリ</li><li>ひみつのアイプリ</li>
+              </ul></div>
+              <div class="login-series-group"><h3>コーデ</h3><ul>
+                <li>おねがいアイプリバース</li><li>ひみつのアイプリバース</li><li>ワッチャプリマジ！</li>
+              </ul></div>
+            </section>
           </div>
 
           <div class="auth-panel">
@@ -629,11 +641,11 @@
           <button aria-label="閉じる" id="id-password-help-close" type="button"> × </button>
         </div>
         <p>
-          アルバムIDで作成したアカウントは、復旧用のメールアドレスを登録していないため、パスワードを再設定できません。
+          パスワードを忘れた場合、パスワードの再設定やアカウントの復旧はできません。
         </p>
         <p> ブラウザや端末のパスワード管理に、保存したパスワードがないかご確認ください。 </p>
         <p>
-          アルバムIDだけでは本人確認ができません。パスワードが見つからない場合は、新しいアルバムを作成してください。以前の所持記録は引き継げません。
+          パスワードが見つからない場合は、新しいアルバムの登録をご検討ください。以前のアカウントの記録は引き継げません。
         </p>
       </dialog>
     </template>
