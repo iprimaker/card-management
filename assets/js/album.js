@@ -953,6 +953,8 @@ function screen(id) {
     "auth-result",
     "selection",
     "collection",
+    "all-selection",
+    "all-collection",
     "probabilities",
     "verse",
     "trade-page",
@@ -962,6 +964,7 @@ function screen(id) {
     if (panel) panel.hidden = s !== id;
   }
   if (id !== "verse") window.CARD_VERSE?.leave();
+  if (!id.startsWith("all-")) window.CARD_ALL?.leave();
   $("nav").hidden = !session;
   $("menu-toggle").hidden = !session;
   closeMenu();
@@ -1371,6 +1374,7 @@ async function authChanged(event, next) {
     resetFavorites();
     saving.clear();
     window.CARD_VERSE?.reset();
+    window.CARD_ALL?.reset();
   }
   updateHeader();
   if (selected) updateModalOwnership();
@@ -3118,6 +3122,7 @@ function updateHeader() {
     .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.game === selectedGame)));
   $("header-card").hidden = true;
   $("header-card").removeAttribute("src");
+  window.CARD_ALL?.syncNavigation();
 }
 function updateSyncIndicator() {
   const busy = catalogLoading || !!catalog.sync?.running;
@@ -4068,8 +4073,23 @@ $("auth")
   });
 const confirmPasswordButton = $("signup-password-form").querySelector('button[type="submit"]');
 if (confirmPasswordButton) confirmPasswordButton.textContent = "パスワードを確定する";
+window.CARD_ALL_HOST = {
+  client: () => db,
+  session: () => session,
+  game: () => game,
+  maintenance: () => maintenanceActive,
+  toast,
+  open(id) {
+    if (!session || maintenanceActive) return;
+    game = "aikatsu";
+    document.body.classList.remove("game-aipri", "game-primagi");
+    screen(id);
+  },
+  back: () => chooseGame("aikatsu"),
+};
 window.CARD_VERSE_HOST = {
-  cardCharacter: (id) => catalog.cards.find((c) => c.id === id)?.character || "",
+  cardCharacter: (id) =>
+    window.CARD_ALL?.character(id) || catalog.cards.find((c) => c.id === id)?.character || "",
   client: () => db,
   session: () => session,
   family: () => aipriFamily,
@@ -7739,7 +7759,7 @@ verseScript.dispatchEvent(new Event("load"));
       return;
     }
     if (owner && owner !== uid()) reset();
-    button.hidden = !host.game() || host.maintenance();
+    button.hidden = !host.game() || host.maintenance() || !!window.CARD_ALL?.active();
     if (!button.hidden) load().catch(() => {});
   }
   function markup(kind, id) {

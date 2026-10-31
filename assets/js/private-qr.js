@@ -512,6 +512,7 @@
   }
   const tagLabels = {
     aikatsu: "アイカツ",
+    "aikatsu-all": "アイカツALL",
     onegai: "おねがい",
     himitsu: "ひみつ",
     aipri: "アイプリ",
@@ -620,8 +621,10 @@
         if (r.data.length < 500) break;
       }
       if (uid() !== user || request !== managerRequest || !manager.open) return;
+      const resolved = window.CARD_ALL ? await window.CARD_ALL.enrichQrRows(all) : all;
+      if (uid() !== user || request !== managerRequest || !manager.open) return;
       managerOwner = user;
-      managedRows = all.map((row) => {
+      managedRows = resolved.map((row) => {
         if (row.kind !== "card" || !window.CARD_VISIBILITY?.mask) return row;
         const masked = window.CARD_VISIBILITY.mask([{ id: row.target_id, name: row.name }])[0];
         return { ...row, name: masked?.name || "カード（非公開）" };

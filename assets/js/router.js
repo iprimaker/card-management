@@ -149,7 +149,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261030-registration-30min-v2";
+  const version = "20261031-aikatsu-all-direct-v5";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(requested)
@@ -253,7 +253,7 @@
       ? ["album"]
       : [page === "browse" ? "shared" : page]
     )
-      .concat("primagi")
+      .concat("primagi", ...(page === "album" ? ["aikatsu-all"] : []))
       .map(stylesheet),
   );
   styles.then(
@@ -286,6 +286,7 @@
         ? script("card-registration.js")
         : script((page === "browse" ? "shared" : page) + ".js"),
     )
+    .then(() => (page === "album" ? script("aikatsu-all.js") : undefined))
     .then(() => (page === "album" ? script("settings-commands.js") : undefined))
     .then(() => (page === "album" ? script("save-codes.js") : undefined))
     .then(() => (page === "album" ? script("tutorial.js") : undefined))
