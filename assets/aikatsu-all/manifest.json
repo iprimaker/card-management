@@ -1,0 +1,48 @@
+{
+  "version": "20261030-all-v1",
+  "checked_on": "2026-10-30",
+  "systems": [
+    {
+      "id": "cardlist",
+      "title": "アイカツ！",
+      "count": 3428,
+      "file": "cardlist.json",
+      "source": "https://card.aikatsu.net/cardlist/"
+    },
+    {
+      "id": "stars",
+      "title": "アイカツスターズ！",
+      "count": 3285,
+      "file": "stars.json",
+      "source": "https://card.aikatsu.net/stars/"
+    },
+    {
+      "id": "friends",
+      "title": "アイカツフレンズ！",
+      "count": 1623,
+      "file": "friends.json",
+      "source": "https://card.aikatsu.net/friends/"
+    },
+    {
+      "id": "onparade",
+      "title": "アイカツオンパレード！",
+      "count": 1538,
+      "file": "onparade.json",
+      "source": "https://card.aikatsu.net/onparade/"
+    },
+    {
+      "id": "planet",
+      "title": "アイカツプラネット！",
+      "count": 444,
+      "file": "planet.json",
+      "source": "https://card.aikatsu.net/planet/"
+    },
+    {
+      "id": "academy",
+      "title": "アイカツアカデミー！",
+      "count": 646,
+      "file": "academy.json",
+      "source": "https://card.aikatsu.net/academy/"
+    }
+  ]
+}
