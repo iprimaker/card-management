@@ -149,7 +149,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261031-aikatsu-all-direct-v5";
+  const version = "20261031-aikatsu-all-browse-v6";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(requested)
