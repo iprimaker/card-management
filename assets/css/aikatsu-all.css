@@ -1405,8 +1405,8 @@ body.all-aikatsu-active
   white-space: nowrap;
 }
 #all-collection #all-filtered-count {
-  font-weight: 400;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 20px;
 }
 #all-collection #all-status:empty {
   display: none;
@@ -1553,4 +1553,10 @@ body.all-aikatsu-active
     width: 76px;
     min-width: 76px;
   }
+}
+
+#all-filtered-count {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
 }

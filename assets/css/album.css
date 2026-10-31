@@ -1327,7 +1327,7 @@ dialog *,
 #cards .favorite-button:focus-visible svg {
   stroke-width: 2.8;
 }
-#empty {
+:is(#empty, #all-empty) {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1346,30 +1346,30 @@ dialog *,
   line-height: 1.7;
   white-space: normal;
 }
-#empty[hidden] {
+:is(#empty, #all-empty)[hidden] {
   display: none;
 }
-#empty strong {
+:is(#empty, #all-empty) strong {
   color: #726a72;
   font-size: 15px;
   font-weight: 600;
 }
-#empty > span:last-child {
+:is(#empty, #all-empty) > span:last-child {
   font-size: 13px;
 }
-#empty .empty-sparkle {
+:is(#empty, #all-empty) .empty-sparkle {
   display: grid;
   place-items: center;
   margin-bottom: 3px;
 }
-#empty .empty-sparkle svg {
+:is(#empty, #all-empty) .empty-sparkle svg {
   width: 24px;
   height: 24px;
   fill: #faedc9;
   stroke: #e3c17c;
   stroke-width: 1.3;
 }
-body.game-aipri #empty {
+body.game-aipri :is(#empty, #all-empty) {
   border-color: #dcebf1;
   background: #f9fdff;
 }
@@ -1383,7 +1383,7 @@ body.game-aipri #empty {
     width: 25px;
     height: 25px;
   }
-  #empty {
+  :is(#empty, #all-empty) {
     min-height: 125px;
     margin: 14px auto;
     padding: 18px 12px;
@@ -9555,4 +9555,109 @@ body.invitation-route #login-catalog-series { display: none; }
 #auth-form .login-actions-row #forgot {
   margin-left: auto;
   text-align: right;
+}
+
+/* Audit fixes: shared geometry, with each work's existing theme colors. */
+.auth-checking #auth {
+  display: none !important;
+}
+.auth-checking-status {
+  min-height: 55vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+#all-filtered-count, #verse-found {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+#verse .verse-progress {
+  border-radius: 24px;
+}
+#verse #verse-filters {
+  border-radius: 20px;
+}
+#verse .verse-card, #verse .verse-coordinate {
+  border-width: 2px;
+  border-radius: 18px;
+}
+#verse .verse-card-detail strong {
+  font-size: 12.8px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+#verse #verse-cards .verse-owned {
+  min-height: 40px;
+  padding: 7px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+#verse-detail .verse-owned {
+  min-height: 46px;
+  padding: 7px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+#verse-detail .verse-modal-favorite {
+  align-self: flex-start;
+  margin: 0 0 8px;
+  min-height: 43px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+#verse-detail .verse-modal-favorite svg {
+  width: 16px;
+  height: 16px;
+}
+body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favorite-button, #verse-cards .verse-favorite {
+  box-sizing: border-box;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+}
+body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favorite-button svg, #verse-cards .verse-favorite svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+#verse-cards .verse-card > .private-qr-tag {
+  top: 46px;
+}
+@media (max-width: 760px) {
+  #verse #verse-cards .verse-owned {
+    font-size: 12px;
+    min-height: 44px;
+    padding: 7px 4px;
+  }
+  #verse-detail .verse-owned {
+    font-size: 13px;
+  }
+}
+@media (any-pointer: coarse) {
+  body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favorite-button, #verse-cards .verse-favorite {
+    flex-basis: 44px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 9px;
+  }
+  #verse-cards .verse-card > .private-qr-tag {
+    top: 54px;
+  }
 }
