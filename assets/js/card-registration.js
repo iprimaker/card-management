@@ -43,9 +43,9 @@
     <main class="registration-main">
       <div class="registration-heading"><span class="registration-eyebrow">登録状況とこれまでの追加記録</span><h1>カード登録情報</h1></div>
       <section class="registration-stats" aria-label="現在の登録数" aria-busy="true">
-        <div class="registration-total"><span>総登録カード数</span><strong id="registration-total">—</strong><span>枚</span></div>
+        <div class="registration-total"><span>通常アルバムの登録カード数</span><strong id="registration-total">—</strong><span>枚</span></div>
         <div id="registration-counts" class="registration-counts"></div>
-        <p class="registration-count-note">カードはパラレルなどの別種を含みます。バースのコーデ・パーツは別集計です。</p>
+        <p class="registration-count-note">アンコール・おねがいアイプリ・ひみつのアイプリの合計です。パラレルなどの別種を含み、アイカツALLの旧カードは含みません。バース・プリマジのコーデとパーツは別集計です。</p>
       </section>
       <section class="registration-history" aria-labelledby="registration-history-title">
         <div class="registration-section-heading"><h2 id="registration-history-title">登録履歴</h2><span>新しい順</span></div>

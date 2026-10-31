@@ -192,12 +192,12 @@
     <div class="results-heading"><h2 id="all-filtered-count"></h2><div class="results-controls card-display-toolbar"><label class="display-count"><span class="display-control-label">並び順</span><select id="all-sort"><option value="official">公式掲載順</option><option value="code">番号順</option><option value="name">名前順</option><option value="rarity">レアリティ順</option><option value="quantity">所持数順</option></select></label><label class="display-count"><span class="display-control-label">表示件数</span><select id="all-size"><option value="20">20枚</option><option value="50">50枚</option><option value="100">100枚</option><option value="all">すべて</option></select></label><div class="mobile-column-control" role="group" aria-label="カード一覧の列数"><span class="mobile-column-label">カードの並び</span><div class="mobile-column-buttons"><button type="button" data-all-columns="2" aria-pressed="false">2列</button><button type="button" data-all-columns="3" aria-pressed="true">3列</button></div></div></div></div>
     <p id="all-status" role="status" aria-live="polite"></p><div id="all-cards" class="card-grid" data-mobile-columns="3"></div><p id="all-empty" hidden><strong>見つかりませんでした</strong><span>条件を変えて探してみてください</span></p>
     <div class="pagination"><button type="button" id="all-prev">前のページ</button><nav id="all-page-numbers" aria-label="カード一覧のページ"></nav><button type="button" id="all-next">次のページ</button></div>
-    <p class="all-static-note">2026年10月30日時点の公式掲載情報です。確認できない項目は「未取得」と表示します。<br><a id="all-official" target="_blank" rel="noopener noreferrer">公式カードリスト</a></p>`;
+`;
   document.querySelector("main").append(panel);
   const dialog = document.createElement("dialog");
   dialog.id = "all-detail";
   dialog.setAttribute("aria-labelledby", "all-modal-name");
-  dialog.innerHTML = `<div class="modal-top"><span id="all-modal-code"></span><button type="button" id="all-close" aria-label="閉じる">×</button></div><div class="modal-body"><div class="viewer"><div><img id="all-modal-image" alt=""><p id="all-image-failure" hidden>画像を読み込めませんでした。</p><span id="all-side-label"></span><div class="modal-side-switch" role="group" aria-label="表裏を切り替える" data-side="0"><button type="button" data-all-side="0">表面</button><button type="button" data-all-side="1">裏面</button></div></div></div><div class="modal-info"><span id="all-modal-rarity" class="pill"></span><h2 id="all-modal-name"></h2><dl id="all-modal-fields"></dl><button type="button" class="ownership-button" id="all-modal-owned"></button><div class="quantity-controls" id="all-quantity"><span>所持数</span><div><button type="button" id="all-minus" aria-label="所持数を1枚減らす">−</button><output id="all-quantity-value"></output><button type="button" id="all-plus" aria-label="所持数を1枚増やす">＋</button></div></div><div id="all-favorite-controls"></div><div id="all-qr-controls" class="qr-action-row"></div><a id="all-modal-source" target="_blank" rel="noopener noreferrer">公式カードリスト</a></div></div><nav class="detail-navigation" aria-label="カードの移動"><button type="button" id="all-detail-prev">← 前のカード</button><button type="button" id="all-detail-next">次のカード →</button></nav>`;
+  dialog.innerHTML = `<div class="modal-top"><span id="all-modal-code"></span><button type="button" id="all-close" aria-label="閉じる">×</button></div><div class="modal-body"><div class="viewer"><div><img id="all-modal-image" alt=""><p id="all-image-failure" hidden>画像を読み込めませんでした。</p><span id="all-side-label"></span><div class="modal-side-switch" role="group" aria-label="表裏を切り替える" data-side="0"><button type="button" data-all-side="0">表面</button><button type="button" data-all-side="1">裏面</button></div></div></div><div class="modal-info"><span id="all-modal-rarity" class="pill"></span><h2 id="all-modal-name"></h2><dl id="all-modal-fields"></dl><div id="all-favorite-controls"></div><button type="button" class="ownership-button" id="all-modal-owned"></button><div class="quantity-controls" id="all-quantity"><span>所持数</span><div><button type="button" id="all-minus" aria-label="所持数を1枚減らす">−</button><output id="all-quantity-value"></output><button type="button" id="all-plus" aria-label="所持数を1枚増やす">＋</button></div></div><div id="all-qr-controls" class="qr-action-row"></div><a id="all-modal-source" target="_blank" rel="noopener noreferrer">公式カードリスト</a></div></div><nav class="detail-navigation" aria-label="カードの移動"><button type="button" id="all-detail-prev">← 前のカード</button><button type="button" id="all-detail-next">次のカード →</button></nav>`;
   document.body.append(dialog);
   const route = document.createElement("button");
   route.type = "button";
@@ -544,8 +544,8 @@
             .filter((v) => v && v !== "-")
             .sort((a, b) => a.localeCompare(b, "ja", { numeric: true }));
           const label =
-            k === "だん数" && current === "academy" ? "収録区分" : k;
-          return `<label><span class="filter-label">${esc(label)}<button type="button" class="filter-clear" data-all-clear="${esc(k)}" disabled>解除</button></span><select data-all-filter="${esc(k)}" id="all-filter-${i}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}<option value="__unknown__">未取得・未設定</option></select></label>`;
+            k === "だん数" && current === "academy" ? "収録区分" : window.CARD_UI.label(k);
+          return `<label><span class="filter-label">${esc(label)}<button type="button" class="filter-clear" data-all-clear="${esc(k)}" disabled>解除</button></span><select data-all-filter="${esc(k)}" id="all-filter-${i}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}">${esc(window.CARD_UI.value(k, v))}</option>`).join("")}<option value="__unknown__">未取得・未設定</option></select></label>`;
         })
         .join("") +
       `<label><span class="filter-label">お気に入り<button type="button" class="filter-clear" data-all-clear="favorite" disabled>解除</button></span><select id="all-favorite-filter" ${favoritesReady ? "" : "disabled"}><option value="all">すべて</option><option value="only">☆ お気に入りのみ</option></select></label><label><span class="filter-label">QRコード<button type="button" class="filter-clear" data-all-clear="qr" disabled>解除</button></span><select id="all-qr-filter"><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label><label><span class="filter-label">重複<button type="button" class="filter-clear" data-all-clear="duplicate" disabled>解除</button></span><select id="all-duplicates"><option value="">すべて</option><option value="only">重複あり</option></select></label>`;
@@ -560,7 +560,6 @@
         .querySelector(".filter-clear")
         .setAttribute("aria-label", name + "の絞り込みを解除");
     }
-    byId("all-official").href = "https://card.aikatsu.net/" + current + "/";
   }
   const quantity = (id) =>
     inventoryReady && owner === uid() ? inventory.get(id) || 0 : 0;
@@ -677,7 +676,7 @@
         const cards = catalog.cards.filter((c) => c.series.includes(label));
         const got = cards.filter((c) => quantity(c.id) > 0).length;
         const rate = cards.length ? (got / cards.length) * 100 : 0;
-        return `<div class="progress-card progress-card-small"><div><span>${esc(label)}</span><strong>${inventoryReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${inventoryReady ? rate : 0}%"></span></div><p>${inventoryReady ? `取得済 ${got}件 ／ 未取得 ${cards.length - got}件` : "所持状況を確認できていません"}</p></div>`;
+        return `<div class="progress-card progress-card-small"><div><span>${esc(label)}</span><strong>${inventoryReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${inventoryReady ? rate : 0}%"></span></div><p>${inventoryReady ? `取得済 ${window.CARD_UI.number(got)}枚 ／ 未取得 ${window.CARD_UI.number(cards.length - got)}枚` : "所持状況を確認できていません"}</p></div>`;
       })
       .join("");
   }
@@ -723,10 +722,10 @@
       : "—";
     byId("all-progress-bar").style.width = (inventoryReady ? rate : 0) + "%";
     byId("all-progress-count").textContent = inventoryReady
-      ? `取得済 ${got.toLocaleString("ja-JP")} ／ 全 ${catalog.cards.length.toLocaleString("ja-JP")}件`
+      ? `取得済 ${got.toLocaleString("ja-JP")}枚 ／ 未取得 ${(catalog.cards.length - got).toLocaleString("ja-JP")}枚`
       : "所持状況を確認できていません";
     byId("all-filtered-count").textContent =
-      `絞り込み結果 ${cards.length.toLocaleString("ja-JP")}件`;
+      `見つかったカード ${cards.length.toLocaleString("ja-JP")}枚`;
     byId("all-cards").innerHTML = cards
       .slice((page - 1) * limit, page * limit)
       .map((c, i) => {
@@ -742,11 +741,11 @@
     byId("all-next").disabled = page >= max;
     renderPageNumbers(max);
     byId("all-total").textContent =
-      `全${catalog.cards.length.toLocaleString("ja-JP")}件`;
+      `全${catalog.cards.length.toLocaleString("ja-JP")}枚`;
     const base = filtered(false),
       baseGot = base.filter((c) => quantity(c.id) > 0).length;
     byId("all-filtered-rate").innerHTML = inventoryReady
-      ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">取得済 ${baseGot}件 ／ 未取得 ${base.length - baseGot}件</span>`
+      ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">取得済 ${window.CARD_UI.number(baseGot)}枚 ／ 未取得 ${window.CARD_UI.number(base.length - baseGot)}枚</span>`
       : "";
     if (!byId("all-series-progress").hidden) renderSeriesProgress();
     panel
@@ -774,12 +773,12 @@
         .filter(([, v]) => v)
         .map(([k, v]) => [
           k,
-          k === "duplicate" ? "重複" : k,
+          k === "duplicate" ? "重複" : window.CARD_UI.label(k),
           v === "__unknown__"
             ? "未取得・未設定"
             : k === "duplicate"
               ? "あり"
-              : v,
+              : window.CARD_UI.value(k, v),
         ]),
       ...(favoriteFilter ? [["favorite", "お気に入り", "登録済み"]] : []),
       ...(qrFilter !== "all"
@@ -800,11 +799,12 @@
       ? entries.length + "件適用中"
       : "";
     byId("all-clear").disabled = !entries.length && ownedFilter === "all";
-    byId("all-clear-query").disabled = !query;
     panel.querySelectorAll(".filter-clear[data-all-clear]").forEach((b) => {
       const k = b.dataset.allClear;
       b.disabled =
-        k === "qr"
+        k === "query"
+          ? !query
+          : k === "qr"
           ? qrFilter === "all"
           : k === "favorite"
             ? !favoriteFilter
@@ -908,7 +908,7 @@
     byId("all-modal-fields").innerHTML = Object.entries(details)
       .map(
         ([k, v]) =>
-          `<dt>${esc(k)}</dt><dd>${esc(textValues(v).join(" ／ ") || "未取得")}</dd>`,
+          `<dt>${esc(window.CARD_UI.label(k))}</dt><dd>${esc(window.CARD_UI.value(k, textValues(v).join(" ／ ") || "未取得"))}</dd>`,
       )
       .join("");
     byId("all-modal-source").href = c.source;

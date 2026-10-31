@@ -169,7 +169,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261031-remember-switch-fix-v14";
+  const version = "20261031-ui-detail-fixes-v16";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -237,6 +237,20 @@
   document.body.className = template.dataset.bodyClass;
   if (page === "browse") document.body.classList.add("guest-browse");
   document.body.replaceChildren(template.content.cloneNode(true));
+  if (page === "album" && !invitationRoute) {
+    document.body.classList.add("auth-checking");
+    const status = document.createElement("section");
+    status.id = "auth-checking-status";
+    status.className = "auth-checking-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
+    status.textContent = "アルバムを確認しています…";
+    document.querySelector("main").prepend(status);
+  }
+  if (page === "browse") {
+    document.getElementById("public-status").textContent = "カード情報を読み込み中…";
+    document.querySelector("footer p").textContent = "非公式のカード検索画面 · 画像・カード情報は各権利者に帰属します。";
+  }
   // 招待URLは、この同期処理の時点で専用画面にする。後続JSを待つ間もログイン欄を見せない。
   if (invitationRoute) {
     document.body.classList.add("invitation-route");
@@ -341,6 +355,8 @@
       document.body.style.visibility = initialVisibility;
     })
     .catch((error) => {
+      document.body.classList.remove("auth-checking");
+      document.getElementById("auth-checking-status")?.remove();
       document.body.style.visibility = initialVisibility;
       if (invitationRoute) {
         const status = document.getElementById("signup-registration-status");

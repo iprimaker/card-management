@@ -1033,7 +1033,12 @@ function randomizeAuthTheme() {
     crypto.getRandomValues(new Uint8Array(1))[0] < 128,
   );
 }
+function finishAuthCheck() {
+  document.body.classList.remove("auth-checking");
+  document.getElementById("auth-checking-status")?.remove();
+}
 function screen(id) {
+  finishAuthCheck();
   if (maintenanceActive) id = "auth";
   if (id === "auth" && $("auth").hidden) randomizeAuthTheme();
   for (const s of [
@@ -1860,7 +1865,7 @@ function renderSeriesProgress() {
       const cards = all.filter((c) => values(c.series).includes(label));
       const got = cards.filter((c) => owned.has(c.id)).length;
       const rate = cards.length ? (got / cards.length) * 100 : 0;
-      return `<div class="progress-card progress-card-small"><div><span>${esc(label)}</span><strong>${ownershipReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${ownershipReady ? rate : 0}%"></span></div><p>${ownershipReady ? `取得済 ${got}枚 ／ 未取得 ${cards.length - got}枚` : "所持データを読み込み中"}</p></div>`;
+      return `<div class="progress-card progress-card-small"><div><span>${esc(label)}</span><strong>${ownershipReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${ownershipReady ? rate : 0}%"></span></div><p>${ownershipReady ? `取得済 ${window.CARD_UI.number(got)}枚 ／ 未取得 ${window.CARD_UI.number(cards.length - got)}枚` : "所持データを読み込み中"}</p></div>`;
     })
     .join("");
 }
@@ -2075,15 +2080,15 @@ function render(keepCardNodes = false) {
     .forEach((b) => (b.disabled = !filters[b.dataset.clearFilter]));
   $("clear-query").disabled = !$("query").value;
   if (!$("series-progress").hidden) renderSeriesProgress();
-  $("total").textContent = `全${all.length}枚`;
+  $("total").textContent = `全${window.CARD_UI.number(all.length)}枚`;
   $("percent").textContent = ownershipReady ? rate.toFixed(1) + "%" : "—";
   $("progress-bar").style.width = (ownershipReady ? rate : 0) + "%";
   $("progress-count").textContent = ownershipReady
-    ? `取得済 ${got}枚 ／ 未取得 ${all.length - got}枚`
+    ? `取得済 ${window.CARD_UI.number(got)}枚 ／ 未取得 ${window.CARD_UI.number(all.length - got)}枚`
     : "所持データを読み込み中（設定が必要な場合は同梱の手順をご確認ください）";
-  $("result-count").textContent = `見つかったカード ${list.length}枚`;
+  $("result-count").textContent = `見つかったカード ${window.CARD_UI.number(list.length)}枚`;
   $("filtered-rate").innerHTML = ownershipReady
-    ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">取得済 ${baseGot}枚 ／ 未取得 ${base.length - baseGot}枚</span>`
+    ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">取得済 ${window.CARD_UI.number(baseGot)}枚 ／ 未取得 ${window.CARD_UI.number(base.length - baseGot)}枚</span>`
     : "";
   document
     .querySelector(".owned-tabs")
@@ -2313,7 +2318,7 @@ function openDetail(id, trigger, navigating = false) {
     })
       .map(
         ([key, value]) =>
-          `<dt>${esc(key)}</dt><dd>${esc(values(value).join(" ／ ") || "未取得")}</dd>`,
+          `<dt>${esc(window.CARD_UI.label(key))}</dt><dd>${esc(window.CARD_UI.value(key, values(value).join(" ／ ") || "未取得"))}</dd>`,
       )
       .join("");
   } else {
@@ -2694,6 +2699,8 @@ async function init() {
     else
       $("auth-message").textContent =
         "初期化できませんでした。" + translatedError(e);
+  } finally {
+    finishAuthCheck();
   }
 }
 $("auth-result-next").onclick = () => {
@@ -5582,12 +5589,12 @@ init();
   dialog.id = "ownership-share-dialog";
   dialog.className = "ownership-share-dialog";
   dialog.setAttribute("aria-labelledby", "share-settings-title");
-  dialog.innerHTML = `<button type="button" class="share-close" id="share-settings-close" aria-label="閉じる">×</button><span class="eyebrow">SHARE ALBUM</span><h2 id="share-settings-title">所持状況を共有</h2><p class="share-settings-intro">公開するアルバムを選んで、あなたのコレクションを共有。</p><details class="share-help"><summary>公開する情報・URLの取り扱い</summary><div><dl><dt>表示される情報</dt><dd>ニックネーム、「〇〇のカードアルバム」、公開をONにしたアルバムの、選択しただん数の所持状況・所持数。</dd><dt>表示されない情報</dt><dd>アルバムID・メールアドレス・お気に入り・譲求。URLにもアルバムIDは含まれません。</dd><dt>公開範囲と有効期間</dt><dd>URLを知っている方は登録・ログインなしで閲覧できます。URLは削除するまで有効で、ログアウト後も継続します。</dd><dt>変更の反映</dt><dd>公開設定と所持状況は同じURLへ反映されます。閲覧中も通信がつながっている間は自動更新されます。共有文の所持率は公開範囲に対して計算した値で、送信後は自動更新されません。</dd><dt>公開をやめるとき</dt><dd>種類ごとにOFFにするか、共有URLを削除してください。既に閲覧・保存・送信された情報は取り消せません。</dd></dl></div></details><div class="share-scope-settings">${Object.entries(
+  dialog.innerHTML = `<button type="button" class="share-close" id="share-settings-close" aria-label="閉じる">×</button><span class="eyebrow">SHARE ALBUM</span><h2 id="share-settings-title">所持状況を共有</h2><p class="share-settings-intro">公開するアルバムを選んで、あなたのコレクションを共有。</p><details class="share-help"><summary>公開する情報・URLの取り扱い</summary><div><dl><dt>表示される情報</dt><dd>ニックネーム、「〇〇のカードアルバム」、公開をONにしたアルバムの、選択した弾数の所持状況・所持数。</dd><dt>表示されない情報</dt><dd>アルバムID・メールアドレス・お気に入り・譲求。URLにもアルバムIDは含まれません。</dd><dt>公開範囲と有効期間</dt><dd>URLを知っている方は登録・ログインなしで閲覧できます。URLは削除するまで有効で、ログアウト後も継続します。</dd><dt>変更の反映</dt><dd>公開設定と所持状況は同じURLへ反映されます。閲覧中も通信がつながっている間は自動更新されます。共有文の所持率は公開範囲に対して計算した値で、送信後は自動更新されません。</dd><dt>公開をやめるとき</dt><dd>種類ごとにOFFにするか、共有URLを削除してください。既に閲覧・保存・送信された情報は取り消せません。</dd></dl></div></details><div class="share-scope-settings">${Object.entries(
     labels,
   )
     .map(
       ([id, label]) =>
-        `<div class="share-scope-row"><div class="share-scope-label"><span>${label}</span><small class="share-scope-state" id="share-scope-state-${id}" data-share-state="${id}"></small><button type="button" class="share-series-toggle" data-share-details="${id}" aria-expanded="false" aria-controls="share-series-${id}"><span class="share-details-chevron" aria-hidden="true"></span>細かく設定</button></div><button type="button" role="switch" aria-checked="false" data-share-scope="${id}" aria-describedby="share-scope-state-${id}" aria-label="${label}を公開"><span aria-hidden="true"></span></button><div class="share-series-panel" id="share-series-${id}" data-series-panel="${id}" hidden><p>公開するだん数・プロモにチェックを入れてください。</p><div class="share-series-list"></div><button type="button" class="share-series-all" data-share-series-all="${id}">すべて公開（今後の追加分も含む）</button></div></div>`,
+        `<div class="share-scope-row"><div class="share-scope-label"><span>${label}</span><small class="share-scope-state" id="share-scope-state-${id}" data-share-state="${id}"></small><button type="button" class="share-series-toggle" data-share-details="${id}" aria-expanded="false" aria-controls="share-series-${id}"><span class="share-details-chevron" aria-hidden="true"></span>細かく設定</button></div><button type="button" role="switch" aria-checked="false" data-share-scope="${id}" aria-describedby="share-scope-state-${id}" aria-label="${label}を公開"><span aria-hidden="true"></span></button><div class="share-series-panel" id="share-series-${id}" data-series-panel="${id}" hidden><p>公開する弾数・プロモにチェックを入れてください。</p><div class="share-series-list"></div><button type="button" class="share-series-all" data-share-series-all="${id}">すべて公開（今後の追加分も含む）</button></div></div>`,
     )
     .join(
       "",
@@ -5958,7 +5965,7 @@ init();
     const g = generation,
       uid = current();
     const list = panel.querySelector(".share-series-list");
-    list.textContent = "だん数を読み込み中…";
+    list.textContent = "弾数を読み込み中…";
     panel.setAttribute("aria-busy", "true");
     try {
       const rows = await host.scopeItems(scope);
@@ -6010,7 +6017,7 @@ init();
       if (g === generation && uid === current()) {
         panel.hidden = true;
         button.setAttribute("aria-expanded", "false");
-        host.toast("だん数を読み込めませんでした", "error");
+        host.toast("弾数を読み込めませんでした", "error");
       }
     } finally {
       if (g === generation && uid === current())
@@ -6928,12 +6935,12 @@ init();
   panel.innerHTML = `
     <div class="verse-heading"><div><span class="eyebrow">AIPRI VERSE</span><h1 id="verse-title">アイプリバース</h1></div><button id="verse-back" class="verse-nav-link" type="button">カード一覧へ</button><span id="verse-total" class="pill"></span></div>
     <div class="verse-families" role="group" aria-label="アイプリのシリーズ"><button type="button" data-verse-family="onegai"></button><button type="button" data-verse-family="himitsu"></button></div>
-    <div class="progress-card verse-progress"><div><span>コーデ総取得率</span><strong id="verse-percent">—</strong></div><div class="progress-track"><span id="verse-progress-bar"></span></div><div class="progress-bottom"><p id="verse-count"></p><button id="verse-progress-details" class="text-button" type="button" aria-expanded="false" aria-controls="verse-series-progress" aria-label="だんごとの取得率を表示"><span class="progress-chevron" aria-hidden="true"></span></button></div><div id="verse-series-progress" hidden></div><div id="verse-filtered-rate"></div></div>
-    <details id="verse-collection"><summary><span>コーデ収集状況</span><span id="verse-collection-count"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-collection-select">だん数<select id="verse-collection-series"></select></label><div class="verse-collection-options"><button type="button" data-verse-collection="complete" aria-pressed="false">収集済のみ</button><button type="button" data-verse-collection="one-away" aria-pressed="false">あと1つで完成</button></div><div id="verse-collection-list"></div><p id="verse-collection-empty" hidden>該当するコーデがありません</p></div></details>
-    <details id="verse-filters"><summary><span>コーデを絞り込む</span><span id="verse-filter-summary" class="filter-summary"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-search"><span>フリーワード検索<button type="button" class="filter-clear" data-verse-clear="query">解除</button></span><input id="verse-query" type="search" placeholder="コーデ名・コード・キャンペーン名" autocomplete="off"></label><div class="verse-filter-grid"><label id="primagi-verse-compat-field" hidden><span>アイプリバース対応<button type="button" class="filter-clear" data-verse-clear="primagi-verse-compat">解除</button></span><select id="primagi-verse-compat"><option value="">すべて</option><option value="supported">対応コーデ（全パーツ）</option><option value="partial">一部パーツのみ対応</option><option value="unlisted">公式一覧に掲載なし・未確認</option></select></label><label id="primagi-rarity-field" hidden><span>レアリティ<button type="button" class="filter-clear" data-verse-clear="primagi-rarity">解除</button></span><select id="primagi-rarity"></select></label><label><span>だん数<button type="button" class="filter-clear" data-verse-clear="series">解除</button></span><select id="verse-series"></select></label><label><span>ガチャ・キャンペーン<button type="button" class="filter-clear" data-verse-clear="group">解除</button></span><select id="verse-group"></select></label><label><span>お気に入り<button type="button" class="filter-clear" data-verse-clear="favorite">解除</button></span><select id="verse-favorite-filter"><option value="all">すべて</option><option value="only">お気に入りのみ</option></select></label><label><span>重複<button type="button" class="filter-clear" data-verse-clear="duplicate">解除</button></span><select id="verse-duplicate-filter"><option value="all">すべて</option><option value="only">重複あり</option></select></label><label id="verse-qr-filter" for="verse-qr-select"><span class="filter-label">QRコード<button type="button" class="filter-clear" data-qr-clear="coordinate">解除</button></span><select id="verse-qr-select" data-qr-filter="coordinate" disabled><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label></div><p id="primagi-verse-compat-source" hidden class="primagi-verse-compat-source">対応状況は公式の対象一覧（2026年10月30日確認）に基づきます。<a href="https://aipri.jp/verse/howto/6.html" target="_blank" rel="noopener noreferrer">公式情報</a></p><div class="verse-clear-row"><button id="verse-clear" type="button" class="text-button">全ての絞り込みを解除</button></div></div></details>
+    <div class="progress-card verse-progress"><div><span>コーデ総取得率</span><strong id="verse-percent">—</strong></div><div class="progress-track"><span id="verse-progress-bar"></span></div><div class="progress-bottom"><p id="verse-count"></p><button id="verse-progress-details" class="text-button" type="button" aria-expanded="false" aria-controls="verse-series-progress" aria-label="弾ごとの取得率を表示"><span class="progress-chevron" aria-hidden="true"></span></button></div><div id="verse-series-progress" hidden></div><div id="verse-filtered-rate"></div></div>
+    <details id="verse-collection"><summary><span>コーデ収集状況</span><span id="verse-collection-count"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-collection-select">弾数<select id="verse-collection-series"></select></label><div class="verse-collection-options"><button type="button" data-verse-collection="complete" aria-pressed="false">収集済のみ</button><button type="button" data-verse-collection="one-away" aria-pressed="false">あと1つで完成</button></div><div id="verse-collection-list"></div><p id="verse-collection-empty" hidden>該当するコーデがありません</p></div></details>
+    <details id="verse-filters"><summary><span>コーデを絞り込む</span><span id="verse-filter-summary" class="filter-summary"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-search"><span>フリーワード検索<button type="button" class="filter-clear" data-verse-clear="query">解除</button></span><input id="verse-query" type="search" placeholder="コーデ名・コード・キャンペーン名" autocomplete="off"></label><div class="verse-filter-grid"><label id="primagi-verse-compat-field" hidden><span>アイプリバース対応<button type="button" class="filter-clear" data-verse-clear="primagi-verse-compat">解除</button></span><select id="primagi-verse-compat"><option value="">すべて</option><option value="supported">対応コーデ（全パーツ）</option><option value="partial">一部パーツのみ対応</option><option value="unlisted">公式一覧に掲載なし・未確認</option></select></label><label id="primagi-rarity-field" hidden><span>レアリティ<button type="button" class="filter-clear" data-verse-clear="primagi-rarity">解除</button></span><select id="primagi-rarity"></select></label><label><span>弾数<button type="button" class="filter-clear" data-verse-clear="series">解除</button></span><select id="verse-series"></select></label><label><span>ガチャ・キャンペーン<button type="button" class="filter-clear" data-verse-clear="group">解除</button></span><select id="verse-group"></select></label><label><span>お気に入り<button type="button" class="filter-clear" data-verse-clear="favorite">解除</button></span><select id="verse-favorite-filter"><option value="all">すべて</option><option value="only">お気に入りのみ</option></select></label><label><span>重複<button type="button" class="filter-clear" data-verse-clear="duplicate">解除</button></span><select id="verse-duplicate-filter"><option value="all">すべて</option><option value="only">重複あり</option></select></label><label id="verse-qr-filter" for="verse-qr-select"><span class="filter-label">QRコード<button type="button" class="filter-clear" data-qr-clear="coordinate">解除</button></span><select id="verse-qr-select" data-qr-filter="coordinate" disabled><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label></div><p id="primagi-verse-compat-source" hidden class="primagi-verse-compat-source">対応状況は公式の対象一覧（2026年10月30日確認）に基づきます。<a href="https://aipri.jp/verse/howto/6.html" target="_blank" rel="noopener noreferrer">公式情報</a></p><div class="verse-clear-row"><button id="verse-clear" type="button" class="text-button">すべての絞り込みを解除</button></div></div></details>
     <div id="verse-active-filters" class="verse-active-filters"></div>
     <div class="verse-owned-tabs owned-tabs" role="group" aria-label="コーデの所持状態"><span class="verse-owned-slider owned-tabs-slider" aria-hidden="true"></span><button type="button" data-verse-view="all">すべて</button><button type="button" data-verse-view="full">持っている</button><button type="button" data-verse-view="partial">一部持っている</button><button type="button" data-verse-view="none">持っていない</button></div>
-    <p id="verse-message" role="status"></p><div class="verse-list-toolbar"><h2 id="verse-found"></h2><div class="verse-display-controls"><label class="verse-display-count display-count"><span>表示件数</span><select id="verse-size"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">すべて</option></select></label><div class="verse-column-control"><span>コーデの並び</span><div class="verse-column-segment" role="group" aria-label="スマホのコーデ列数"><button type="button" data-verse-columns="2">2列</button><button type="button" data-verse-columns="3">3列</button></div></div></div></div>
+    <p id="verse-message" role="status"></p><div class="verse-list-toolbar"><h2 id="verse-found"></h2><div class="verse-display-controls"><label class="verse-display-count display-count"><span>表示件数</span><select id="verse-size"><option value="20">20件</option><option value="50">50件</option><option value="100">100件</option><option value="all">すべて</option></select></label><div class="verse-column-control"><span>コーデの並び</span><div class="verse-column-segment" role="group" aria-label="スマホのコーデ列数"><button type="button" data-verse-columns="2">2列</button><button type="button" data-verse-columns="3">3列</button></div></div></div></div>
     <div id="verse-cards" class="verse-cards"></div><p id="verse-empty" hidden><strong>見つかりませんでした</strong><span>条件を変えて探してみてください</span></p><section id="verse-related-search" class="verse-related-search" aria-label="別シリーズの検索結果" hidden><p data-related-message role="status"></p><button type="button" data-verse-related-family></button><small>フリーワードを引き継ぎ、ほかの絞り込みを解除して表示します。</small></section><nav id="verse-pages" class="verse-pages" aria-label="コーデ一覧のページ"></nav>
     <div class="verse-sync"><button id="verse-sync" type="button" class="catalog-update-text" aria-label="コーデ情報を更新する">コーデ情報の更新</button></div>`;
   $("collection").after(panel);
@@ -7101,17 +7108,19 @@ init();
   }
   function syncImages() {
     const showPanel = !panel.hidden;
+    $("verse-back").hidden = family === "primagi";
+    $("verse-progress-details").setAttribute("aria-label", (family === "primagi" ? "章" : "弾") + "ごとの取得率を表示");
     panel.querySelector(".verse-families").hidden = family === "primagi";
     panel.querySelector(
       '[data-verse-clear="series"]',
     ).parentElement.firstChild.textContent =
-      family === "primagi" ? "章" : "だん数";
+      family === "primagi" ? "章" : "弾数";
     panel.querySelector(
       '[data-verse-clear="group"]',
     ).parentElement.firstChild.textContent =
       family === "primagi" ? "入手方法" : "ガチャ・キャンペーン";
     panel.querySelector(".verse-collection-select").firstChild.textContent =
-      family === "primagi" ? "章" : "だん数";
+      family === "primagi" ? "章" : "弾数";
     panel.querySelector(".eyebrow").textContent =
       family === "primagi" ? "PRIMAGI COORDINATES" : "AIPRI VERSE";
     if (showPanel)
@@ -7133,10 +7142,6 @@ init();
       ]);
     if (showPanel && family !== "primagi")
       links.push([$("verse-back"), backImage, "カード一覧へ"]);
-    if (showPanel && family === "primagi") {
-      $("verse-back").textContent = "アルバム選択へ";
-      delete $("verse-back").dataset.imageKey;
-    }
     if (!mobileRoute.hidden)
       links.push([
         mobileRoute,
@@ -7259,7 +7264,7 @@ init();
     );
     const completed = base.filter(collected).length;
     $("verse-collection-count").textContent =
-      `収集済 ${completed} ／ 未収集 ${base.length - completed}`;
+      `収集済 ${window.CARD_UI.number(completed)} ／ 未収集 ${window.CARD_UI.number(base.length - completed)}`;
     if (!$("verse-collection").open) return;
     const all = base.filter(
       (c) =>
@@ -7290,7 +7295,7 @@ init();
       ["query", "検索", query],
       [
         "series",
-        family === "primagi" ? "章" : "だん数",
+        family === "primagi" ? "章" : "弾数",
         chapterDisplayLabel(series),
       ],
       [
@@ -7335,19 +7340,19 @@ init();
   function renderProgress() {
     const all = pool(),
       complete = all.filter(collected).length;
-    $("verse-total").textContent = `全${all.length}コーデ`;
+    $("verse-total").textContent = `全${window.CARD_UI.number(all.length)}コーデ`;
     $("verse-percent").textContent = ready
       ? (all.length ? ((complete / all.length) * 100).toFixed(1) : "0.0") + "%"
       : "—";
     $("verse-progress-bar").style.width =
       ready && all.length ? (complete / all.length) * 100 + "%" : "0%";
     $("verse-count").textContent = ready
-      ? `収集済 ${complete}コーデ ／ 未収集 ${all.length - complete}コーデ`
+      ? `収集済 ${window.CARD_UI.number(complete)}コーデ ／ 未収集 ${window.CARD_UI.number(all.length - complete)}コーデ`
       : "所持データを確認中";
     const base = filtered(false),
       n = base.filter(collected).length;
     $("verse-filtered-rate").innerHTML = ready
-      ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((n / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">収集済 ${n}コーデ ／ 未収集 ${base.length - n}コーデ</span>`
+      ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((n / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">収集済 ${window.CARD_UI.number(n)}コーデ ／ 未収集 ${window.CARD_UI.number(base.length - n)}コーデ</span>`
       : "";
     if (!$("verse-series-progress").hidden) renderSeriesProgress();
   }
@@ -7362,7 +7367,7 @@ init();
           ),
           n = rows.filter(collected).length,
           rate = rows.length ? (n / rows.length) * 100 : 0;
-        return `<div class="progress-card progress-card-small"><div><span>${esc(chapterDisplayLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="progress-track"><span style="width:${rate}%"></span></div><p>収集済 ${n}コーデ ／ 未収集 ${rows.length - n}コーデ</p></div>`;
+        return `<div class="progress-card progress-card-small"><div><span>${esc(chapterDisplayLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="progress-track"><span style="width:${rate}%"></span></div><p>収集済 ${window.CARD_UI.number(n)}コーデ ／ 未収集 ${rows.length - n}コーデ</p></div>`;
       })
       .join("");
   }
@@ -7480,7 +7485,7 @@ init();
     const perPage = size === "all" ? Math.max(1, rows.length) : Number(size);
     const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
     page = Math.min(page, pageCount);
-    $("verse-found").textContent = `見つかったコーデ ${rows.length}件`;
+    $("verse-found").textContent = `見つかったコーデ ${window.CARD_UI.number(rows.length)}件`;
     const visible = rows.slice((page - 1) * perPage, page * perPage);
     const listKey = JSON.stringify([
       catalog?.version,
@@ -7518,7 +7523,7 @@ init();
     const c = catalog.coordinates.find((c) => c.id === selected);
     if (!c) return;
     $("verse-detail-content").innerHTML =
-      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${seriesName(c.family)}</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>${c.family === "primagi" ? "章" : "だん数"}</dt><dd>${esc(chapterDisplayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>${c.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${ownControl(c)}${favoriteButton(c, true)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate", c.id, c.name, [], c.family) || ""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${
+      `<div class="verse-modal-heading"><div class="verse-modal-full">${image(c, true)}</div><div class="verse-modal-info"><span class="verse-code">${esc(c.code || "コード未取得")}</span><h2>${esc(c.name)}</h2><dl><dt>シリーズ</dt><dd>${seriesName(c.family)}</dd><dt>レアリティ</dt><dd>${esc(c.rarity)}</dd><dt>${c.family === "primagi" ? "章" : "弾数"}</dt><dd>${esc(chapterDisplayLabel([...new Set(appearances(c).map((a) => a.series))].join(" ／ ")))}</dd><dt>${c.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"}</dt><dd>${esc(displayLabel([...new Set(appearances(c).map((a) => a.group))].join(" ／ ")))}</dd></dl><div class="verse-modal-total">${favoriteButton(c, true)}${ownControl(c)}<div class="qr-action-row">${trade()?.markup("coordinate", c.id) || ""}${window.CARD_QR?.button("coordinate", c.id, c.name, [], c.family) || ""}</div></div></div></div><h3 class="verse-parts-heading">パーツごとに管理</h3><div class="verse-modal-parts">${
         c.part_ids
           .map((id) => {
             const p = parts.get(id);
@@ -8517,9 +8522,9 @@ verseScript.dispatchEvent(new Event("load"));
   panel.id = "trade-page";
   panel.hidden = true;
   panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="text-button">アルバムに戻る</button></div>
- <details id="trade-filter-panel" class="trade-filter-panel"><summary><span class="trade-chevron" aria-hidden="true"></span><span>交換希望を絞り込む</span><small id="trade-filter-count"></small></summary><div class="trade-filters"><label>キーワード<input id="trade-query" type="search" placeholder="名前・コード"></label><label>だん数<select id="trade-series"></select></label><label id="trade-rarity-label">レアリティ<select id="trade-rarity"></select></label><label id="trade-group-label">ガチャ・キャンペーン<select id="trade-group"></select></label></div></details><p id="trade-load-status" role="status"></p>
- <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求のカードを確認</h2><p>絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のものです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
- <section class="trade-step trade-export-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>希望画像を出力</h2><p>1画像に最大36枚。譲・求ごとに、保存する画像を選んでください。</p></div></div><div id="trade-export-buttons" class="trade-export-buttons"></div><p id="trade-export-status" role="status" aria-live="polite"></p></section>
+ <details id="trade-filter-panel" class="trade-filter-panel"><summary><span class="trade-chevron" aria-hidden="true"></span><span>交換希望を絞り込む</span><small id="trade-filter-count"></small></summary><div class="trade-filters"><label>キーワード<input id="trade-query" type="search" placeholder="名前・コード"></label><label>弾数<select id="trade-series"></select></label><label id="trade-rarity-label">レアリティ<select id="trade-rarity"></select></label><label id="trade-group-label">ガチャ・キャンペーン<select id="trade-group"></select></label></div></details><p id="trade-load-status" role="status"></p>
+ <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求のカードを確認</h2><p id="trade-review-description">絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のものです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
+ <section class="trade-step trade-export-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>希望画像を出力</h2><p id="trade-export-description">1画像に最大36枚。譲・求ごとに、保存する画像を選んでください。</p></div></div><div id="trade-export-buttons" class="trade-export-buttons"></div><p id="trade-export-status" role="status" aria-live="polite"></p></section>
  <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">3</span><div><h2>交換希望の文章をコピー</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。出力した画像は共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
   $("collection").after(panel);
   function reset() {
@@ -9074,7 +9079,11 @@ verseScript.dispatchEvent(new Event("load"));
       ? `譲・求合わせて${count}画像になります。共有先の添付枚数をご確認ください。すべての画像を出力できます。`
       : "";
     const unit = origin.kind === "coordinate" ? "コーデ" : "カード";
+    $("trade-series").closest("label").firstChild.textContent = origin.family === "primagi" ? "章" : "弾数";
+    $("trade-group-label").firstChild.textContent = origin.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン";
     $("trade-review-title").textContent = `譲・求の${unit}を確認`;
+    $("trade-review-description").textContent = `絞り込みを使って、画像に入れる${unit}を確認してください。赤枠は優先のものです。`;
+    $("trade-export-description").textContent = `1画像に最大36${origin.kind === "coordinate" ? "コーデ" : "枚"}。譲・求ごとに、保存する画像を選んでください。`;
     $("trade-copy-text").textContent = `${unit}情報をコピー`;
     $("trade-text").setAttribute("aria-label", `譲・求の${unit}情報`);
     $("trade-text-panel").querySelector("p").textContent =

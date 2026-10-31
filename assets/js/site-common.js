@@ -1,3 +1,18 @@
+/* Shared presentation rules. Raw catalog values stay unchanged. */
+(() => {
+  const numberFormat = new Intl.NumberFormat("ja-JP");
+  const labels = { "だん数": "弾数", "キャラ名": "キャラクター", "カテゴリー": "カテゴリ" };
+  const zodiac = { aries: "おひつじ座", taurus: "おうし座", gemini: "ふたご座", cancer: "かに座", leo: "しし座", virgo: "おとめ座", libra: "てんびん座", scorpio: "さそり座", sagittarius: "いて座", capricorn: "やぎ座", aquarius: "みずがめ座", pisces: "うお座" };
+  window.CARD_UI = Object.freeze({
+    number: value => numberFormat.format(value),
+    label: key => labels[key] || key,
+    value(key, value) {
+      const text = String(value ?? "");
+      return /星座/.test(key) ? text.replace(/\b(?:aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b/gi, word => zodiac[word.toLowerCase()]) : text;
+    },
+  });
+})();
+
 /* Remove retired guide progress from this browser without touching other settings. */
 (() => {
   for (const area of ["localStorage", "sessionStorage"]) {
@@ -3166,6 +3181,7 @@
         /* dropdowns.js */
         (() => {
           "use strict";
+          if (window.CARD_SELECTS) return;
           const enhanced = new WeakMap();
           let active = null;
           let serial = 0;
@@ -3195,11 +3211,9 @@
             const value = select.selectedOptions[0]?.textContent || "選択してください";
             if (state.text.textContent !== value) state.text.textContent = value;
             if (state.button.disabled !== select.disabled) state.button.disabled = select.disabled;
-            const label =
-              select.getAttribute("aria-label") ||
-              select.labels?.[0]?.querySelector(".filter-label")?.firstChild?.textContent ||
-              select.labels?.[0]?.firstChild?.textContent ||
-              "選択項目";
+            const labelCopy = (select.labels?.[0] || select.closest("label"))?.cloneNode(true);
+            labelCopy?.querySelectorAll("button, select, input, .album-select").forEach(node => node.remove());
+            const label = select.getAttribute("aria-label") || labelCopy?.textContent.trim() || "選択項目";
             state.button.setAttribute("aria-label", `${label.trim()}：${state.text.textContent}`);
           }
 
@@ -3395,7 +3409,12 @@
             });
           }
 
-          document.querySelectorAll("select").forEach(enhance);
+          function refresh(root = document) {
+            if (root.matches?.("select")) enhance(root);
+            root.querySelectorAll("select").forEach(enhance);
+          }
+          window.CARD_SELECTS = Object.freeze({ refresh });
+          refresh();
           new MutationObserver((records) => {
             if (
               active &&
