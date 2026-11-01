@@ -10064,8 +10064,8 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
 }
 .qr-manager-label .qr-manager-name,
 .qr-manager-label .qr-manager-name:hover {
-  text-decoration-color: #000;
-  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(0, 0, 0, 0.18);
+  text-decoration-thickness: 0.5px;
   text-underline-offset: 2px;
 }
 .qr-information-layout.is-coordinate {
@@ -10076,4 +10076,49 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
   .qr-manager-label { gap: 5px; }
   .qr-manager-label .qr-manager-name,
   .qr-manager-label > span { font-size: 11px; }
+}
+
+/* Match the reduced-resolution canvas to the QR information image area. */
+.qr-information-image {
+  position: relative;
+}
+.qr-information-image > canvas.low-resolution-image {
+  left: 8px !important;
+  top: 8px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: calc(100% - 16px) !important;
+  height: calc(100% - 16px) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+}
+/* Use the normal card modal's left-image / right-information arrangement. */
+.qr-information-layout.is-card {
+  grid-template-columns: 1.1fr 1fr;
+  gap: 30px;
+}
+.qr-information-layout.is-card .modal-info h2 {
+  margin: 12px 0 18px;
+}
+.qr-information-layout.is-card .qr-information-actions {
+  margin-top: 18px;
+  padding-top: 0;
+  border: 0;
+}
+.qr-information-layout.is-card .qr-information-image img {
+  max-height: 65vh;
+}
+.qr-information-layout.is-coordinate > .qr-information-actions {
+  margin-top: 0;
+  padding-top: 0;
+  border: 0;
+}
+@media (max-width: 760px) {
+  .qr-information-layout.is-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
 }
