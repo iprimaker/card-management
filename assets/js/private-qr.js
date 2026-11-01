@@ -500,12 +500,21 @@
   information.innerHTML =
     '<div class="modal-top"><span data-code></span><button type="button" data-close aria-label="閉じる">×</button></div><h2 id="qr-information-title"></h2><p data-status role="status"></p><div data-body></div><div class="qr-information-actions"></div>';
   document.body.append(information);
+  const informationTitle = information.querySelector("h2");
+  const informationActions = information.querySelector(
+    ".qr-information-actions",
+  );
+  function restoreInformationLayout() {
+    information.querySelector(".modal-top").after(informationTitle);
+    information.append(informationActions);
+  }
   information.querySelector("[data-close]").onclick = () => information.close();
   let informationRequest = 0;
   let informationRow = null;
   information.addEventListener("close", () => {
     informationRequest++;
     informationRow = null;
+    restoreInformationLayout();
     information.querySelector("[data-body]").replaceChildren();
     information.querySelector(".qr-information-actions").replaceChildren();
   });
@@ -607,7 +616,8 @@
       user === managerOwner &&
       request === informationRequest &&
       information.open;
-    const title = information.querySelector("h2"),
+    restoreInformationLayout();
+    const title = informationTitle,
       status = information.querySelector("[data-status]"),
       body = information.querySelector("[data-body]");
     title.textContent = row.name;
@@ -668,7 +678,19 @@
         sides.append(...buttons);
         viewer.append(sides);
         buttons[0].click();
-        layout.append(viewer, infoFields(info.fields));
+        layout.classList.add("modal-body", "is-card");
+        const details = document.createElement("div");
+        details.className = "modal-info";
+        const rarity = document.createElement("span");
+        rarity.className = "pill";
+        rarity.textContent = info.rarity;
+        details.append(
+          rarity,
+          title,
+          infoFields(info.fields),
+          informationActions,
+        );
+        layout.append(viewer, details);
       } else {
         const c = data.coordinate,
           selectedPart = data.part;
@@ -752,7 +774,7 @@
           );
           parts.append(item);
         }
-        layout.append(parts);
+        layout.append(informationActions, parts);
       }
       body.replaceChildren(layout);
       status.textContent = "";

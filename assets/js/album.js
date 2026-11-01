@@ -4481,7 +4481,7 @@ window.CARD_VERSE_HOST = {
       ? Object.entries({ だん数: card.series, ...card.details })
       : (fields[card.game] || []).map(([key, label]) => [key === "family" ? "シリーズ" : label, key === "rarity" ? displayRarity(card) : card[key]]);
     if (card.game === "aikatsu" && !card.id.startsWith("aikatsu-all:")) info.push(["AP", cardAP(card) === null ? "未確認" : cardAP(card).toLocaleString("ja-JP") + " AP"]);
-    return { name: name(card), fields: info };
+    return { name: name(card), fields: info, rarity: card.id.startsWith("aikatsu-all:") ? values(card.details?.["レアリティ"]).join(" ／ ") || "レアリティ未取得" : displayRarity(card) };
   },
   cardCharacter: (id) =>
     window.CARD_ALL?.character(id) ||
@@ -6391,7 +6391,10 @@ init();
   // Keep the original image available when a mobile canvas loses its backing store.
   const fallbackStyle = document.createElement("style");
   fallbackStyle.textContent = `html body img[data-low-resolution="true"],
-    html body .public-share img[data-low-resolution="true"] { opacity: 1 !important; }`;
+    html body .public-share img[data-low-resolution="true"] { opacity: 1 !important; }
+    /* The QR information frame also displays the resized canvas. Show only
+       that canvas after a successful draw; clear() restores the native image. */
+    html body .qr-information-dialog img[data-low-resolution="true"] { opacity: 0 !important; }`;
   document.head.append(fallbackStyle);
   const MAX_EDGE = 560;
   const LIST_MAX_EDGE = 420;

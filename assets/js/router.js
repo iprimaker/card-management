@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261102-qr-compact-v21";
+  const version = "20261102-qr-overlay-v23";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
