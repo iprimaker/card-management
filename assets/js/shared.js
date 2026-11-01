@@ -728,6 +728,7 @@
       current = generation;
     visibilityPictureFlight = (async () => {
       const data = await window.CARD_VERSE_CATALOG.load(client, {
+        family: wanted.slice(6),
         force: true,
       });
       if (scope !== wanted || generation !== current) return;
@@ -746,7 +747,6 @@
       items = rows;
       parts = new Map(
         data.parts
-          .filter((p) => p.family === scope.slice(6))
           .map((p) => [p.id, p]),
       );
       fillFields();
@@ -830,12 +830,7 @@
       if (browseOnly && Object.hasOwn(archiveSystems, snap.scope)) {
         rows = await loadArchive(snap.scope);
       } else if (snap.scope.startsWith("verse-")) {
-        const c = window.CARD_VERSE_CATALOG
-          ? { data: await window.CARD_VERSE_CATALOG.load(client), error: null }
-          : verseCatalog ||
-            (await client.rpc("card_verse_catalog_cached", {
-              p_version: null,
-            }));
+        const c = { data: await window.CARD_VERSE_CATALOG.load(client, { family: snap.scope.slice(6) }), error: null };
         if (
           c.error ||
           !Array.isArray(c.data?.coordinates) ||
@@ -846,7 +841,7 @@
         const family = snap.scope.slice(6);
         rows = c.data.coordinates.filter((x) => x.family === family);
         partMap = new Map(
-          c.data.parts.filter((p) => p.family === family).map((p) => [p.id, p]),
+          c.data.parts.map((p) => [p.id, p]),
         );
       } else {
         const catalog =

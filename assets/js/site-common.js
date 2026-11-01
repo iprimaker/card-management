@@ -2942,99 +2942,113 @@
     chapterRank,
   });
 })();
-/* ===== assets/js/verse-catalog-cache.js ===== */
-/* Public catalog only. Ownership, favorites, QR and account data never enter this cache. */
+/* Public family catalogs. Account data never enter this cache. */
 (() => {
   "use strict";
-  const key = "card-verse-public:v2:" + new URL(window.APP_CONFIG.supabaseUrl).hostname;
-  const valid = (data) =>
-    typeof data?.version === "string" &&
-    Array.isArray(data.coordinates) &&
-    Array.isArray(data.parts);
-  let snapshot = null,
-    flight = null,
-    checkedAt = 0,
-    retryAt = 0,
-    failures = 0,
-    lastError,
-    hydrated = false;
-  function hydrate() {
-    if (hydrated) return;
-    hydrated = true;
-    try {
-      const data = JSON.parse(localStorage.getItem(key) || "null");
-      if (valid(data)) snapshot = data;
-    } catch {}
+  const families = ["onegai", "himitsu", "primagi"];
+  const prefix = "card-verse-public:v3:" + new URL(window.APP_CONFIG.supabaseUrl).hostname + ":";
+  try {
+    const host = new URL(window.APP_CONFIG.supabaseUrl).hostname;
+    localStorage.removeItem("card-verse-public:v2:" + host);
+    localStorage.removeItem("card-verse-public:" + host);
+  } catch {}
+  const slots = new Map();
+  let currentVersion = null, latestTime = 0;
+  const valid = (data, family) =>
+    data?.family === family && typeof data.version === "string" &&
+    Array.isArray(data.coordinates) && Array.isArray(data.parts) &&
+    data.coordinates.every(c => c.family === family);
+  function slot(family) {
+    if (!families.includes(family)) throw Error("コーデのシリーズを確認してください。");
+    if (!slots.has(family)) {
+      let snapshot = null;
+      try {
+        const saved = JSON.parse(localStorage.getItem(prefix + family) || "null");
+        if (valid(saved, family)) snapshot = saved;
+      } catch {}
+      slots.set(family, { snapshot, flight: null, expires: 0, retryAt: 0, failures: 0, epoch: 0 });
+    }
+    return slots.get(family);
   }
-  async function request(client, version) {
-    const controller = new AbortController(),
-      timer = setTimeout(() => controller.abort(), 10000);
+  function fresh(entry) {
+    return !!entry.snapshot && entry.expires > Date.now();
+  }
+  function peek(family) {
+    if (family) {
+      const entry = slot(family);
+      return fresh(entry) ? entry.snapshot : null;
+    }
+    const loaded = families.map(name => [name, slot(name)]).filter(([, entry]) => fresh(entry));
+    if (!loaded.length) return null;
+    const parts = new Map();
+    for (const [, entry] of loaded) for (const part of entry.snapshot.parts) parts.set(part.id, part);
+    return {
+      version: currentVersion,
+      coordinates: loaded.flatMap(([, entry]) => entry.snapshot.coordinates),
+      parts: [...parts.values()],
+      loaded_families: loaded.map(([name]) => name),
+    };
+  }
+  async function request(client, family, version) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
-      let call = client.rpc("card_verse_catalog_cached", { p_version: version });
+      let call = client.rpc("card_verse_catalog_family_cached", { p_family: family, p_version: version });
       if (typeof call.abortSignal === "function") call = call.abortSignal(controller.signal);
       const { data, error } = await call;
-      if (error || !data)
-        throw Error("コーデ情報を取得できませんでした。時間をおいて再度お試しください。");
+      if (error || !data) throw Error("コーデ情報を取得できませんでした。時間をおいて再度お試しください。");
       return data;
-    } finally {
-      clearTimeout(timer);
-    }
+    } finally { clearTimeout(timer); }
   }
-  async function load(client, { force = false } = {}) {
-    if (flight) return flight;
-    hydrate();
-    if (Date.now() < retryAt) throw (lastError, (hydrated = false));
-    if (snapshot && !force && Date.now() - checkedAt < 300000) return snapshot;
-    flight = (async () => {
+  async function load(client, { family, force = false } = {}) {
+    const entry = slot(family);
+    if (entry.flight) return entry.flight;
+    if (Date.now() < entry.retryAt) throw entry.lastError;
+    if (!force && fresh(entry)) return entry.snapshot;
+    const epoch = entry.epoch;
+    const task = (async () => {
       if (navigator.onLine === false) throw Error("通信状態を確認して再度お試しください。");
-      let data = await request(client, snapshot?.version || null);
-      let fullResponse = !data.omitted;
+      const requestedAt = Date.now();
+      let data = await request(client, family, entry.snapshot?.version || null);
       if (data.omitted) {
-        if (!snapshot || snapshot.version !== data.version) {
-          data = await request(client, null);
-          fullResponse = true;
-        } else
-          data = {
-            ...snapshot,
-            updated_at: data.updated_at || snapshot.updated_at,
-            omitted: false,
-          };
+        if (!entry.snapshot || entry.snapshot.version !== data.version) data = await request(client, family, null);
+        else data = { ...entry.snapshot, ...data, omitted: false };
       }
-      if (!valid(data))
-        throw Error("コーデ情報を確認できませんでした。時間をおいて再度お試しください。");
-      snapshot = { ...data, omitted: false };
-      checkedAt = Date.now();
-      retryAt = 0;
-      failures = 0;
-      if (fullResponse)
-        try {
-          localStorage.setItem(key, JSON.stringify(snapshot));
-        } catch {}
-      return snapshot;
-    })()
-      .catch((error) => {
-        lastError = error;
-        failures = Math.min(failures + 1, 6);
-        retryAt =
-          Date.now() + Math.min(300000, 15000 * 2 ** (failures - 1)) * (1 + Math.random() * 0.2);
-        throw error;
-      })
-      .finally(() => {
-        flight = null;
-      });
-    return flight;
+      if (!valid(data, family)) throw Error("コーデ情報を確認できませんでした。時間をおいて再度お試しください。");
+      const serverTime = Date.parse(data.server_time) || Date.now();
+      if (currentVersion && currentVersion !== data.version && serverTime < latestTime)
+        throw Error("コーデ情報が更新されています。もう一度お試しください。");
+      if (currentVersion && currentVersion !== data.version) {
+        for (const [name, other] of slots) if (name !== family) {
+          other.snapshot = null; other.expires = 0;
+          try { localStorage.removeItem(prefix + name); } catch {}
+        }
+      }
+      currentVersion = data.version;
+      latestTime = Math.max(latestTime, serverTime);
+      entry.snapshot = { ...data, omitted: false };
+      const until = Date.parse(data.next_transition);
+      entry.expires = epoch === entry.epoch
+        ? requestedAt + Math.min(300000, Number.isFinite(until) ? Math.max(0, until - serverTime) : 300000)
+        : 0;
+      entry.retryAt = 0; entry.failures = 0;
+      try { localStorage.setItem(prefix + family, JSON.stringify(entry.snapshot)); } catch {}
+      return entry.snapshot;
+    })().catch(error => {
+      entry.lastError = error;
+      entry.failures = Math.min(entry.failures + 1, 6);
+      entry.retryAt = Date.now() + Math.min(300000, 15000 * 2 ** (entry.failures - 1));
+      throw error;
+    }).finally(() => { if (entry.flight === task) entry.flight = null; });
+    entry.flight = task;
+    return task;
   }
   document.addEventListener("card-visibility-updated", () => {
-    checkedAt = 0;
+    for (const entry of slots.values()) { entry.expires = 0; entry.epoch++; }
   });
-  window.CARD_VERSE_CATALOG = Object.freeze({
-    load,
-    peek() {
-      hydrate();
-      return snapshot;
-    },
-  });
+  window.CARD_VERSE_CATALOG = Object.freeze({ load, peek });
 })();
+
 /* ===== assets/js/site-common.js ===== */
 /* Shared page components. Initialized once after templates are mounted. */
 (() => {
@@ -3565,6 +3579,14 @@
               clear();
               modal = active;
               resize.observe(active);
+            }
+            // Settings can sit exactly at the overflow boundary. Removing its
+            // scrollbar gutter changes wrapping and can create a resize loop.
+            // Keep this dialog on a stable native scrollbar instead.
+            if (active.id === "display-settings-dialog") {
+              hideRail();
+              target = null;
+              return;
             }
             if (!canPopover) {
               hideRail();

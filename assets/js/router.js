@@ -169,7 +169,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261031-ui-detail-fixes-v16";
+  const version = "20261101-family-catalog-v17";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -244,7 +244,7 @@
     status.className = "auth-checking-status";
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
-    status.textContent = "アルバムを確認しています…";
+    status.innerHTML = '<div class="album-loading-cards" aria-hidden="true"><span class="album-loading-card"></span><span class="album-loading-card"></span><span class="album-loading-card"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L2.9 9.6l6.3-.9Z"/></svg></span></div><h1 class="album-loading-title">アルバムを確認しています</h1><p class="album-loading-note">もう少しだけお待ちください</p><span class="album-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
     document.querySelector("main").prepend(status);
   }
   if (page === "browse") {

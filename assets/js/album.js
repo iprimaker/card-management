@@ -7039,31 +7039,43 @@ init();
       ).includes(needle)
     );
   }
+  let relatedSequence = 0, relatedTimer = null, relatedController = null;
+  const relatedCounts = new Map();
   function renderRelatedSearch(hasResults) {
-    if (family === "primagi") {
-      $("verse-related-search").hidden = true;
-      return;
+    const ticket = ++relatedSequence;
+    clearTimeout(relatedTimer);
+    relatedController?.abort();
+    const hint = $("verse-related-search");
+    hint.hidden = true;
+    const needle = compact(query), source = family;
+    if (family === "primagi" || panel.hidden || hasResults || !needle || query.length > 500 || !window.CARD_VERSE_CATALOG.peek(family)) return;
+    const target = family === "onegai" ? "himitsu" : "onegai";
+    const key = [catalog?.version, target, needle].join(":");
+    function show(count) {
+      if (ticket !== relatedSequence || family !== source || compact(query) !== needle || panel.hidden) return;
+      hint.hidden = !count;
+      if (!count) return;
+      const label = target === "himitsu" ? "ひみつのアイプリバース" : "おねがいアイプリバース";
+      hint.querySelector("[data-related-message]").textContent = `同じフリーワードに該当するコーデが、${label}で見つかりました。`;
+      const link = hint.querySelector("[data-verse-related-family]");
+      link.dataset.verseRelatedFamily = target;
+      link.textContent = `${label}で見る（${count}件）`;
     }
-    const hint = $("verse-related-search"),
-      needle = compact(query),
-      target = family === "onegai" ? "himitsu" : "onegai",
-      count =
-        !hasResults && needle
-          ? (catalog?.coordinates || []).filter(
-              (c) => c.family === target && matchesQuery(c, needle),
-            ).length
-          : 0;
-    hint.hidden = count === 0;
-    if (!count) return;
-    const label =
-      target === "himitsu"
-        ? "ひみつのアイプリバース"
-        : "おねがいアイプリバース";
-    hint.querySelector("[data-related-message]").textContent =
-      `同じフリーワードに該当するコーデが、${label}で見つかりました。`;
-    const link = hint.querySelector("[data-verse-related-family]");
-    link.dataset.verseRelatedFamily = target;
-    link.textContent = `${label}で見る（${count}件）`;
+    if (relatedCounts.has(key)) { show(relatedCounts.get(key)); return; }
+    relatedTimer = setTimeout(async () => {
+      const controller = new AbortController();
+      relatedController = controller;
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      try {
+        let call = host.client().rpc("card_verse_catalog_related_count", { p_family: target, p_query: query });
+        if (typeof call.abortSignal === "function") call = call.abortSignal(controller.signal);
+        const { data, error } = await call;
+        if (error || !Number.isInteger(data?.count) || data.count < 0 || controller.signal.aborted) return;
+        if (relatedCounts.size > 30) relatedCounts.clear();
+        relatedCounts.set(key, data.count);
+        show(data.count);
+      } catch {} finally { clearTimeout(timeout); }
+    }, 300);
   }
   function filtered(includeOwnership = true) {
     const needle = compact(query);
@@ -7827,54 +7839,23 @@ init();
       }
     }
   }
+  function adoptCatalog(data) {
+    catalog = window.CARD_VERSE_CATALOG.peek() || data;
+    if (!catalog) return;
+    parts = new Map(catalog.parts.map(p => [p.id, p]));
+  }
   function hydrateCatalog() {
-    if (catalog) return;
-    try {
-      const data = window.CARD_VERSE_CATALOG
-        ? window.CARD_VERSE_CATALOG.peek()
-        : JSON.parse(localStorage.getItem(cacheKey) || "null");
-      if (Array.isArray(data?.coordinates) && Array.isArray(data?.parts)) {
-        catalog = data;
-        parts = new Map(data.parts.map((p) => [p.id, p]));
-      }
-    } catch {}
+    const data = window.CARD_VERSE_CATALOG.peek();
+    if (data) adoptCatalog(data);
   }
-  async function readCatalog(force = false) {
-    if (!force && catalog && Date.now() - checkedAt < 300000) return;
-    if (!window.CARD_VERSE_CATALOG) hydrateCatalog();
-    const r = window.CARD_VERSE_CATALOG
-      ? {
-          data: await window.CARD_VERSE_CATALOG.load(host.client(), { force }),
-          error: null,
-        }
-      : await host.client().rpc("card_verse_catalog_cached", {
-          p_version: catalog?.version || null,
-        });
-    if (r.error || !r.data)
-      throw Error("バース用SQLを導入してから、もう一度開いてください。");
-    const data = r.data.omitted ? catalog : r.data;
-    if (!Array.isArray(data?.coordinates) || !Array.isArray(data?.parts))
-      throw Error("コーデデータを確認できませんでした。");
-    catalog = { ...data, updated_at: r.data.updated_at || data.updated_at };
-    parts = new Map(data.parts.map((p) => [p.id, p]));
+  async function readCatalog(force = false, targetFamily = family) {
+    const data = await window.CARD_VERSE_CATALOG.load(host.client(), { family: targetFamily, force });
+    adoptCatalog(data);
     checkedAt = Date.now();
-    if (!r.data.omitted && !window.CARD_VERSE_CATALOG)
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(catalog));
-      } catch {}
+    return data;
   }
-  function ensureCatalog() {
-    if (catalog && Date.now() - checkedAt < 300000) return Promise.resolve();
-    if (!loading) {
-      const task = readCatalog();
-      loading = task;
-      task
-        .finally(() => {
-          if (loading === task) loading = null;
-        })
-        .catch(() => {});
-    }
-    return loading;
+  function ensureCatalog(targetFamily = family) {
+    return readCatalog(false, targetFamily);
   }
   function ensureInventory() {
     const uid = currentUser(),
@@ -7939,7 +7920,7 @@ init();
       return;
     lastWarmAt = Date.now();
     hydrateCatalog();
-    Promise.all([ensureCatalog(), ensureInventory()])
+    Promise.all([ensureInventory()])
       .then(() => {
         if (
           currentUser() &&
@@ -7950,7 +7931,7 @@ init();
       })
       .catch(() => {});
   }
-  async function open(value) {
+  async function open(value, options = {}) {
     if (!currentUser() || host.maintenance()) return;
     family =
       value === "primagi"
@@ -7960,12 +7941,15 @@ init();
           : "onegai";
     primagiRarity = "";
     primagiVerseCompatibility = "";
-    series = group = query = collectionSeries = "";
+    series = group = collectionSeries = "";
+    query = options.query || "";
+    selected = null;
+    if (dialog.open) dialog.close();
     collectionFilter = ownershipView = "all";
     favoriteOnly = duplicateOnly = false;
     trade()?.clear("coordinate");
     page = 1;
-    $("verse-query").value = "";
+    $("verse-query").value = query;
     $("verse-favorite-filter").value = "all";
     $("verse-duplicate-filter").value = "all";
     host.screen("verse");
@@ -7980,16 +7964,20 @@ init();
       view === viewGeneration &&
       !host.maintenance();
     hydrateCatalog();
-    if (catalog) {
-      fillFilters(true);
+    if (window.CARD_VERSE_CATALOG.peek(family)) {
+      fillFilters(options.latest !== false);
       render();
       $("verse-message").textContent = "";
-    } else $("verse-message").textContent = "コーデを読み込み中…";
+    } else {
+      fillFilters(false);
+      render();
+      $("verse-message").textContent = "コーデを読み込み中…";
+    }
     try {
       await Promise.all([
         ensureCatalog().then(() => {
           if (current()) {
-            fillFilters(true);
+            fillFilters(options.latest !== false);
             render();
             $("verse-message").textContent = "";
           }
@@ -8124,24 +8112,10 @@ init();
     const related = e.target.closest("[data-verse-related-family]");
     const f = e.target.closest("[data-verse-family]");
     if (f || related) {
+      const target = related ? related.dataset.verseRelatedFamily : f.dataset.verseFamily;
       const inheritedQuery = related ? query : "";
-      family = related
-        ? related.dataset.verseRelatedFamily
-        : f.dataset.verseFamily;
-      series = group = collectionSeries = "";
-      query = inheritedQuery;
       if (related) window.CARD_QR?.clear("coordinate");
-      collectionFilter = ownershipView = "all";
-      favoriteOnly = duplicateOnly = false;
-      trade()?.clear("coordinate");
-      page = 1;
-      $("verse-query").value = inheritedQuery;
-      $("verse-favorite-filter").value = "all";
-      $("verse-duplicate-filter").value = "all";
-      if (catalog) {
-        fillFilters(!related);
-        render();
-      }
+      void open(target, { query: inheritedQuery, latest: !related });
       return;
     }
     const d = e.target.closest("[data-verse-detail]");
@@ -8354,6 +8328,7 @@ init();
   // Refresh public pictures at a visibility boundary, keeping personal state and the current page.
   let visibilityPictureFlight = null;
   document.addEventListener("card-visibility-updated", () => {
+    relatedCounts.clear();
     checkedAt = 0;
     if (
       (panel.hidden && !dialog.open) ||
@@ -8388,21 +8363,29 @@ init();
       }
     },
     async shareCatalog(scopeFamily) {
-      await ensureCatalog();
-      return catalog.coordinates.filter((c) => c.family === scopeFamily);
+      const data = await ensureCatalog(scopeFamily);
+      return data.coordinates;
     },
     async shareRates(scopes, seriesFilters = {}) {
       const uid = currentUser();
-      await Promise.all([ensureCatalog(), ensureInventory()]);
+      const wantedFamilies = [...new Set(scopes.filter(value => value.startsWith("verse-")).map(value => value.slice(6)))];
+      if (!wantedFamilies.length) return {};
+      const snapshots = new Map();
+      for (let attempt = 0; attempt < 3; attempt++) {
+        snapshots.clear();
+        for (const value of wantedFamilies) snapshots.set(value, await ensureCatalog(value));
+        if (new Set([...snapshots.values()].map(data => data.version)).size <= 1) break;
+        if (attempt === 2) throw Error("コーデ情報が更新されています。もう一度お試しください。");
+      }
+      await ensureInventory();
       if (!uid || uid !== currentUser() || owner !== uid || !ready || !catalog)
         throw Error("コーデの所持状況を確認できませんでした。");
       const rates = {};
       for (const scope of scopes.filter((value) =>
         value.startsWith("verse-"),
       )) {
-        const rows = catalog.coordinates.filter(
+        const rows = (snapshots.get(scope.slice(6))?.coordinates || []).filter(
           (c) =>
-            c.family === scope.slice(6) &&
             (!Array.isArray(seriesFilters[scope]) ||
               appearances(c).some((a) =>
                 seriesFilters[scope].includes(a.series),
