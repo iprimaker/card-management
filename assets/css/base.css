@@ -4016,3 +4016,155 @@ body.invitation-route #signup-registration-status {
   box-shadow: none;
 }
 #auth-art .marquee-card { padding: 0 !important; }
+
+/* Shared feedback: calm colors, readable copy and a stable mobile layout. */
+.card-feedback {
+  --feedback-ink: #824558;
+  --feedback-line: #edced9;
+  --feedback-fill: #fff5f8;
+  position: relative;
+  box-sizing: border-box;
+  padding: 13px 15px 13px 43px;
+  margin-block: 14px;
+  border: 1px solid var(--feedback-line);
+  border-radius: 15px;
+  background: var(--feedback-fill);
+  color: var(--feedback-ink) !important;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.75;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.card-feedback::before {
+  content: "!";
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+:is(.card-feedback, #toast.card-notice)[data-feedback-kind="network"],
+:is(.card-feedback, #toast.card-notice)[data-feedback-kind="offline"],
+:is(.card-feedback, #toast.card-notice)[data-feedback-kind="server"] {
+  --feedback-ink: #315f7c;
+  --feedback-line: #caddE9;
+  --feedback-fill: #f3f9fd;
+}
+:is(.card-feedback, #toast.card-notice)[data-feedback-kind="timeout"],
+:is(.card-feedback, #toast.card-notice)[data-feedback-kind="busy"] {
+  --feedback-ink: #795823;
+  --feedback-line: #eadbb9;
+  --feedback-fill: #fffbf1;
+}
+#toast.card-notice {
+  --feedback-ink: #824558;
+  --feedback-line: #edced9;
+  --feedback-fill: #fff8fa;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 28px;
+  align-items: start;
+  gap: 11px;
+  width: min(450px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 16px 13px 16px 16px;
+  border: 1px solid var(--feedback-line);
+  border-radius: 20px;
+  background: var(--feedback-fill);
+  color: var(--feedback-ink) !important;
+  box-shadow: 0 12px 42px #3d294b1c;
+  font-size: 13px;
+  text-align: left;
+  pointer-events: auto;
+  animation: card-notice-enter 180ms ease-out;
+}
+#toast.card-notice[hidden] {
+  display: none !important;
+}
+#toast.card-notice[data-feedback-kind="success"] {
+  --feedback-ink: #3c6857;
+  --feedback-line: #d0e4d9;
+  --feedback-fill: #f6fcf8;
+  align-items: center;
+}
+.card-notice-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--feedback-line);
+  border-radius: 12px;
+  background: #ffffffb3;
+}
+.card-notice-icon svg {
+  width: 21px;
+  height: 21px;
+}
+.card-notice-copy {
+  min-width: 0;
+  padding-top: 2px;
+  overflow-wrap: anywhere;
+}
+.card-notice-copy strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+.card-notice-copy span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+#toast .card-notice-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+}
+#toast .card-notice-close:hover {
+  background: #ffffffc9;
+}
+#toast .card-notice-close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+@keyframes card-notice-enter {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (max-width: 480px) {
+  #toast.card-notice {
+    gap: 9px;
+    padding: 14px 10px 14px 13px;
+    border-radius: 18px;
+    grid-template-columns: 34px minmax(0, 1fr) 44px;
+  }
+  #toast .card-notice-close {
+    width: 44px;
+    height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #toast.card-notice { animation: none; }
+}
