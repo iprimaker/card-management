@@ -162,16 +162,13 @@
         .client()
         .rpc("card_all_set_favorite", { p_card_id: id, p_enabled: enabled });
       if (user !== uid() || g !== generation) return;
-      if (result.error || result.data !== enabled) throw Error();
+      if (result.error) throw result.error;
+      if (result.data !== enabled) throw Error();
       if (enabled) favorites.add(id);
       else favorites.delete(id);
       favoritesChecked = Date.now();
-    } catch {
-      if (user === uid() && g === generation)
-        host.toast(
-          "お気に入りを保存できませんでした。通信状態を確認して、もう一度お試しください。",
-          "error",
-        );
+    } catch (e) {
+      if (user === uid() && g === generation) host.toast(e, "error");
     } finally {
       if (user === uid() && g === generation) {
         favoriteSaving.delete(id);
@@ -544,7 +541,9 @@
             .filter((v) => v && v !== "-")
             .sort((a, b) => a.localeCompare(b, "ja", { numeric: true }));
           const label =
-            k === "だん数" && current === "academy" ? "収録区分" : window.CARD_UI.label(k);
+            k === "だん数" && current === "academy"
+              ? "収録区分"
+              : window.CARD_UI.label(k);
           return `<label><span class="filter-label">${esc(label)}<button type="button" class="filter-clear" data-all-clear="${esc(k)}" disabled>解除</button></span><select data-all-filter="${esc(k)}" id="all-filter-${i}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}">${esc(window.CARD_UI.value(k, v))}</option>`).join("")}<option value="__unknown__">未取得・未設定</option></select></label>`;
         })
         .join("") +
@@ -805,10 +804,10 @@
         k === "query"
           ? !query
           : k === "qr"
-          ? qrFilter === "all"
-          : k === "favorite"
-            ? !favoriteFilter
-            : !filters[k];
+            ? qrFilter === "all"
+            : k === "favorite"
+              ? !favoriteFilter
+              : !filters[k];
     });
   }
   function clearFilter(k) {
@@ -853,13 +852,11 @@
     saving.add(id);
     render();
     try {
-      const result = await host
-        .client()
-        .rpc("card_all_change_quantity", {
-          p_card_id: id,
-          p_delta: delta,
-          p_clear: clear,
-        });
+      const result = await host.client().rpc("card_all_change_quantity", {
+        p_card_id: id,
+        p_delta: delta,
+        p_clear: clear,
+      });
       if (user !== uid() || g !== generation) return;
       if (result.error) throw result.error;
       const count = Number(result.data);
@@ -875,11 +872,7 @@
       else inventory.delete(id);
       inventoryChecked = Date.now();
     } catch (e) {
-      if (user === uid() && g === generation)
-        host.toast(
-          "保存できませんでした。通信状態を確認して、もう一度お試しください。",
-          "error",
-        );
+      if (user === uid() && g === generation) host.toast(e, "error");
     } finally {
       if (user === uid() && g === generation) {
         saving.delete(id);

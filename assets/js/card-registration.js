@@ -4,7 +4,8 @@
   const rootURL = new URL("./", location.href);
   const pageURL = new URL(rootURL);
   pageURL.searchParams.set("view", "card-registration");
-  const isPage = new URLSearchParams(location.search).get("view") === "card-registration";
+  const isPage =
+    new URLSearchParams(location.search).get("view") === "card-registration";
 
   if (!isPage) {
     const selection = document.getElementById("selection");
@@ -33,7 +34,9 @@
   const sharedFooter = document.querySelector("body > footer");
   const sharedInfoDialog = document.getElementById("info-dialog");
   if (!sharedHeader || !sharedFooter || !sharedInfoDialog) {
-    throw new Error("共通ヘッダー・フッターを読み込めませんでした。再読み込みしてください。");
+    throw new Error(
+      "共通ヘッダー・フッターを読み込めませんでした。再読み込みしてください。",
+    );
   }
   sharedHeader.remove();
   sharedFooter.remove();
@@ -43,9 +46,14 @@
     <main class="registration-main">
       <div class="registration-heading"><span class="registration-eyebrow">登録状況とこれまでの追加記録</span><h1>カード登録情報</h1></div>
       <section class="registration-stats" aria-label="現在の登録数" aria-busy="true">
-        <div class="registration-total"><span>通常アルバムの登録カード数</span><strong id="registration-total">—</strong><span>枚</span></div>
+        <div class="registration-totals">
+          <div class="registration-total"><span>総カード数</span><strong id="registration-total">—</strong><span>枚</span></div>
+          <div class="registration-total"><span>総コーデ数</span><strong id="registration-coordinate-total">—</strong><span>コーデ</span></div>
+        </div>
         <div id="registration-counts" class="registration-counts"></div>
-        <p class="registration-count-note">アンコール・おねがいアイプリ・ひみつのアイプリの合計です。パラレルなどの別種を含み、アイカツALLの旧カードは含みません。バース・プリマジのコーデとパーツは別集計です。</p>
+        <p id="registration-count-status" role="status" hidden></p>
+        <button id="registration-count-retry" class="registration-more" type="button" hidden>登録数をもう一度読み込む</button>
+        <p class="registration-count-note">総カード数はアンコール・おねがいアイプリ・ひみつのアイプリ・旧アイカツカード（ALLの6系統）の合計です。パラレルなどの別種も含みます。総コーデ数は、おねがいバース・ひみつバース・プリマジの合計です。構成パーツは総数に含めず、別に表示しています。</p>
       </section>
       <section class="registration-history" aria-labelledby="registration-history-title">
         <div class="registration-section-heading"><h2 id="registration-history-title">登録履歴</h2><span>新しい順</span></div>
@@ -84,7 +92,9 @@
       body.scrollTop = 0;
     });
   });
-  document.getElementById("legal-close").addEventListener("click", () => sharedInfoDialog.close());
+  document
+    .getElementById("legal-close")
+    .addEventListener("click", () => sharedInfoDialog.close());
 
   const config = window.APP_CONFIG;
   const status = document.getElementById("registration-status");
@@ -95,17 +105,138 @@
   let loading = false;
   let initialized = false;
   const shown = new Set();
+  const validCount = (value) =>
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    (typeof value === "number" || typeof value === "string") &&
+    Number.isSafeInteger(Number(value)) &&
+    Number(value) >= 0;
   const number = (value) =>
-    Number.isSafeInteger(Number(value)) && Number(value) >= 0
+    validCount(value)
       ? new Intl.NumberFormat("ja-JP").format(Number(value))
       : "—";
+  const sum = (values) =>
+    values.every(validCount) &&
+    Number.isSafeInteger(
+      values.reduce((total, value) => total + Number(value), 0),
+    )
+      ? values.reduce((total, value) => total + Number(value), 0)
+      : null;
+  let archiveCountFlight = null;
+  let lastCounts = null;
+  let countFlight = null;
+  async function archiveCount() {
+    if (!archiveCountFlight)
+      archiveCountFlight = (async () => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        let response;
+        let manifest;
+        try {
+          response = await fetch(
+            new URL("assets/aikatsu-all/manifest.json", rootURL),
+            { signal: controller.signal },
+          );
+          if (response.ok) manifest = await response.json();
+        } finally {
+          clearTimeout(timer);
+        }
+        if (!response.ok)
+          throw Object.assign(
+            new Error("旧カードの登録数を取得できませんでした。"),
+            { status: response.status },
+          );
+        const wanted = [
+          "cardlist",
+          "stars",
+          "friends",
+          "onparade",
+          "planet",
+          "academy",
+        ];
+        const systems = manifest?.systems;
+        if (
+          !Array.isArray(systems) ||
+          wanted.some(
+            (id) => systems.filter((system) => system.id === id).length !== 1,
+          )
+        )
+          throw Error("旧カードの登録数を確認できませんでした。");
+        const total = sum(
+          wanted.map((id) => systems.find((system) => system.id === id).count),
+        );
+        if (total === null)
+          throw Error("旧カードの登録数を確認できませんでした。");
+        return total;
+      })().catch((error) => {
+        archiveCountFlight = null;
+        throw error;
+      });
+    return archiveCountFlight;
+  }
+  async function loadCounts(counts) {
+    if (countFlight) return countFlight;
+    lastCounts = counts;
+    const button = document.getElementById("registration-count-retry");
+    const message = document.getElementById("registration-count-status");
+    button.disabled = true;
+    countFlight = (async () => {
+      const [legacy, primagi] = await Promise.allSettled([
+        archiveCount(),
+        db.rpc("card_primagi_catalog_counts"),
+      ]);
+      const merged = {
+        ...counts,
+        aikatsu_all: legacy.status === "fulfilled" ? legacy.value : null,
+      };
+      const errors = [];
+      if (legacy.status === "rejected") errors.push(legacy.reason);
+      if (
+        primagi.status === "fulfilled" &&
+        !primagi.value.error &&
+        primagi.value.data
+      )
+        Object.assign(merged, primagi.value.data);
+      else
+        errors.push(
+          primagi.status === "rejected"
+            ? primagi.reason
+            : primagi.value.error || Error("集計できませんでした。"),
+        );
+      if (
+        ![merged.primagi, merged.primagi_parts].every(validCount) &&
+        !errors.length
+      )
+        errors.push(Error("プリマジの登録数を確認できませんでした。"));
+      renderCounts(merged);
+      message.hidden = !errors.length;
+      message.textContent = errors.length
+        ? "一部の登録数を確認できませんでした。" +
+          window.CARD_ERROR.message(errors[0])
+        : "";
+      button.hidden = !errors.length;
+    })().finally(() => {
+      countFlight = null;
+      button.disabled = false;
+    });
+    return countFlight;
+  }
+  document.getElementById("registration-count-retry").onclick = () => {
+    if (lastCounts) void loadCounts(lastCounts);
+  };
 
   function renderCounts(counts) {
-    document.getElementById("registration-total").textContent = number(counts.cards);
+    document.getElementById("registration-total").textContent = number(
+      sum([counts.aikatsu, counts.onegai, counts.himitsu, counts.aikatsu_all]),
+    );
+    document.getElementById("registration-coordinate-total").textContent =
+      number(sum([counts.verse_onegai, counts.verse_himitsu, counts.primagi]));
     const root = document.getElementById("registration-counts");
     root.replaceChildren();
     for (const [label, key, unit] of [
       ["アイカツ！アンコール", "aikatsu", "枚"],
+      ["旧アイカツカード", "aikatsu_all", "枚"],
       ["おねがいアイプリ", "onegai", "枚"],
       ["ひみつのアイプリ", "himitsu", "枚"],
       ["おねがいバース", "verse_onegai", "コーデ"],
@@ -123,7 +254,9 @@
       item.append(name, amount);
       root.append(item);
     }
-    document.querySelector(".registration-stats").setAttribute("aria-busy", "false");
+    document
+      .querySelector(".registration-stats")
+      .setAttribute("aria-busy", "false");
   }
 
   function renderEntry(entry) {
@@ -151,7 +284,8 @@
     meta.className = "registration-entry-meta";
     const id = document.createElement("span");
     id.className = "registration-entry-id";
-    id.textContent = "REG-" + String(entry.display_number ?? entry.id).padStart(6, "0");
+    id.textContent =
+      "REG-" + String(entry.display_number ?? entry.id).padStart(6, "0");
     const time = document.createElement("time");
     const date = new Date(entry.updated_on);
     if (Number.isFinite(date.getTime())) {
@@ -195,25 +329,31 @@
     status.hidden = false;
     status.textContent = "登録情報を読み込んでいます…";
     try {
-      if (!config?.supabaseUrl || !config?.supabaseKey || !window.supabase?.createClient)
+      if (
+        !config?.supabaseUrl ||
+        !config?.supabaseKey ||
+        !window.supabase?.createClient
+      )
         throw new Error("configuration");
-      db ||= window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
-        auth: {
-          storageKey: "card-registration-anonymous",
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
+      db ||= window.supabase.createClient(
+        config.supabaseUrl,
+        config.supabaseKey,
+        {
+          auth: {
+            storageKey: "card-registration-anonymous",
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
         },
-      });
+      );
       const { data, error } = await db.rpc("card_album_registration_feed", {
         p_before: cursor,
         p_limit: 20,
       });
-      if (error || !data || !Array.isArray(data.updates)) throw error || new Error("response");
-      const counts = { ...(data.counts || {}) };
-      const primagi = await db.rpc("card_primagi_catalog_counts");
-      if (!primagi.error && primagi.data) Object.assign(counts, primagi.data);
-      renderCounts(counts);
+      if (error || !data || !Array.isArray(data.updates))
+        throw error || new Error("response");
+      await loadCounts({ ...(data.counts || {}) });
       for (const entry of data.updates) {
         if (shown.has(String(entry.id))) continue;
         renderEntry(entry);
@@ -224,11 +364,13 @@
       initialized = true;
       status.hidden = shown.size > 0;
       status.textContent = "登録履歴はまだありません。";
-    } catch {
-      status.textContent = "登録情報を読み込めませんでした。時間をおいて、もう一度お試しください。";
+    } catch (error) {
+      status.textContent = window.CARD_ERROR.message(error);
       retry.hidden = false;
       if (!initialized)
-        document.querySelector(".registration-stats").setAttribute("aria-busy", "false");
+        document
+          .querySelector(".registration-stats")
+          .setAttribute("aria-busy", "false");
     } finally {
       loading = false;
       more.disabled = false;

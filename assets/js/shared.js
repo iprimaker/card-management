@@ -795,8 +795,7 @@
             p_scope: wanted || null,
           });
       if (g !== generation) return;
-      if (r.error)
-        throw Error("所持状況を取得できませんでした。再読み込みしてください。");
+      if (r.error) throw r.error;
       if (r.data?.rate_limited === true) {
         showShareReadLimit(r.data);
         return;
@@ -808,7 +807,7 @@
             p_scope: null,
           });
           if (g !== generation) return;
-          if (retry.error) throw Error("更新できませんでした。");
+          if (retry.error) throw retry.error;
           if (retry.data?.rate_limited === true) {
             showShareReadLimit(retry.data);
             return;

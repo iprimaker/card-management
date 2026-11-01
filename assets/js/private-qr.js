@@ -8,7 +8,10 @@
       for (const name of ["qr-encoder.js", "qr-utf8.js", "qr-reader.js"])
         await new Promise((resolve, reject) => {
           const s = document.createElement("script");
-          s.src = new URL("vendor/" + name + "?v=20261030-primagi-verse-compat-v1", assetBase);
+          s.src = new URL(
+            "vendor/" + name + "?v=20261030-primagi-verse-compat-v1",
+            assetBase,
+          );
           s.onload = resolve;
           s.onerror = reject;
           document.head.append(s);
@@ -83,7 +86,8 @@
   compatibilityNote.hidden = true;
   dialog.insertBefore(compatibilityNote, content);
   function updateCompatibilityNote(target) {
-    compatibilityNote.textContent = window.CARD_PRIMAGI_VERSE_COMPAT.warning(target);
+    compatibilityNote.textContent =
+      window.CARD_PRIMAGI_VERSE_COMPAT.warning(target);
     compatibilityNote.hidden = !compatibilityNote.textContent;
   }
   dialog.querySelector(".qr-close").onclick = () => dialog.close();
@@ -163,12 +167,11 @@
   function err(e) {
     return /上限/.test(e?.message || "")
       ? "QRコードの登録上限に達しました。不要なQRコードを削除してください。"
-      : /ログイン/.test(e?.message || "")
-        ? "ログインしてからお試しください。"
-        : "QRコードの操作を完了できませんでした。通信状態を確認してお試しください。";
+      : window.CARD_ERROR.message(e);
   }
   function show(t) {
-    targets = t.kind === "part" ? (t.group || []).filter((x) => rows.has(key(x))) : [t];
+    targets =
+      t.kind === "part" ? (t.group || []).filter((x) => rows.has(key(x))) : [t];
     if (!targets.length) targets = [t];
     current = Math.max(
       0,
@@ -184,7 +187,8 @@
     label.className = "qr-card-character";
     label.style.cssText =
       "margin:6px 0 16px;font-size:.88rem;line-height:1.6;color:#706879;overflow-wrap:anywhere";
-    label.textContent = "キャラ名：" + (host()?.cardCharacter?.(String(target.id)) || "未取得");
+    label.textContent =
+      "キャラ名：" + (host()?.cardCharacter?.(String(target.id)) || "未取得");
     name.insertAdjacentElement("afterend", label);
   }
   function draw() {
@@ -207,11 +211,13 @@
       });
       code.querySelector("svg")?.setAttribute("aria-label", "登録したQRコード");
     } catch {
-      code.textContent = "このQR情報は表示できません。削除して再登録してください。";
+      code.textContent =
+        "このQR情報は表示できません。削除して再登録してください。";
     }
     content.querySelector("[data-name]").textContent = t.name;
     appendCardCharacter(t);
-    content.querySelector("[data-position]").textContent = current + 1 + " / " + targets.length;
+    content.querySelector("[data-position]").textContent =
+      current + 1 + " / " + targets.length;
     content.querySelector(".qr-navigation").hidden = targets.length < 2;
     const move = (d) => {
       current = (current + d + targets.length) % targets.length;
@@ -263,11 +269,15 @@
     if (uid() !== u || token !== scanToken || !dialog.open) return;
     if (status.error) throw status.error;
     if (status.data?.limit !== null && status.data.count >= status.data.limit) {
-      message("QRコードの登録上限に達しました。不要なQRコードを削除してください。");
+      message(
+        "QRコードの登録上限に達しました。不要なQRコードを削除してください。",
+      );
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
-      message("カメラを使用できません。HTTPSで開き、カメラに対応したブラウザでお試しください。");
+      message(
+        "カメラを使用できません。HTTPSで開き、カメラに対応したブラウザでお試しください。",
+      );
       return;
     }
     content.innerHTML =
@@ -304,7 +314,9 @@
             inversionAttempts: "attemptBoth",
           });
         const binaryScan =
-          !onRead && t?.family === "primagi" && (t.kind === "coordinate" || t.kind === "part");
+          !onRead &&
+          t?.family === "primagi" &&
+          (t.kind === "coordinate" || t.kind === "part");
         if (binaryScan ? result?.binaryData?.length : result?.data) {
           captureFooter.replaceChildren();
           stop();
@@ -316,7 +328,9 @@
               if (uid() === u) dialog.close();
               return;
             }
-            const payload = binaryScan ? encodePrimagiScan(result) : result.data;
+            const payload = binaryScan
+              ? encodePrimagiScan(result)
+              : result.data;
             if (!payload) throw Error("このQRコードは保存できません");
             const r = await db().rpc("card_qr_save", {
               p_kind: t.kind,
@@ -404,7 +418,9 @@
           root.append(label);
         }
         if (!label) continue;
-        if (!select.id) select.id = kind === "coordinate" ? "verse-qr-select" : "card-qr-select";
+        if (!select.id)
+          select.id =
+            kind === "coordinate" ? "verse-qr-select" : "card-qr-select";
         if (label.htmlFor !== select.id) label.htmlFor = select.id;
         const hidden = !uid();
         if (label.hidden !== hidden) label.hidden = hidden;
@@ -433,7 +449,8 @@
     (e) => {
       if (e.target.closest("#reset")) {
         filters.card = "all";
-        for (const s of document.querySelectorAll("[data-qr-filter=card]")) s.value = "all";
+        for (const s of document.querySelectorAll("[data-qr-filter=card]"))
+          s.value = "all";
         document.dispatchEvent(new Event("private-qr-changed"));
       }
     },
@@ -444,7 +461,7 @@
   manager.className = "qr-manager-dialog";
   manager.setAttribute("aria-labelledby", "qr-manager-title");
   manager.innerHTML =
-    '<div class="qr-manager-heading"><h2 id="qr-manager-title">登録済みQRコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><div class="qr-manager-filters" role="group" aria-label="タグで絞り込み"></div><p data-status role="status" aria-live="polite"></p><div data-entries></div><div class="qr-manager-footer"><button type="button" data-delete-all disabled>一括削除（セーブ・フレカを除く）</button><p>カード・コーデ・パーツのQRコードを削除します。</p><details class="qr-limit-help"><summary>QRコードの登録上限を増やすには</summary><p>アルバムを継続してご利用いただいている方など、アルバムの利用状況に応じて登録上限を増やす場合があります。利用状況が高いほど上限増加の対象となる場合がありますが、自動的な増加をお約束するものではありません。上限を変更した際は、個別のお知らせでご案内します。</p></details></div>';
+    '<div class="qr-manager-heading"><h2 id="qr-manager-title">登録済みQRコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><section class="qr-manager-summary" aria-label="QRコードの登録数と上限"></section><div class="qr-manager-filters" role="group" aria-label="タグで絞り込み"></div><p data-status role="status" aria-live="polite"></p><div data-entries></div><div class="qr-manager-footer"><button type="button" data-delete-all disabled>一括削除（セーブ・フレカを除く）</button><p>カード・コーデ・パーツのQRコードを削除します。</p><details class="qr-limit-help"><summary>QRコードの登録上限を増やすには</summary><p>アルバムを継続してご利用いただいている方など、アルバムの利用状況に応じて登録上限を増やす場合があります。利用状況が高いほど上限増加の対象となる場合がありますが、自動的な増加をお約束するものではありません。上限を変更した際は、個別のお知らせでご案内します。</p></details></div>';
   document.body.append(manager);
   manager.querySelector("[data-close]").onclick = () => manager.close();
   const confirmation = document.createElement("dialog");
@@ -466,7 +483,8 @@
       confirmation.addEventListener("close", () => resolve(yes), {
         once: true,
       });
-      confirmation.querySelector("[data-cancel]").onclick = () => confirmation.close();
+      confirmation.querySelector("[data-cancel]").onclick = () =>
+        confirmation.close();
       confirmation.querySelector("[data-confirm]").onclick = () => {
         yes = true;
         confirmation.close();
@@ -474,6 +492,394 @@
     });
   }
   const managerStatus = manager.querySelector("[data-status]");
+  // The QR manager uses a separate information-only dialog. It never opens an
+  // album screen or mounts ownership, favorite or trade controls.
+  const information = document.createElement("dialog");
+  information.className = "qr-information-dialog";
+  information.setAttribute("aria-labelledby", "qr-information-title");
+  information.innerHTML =
+    '<div class="modal-top"><span data-code></span><button type="button" data-close aria-label="閉じる">×</button></div><h2 id="qr-information-title"></h2><p data-status role="status"></p><div data-body></div><div class="qr-information-actions"></div>';
+  document.body.append(information);
+  information.querySelector("[data-close]").onclick = () => information.close();
+  let informationRequest = 0;
+  let informationRow = null;
+  information.addEventListener("close", () => {
+    informationRequest++;
+    informationRow = null;
+    information.querySelector("[data-body]").replaceChildren();
+    information.querySelector(".qr-information-actions").replaceChildren();
+  });
+  function openManagedQr(row) {
+    if (uid() !== managerOwner || managing) return;
+    display(
+      row.payload,
+      row.name,
+      () => removeManaged(row),
+      row.kind !== "save" && row.series === "primagi",
+      { kind: row.kind, id: row.target_id },
+    );
+  }
+  function infoFields(entries) {
+    const dl = document.createElement("dl");
+    for (const [label, value] of entries) {
+      const dt = document.createElement("dt"),
+        dd = document.createElement("dd");
+      dt.textContent = window.CARD_UI?.label(label) || label;
+      const text =
+        (Array.isArray(value) ? value : [value])
+          .filter((v) => v !== null && v !== undefined && v !== "")
+          .join(" ／ ") || "未取得";
+      dd.textContent = window.CARD_UI?.value(label, text) || text;
+      dl.append(dt, dd);
+    }
+    return dl;
+  }
+  function infoImage(url, label) {
+    const frame = document.createElement("div");
+    frame.className = "qr-information-image";
+    const missing = () => {
+      frame.replaceChildren();
+      const p = document.createElement("span");
+      p.textContent = "画像なし";
+      frame.append(p);
+    };
+    let safe = "";
+    try {
+      const parsed = new URL(url, location.href);
+      if (
+        url &&
+        (["https:", "http:"].includes(parsed.protocol) ||
+          /^data:image\/(?:png|jpeg|webp|gif|svg\+xml)[;,]/i.test(url))
+      )
+        safe = parsed.href;
+    } catch {}
+    if (!safe) missing();
+    else {
+      const img = document.createElement("img");
+      img.src = safe;
+      img.alt = label;
+      img.decoding = "async";
+      img.onerror = missing;
+      frame.append(img);
+    }
+    return frame;
+  }
+  async function informationData(row) {
+    if (row.kind === "card") {
+      const card = String(row.target_id).startsWith("aikatsu-all:")
+        ? await window.CARD_ALL.resolve(row.target_id)
+        : (await window.PUBLIC_CATALOG_CACHE.load(db()))?.cards?.find(
+            (c) => c.id === row.target_id,
+          );
+      if (!card) throw Error("カード情報を表示できません");
+      return { card };
+    }
+    const family =
+      row.series === "おねがい"
+        ? "onegai"
+        : row.series === "ひみつ"
+          ? "himitsu"
+          : row.series;
+    if (!["onegai", "himitsu", "primagi"].includes(family))
+      throw Error("コーデデータを確認できませんでした。");
+    const data = await window.CARD_VERSE_CATALOG.load(db(), { family });
+    const part =
+      row.kind === "part"
+        ? data.parts.find((p) => String(p.id) === String(row.target_id))
+        : null;
+    const coordinate =
+      row.kind === "coordinate"
+        ? data.coordinates.find((c) => c.id === row.target_id)
+        : data.coordinates.find((c) =>
+            c.part_ids.some((id) => String(id) === String(row.target_id)),
+          );
+    if (!coordinate && !part)
+      throw Error("コーデデータを確認できませんでした。");
+    return { coordinate, part, family, parts: data.parts };
+  }
+  async function openInformation(row) {
+    const user = uid();
+    if (!user || user !== managerOwner || managing) return;
+    informationRow = row;
+    const request = ++informationRequest;
+    const current = () =>
+      user === uid() &&
+      user === managerOwner &&
+      request === informationRequest &&
+      information.open;
+    const title = information.querySelector("h2"),
+      status = information.querySelector("[data-status]"),
+      body = information.querySelector("[data-body]");
+    title.textContent = row.name;
+    information.querySelector("[data-code]").textContent = "";
+    body.replaceChildren();
+    status.textContent = "情報を読み込んでいます…";
+    const qr = document.createElement("button");
+    qr.type = "button";
+    qr.className = "private-qr-button is-registered";
+    qr.innerHTML = icon;
+    qr.setAttribute("aria-label", row.name + "のQRコードを表示");
+    qr.onclick = () => {
+      if (current()) openManagedQr(row);
+    };
+    information.querySelector(".qr-information-actions").replaceChildren(qr);
+    if (!information.open) information.showModal();
+    try {
+      const data = await informationData(row);
+      if (!current()) return;
+      information.dataset.theme =
+        data.card?.game === "aikatsu"
+          ? "aikatsu"
+          : data.family === "primagi"
+            ? "primagi"
+            : "aipri";
+      const layout = document.createElement("div");
+      layout.className = "qr-information-layout";
+      if (data.card) {
+        const c = data.card;
+        const info = host().cardInformation(c);
+        title.textContent = info.name;
+        information.querySelector("[data-code]").textContent =
+          c.code || "コード未取得";
+        const viewer = document.createElement("div");
+        viewer.className = "qr-information-viewer";
+        const picture = document.createElement("div");
+        viewer.append(picture);
+        const sides = document.createElement("div");
+        sides.className = "modal-side-switch";
+        sides.setAttribute("role", "group");
+        sides.setAttribute("aria-label", "表裏を切り替える");
+        const buttons = ["表面", "裏面"].map((label, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = label;
+          button.disabled = index === 1 && !c.back;
+          button.onclick = () => {
+            picture.replaceChildren(
+              infoImage(index ? c.back : c.front, info.name + " " + label),
+            );
+            sides.dataset.side = String(index);
+            buttons.forEach((b, i) =>
+              b.setAttribute("aria-pressed", String(i === index)),
+            );
+          };
+          return button;
+        });
+        sides.append(...buttons);
+        viewer.append(sides);
+        buttons[0].click();
+        layout.append(viewer, infoFields(info.fields));
+      } else {
+        const c = data.coordinate,
+          selectedPart = data.part;
+        const relevant = selectedPart
+          ? [selectedPart]
+          : (c?.part_ids || [])
+              .map((id) => data.parts.find((p) => p.id === id))
+              .filter(Boolean);
+        title.textContent = selectedPart
+          ? (c?.name || selectedPart.metadata?.name || "コーデ名未取得") +
+            " ／ " +
+            selectedPart.slot
+          : c.name;
+        information.querySelector("[data-code]").textContent = selectedPart
+          ? (selectedPart.codes || []).join(" ／ ")
+          : c.code || "コード未取得";
+        const fields = [
+          [
+            "作品",
+            {
+              onegai: "おねがいアイプリバース",
+              himitsu: "ひみつのアイプリバース",
+              primagi: "ワッチャプリマジ！",
+            }[data.family],
+          ],
+          ["レアリティ", selectedPart?.metadata?.rarity || c?.rarity],
+          [
+            "入手方法",
+            (c?.appearances || []).map((a) =>
+              [a.series, a.group].filter(Boolean).join(" ／ "),
+            ),
+          ],
+        ];
+        if (c?._visibility?.image)
+          fields.push([
+            "画像の公開予定",
+            c._visibility.until
+              ? new Intl.DateTimeFormat("ja-JP", {
+                  timeZone: "Asia/Tokyo",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }).format(new Date(c._visibility.until))
+              : "未定",
+          ]);
+        // Parts already carry their own picture. A second hero picture repeats
+        // the selected part (and often the first part of a full coordinate).
+        if (relevant.length) {
+          layout.classList.add("is-coordinate");
+          layout.append(infoFields(fields));
+        } else {
+          layout.append(
+            infoImage(
+              window.CARD_PRIMAGI?.verseImage(c?.image || c?.thumbnail) || "",
+              title.textContent,
+            ),
+            infoFields(fields),
+          );
+        }
+        const parts = document.createElement("div");
+        parts.className = "qr-information-parts";
+        for (const p of relevant) {
+          const item = document.createElement("article");
+          item.append(
+            infoImage(window.CARD_PRIMAGI?.verseImage(p.image) || "", p.slot),
+          );
+          const heading = document.createElement("h3");
+          heading.textContent = p.slot;
+          item.append(heading);
+          item.append(
+            infoFields([
+              [
+                "コーデ名",
+                c?.name === "公開準備中のコーデ"
+                  ? c.name
+                  : p.metadata?.name || c?.name,
+              ],
+              ["コード", p.codes],
+              [data.family === "primagi" ? "ワッチャ" : "バズパワー", p.buzz],
+            ]),
+          );
+          parts.append(item);
+        }
+        layout.append(parts);
+      }
+      body.replaceChildren(layout);
+      status.textContent = "";
+    } catch (error) {
+      if (current()) status.textContent = window.CARD_ERROR.message(error);
+    }
+  }
+  document.addEventListener("card-visibility-updated", () => {
+    if (information.open && informationRow)
+      void openInformation(informationRow);
+  });
+  let quotaFlight = null;
+  function quotaStatus() {
+    const user = uid();
+    if (quotaFlight?.user === user) return quotaFlight.promise;
+    const flight = { user, promise: null };
+    flight.promise = (async () => {
+      const result = await db().rpc("card_qr_status");
+      if (result.error) throw result.error;
+      const value = result.data;
+      if (
+        !value ||
+        !Number.isSafeInteger(value.count) ||
+        value.count < 0 ||
+        (value.limit !== null &&
+          (!Number.isSafeInteger(value.limit) || value.limit < 0))
+      )
+        throw Error("QR情報を確認できません");
+      return value;
+    })().finally(() => {
+      if (quotaFlight === flight) quotaFlight = null;
+    });
+    quotaFlight = flight;
+    return flight.promise;
+  }
+  function quotaMeter(value) {
+    const meter = document.createElement("span");
+    meter.className = "qr-quota-meter";
+    const fill = document.createElement("span");
+    if (value.limit === null) {
+      meter.classList.add("is-unlimited");
+      meter.setAttribute("role", "img");
+      meter.setAttribute("aria-label", value.count + "件登録中・上限なし");
+    } else {
+      const width = value.limit
+        ? Math.min(100, (value.count / value.limit) * 100)
+        : value.count
+          ? 100
+          : 0;
+      fill.style.width = width + "%";
+      meter.setAttribute("role", "progressbar");
+      meter.setAttribute("aria-label", "QRコードの登録使用量");
+      meter.setAttribute("aria-valuemin", "0");
+      meter.setAttribute("aria-valuemax", String(Math.max(1, value.limit)));
+      meter.setAttribute(
+        "aria-valuenow",
+        String(Math.min(value.count, Math.max(1, value.limit))),
+      );
+      meter.setAttribute(
+        "aria-valuetext",
+        value.count + "件登録中・上限" + value.limit + "件",
+      );
+      meter.classList.toggle("is-full", value.count >= value.limit);
+    }
+    meter.append(fill);
+    return meter;
+  }
+  async function refreshManagerQuota(user, request) {
+    const root = manager.querySelector(".qr-manager-summary");
+    root.textContent = "登録数を確認しています…";
+    try {
+      const value = await quotaStatus();
+      if (
+        user !== uid() ||
+        user !== managerOwner ||
+        request !== managerRequest ||
+        !manager.open
+      )
+        return;
+      root.replaceChildren();
+      const n = (v) => v.toLocaleString("ja-JP");
+      const heading = document.createElement("p");
+      heading.className = "qr-quota-heading";
+      heading.textContent =
+        n(value.count) +
+        "件登録中 ／ " +
+        (value.limit === null ? "上限なし" : "上限 " + n(value.limit) + "件");
+      root.append(heading, quotaMeter(value));
+      const details = document.createElement("dl");
+      const count = (test) => managedRows.filter(test).length;
+      const entries = [
+        [
+          "残り登録可能数",
+          value.limit === null
+            ? "上限なし"
+            : n(Math.max(0, value.limit - value.count)) + "件",
+        ],
+        ["カード", count((r) => r.kind === "card")],
+        ["フルコーデ", count((r) => r.kind === "coordinate")],
+        ["パーツ", count((r) => r.kind === "part")],
+        [
+          "セーブコード",
+          count((r) => r.kind === "save" && r.series !== "friend"),
+        ],
+        ["フレカ", count((r) => r.kind === "save" && r.series === "friend")],
+      ];
+      for (const [label, amount] of entries) {
+        const dt = document.createElement("dt"),
+          dd = document.createElement("dd");
+        dt.textContent = label;
+        dd.textContent = typeof amount === "number" ? n(amount) + "件" : amount;
+        details.append(dt, dd);
+      }
+      root.append(details);
+      if (value.limit !== null && value.count > value.limit) {
+        const note = document.createElement("p");
+        note.textContent =
+          "上限を" +
+          n(value.count - value.limit) +
+          "件超えています。登録済みのQRコードは保持されますが、新しく追加することはできません。";
+        root.append(note);
+      }
+    } catch (error) {
+      if (user === uid() && request === managerRequest && manager.open)
+        root.textContent = window.CARD_ERROR.message(error);
+    }
+  }
   async function removeManaged(row) {
     const user = uid();
     if (!user || user !== managerOwner || managing) return false;
@@ -507,8 +913,14 @@
             ? "primagi-save"
             : "aipri-save";
     const family =
-      row.series === "おねがい" ? "onegai" : row.series === "ひみつ" ? "himitsu" : row.series;
-    return row.kind === "coordinate" || row.kind === "part" ? family + "-verse" : family;
+      row.series === "おねがい"
+        ? "onegai"
+        : row.series === "ひみつ"
+          ? "himitsu"
+          : row.series;
+    return row.kind === "coordinate" || row.kind === "part"
+      ? family + "-verse"
+      : family;
   }
   const tagLabels = {
     aikatsu: "アイカツ",
@@ -529,13 +941,15 @@
     const root = manager.querySelector("[data-entries]");
     root.replaceChildren();
     const available = [...new Set(managedRows.map(tagKey))];
-    if (managerFilter !== "all" && !available.includes(managerFilter)) managerFilter = "all";
+    if (managerFilter !== "all" && !available.includes(managerFilter))
+      managerFilter = "all";
     const filterRoot = manager.querySelector(".qr-manager-filters");
     filterRoot.replaceChildren();
     for (const value of ["all", ...available]) {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = value === "all" ? "すべて" : tagLabels[value] || "未取得";
+      button.textContent =
+        value === "all" ? "すべて" : tagLabels[value] || "未取得";
       button.dataset.qrTagFilter = value;
       button.setAttribute("aria-pressed", String(value === managerFilter));
       button.onclick = () => {
@@ -550,23 +964,26 @@
     for (const row of visibleRows) {
       const item = document.createElement("div");
       item.className = "qr-manager-row";
-      const text = document.createElement("span");
+      const text = document.createElement(
+        row.kind === "save" ? "span" : "button",
+      );
       text.textContent = row.name;
+      if (row.kind !== "save") {
+        text.type = "button";
+        text.className = "qr-manager-name";
+        text.setAttribute("aria-haspopup", "dialog");
+        text.setAttribute("aria-label", row.name + "の情報を表示");
+        text.onclick = () => {
+          void openInformation(row);
+        };
+      }
       const qr = document.createElement("button");
       qr.type = "button";
       qr.className = "private-qr-button is-registered";
       qr.innerHTML = icon;
       qr.setAttribute("aria-label", row.name + "のQRコードを表示");
-      qr.onclick = () => {
-        if (uid() !== managerOwner || managing) return;
-        display(
-          row.payload,
-          row.name,
-          () => removeManaged(row),
-          row.kind !== "save" && row.series === "primagi",
-          { kind: row.kind, id: row.target_id },
-        );
-      };
+      qr.onclick = () => openManagedQr(row);
+
       const del = document.createElement("button");
       del.type = "button";
       del.className = "qr-manager-delete";
@@ -617,19 +1034,35 @@
         });
         if (r.error || !Array.isArray(r.data)) throw r.error || Error();
         all.push(...r.data);
-        if (uid() !== user || request !== managerRequest || !manager.open) return;
+        if (uid() !== user || request !== managerRequest || !manager.open)
+          return;
         if (r.data.length < 500) break;
       }
       if (uid() !== user || request !== managerRequest || !manager.open) return;
-      const resolved = window.CARD_ALL ? await window.CARD_ALL.enrichQrRows(all) : all;
+      const resolved = window.CARD_ALL
+        ? await window.CARD_ALL.enrichQrRows(all)
+        : all;
       if (uid() !== user || request !== managerRequest || !manager.open) return;
       managerOwner = user;
       managedRows = resolved.map((row) => {
         if (row.kind !== "card" || !window.CARD_VISIBILITY?.mask) return row;
-        const masked = window.CARD_VISIBILITY.mask([{ id: row.target_id, name: row.name }])[0];
+        const masked = window.CARD_VISIBILITY.mask([
+          { id: row.target_id, name: row.name },
+        ])[0];
         return { ...row, name: masked?.name || "カード（非公開）" };
       });
       renderManager();
+      if (
+        information.open &&
+        informationRow &&
+        !managedRows.some(
+          (row) =>
+            row.kind === informationRow.kind &&
+            String(row.target_id) === String(informationRow.target_id),
+        )
+      )
+        information.close();
+      void refreshManagerQuota(user, request);
       managerStatus.textContent = "";
     } catch (e) {
       if (uid() === user && request === managerRequest) {
@@ -641,6 +1074,8 @@
     }
   }
   manager.addEventListener("close", () => {
+    if (information.open) information.close();
+    manager.querySelector(".qr-manager-summary").replaceChildren();
     managerRequest++;
     managerFilter = "all";
     managedRows = [];
@@ -665,7 +1100,8 @@
       if (uid() !== user) return;
       await load();
       await reloadManager();
-      managerStatus.textContent = "セーブコード・フレカを除くQRコードを削除しました。";
+      managerStatus.textContent =
+        "セーブコード・フレカを除くQRコードを削除しました。";
     } catch (e) {
       if (uid() === user) managerStatus.textContent = err(e);
     } finally {
@@ -683,9 +1119,16 @@
     button.dataset.qrRemaining = "";
     button.className = "qr-remaining-row";
     button.setAttribute("aria-haspopup", "dialog");
-    button.textContent = "QRコード登録残高　確認中…";
+    button.textContent = "QRコード登録数　確認中…";
     button.onclick = () => {
       if (!uid()) return;
+      managerUser = uid();
+      if (information.open) information.close();
+      managerOwner = null;
+      managedRows = [];
+      renderManager();
+      manager.querySelector(".qr-manager-summary").textContent =
+        "登録数を確認しています…";
       manager.showModal();
       reloadManager();
     };
@@ -700,40 +1143,43 @@
       request = ++remainingRequest;
     p.disabled = !user;
     if (!user) {
-      p.textContent = "QRコード登録残高　ログインしてください";
+      p.textContent = "QRコード登録数　ログインしてください";
       return;
     }
-    p.textContent = "QRコード登録残高　確認中…";
+    p.textContent = "QRコード登録数　確認中…";
     try {
-      const result = await db().rpc("card_qr_status");
+      const value = await quotaStatus();
       if (request !== remainingRequest || user !== uid()) return;
-      if (result.error || !result.data || !Number.isFinite(result.data.save_count)) throw Error();
-      const n = (value) => Number(value).toLocaleString("ja-JP");
-      const balance =
-        result.data.limit === null
-          ? "上限なし"
-          : n(Math.max(0, result.data.limit - result.data.count)) + "件";
+      const n = (number) => number.toLocaleString("ja-JP");
       p.replaceChildren();
-      const primary = document.createElement("span"),
-        detail = document.createElement("small");
-      primary.textContent = "QRコード登録残高　" + balance;
-      detail.textContent =
-        "（" +
-        n(result.data.count) +
-        "件登録中　うち" +
-        n(result.data.save_count) +
-        "件セーブコード" +
-        (result.data.friend_count ? "・" + n(result.data.friend_count) + "件フレカ" : "") +
-        "）";
-      p.append(primary, detail);
-    } catch {
+      const heading = document.createElement("span");
+      heading.className = "qr-quota-heading";
+      const label = document.createElement("span"),
+        amount = document.createElement("strong");
+      label.textContent = "QRコード登録数";
+      amount.textContent =
+        n(value.count) +
+        (value.limit === null
+          ? "件・上限なし"
+          : " ／ " + n(value.limit) + "件");
+      heading.append(label, amount);
+      const hint = document.createElement("small");
+      hint.textContent = "登録済みの一覧・内訳を見る ›";
+      p.append(heading, quotaMeter(value), hint);
+    } catch (error) {
       if (request === remainingRequest && user === uid())
-        p.textContent = "QRコード登録残高　取得できませんでした";
+        p.textContent = "QRコード登録数　" + err(error);
     }
   }
+
   new MutationObserver((records) => {
     mountRemaining();
-    if (records.some((r) => r.type === "attributes" && r.target.id === "display-settings-dialog"))
+    if (
+      records.some(
+        (r) =>
+          r.type === "attributes" && r.target.id === "display-settings-dialog",
+      )
+    )
       refreshRemaining();
   }).observe(document.body, {
     childList: true,
@@ -749,6 +1195,8 @@
   setInterval(() => {
     if (managerUser === uid()) return;
     managerUser = uid();
+    quotaFlight = null;
+    if (information.open) information.close();
     remainingRequest++;
     managerRequest++;
     managerFilter = "all";
@@ -781,7 +1229,9 @@
   }
   function clear(kind) {
     filters[kind] = "all";
-    for (const select of document.querySelectorAll('[data-qr-filter="' + kind + '"]'))
+    for (const select of document.querySelectorAll(
+      '[data-qr-filter="' + kind + '"]',
+    ))
       select.value = "all";
   }
   async function capture(onRead, options = {}) {
@@ -830,7 +1280,8 @@
             await onRead(payload);
             if (uid() === user && dialog.open) dialog.close();
           } catch (error) {
-            if (uid() === user && dialog.open && form.isConnected) status.textContent = err(error);
+            if (uid() === user && dialog.open && form.isConnected)
+              status.textContent = err(error);
           } finally {
             saving = false;
             button.disabled = false;
@@ -847,7 +1298,8 @@
         await load();
         if (uid() === user && operation === scanToken && dialog.open) {
           await ensureLibraries();
-          if (uid() === user && operation === scanToken && dialog.open) await scan(null, onRead);
+          if (uid() === user && operation === scanToken && dialog.open)
+            await scan(null, onRead);
         }
       } catch (e) {
         if (
@@ -861,7 +1313,13 @@
     await Promise.race([prepare, closed]);
     await closed;
   }
-  async function display(payload, title, onDelete, allowBinary = false, target = null) {
+  async function display(
+    payload,
+    title,
+    onDelete,
+    allowBinary = false,
+    target = null,
+  ) {
     updateCompatibilityNote(null);
     const user = uid();
     if (!user) return;
@@ -933,7 +1391,12 @@
       box?.replaceChildren();
       if (box) box.dataset.noticeOwner = user || "";
     }
-    if (!user || host()?.maintenance() || document.getElementById("selection")?.hidden) return;
+    if (
+      !user ||
+      host()?.maintenance() ||
+      document.getElementById("selection")?.hidden
+    )
+      return;
     const anchor = document.getElementById("album-contact-replies");
     if (!anchor) return;
     if (!box) {
@@ -970,19 +1433,28 @@
           title = document.createElement("span"),
           body = document.createElement("p");
         time.dateTime = row.created_at;
-        time.textContent = new Date(row.created_at).toLocaleDateString("ja-JP", {
-          timeZone: "Asia/Tokyo",
-        });
+        time.textContent = new Date(row.created_at).toLocaleDateString(
+          "ja-JP",
+          {
+            timeZone: "Asia/Tokyo",
+          },
+        );
         const tag = document.createElement("small");
         tag.className = "contact-reply-tag qr-limit-notice-tag";
         tag.textContent = "通知";
         title.append(tag, document.createTextNode(row.title));
         body.textContent = row.body;
         body.style.whiteSpace = "pre-wrap";
-        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const arrow = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg",
+        );
         arrow.setAttribute("viewBox", "0 0 20 20");
         arrow.setAttribute("aria-hidden", "true");
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const path = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path",
+        );
         path.setAttribute("d", "m6 8 4 4 4-4");
         arrow.append(path);
         summary.append(time, title, arrow);
@@ -992,7 +1464,8 @@
       last = Date.now();
     } catch {
       if (request === token && !box.children.length) {
-        box.textContent = "個別のお知らせを読み込めませんでした。時間をおいて再度お試しください。";
+        box.textContent =
+          "個別のお知らせを読み込めませんでした。時間をおいて再度お試しください。";
       }
     } finally {
       if (request === token) loading = false;
@@ -1018,8 +1491,14 @@
       .filter(Boolean);
   function loaders() {
     return sources()
-      .filter((source) => source.id === "album-notices" || source.dataset.noticeOwner === user())
-      .flatMap((source) => [...source.querySelectorAll("button.album-news-history")])
+      .filter(
+        (source) =>
+          source.id === "album-notices" ||
+          source.dataset.noticeOwner === user(),
+      )
+      .flatMap((source) => [
+        ...source.querySelectorAll("button.album-news-history"),
+      ])
       .filter(
         (button) =>
           !button.hidden &&
@@ -1083,7 +1562,9 @@
       toggle.onclick = () => {
         expanded = !expanded;
         if (expanded) {
-          const initial = document.querySelector('#album-notices > button[aria-expanded="false"]');
+          const initial = document.querySelector(
+            '#album-notices > button[aria-expanded="false"]',
+          );
           if (initial && !initial.disabled) initial.click();
         }
         render();
@@ -1094,7 +1575,11 @@
     const feeds = sources();
     for (const source of feeds) if (!source.hidden) source.hidden = true;
     const nodes = feeds
-      .filter((source) => source.id === "album-notices" || source.dataset.noticeOwner === current)
+      .filter(
+        (source) =>
+          source.id === "album-notices" ||
+          source.dataset.noticeOwner === current,
+      )
       .flatMap((source) => [...source.querySelectorAll(".album-news-item")]);
     nodes.sort(
       (a, b) =>
@@ -1102,7 +1587,8 @@
         (Date.parse(a.querySelector("time")?.dateTime) || 0),
     );
     const list = output.querySelector("[data-notice-items]");
-    const key = (node) => (node.querySelector("time")?.dateTime || "") + "|" + node.textContent;
+    const key = (node) =>
+      (node.querySelector("time")?.dateTime || "") + "|" + node.textContent;
     const opens = new Set([...list.querySelectorAll("details[open]")].map(key));
     const signature = nodes.map((node) => node.outerHTML).join("");
     if (list.dataset.signature !== signature) {
@@ -1127,11 +1613,16 @@
     more.hidden = !expanded || loaders().length === 0;
     const status = output.querySelector("[data-notice-status]");
     const errors = feeds
-      .filter((source) => source.id === "album-notices" || source.dataset.noticeOwner === current)
+      .filter(
+        (source) =>
+          source.id === "album-notices" ||
+          source.dataset.noticeOwner === current,
+      )
       .flatMap((source) => [...source.querySelectorAll('[role="status"]')])
       .map((node) => node.textContent)
       .filter((text) => /できません|読み込めません/.test(text));
-    status.textContent = errors.join("\n") || (!nodes.length ? "現在、掲載情報はありません" : "");
+    status.textContent =
+      errors.join("\n") || (!nodes.length ? "現在、掲載情報はありません" : "");
     status.hidden = !status.textContent;
   }
   new MutationObserver((records) => {

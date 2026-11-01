@@ -851,12 +851,12 @@ async function saveFavorite(id) {
         },
       }),
     );
-  } catch {
+  } catch (caughtError) {
     if (generation !== favoritesGeneration || uid !== session?.user.id) return;
     if (wasEnabled) favorites.add(id);
     else favorites.delete(id);
     refreshFavoriteUI(id);
-    toast("失敗しました", "error");
+    toast(caughtError, "error");
 
     try {
       const check = await db
@@ -1016,15 +1016,15 @@ function songFilterValue(value) {
 }
 
 function toast(s, kind = "normal") {
-  $("toast").classList.toggle("is-error", kind === "error");
-  $("toast").textContent = s;
+  if (kind === "normal" && typeof s === "string" && /できませんでした|失敗しました|エラーが発生/.test(s)) kind = "error";
+  window.CARD_ERROR.renderToast($("toast"), s, kind === "error");
   $("toast").hidden = false;
   window.CARD_TOAST_LAYER.raise($("toast"));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     window.CARD_TOAST_LAYER.hide($("toast"));
     $("toast").hidden = true;
-  }, 3500);
+  }, kind === "error" ? 7000 : 3500);
 }
 function randomizeAuthTheme() {
   document.body.classList.remove("game-primagi");
@@ -1300,26 +1300,9 @@ function authMode(m) {
   } else clearTimeout(signupRegistrationTimer);
 }
 function translatedError(e) {
-  const raw = typeof e === "string" ? e : String(e?.message || "");
-  if (
-    /load[\s_-]*fail(?:ed)?|lode[\s_-]*fail(?:ed|ede)?|failed[\s_-]*to[\s_-]*fetch|network|offline|fetch/i.test(
-      raw,
-    )
-  )
-    return "接続できませんでした。通信状態を確認して、もう一度お試しください。";
-  if (/timeout|timed.?out|abort/i.test(raw) || e?.name === "AbortError")
-    return "通信に時間がかかっています。時間をおいて、もう一度お試しください。";
-  if (
-    e?.code === "invalid_credentials" ||
-    /Invalid login credentials|(?:アルバム)?ID(?:または|か)パスワードが(?:正しくありません|異なります)/i.test(
-      raw,
-    )
-  )
-    return "IDまたはパスワードが異なります。";
-  if (typeof window.CARD_ERROR?.message === "function")
-    return window.CARD_ERROR.message(e);
-  return "操作を完了できませんでした。時間をおいて、もう一度お試しください。";
+  return window.CARD_ERROR.message(e);
 }
+
 let ownershipRequest = null;
 let ownershipCheckedAt = 0,
   ownershipLoadedUser = null;
@@ -2239,11 +2222,11 @@ async function saveQuantity(id, delta, clear = false) {
         },
       }),
     );
-  } catch {
+  } catch (caughtError) {
     if (session?.user.id !== uid || generation !== loadGeneration) return;
     setLocalQuantity(id, before);
     render(true);
-    toast("失敗しました", "error");
+    toast(caughtError, "error");
 
     try {
       const check = await db
@@ -2818,8 +2801,8 @@ async function albumAuth(body) {
       .select("album_id")
       .eq("user_id", data.user.id)
       .maybeSingle();
-    if (identity.error || !identity.data)
-      throw Error("アルバムIDを確認できませんでした。");
+    if (identity.error) throw identity.error;
+    if (!identity.data) throw Error("アルバムIDを確認できませんでした。");
     return { album_id: identity.data.album_id, session: data.session };
   }
   const bytes = await crypto.subtle.digest(
@@ -3172,7 +3155,7 @@ $("account-delete-confirm").onclick = async () => {
       p_confirmation: "DELETE_MY_ACCOUNT",
     });
     if (error || data !== true)
-      throw Error(error?.message || "削除できませんでした。");
+      throw error || Error("削除できませんでした。");
     await db.auth.signOut({ scope: "local" }).catch(() => {});
     $("logout-dialog").close();
     await authChanged("SIGNED_OUT", null);
@@ -4493,6 +4476,13 @@ window.CARD_ALL_HOST = {
   back: () => chooseGame("aikatsu"),
 };
 window.CARD_VERSE_HOST = {
+  cardInformation(card) {
+    const info = card.id.startsWith("aikatsu-all:")
+      ? Object.entries({ だん数: card.series, ...card.details })
+      : (fields[card.game] || []).map(([key, label]) => [key === "family" ? "シリーズ" : label, key === "rarity" ? displayRarity(card) : card[key]]);
+    if (card.game === "aikatsu" && !card.id.startsWith("aikatsu-all:")) info.push(["AP", cardAP(card) === null ? "未確認" : cardAP(card).toLocaleString("ja-JP") + " AP"]);
+    return { name: name(card), fields: info };
+  },
   cardCharacter: (id) =>
     window.CARD_ALL?.character(id) ||
     catalog.cards.find((c) => c.id === id)?.character ||
@@ -5809,8 +5799,7 @@ init();
     try {
       const r = await host.client().rpc(name, args);
       if (g !== generation || user !== current()) return;
-      if (r.error)
-        throw Error("保存できませんでした。通信状態をご確認ください。");
+      if (r.error) throw r.error;
       onSuccess(r.data);
     } catch (error) {
       if (g === generation && user === current()) {
@@ -5908,7 +5897,8 @@ init();
               : { p_scope: change.scope, p_series: change.value },
           );
         if (g !== generation || uid !== current()) return;
-        if (result.error || !Array.isArray(result.data?.scopes)) throw Error();
+        if (result.error) throw result.error;
+        if (!Array.isArray(result.data?.scopes)) throw Error();
         if (
           change.kind === "scope" &&
           result.data.scopes.includes(change.scope) !== change.value
@@ -5923,7 +5913,8 @@ init();
             .client()
             .rpc("card_album_share_settings", {});
           if (g !== generation || uid !== current()) return;
-          if (check.error || !Array.isArray(check.data?.scopes)) throw Error();
+          if (check.error) throw check.error;
+          if (!Array.isArray(check.data?.scopes)) throw Error();
           data = check.data;
         }
         if (change.kind === "series") {
@@ -5940,11 +5931,10 @@ init();
         confirmedScopes = data.scopes.filter((scope) => scope in labels);
         if (data.series_filters && typeof data.series_filters === "object")
           confirmedFilters = data.series_filters;
-      } catch {
+      } catch (error) {
         if (g !== generation || uid !== current()) return;
-        $("share-settings-status").textContent =
-          "公開設定を保存できませんでした。変更を元に戻しました。";
-        host.toast("公開設定の保存に失敗しました", "error");
+        $("share-settings-status").textContent = window.CARD_ERROR.message(error);
+        host.toast(error, "error");
       }
       mutations.shift();
       optimisticState();
@@ -7697,13 +7687,14 @@ init();
         p_enabled: enabled,
       });
       if (uid !== currentUser() || g !== generation) return;
-      if (r.error || r.data !== enabled) throw Error("Favorite failed");
-    } catch {
+      if (r.error) throw r.error;
+      if (r.data !== enabled) throw Error("Favorite failed");
+    } catch (caughtError) {
       if (uid !== currentUser() || g !== generation) return;
       if (before) favorites.add(id);
       else favorites.delete(id);
       patchFavorite(id);
-      host.toast("失敗しました", "error");
+      host.toast(caughtError, "error");
       try {
         const r = await host
           .client()
@@ -7792,8 +7783,8 @@ init();
             p_clear: operation.clear,
           });
           if (!current()) return;
+          if (result.error) throw result.error;
           if (
-            result.error ||
             !Number.isInteger(result.data?.quantity) ||
             result.data.quantity < 0 ||
             result.data.quantity > 9999
@@ -7801,9 +7792,9 @@ init();
             throw Error("Quantity save failed");
           queue.base = result.data.quantity;
           ownedCheckedAt = Date.now();
-        } catch {
+        } catch (caughtError) {
           if (!current()) return;
-          host.toast("失敗しました", "error");
+          host.toast(caughtError, "error");
 
           try {
             const table =
@@ -7873,8 +7864,8 @@ init();
     task.promise = (async () => {
       const result = await host.client().rpc("card_verse_my_inventory", {});
       if (uid !== currentUser() || g !== generation) return;
+      if (result.error) throw result.error;
       if (
-        result.error ||
         !Array.isArray(result.data?.parts) ||
         !Array.isArray(result.data?.coordinates) ||
         !Array.isArray(result.data?.favorites)
@@ -8317,8 +8308,8 @@ init();
       await readCatalog(true);
       fillFilters();
       render();
-    } catch {
-      host.toast("失敗しました", "error");
+    } catch (caughtError) {
+      host.toast(caughtError, "error");
     } finally {
       refreshing = false;
       $("verse-sync").disabled = false;
@@ -8556,7 +8547,7 @@ verseScript.dispatchEvent(new Event("load"));
           .order("target_id")
           .order("side")
           .range(offset, offset + 999);
-        if (r.error) throw Error("交換希望用SQLと通信状態を確認してください。");
+        if (r.error) throw r.error;
         if (!Array.isArray(r.data))
           throw Error("交換希望を取得できませんでした。");
         rows.push(...r.data);
@@ -8710,7 +8701,8 @@ verseScript.dispatchEvent(new Event("load"));
         p_level: next,
       });
       if (user !== uid() || g !== generation) return;
-      if (r.error || r.data !== next) throw Error("save");
+      if (r.error) throw r.error;
+      if (r.data !== next) throw Error("save");
       document.dispatchEvent(
         new CustomEvent("card-album-operation-saved", {
           detail: {
@@ -8733,7 +8725,7 @@ verseScript.dispatchEvent(new Event("load"));
           },
         }),
       );
-    } catch {
+    } catch (caughtError) {
       if (user !== uid() || g !== generation) return;
       remove();
       if (before) {
@@ -8745,7 +8737,7 @@ verseScript.dispatchEvent(new Event("load"));
         priorities.set(other, beforeOther);
       }
       host.changed();
-      host.toast("失敗しました", "error");
+      host.toast(caughtError, "error");
       try {
         const r = await host
           .client()

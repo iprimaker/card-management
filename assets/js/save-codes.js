@@ -96,7 +96,7 @@
   function error(e) {
     return /上限/.test(e?.message || "")
       ? "QRコードの登録上限に達しました。不要なQRコードを削除してください。"
-      : "操作を完了できませんでした。通信状態を確認して、もう一度お試しください。";
+      : window.CARD_ERROR.message(e);
   }
   async function reload() {
     const u = uid(),

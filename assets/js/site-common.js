@@ -2996,7 +2996,8 @@
       let call = client.rpc("card_verse_catalog_family_cached", { p_family: family, p_version: version });
       if (typeof call.abortSignal === "function") call = call.abortSignal(controller.signal);
       const { data, error } = await call;
-      if (error || !data) throw Error("コーデ情報を取得できませんでした。時間をおいて再度お試しください。");
+      if (error) throw error;
+      if (!data) throw Error("コーデ情報を取得できませんでした。時間をおいて再度お試しください。");
       return data;
     } finally { clearTimeout(timer); }
   }

@@ -16,11 +16,10 @@
     if (node.parentElement !== host) host.append(node);
     Object.assign(node.style, {
       inset: "auto",
-      bottom: "25px",
+      bottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
       left: "50%",
       margin: "0",
-      border: "0",
-      pointerEvents: "none",
+      pointerEvents: "auto",
       zIndex: "2147483647",
     });
     if (typeof node.showPopover === "function") {
@@ -32,7 +31,9 @@
     }
     // A failed popover must not retain the browser's default display:none.
     node.removeAttribute("popover");
-    node.style.display = "block";
+    node.style.display = node.classList.contains("card-notice")
+      ? "grid"
+      : "block";
   }
   window.CARD_TOAST_LAYER = Object.freeze({ raise, hide });
   new MutationObserver((records) => {
@@ -121,55 +122,281 @@
     "通信できませんでした。時間をおいて再度お試しください。",
     "過去の情報を読み込めませんでした。もう一度お試しください。",
   ]);
-  function message(error) {
-    const text =
-      typeof error === "string" ? error : String(error?.message || "");
-    const code = String(error?.code || "");
+  const notices = Object.freeze({
+    network: [
+      "通信エラーが発生しました。",
+      "接続を確認して、もう一度お試しください。",
+    ],
+    offline: [
+      "インターネットに接続されていません。",
+      "接続後にもう一度お試しください。",
+    ],
+    timeout: [
+      "応答に時間がかかっています。",
+      "時間をおいて、もう一度お試しください。",
+    ],
+    busy: [
+      "操作が集中しています。",
+      "しばらく時間をおいてからお試しください。",
+    ],
+    server: [
+      "サービスに接続できませんでした。",
+      "時間をおいて、もう一度お試しください。",
+    ],
+    session: [
+      "ログインの有効期限が切れました。",
+      "もう一度ログインしてください。",
+    ],
+    credentials: [
+      "IDまたはパスワードが異なります。",
+      "入力内容を確認してください。",
+    ],
+    permission: [
+      "この操作を行う権限がありません。",
+      "ログイン状態を確認してください。",
+    ],
+    generic: [
+      "操作を完了できませんでした。",
+      "時間をおいて、もう一度お試しください。",
+    ],
+  });
+  function fields(error) {
+    const chain = [];
+    const seen = new Set();
+    for (
+      let item = error;
+      item && chain.length < 4 && !seen.has(item);
+      item = item.cause
+    ) {
+      seen.add(item);
+      chain.push(item);
+    }
+    return {
+      text: chain
+        .map((item) =>
+          typeof item === "string"
+            ? item
+            : [item.message, item.details].filter(Boolean).join(" "),
+        )
+        .join(" "),
+      code: String(chain.find((item) => item.code)?.code || ""),
+      status: Number(
+        chain.find((item) => item.status || item.statusCode)?.status ||
+          chain.find((item) => item.statusCode)?.statusCode ||
+          0,
+      ),
+      names: chain.map((item) => item.name || "").join(" "),
+    };
+  }
+  function classify(error) {
+    const { text, code, status, names } = fields(error);
     if (
       code === "invalid_credentials" ||
-      /Invalid login credentials|(?:アルバム)?ID(?:または|か)パスワードが(?:正しくありません|異なります)/i.test(
+      /Invalid login credentials|ID(?:または|か)パスワードが(?:正しくありません|異なります)/i.test(
         text,
       )
     )
-      return "IDまたはパスワードが異なります。";
-    if (/Email not confirmed/i.test(text))
-      return "確認メールのリンクを開いてからログインしてください。";
+      return "credentials";
+    if (code === "email_not_confirmed" || /Email not confirmed/i.test(text))
+      return "confirmation";
     if (
-      /rate.?limit|too many|送信回数|リクエスト.*多/i.test(text) ||
-      code === "429"
-    )
-      return "操作が集中しています。しばらく時間をおいてからお試しください。";
-    if (
-      /timeout|timed.?out|abort|タイムアウト/i.test(text) ||
-      error?.name === "AbortError"
-    )
-      return "通信に時間がかかっています。時間をおいて、もう一度お試しください。";
-    if (
-      /load.?failed|failed.?to.?load|fetch|network|offline|lode.?falede/i.test(
+      status === 429 ||
+      /^(429|over_request_rate_limit|over_email_send_rate_limit)$/.test(code) ||
+      /rate.?limit|too many|送信回数|操作回数.*多|操作が集中|リクエスト.*多/i.test(
         text,
       )
     )
-      return "接続できませんでした。通信状態を確認して、もう一度お試しください。";
-    if (/JWT|token.*expired|session.*expired|PGRST301/i.test(text + code))
-      return "ログインの有効期限が切れました。もう一度ログインしてください。";
+      return "busy";
     if (
-      /SQL|Supabase|DB|テーブル|版番号|Confirm email|permission|PGRST|schema|relation|constraint|stack|TypeError|ReferenceError/i.test(
+      code === "57014" ||
+      /AbortError|TimeoutError/.test(names) ||
+      /timeout|timed.?out|タイムアウト|通信に時間|応答に時間|statement.*cancel/i.test(
+        text,
+      )
+    )
+      return "timeout";
+    if (
+      status === 401 ||
+      /^(PGRST30[123]|session_expired|refresh_token_not_found|refresh_token_already_used)$/.test(
+        code,
+      ) ||
+      /JWT|token.*expired|session.*expired|ログインの有効期限/i.test(text)
+    )
+      return "session";
+    if (
+      status >= 500 ||
+      /^(57P0[123]|53300|PGRST00[012])$/.test(code) ||
+      /database system is shutting down|service unavailable|bad gateway|gateway timeout|サービスに接続できません/i.test(
+        text,
+      )
+    )
+      return "server";
+    if (
+      /インターネットに接続されていません|通信に接続されていません|offline/i.test(
+        text,
+      )
+    )
+      return "offline";
+    if (
+      /load[\s_-]*fail(?:ed)?|lode[\s_-]*fail(?:ed|ede)?|lode.?falede|failed[\s_-]*to[\s_-]*(?:fetch|load)|network(?:error| request| connection)?|ERR_(?:NETWORK|INTERNET|CONNECTION)|通信エラー|接続できません|通信できません|通信状態を確認して再度/i.test(
         text,
       ) ||
-      /^(?:42|23|PGRST)/.test(code)
+      /^08/.test(code) ||
+      /AuthRetryableFetchError/.test(names)
     )
-      return "情報を読み込めないか、操作を完了できませんでした。時間をおいて再度お試しください。改善しない場合はお問い合わせください。";
-    if (safe.has(text))
-      return text === "メールアドレスまたはパスワードが正しくありません。"
-        ? "アルバムIDまたはパスワードが正しくありません。"
-        : text;
-    return "操作を完了できませんでした。時間をおいて、もう一度お試しください。";
+      return navigator.onLine === false ? "offline" : "network";
+    if (safe.has(text)) return "known";
+    if (
+      status === 403 ||
+      code === "42501" ||
+      /permission denied|row.level security/i.test(text)
+    )
+      return "permission";
+    if (navigator.onLine === false) return "offline";
+    return "generic";
   }
-  window.CARD_ERROR = Object.freeze({ message });
+  function describe(error) {
+    const kind = classify(error);
+    if (kind === "confirmation")
+      return {
+        kind: "session",
+        title: "メールの確認が必要です。",
+        detail: "確認メールのリンクを開いてからログインしてください。",
+        message: "確認メールのリンクを開いてからログインしてください。",
+      };
+    if (kind === "known") {
+      const text = fields(error).text;
+      if (/^(失敗しました[。]?|初期化できませんでした[。]?)$/.test(text))
+        return describe(null);
+      return {
+        kind: "generic",
+        title: "操作をご確認ください",
+        detail: text,
+        message: text,
+      };
+    }
+    const [title, detail] = notices[kind] || notices.generic;
+    return {
+      kind,
+      title,
+      detail,
+      message: kind === "credentials" ? title : title + detail,
+    };
+  }
+  function message(error) {
+    return describe(error).message;
+  }
+  const iconPaths = {
+    network:
+      '<path d="M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0M9 16a5 5 0 0 1 6 0"/><path d="m4 3 16 18"/>',
+    offline:
+      '<path d="M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0M9 16a5 5 0 0 1 6 0"/><path d="m4 3 16 18"/>',
+    timeout: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+    success: '<path d="m5 12 4 4L19 6"/>',
+    generic: '<circle cx="12" cy="12" r="8"/><path d="M12 7v6m0 3v.1"/>',
+  };
+  function renderToast(node, error, isError) {
+    const info = isError
+      ? describe(error)
+      : { kind: "success", title: String(error ?? ""), detail: "" };
+    node.replaceChildren();
+    node.classList.add("card-notice");
+    node.classList.toggle("is-error", isError);
+    node.dataset.feedbackKind = info.kind;
+    node.setAttribute("role", isError ? "alert" : "status");
+    node.setAttribute("aria-atomic", "true");
+    const icon = document.createElement("span");
+    icon.className = "card-notice-icon";
+    icon.setAttribute("aria-hidden", "true");
+    // Only constant, local SVG paths are inserted as markup.
+    icon.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+      (iconPaths[info.kind] || iconPaths.generic) +
+      "</svg>";
+    const copy = document.createElement("div");
+    copy.className = "card-notice-copy";
+    const title = document.createElement("strong");
+    title.textContent = info.title;
+    copy.append(title);
+    if (info.detail) {
+      const detail = document.createElement("span");
+      detail.textContent = info.detail;
+      copy.append(detail);
+    }
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "card-notice-close";
+    close.setAttribute("aria-label", "通知を閉じる");
+    close.textContent = "×";
+    close.onclick = () => {
+      window.CARD_TOAST_LAYER.hide(node);
+      node.hidden = true;
+    };
+    node.append(icon, copy, close);
+  }
+  // Status text is also used for loading and success. Decorate only error messages,
+  // and remove the decoration as soon as the text changes or is cleared.
+  function enhanceStatuses() {
+    const selector =
+      'p[role="status"], p[role="alert"], .field-error, [data-status], [data-error], #all-status, #command-result';
+    function sync(node) {
+      if (node.closest("#toast")) return;
+      const text = node.textContent.trim();
+      const failure =
+        !text.startsWith("以前のURLはこの画面に再表示できません") &&
+        text &&
+        /できません|できなかった|失敗|エラー|異なります|有効期限|接続されていません|時間がかか|操作が集中|確認してください|入力してください|上限に達/.test(
+          text,
+        );
+      node.classList.toggle("card-feedback", Boolean(failure));
+      if (failure) node.dataset.feedbackKind = classify(text);
+      else delete node.dataset.feedbackKind;
+    }
+    const pending = new Set();
+    let queued = false;
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        const el =
+          record.target.nodeType === 1
+            ? record.target
+            : record.target.parentElement;
+        if (!el || el.closest("#toast")) continue;
+        const own = el.closest(selector);
+        if (own) pending.add(own);
+        for (const added of record.addedNodes)
+          if (added.nodeType === 1) {
+            if (added.matches(selector)) pending.add(added);
+            added
+              .querySelectorAll(selector)
+              .forEach((node) => pending.add(node));
+          }
+      }
+      if (!queued && pending.size) {
+        queued = true;
+        queueMicrotask(() => {
+          queued = false;
+          pending.forEach(sync);
+          pending.clear();
+        });
+      }
+    });
+    observer.observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    document.querySelectorAll(selector).forEach(sync);
+  }
+  if (document.body) enhanceStatuses();
+  else
+    document.addEventListener("DOMContentLoaded", enhanceStatuses, {
+      once: true,
+    });
+  window.CARD_ERROR = Object.freeze({ message, describe, renderToast });
 })();
 (() => {
   "use strict";
-  const version = "20261101-family-catalog-v17";
+  const version = "20261102-qr-compact-v21";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -244,12 +471,15 @@
     status.className = "auth-checking-status";
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
-    status.innerHTML = '<div class="album-loading-cards" aria-hidden="true"><span class="album-loading-card"></span><span class="album-loading-card"></span><span class="album-loading-card"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L2.9 9.6l6.3-.9Z"/></svg></span></div><h1 class="album-loading-title">アルバムを確認しています</h1><p class="album-loading-note">もう少しだけお待ちください</p><span class="album-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+    status.innerHTML =
+      '<div class="album-loading-cards" aria-hidden="true"><span class="album-loading-card"></span><span class="album-loading-card"></span><span class="album-loading-card"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L2.9 9.6l6.3-.9Z"/></svg></span></div><h1 class="album-loading-title">アルバムを確認しています</h1><p class="album-loading-note">もう少しだけお待ちください</p><span class="album-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
     document.querySelector("main").prepend(status);
   }
   if (page === "browse") {
-    document.getElementById("public-status").textContent = "カード情報を読み込み中…";
-    document.querySelector("footer p").textContent = "非公式のカード検索画面 · 画像・カード情報は各権利者に帰属します。";
+    document.getElementById("public-status").textContent =
+      "カード情報を読み込み中…";
+    document.querySelector("footer p").textContent =
+      "非公式のカード検索画面 · 画像・カード情報は各権利者に帰属します。";
   }
   // 招待URLは、この同期処理の時点で専用画面にする。後続JSを待つ間もログイン欄を見せない。
   if (invitationRoute) {

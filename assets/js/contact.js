@@ -119,7 +119,7 @@ $("contact-form").onsubmit = async (event) => {
     const { data: result, error } = await contactDB.rpc("card_contact_submit", {
       p_payload: body,
     });
-    if (error) throw Error(error.message);
+    if (error) throw error;
     if (!result.id) throw Error("受付を確認できませんでした。");
     $("contact-reference").textContent = result.id;
     $("contact-panel").hidden = true;
