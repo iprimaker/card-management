@@ -1095,16 +1095,53 @@ let signupStep = "id";
 let signupBusy = false;
 let signupRegistrationAllowed = null;
 let signupInvitationAllowed = false;
+let signupCapacityLimited = false, signupCapacityRetryAt = null, signupCapacityFetchFailed = false;
+const signupCapacityNotice = document.createElement("div");
+signupCapacityNotice.id = "signup-capacity-notice";
+signupCapacityNotice.hidden = true;
+signupCapacityNotice.setAttribute("role", "status");
+signupCapacityNotice.setAttribute("aria-live", "polite");
+signupCapacityNotice.innerHTML = '<div class="signup-capacity-art" aria-hidden="true"><svg viewBox="0 0 72 64"><rect x="13" y="8" width="31" height="43" rx="7" transform="rotate(-12 28.5 29.5)"/><rect x="27" y="7" width="31" height="43" rx="7" transform="rotate(8 42.5 28.5)"/><path d="m36 21 4 4 4-4m-4 4v9"/><circle cx="53" cy="47" r="12"/><path d="M53 40v7l5 3"/></svg></div><span class="signup-capacity-badge">受付を一時停止しています</span><h3>新規登録が混み合っています</h3><p class="signup-capacity-intro">ただいま新規登録の人数が上限に達しています。</p><div class="signup-capacity-retry"><span class="signup-capacity-label">再受付の目安</span><div class="signup-capacity-schedule"><span class="signup-capacity-date"></span><span class="signup-capacity-clock"><time></time><span>以降</span></span></div></div><p class="signup-capacity-help"></p><button type="button" class="signup-capacity-refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8a8.5 8.5 0 1 0 .3 7M20 3v5h-5"/></svg><span>受付状況を更新</span></button>';
+$("signup-flow").prepend(signupCapacityNotice);
+signupCapacityNotice.querySelector("button").onclick = async (event) => {
+  event.currentTarget.disabled = true;
+  await refreshSignupRegistrationStatus({force:true});
+};
+function renderSignupCapacityNotice() {
+  const limited = !invitationPage && signupCapacityLimited;
+  signupCapacityNotice.hidden = !limited;
+  $("signup-flow").classList.toggle("capacity-paused", limited && !signupReservation);
+  if (limited) {
+    const raw = Date.parse(signupCapacityRetryAt || "");
+    const retry = Number.isFinite(raw) ? new Date(Math.ceil(raw / 60000) * 60000) : null;
+    const schedule = signupCapacityNotice.querySelector(".signup-capacity-retry");
+    schedule.hidden = !retry;
+    if (retry) {
+      const time = signupCapacityNotice.querySelector("time");
+      time.dateTime = retry.toISOString();
+      time.textContent = new Intl.DateTimeFormat("ja-JP", {timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit",hour12:false}).format(retry);
+      signupCapacityNotice.querySelector(".signup-capacity-date").textContent = new Intl.DateTimeFormat("ja-JP", {timeZone:"Asia/Tokyo",month:"long",day:"numeric"}).format(retry);
+    }
+    signupCapacityNotice.querySelector(".signup-capacity-help").textContent = signupCapacityFetchFailed
+      ? "受付状況を確認できませんでした。通信環境を確認して、もう一度更新してください。"
+      : retry ? "この時刻以降に、受付状況を更新してご確認ください。" : "しばらく時間をおいて、受付状況を更新してください。";
+    const refresh = signupCapacityNotice.querySelector("button");
+    refresh.disabled = signupBusy || !!signupRegistrationFlight;
+    refresh.querySelector("span").textContent = signupRegistrationFlight ? "確認しています…" : "受付状況を更新";
+  }
+  $("album-create").disabled = signupBusy || limited;
+}
 let signupRegistrationMessage = "受付状況を確認しています…";
 let signupRegistrationFlight = null,
   signupRegistrationFreshUntil = 0,
   signupRegistrationTimer;
 function renderSignupRegistrationAvailability() {
+  renderSignupCapacityNotice();
   const inviteOnly =
     !invitationPage &&
     !signupReservation &&
     signupRegistrationAllowed === false &&
-    signupInvitationAllowed;
+    signupInvitationAllowed && !signupCapacityLimited;
   $("signup-invitation-notice").hidden = !inviteOnly;
   $("signup-flow").classList.toggle("invitation-only", inviteOnly);
   $("signup-flow").classList.toggle(
@@ -1127,7 +1164,7 @@ function renderSignupRegistrationAvailability() {
   $("issue-album-id").disabled = signupBusy;
   const status = $("signup-registration-status");
   status.hidden =
-    !!signupReservation || signupRegistrationAllowed === true || inviteOnly;
+    !!signupReservation || signupRegistrationAllowed === true || inviteOnly || signupCapacityLimited;
   status.textContent = signupRegistrationMessage;
 }
 function scheduleSignupRegistrationCheck() {
@@ -1137,7 +1174,7 @@ function scheduleSignupRegistrationCheck() {
     document.hidden ||
     navigator.onLine === false ||
     $("auth").hidden ||
-    signupReservation
+    (signupReservation && !signupCapacityLimited)
   )
     return;
   signupRegistrationTimer = setTimeout(
@@ -1146,7 +1183,7 @@ function scheduleSignupRegistrationCheck() {
         mode === "signup" &&
         !document.hidden &&
         !$("auth").hidden &&
-        !signupReservation
+        (!signupReservation || signupCapacityLimited)
       )
         void refreshSignupRegistrationStatus();
     },
@@ -1165,7 +1202,7 @@ async function refreshSignupRegistrationStatus({ force = false } = {}) {
     const controller = new AbortController(),
       timeout = setTimeout(() => controller.abort(), 10000);
     try {
-      let request = db.rpc("card_album_registration_status_v2");
+      let request = db.rpc("card_album_registration_status_v3");
       if (typeof request.abortSignal === "function")
         request = request.abortSignal(controller.signal);
       const { data, error } = await request;
@@ -1173,12 +1210,16 @@ async function refreshSignupRegistrationStatus({ force = false } = {}) {
         throw Error("registration status unavailable");
       signupRegistrationAllowed = data.allowed;
       signupInvitationAllowed = data.invitation_allowed === true;
+      signupCapacityLimited = data.capacity_limited === true;
+      signupCapacityRetryAt = data.retry_at || null;
+      signupCapacityFetchFailed = false;
       signupRegistrationMessage = data.allowed
         ? ""
         : data.message || "現在、新規登録の受付を停止しています。";
     } catch {
       signupRegistrationAllowed = null;
       signupInvitationAllowed = false;
+      signupCapacityFetchFailed = true;
       signupRegistrationMessage =
         "受付状況を確認できませんでした。時間をおいて再度お試しください。";
     } finally {
@@ -1189,6 +1230,7 @@ async function refreshSignupRegistrationStatus({ force = false } = {}) {
     }
   })().finally(() => {
     signupRegistrationFlight = null;
+    renderSignupRegistrationAvailability();
   });
   return signupRegistrationFlight;
 }
@@ -1268,7 +1310,16 @@ async function startInvitationRegistration(existingSession) {
 }
 function authMode(m) {
   if (invitationPage) m = "signup";
-  if (m === "signup" && mode !== "signup") {
+  const enteringSignup = m === "signup" && mode !== "signup";
+  if (enteringSignup) {
+    if (!invitationPage) {
+      signupRegistrationAllowed = null;
+      signupCapacityLimited = false;
+      signupCapacityRetryAt = null;
+      signupCapacityFetchFailed = false;
+      signupRegistrationFreshUntil = 0;
+      signupRegistrationMessage = "受付状況を確認しています…";
+    }
     signupReservation = null;
     signupStep = "id";
     try {
@@ -1296,7 +1347,7 @@ function authMode(m) {
   resetPasswordVisibility();
   if (m === "signup") {
     renderSignupStep(signupStep);
-    void refreshSignupRegistrationStatus();
+    void refreshSignupRegistrationStatus({ force: enteringSignup });
   } else clearTimeout(signupRegistrationTimer);
 }
 function translatedError(e) {
@@ -2954,6 +3005,14 @@ $("signup-nickname-form").onsubmit = async (event) => {
   $("album-create").disabled = true;
   authResultShowing = true;
   try {
+    if (!invitationPage) {
+      await refreshSignupRegistrationStatus({force:true});
+      if (signupRegistrationAllowed !== true) {
+        authResultShowing = false;
+        if (!signupCapacityLimited) $("signup-message").textContent = signupRegistrationMessage;
+        return;
+      }
+    }
     const result = await albumAuth({
       action: "create",
       album_id: signupReservation.album_id,
@@ -3001,10 +3060,12 @@ $("signup-nickname-form").onsubmit = async (event) => {
     $("auth-result-next").textContent = "アルバムを開く";
   } catch (error) {
     authResultShowing = false;
-    $("signup-message").textContent = window.CARD_ERROR.message(error);
+    if (!invitationPage) await refreshSignupRegistrationStatus({force:true});
+    $("signup-message").textContent = signupCapacityLimited ? "" : window.CARD_ERROR.message(error);
   } finally {
     signupBusy = false;
     $("album-create").disabled = false;
+    renderSignupRegistrationAvailability();
   }
 };
 let albumIdentityRequest = null;
