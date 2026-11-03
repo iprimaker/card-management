@@ -9576,22 +9576,6 @@ body.invitation-route #login-catalog-series { display: none; }
   font-weight: 700;
   line-height: 1.4;
 }
-#verse #verse-cards .verse-owned {
-  min-height: 40px;
-  padding: 7px;
-  border-radius: 11px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-#verse-detail .verse-owned {
-  min-height: 46px;
-  padding: 7px;
-  border-radius: 11px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-}
 #verse-detail .verse-modal-favorite {
   align-self: flex-start;
   margin: 0 0 8px;
@@ -9623,16 +9607,6 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
 }
 #verse-cards .verse-card > .private-qr-tag {
   top: 46px;
-}
-@media (max-width: 760px) {
-  #verse #verse-cards .verse-owned {
-    font-size: 12px;
-    min-height: 44px;
-    padding: 7px 4px;
-  }
-  #verse-detail .verse-owned {
-    font-size: 13px;
-  }
 }
 @media (any-pointer: coarse) {
   body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favorite-button, #verse-cards .verse-favorite {
@@ -10122,3 +10096,28 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
     gap: 20px;
   }
 }
+
+/* Registration pause: one clear message, reopening time and action. */
+#signup-capacity-notice:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:0; margin:0; padding:22px 4px 12px; border:0; border-radius:0; background:transparent; color:var(--accent); text-align:center; }
+#signup-capacity-notice .signup-capacity-art { display:grid; place-items:center; width:88px; height:88px; margin-bottom:18px; border-radius:50%; background:var(--soft); }
+.signup-capacity-art svg { width:66px; height:60px; fill:#fff; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.signup-capacity-art svg rect:first-child { fill:var(--soft); }
+#signup-capacity-notice .signup-capacity-badge { padding:5px 12px; border-radius:999px; background:var(--soft); color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.04em; line-height:1.6; }
+#signup-capacity-notice h3 { margin:14px 0 9px; padding:0; background:none; color:var(--text,#403249); font-size:clamp(17px,3.8vw,21px); font-weight:700; line-height:1.65; letter-spacing:.01em; }
+#signup-capacity-notice .signup-capacity-intro { margin:0; color:var(--muted); font-size:12px; line-height:1.9; }
+#signup-capacity-notice .signup-capacity-retry:not([hidden]) { align-self:stretch; display:grid; gap:10px; margin-top:24px; padding:17px 14px; border:1px solid var(--line); border-radius:18px; background:var(--soft); }
+#signup-capacity-notice .signup-capacity-label { color:var(--muted); font-size:11px; font-weight:500; letter-spacing:.08em; }
+#signup-capacity-notice .signup-capacity-schedule { display:flex; justify-content:center; align-items:baseline; flex-wrap:wrap; gap:6px 12px; }
+#signup-capacity-notice .signup-capacity-date { color:var(--accent); font-size:13px; font-weight:500; }
+#signup-capacity-notice .signup-capacity-clock { display:inline-flex; align-items:baseline; gap:7px; }
+#signup-capacity-notice time { color:var(--accent); font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.02em; line-height:1.25; }
+#signup-capacity-notice .signup-capacity-clock > span { color:var(--muted); font-size:12px; }
+#signup-capacity-notice .signup-capacity-help { max-width:30em; margin:14px 0 23px; color:var(--muted); font-size:11px; line-height:1.9; }
+#signup-capacity-notice .signup-capacity-refresh { display:inline-flex; align-items:center; justify-content:center; gap:9px; align-self:stretch; min-height:46px; padding:11px 16px; border:1px solid var(--accent); border-radius:14px; background:var(--accent); color:#fff; font-size:13px; font-weight:700; line-height:1.5; box-shadow:none; }
+#signup-capacity-notice .signup-capacity-refresh svg { flex:0 0 18px; width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+#signup-capacity-notice .signup-capacity-refresh:disabled { opacity:.6; cursor:wait; }
+#signup-capacity-notice .signup-capacity-refresh:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+@media(max-width:420px) { #signup-capacity-notice:not([hidden]) { padding:18px 0 8px; } #signup-capacity-notice .signup-capacity-art { width:76px; height:76px; } #signup-capacity-notice .signup-capacity-retry:not([hidden]) { margin-top:20px; } }
+
+/* Before issuing an ID, show only the admission-pause screen. */
+#signup-flow.capacity-paused > :not(#signup-capacity-notice) { display:none !important; }
