@@ -420,7 +420,7 @@
       .filter(Boolean);
     return images.length
       ? `<span class="public-collage">${images.map((url) => `<img src="${esc(url)}" alt="" loading="lazy">`).join("")}</span>`
-      : `<span class="catalog-image-unavailable">画像なし</span>`;
+      : verse() ? window.CARD_UI.coordinatePlaceholder("full") : `<span class="catalog-image-unavailable">画像なし</span>`;
   }
   function renderScopeNote() {
     if (browseOnly) return;
@@ -674,7 +674,7 @@
           ? `<h3>${browseOnly ? "構成パーツ" : "パーツごとの所持状況"}</h3><div class="public-modal-parts">${c.part_ids
               .map((id) => {
                 const p = parts.get(id);
-                return `<article>${window.CARD_PRIMAGI.verseImage(p?.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p?.image))}" alt="${esc(p?.slot)}">` : `<span class="catalog-image-unavailable">画像なし</span>`}<span>${esc(p?.slot)}${scope === "verse-primagi" ? " · " + esc(p?.metadata?.name || "未取得") : ""} ／ ${p?.buzz == null ? (scope === "verse-primagi" ? "ワッチャ未取得" : "BP未取得") : `${p.buzz} ${scope === "verse-primagi" ? "ワッチャ" : "バズパワー"}`}</span>${browseOnly ? "" : `<small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small>`}</article>`;
+                return `<article>${window.CARD_PRIMAGI.verseImage(p?.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p?.image))}" alt="${esc(p?.slot)}">` : window.CARD_UI.coordinatePlaceholder(p?.slot || "part")}<span>${esc(p?.slot)}${scope === "verse-primagi" ? " · " + esc(p?.metadata?.name || "未取得") : ""} ／ ${p?.buzz == null ? (scope === "verse-primagi" ? "ワッチャ未取得" : "BP未取得") : `${p.buzz} ${scope === "verse-primagi" ? "ワッチャ" : "バズパワー"}`}</span>${browseOnly ? "" : `<small class="public-part-state ${(quantities.get(id) || 0) > 0 ? "is-yes" : "is-no"}">${(quantities.get(id) || 0) > 0 ? "持っている " + quantities.get(id) + "枚" : "持っていない"}</small>`}</article>`;
               })
               .join("")}</div>`
           : ""

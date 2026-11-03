@@ -3,7 +3,28 @@
   const numberFormat = new Intl.NumberFormat("ja-JP");
   const labels = { "だん数": "弾数", "キャラ名": "キャラクター", "カテゴリー": "カテゴリ" };
   const zodiac = { aries: "おひつじ座", taurus: "おうし座", gemini: "ふたご座", cancer: "かに座", leo: "しし座", virgo: "おとめ座", libra: "てんびん座", scorpio: "さそり座", sagittarius: "いて座", capricorn: "やぎ座", aquarius: "みずがめ座", pisces: "うお座" };
+  function coordinatePlaceholder(slot = "full") {
+    const value = String(slot || "part").normalize("NFKC").replace(/[\s・＆&]/g, "");
+    const kind = /^(full|フルコーデ|コーデ)$/.test(value) ? "full"
+      : /トップス|tops/i.test(value) ? "tops"
+      : /ボトムス|bottoms/i.test(value) ? "bottoms"
+      : /ワンピ|onepiece|dress/i.test(value) ? "onepiece"
+      : /シューズ|shoes/i.test(value) ? "shoes"
+      : /アクセ|accessory/i.test(value) ? "accessory" : "part";
+    const labels = {full:"フルコーデ",tops:"トップス",bottoms:"ボトムス",onepiece:"ワンピース",shoes:"シューズ",accessory:"アクセサリー",part:"パーツ"};
+    const drawings = {
+      full:'<path d="m34 19 14 7 14-7 12 17-12 8-5-8v16l11 22H28l11-22V36l-5 8-12-8Z"/><path d="M39 48h18M40 60l-4 14m12-14v14m8-14 4 14M38 81l-5 6h12v-6m13 0 5 6H51v-6"/><path class="coordinate-icon-detail" d="m48 32-7-4v10l7-4 7 4V28Z"/><path class="coordinate-icon-sparkle" d="M78 17v10m-5-5h10M17 58v8m-4-4h8"/>',
+      tops:'<path d="m33 25 15 8 15-8 16 20-14 10-7-9v29H38V46l-7 9-14-10Z"/><path d="m33 25 8 17 7-9 7 9 8-17M38 69h20"/><path class="coordinate-icon-detail" d="m48 47-7-4v10l7-4 7 4V43Z"/>',
+      bottoms:'<path d="M33 25h30l13 46q-28 12-56 0Z"/><path d="M32 33h32M39 38l-6 36m15-36v39m9-39 6 36"/><path class="coordinate-icon-detail" d="m43 25 5 4 5-4"/>',
+      onepiece:'<path d="m34 20 14 9 14-9 8 17-12 7-3 10 17 24q-24 9-48 0l17-24-3-10-12-7Z"/><path d="M41 52h14m-9 10-7 19m11-19 7 19"/><path class="coordinate-icon-detail" d="m48 37-6-4v9l6-3 6 3v-9Z"/>',
+      shoes:'<path d="M17 45v21q1 7 10 7h24q7-1 7-7 0-8-12-10l-12-5-4-13-13 7Z"/><path d="M18 65h38M31 45l-9 7 4 8 12-5"/><path d="M43 32v15l13 5q14 3 16 14h9q6-1 6-7 0-7-12-9l-12-6-5-14-15 2Z"/><path d="m59 36-9 7 5 7 11-5M72 59h13"/>',
+      accessory:'<path d="M43 40 25 27q-9 19 0 38l18-12m10-13 18-13q9 19 0 38L53 53"/><path class="coordinate-icon-detail" d="M48 56c-15-9-12-20-5-19 3 0 5 3 5 3s2-3 5-3c7-1 10 10-5 19Z"/><path d="m40 55-6 21 14-7 14 7-6-21"/>',
+      part:'<path d="M42 30a6 6 0 1 1 10 5l-4 4v8L20 64q-7 6 2 6h52q9 0 2-6L48 47"/><path class="coordinate-icon-sparkle" d="M74 24v12m-6-6h12M23 37v8m-4-4h8"/>'
+    };
+    return `<span class="coordinate-image-placeholder" data-coordinate-placeholder="${kind}" role="img" aria-label="${labels[kind]}（画像未登録）"><svg viewBox="0 0 96 96" aria-hidden="true" focusable="false">${drawings[kind]}</svg></span>`;
+  }
   window.CARD_UI = Object.freeze({
+    coordinatePlaceholder,
     number: value => numberFormat.format(value),
     label: key => labels[key] || key,
     value(key, value) {

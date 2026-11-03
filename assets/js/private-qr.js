@@ -543,11 +543,15 @@
     }
     return dl;
   }
-  function infoImage(url, label) {
+  function infoImage(url, label, placeholderSlot = null) {
     const frame = document.createElement("div");
     frame.className = "qr-information-image";
     const missing = () => {
       frame.replaceChildren();
+      if (placeholderSlot !== null) {
+        frame.innerHTML = window.CARD_UI.coordinatePlaceholder(placeholderSlot);
+        return;
+      }
       const p = document.createElement("span");
       p.textContent = "画像なし";
       frame.append(p);
@@ -746,6 +750,7 @@
             infoImage(
               window.CARD_PRIMAGI?.verseImage(c?.image || c?.thumbnail) || "",
               title.textContent,
+              "full",
             ),
             infoFields(fields),
           );
@@ -755,7 +760,7 @@
         for (const p of relevant) {
           const item = document.createElement("article");
           item.append(
-            infoImage(window.CARD_PRIMAGI?.verseImage(p.image) || "", p.slot),
+            infoImage(window.CARD_PRIMAGI?.verseImage(p.image) || "", p.slot, p.slot || "part"),
           );
           const heading = document.createElement("h3");
           heading.textContent = p.slot;

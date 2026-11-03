@@ -1101,7 +1101,7 @@ signupCapacityNotice.id = "signup-capacity-notice";
 signupCapacityNotice.hidden = true;
 signupCapacityNotice.setAttribute("role", "status");
 signupCapacityNotice.setAttribute("aria-live", "polite");
-signupCapacityNotice.innerHTML = '<div class="signup-capacity-art" aria-hidden="true"><svg viewBox="0 0 72 64"><rect x="13" y="8" width="31" height="43" rx="7" transform="rotate(-12 28.5 29.5)"/><rect x="27" y="7" width="31" height="43" rx="7" transform="rotate(8 42.5 28.5)"/><path d="m36 21 4 4 4-4m-4 4v9"/><circle cx="53" cy="47" r="12"/><path d="M53 40v7l5 3"/></svg></div><span class="signup-capacity-badge">受付を一時停止しています</span><h3>新規登録が混み合っています</h3><p class="signup-capacity-intro">ただいま新規登録の人数が上限に達しています。</p><div class="signup-capacity-retry"><span class="signup-capacity-label">再受付の目安</span><div class="signup-capacity-schedule"><span class="signup-capacity-date"></span><span class="signup-capacity-clock"><time></time><span>以降</span></span></div></div><p class="signup-capacity-help"></p><button type="button" class="signup-capacity-refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8a8.5 8.5 0 1 0 .3 7M20 3v5h-5"/></svg><span>受付状況を更新</span></button>';
+signupCapacityNotice.innerHTML = '<div class="signup-capacity-art" aria-hidden="true"><svg viewBox="0 0 72 64"><rect x="13" y="8" width="31" height="43" rx="7" transform="rotate(-12 28.5 29.5)"/><rect x="27" y="7" width="31" height="43" rx="7" transform="rotate(8 42.5 28.5)"/><circle cx="53" cy="47" r="12"/><path d="M53 40v7l5 3"/></svg></div><span class="signup-capacity-badge">受付を一時停止しています</span><h3>新規登録が混み合っています</h3><p class="signup-capacity-intro">少し時間をおいて、改めてアクセスしてください。</p><div class="signup-capacity-retry"><span class="signup-capacity-label">再受付の目安</span><div class="signup-capacity-schedule"><span class="signup-capacity-date"></span><span class="signup-capacity-clock"><time></time><span>以降</span></span></div></div><p class="signup-capacity-help"></p><button type="button" class="signup-capacity-refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8a8.5 8.5 0 1 0 .3 7M20 3v5h-5"/></svg><span>受付状況を更新</span></button>';
 $("signup-flow").prepend(signupCapacityNotice);
 signupCapacityNotice.querySelector("button").onclick = async (event) => {
   event.currentTarget.disabled = true;
@@ -7308,7 +7308,7 @@ init();
       .map((id) => parts.get(id))
       .filter((part) => window.CARD_PRIMAGI.verseImage(part?.image));
     if (!images.length)
-      return '<span class="verse-image-unavailable catalog-image-unavailable" role="img" aria-label="画像なし">画像なし</span>';
+      return `<span class="verse-full-image">${window.CARD_UI.coordinatePlaceholder("full")}</span>`;
     return `<span class="verse-image-collage">${images.map((part) => `<span class="verse-collage-item"><img src="${esc(window.CARD_PRIMAGI.verseImage(part.image))}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async"></span>`).join("")}</span>`;
   }
   function ownedButton(c, part = null, modal = false) {
@@ -7351,7 +7351,7 @@ init();
     $("verse-collection-list").innerHTML = all
       .map(
         (c) =>
-          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(parts.get(id)?.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(parts.get(id)?.image))}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async">` : `<span class="catalog-image-unavailable">画像なし</span>`}</span></button>`).join("")}</div></article>`,
+          `<article class="verse-coordinate ${collected(c) ? "is-complete" : ""} ${!full(c) && partsComplete(c) ? "is-parts-complete" : ""}"><h3>${esc(c.name)}</h3><div class="verse-coordinate-images"><button type="button" class="verse-character ${full(c) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)}の詳細">${image(c)}</button>${c.part_ids.map((id) => `<button type="button" class="verse-part-image ${owned.has(id) ? "is-owned" : ""}" data-verse-detail="${esc(c.id)}" aria-label="${esc(c.name)} ${esc(parts.get(id)?.slot)}の詳細"><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(parts.get(id)?.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(parts.get(id)?.image))}" alt="${esc(parts.get(id)?.slot)}" loading="lazy" decoding="async">` : window.CARD_UI.coordinatePlaceholder(parts.get(id)?.slot || "part")}</span></button>`).join("")}</div></article>`,
       )
       .join("");
     $("verse-collection-empty").hidden = all.length > 0;
@@ -7593,7 +7593,7 @@ init();
         c.part_ids
           .map((id) => {
             const p = parts.get(id);
-            return `<article><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(p.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p.image))}" alt="${esc(p.slot)}" loading="eager" decoding="async">` : `<span class="catalog-image-unavailable">画像なし</span>`}</span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? (c.family === "primagi" ? "ワッチャ未取得" : "BP未取得") : p.buzz + (c.family === "primagi" ? " ワッチャ" : " バズパワー")}</strong></div>${c.family === "primagi" ? `<p class="primagi-part-name">${esc(p.metadata?.name || "未取得")}</p><p class="primagi-part-code">${esc((p.codes || []).join(" ／ "))} · ${esc(p.metadata?.rarity || "未取得")}</p>` : ""}${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${
+            return `<article><span class="verse-part-image-frame">${window.CARD_PRIMAGI.verseImage(p.image) ? `<img src="${esc(window.CARD_PRIMAGI.verseImage(p.image))}" alt="${esc(p.slot)}" loading="eager" decoding="async">` : window.CARD_UI.coordinatePlaceholder(p.slot || "part")}</span><div class="verse-part-stats"><span class="verse-slot-tag">${esc(p.slot)}</span><strong>${p.buzz == null ? (c.family === "primagi" ? "ワッチャ未取得" : "BP未取得") : p.buzz + (c.family === "primagi" ? " ワッチャ" : " バズパワー")}</strong></div>${c.family === "primagi" ? `<p class="primagi-part-name">${esc(p.metadata?.name || "未取得")}</p><p class="primagi-part-code">${esc((p.codes || []).join(" ／ "))} · ${esc(p.metadata?.rarity || "未取得")}</p>` : ""}${ownControl(c, id)}<div class="qr-action-row">${trade()?.markup("part", id) || ""}${
               window.CARD_QR?.button(
                 "part",
                 id,
@@ -9056,7 +9056,7 @@ verseScript.dispatchEvent(new Event("load"));
     const images = (c.collage || []).filter((url) => source(url));
     return images.length
       ? `<span class="trade-collage">${images.map((url) => frame(url, true)).join("")}</span>`
-      : `<span class="catalog-image-unavailable">画像なし</span>`;
+      : c.kind === "card" ? `<span class="catalog-image-unavailable">画像なし</span>` : window.CARD_UI.coordinatePlaceholder(c.kind === "part" ? c.slot || "part" : "full");
   }
   function renderOutput() {
     if (!origin || panel.hidden) return;
