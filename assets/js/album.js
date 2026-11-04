@@ -3660,7 +3660,7 @@ function marqueeOutside(pair) {
   if (!bounds.width || pair.length !== 2) return false;
   return pair.every((button) => {
     const box = button.getBoundingClientRect();
-    return box.right <= bounds.left || box.left >= bounds.right;
+    return box.right <= bounds.left - 48 || box.left >= bounds.right + 48;
   });
 }
 function commitMarqueeCard(index, entry) {
@@ -3677,6 +3677,7 @@ function commitMarqueeCard(index, entry) {
     return false;
   const pair = marqueePair(index);
   if (!marqueeOutside(pair)) return false;
+  if (!entry.images || entry.images.length !== pair.length || pair.some(button => !button.querySelector("img"))) return false;
   for (const button of pair) {
     button.dataset.preview = entry.card.id;
     button.dataset.game = entry.card.game;
@@ -3685,7 +3686,15 @@ function commitMarqueeCard(index, entry) {
       "aria-label",
       (entry.card.name || entry.card.code) + "の詳細",
     );
-    const image = button.querySelector("img");
+    const oldImage = button.querySelector("img");
+    const image = entry.images[pair.indexOf(button)];
+    if (!oldImage || !image) return false;
+    const frame = oldImage.closest(".marquee-image-frame");
+    image.alt = entry.card.name || entry.card.code;
+    // Both incoming nodes are already loaded and decoded. Keep the old image
+    // until this offscreen, synchronous swap; do not restart a visible img load.
+    oldImage.replaceWith(image);
+    frame.querySelectorAll("canvas.low-resolution-image").forEach(canvas => canvas.remove());
     prepareMarqueeImage(image, entry.card);
     image
       .closest(".marquee-image-frame")
@@ -3697,7 +3706,6 @@ function commitMarqueeCard(index, entry) {
     const isLandscape =
       entry.card.game === "aikatsu" &&
       entry.image.naturalWidth > entry.image.naturalHeight;
-    const frame = image.closest(".marquee-image-frame");
     const width = isLandscape
       ? entry.image.naturalHeight
       : entry.image.naturalWidth;
@@ -3708,8 +3716,6 @@ function commitMarqueeCard(index, entry) {
       frame.style.aspectRatio = width + " / " + height;
       frame.style.setProperty("--image-ratio", String(height / width));
     }
-    image.src = entry.image.src;
-    image.alt = entry.card.name || entry.card.code;
     image.removeAttribute("fetchpriority");
   }
 
@@ -3750,22 +3756,34 @@ function pumpMarquee() {
     if (!card) continue;
     if (pair[0].dataset.preview === card.id)
       card = nextMarqueeCard(primary) || card;
-    const image = new Image();
-    entry = { card, image, ready: false };
+    entry = { card, image: true, images: null, ready: false };
     marqueePending.set(index, entry);
     loading++;
-    image.onload = async () => {
-      try {
-        if (image.decode) await image.decode();
-      } catch {}
+    const preload = () => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.loading = "eager";
+      image.onload = async () => {
+        try {
+          if (image.decode) await image.decode();
+          if (!image.naturalWidth || !image.naturalHeight) throw Error("empty image");
+          image.onload = image.onerror = null;
+          resolve(image);
+        } catch (error) { reject(error); }
+      };
+      image.onerror = reject;
+      image.src = card.front;
+    });
+    Promise.all([preload(), preload()]).then(images => {
       if (marqueePending.get(index) !== entry) return;
+      entry.images = images;
+      entry.image = images[0];
       entry.ready = true;
       commitMarqueeCard(index, entry);
-    };
-    image.onerror = () => {
+    }).catch(() => {
+      // A failed or cancelled replacement leaves the current two images intact.
       if (marqueePending.get(index) === entry) marqueePending.delete(index);
-    };
-    image.src = card.front;
+    });
   }
 }
 function prepareMarqueeImage(image, card) {
@@ -3813,13 +3831,23 @@ function buildMarquee() {
     marqueeBootstrapped &&
     $("auth-art").dataset.catalogSignature !== signature
   ) {
-    clearInterval(marqueeTimer);
+    // Refresh candidate pools without removing the running track or its cards.
+    // Rebuilding both groups here briefly empties the entire strip and changes
+    // its animation width on every catalog update.
     marqueePending.clear();
     for (const key of Object.keys(marqueePools)) delete marqueePools[key];
     for (const key of Object.keys(marqueePositions))
       delete marqueePositions[key];
-    groups.forEach((group) => group.replaceChildren());
-    marqueeBootstrapped = false;
+    const currentCards = new Map(marqueeCards().map(card => [card.id, card]));
+    for (const button of $("auth-art").querySelectorAll(".marquee-card")) {
+      const card = currentCards.get(button.dataset.preview);
+      if (!card?._visibility?.image) continue;
+      // Newly restricted artwork must be removed immediately, even on screen.
+      const image = button.querySelector("img");
+      const frame = image?.closest(".marquee-image-frame");
+      frame?.querySelectorAll("canvas.low-resolution-image").forEach(canvas => canvas.remove());
+      if (image && image.getAttribute("src") !== card.front) image.src = card.front || "";
+    }
   }
   $("auth-art").dataset.catalogSignature = signature;
   if (!marqueeBootstrapped) {
@@ -3837,14 +3865,16 @@ function buildMarquee() {
         )
         .join("");
     const cards = [...groups[0].children];
-    groups[0].replaceChildren(...cards);
-    groups[1].replaceChildren(
-      ...cards.map((button) => {
+    // The startup preview already owns a matching, decoded pair of groups.
+    // Keep these nodes and the animation's width unchanged during handover.
+    if (groups[1].children.length !== cards.length ||
+        cards.some((button, index) => groups[1].children[index]?.dataset.preview !== button.dataset.preview)) {
+      groups[1].replaceChildren(...cards.map(button => {
         const clone = button.cloneNode(true);
         clone.tabIndex = -1;
         return clone;
-      }),
-    );
+      }));
+    }
     marqueeBootstrapped = true;
     marqueeTimer = setInterval(pumpMarquee, 500);
   }
