@@ -3039,7 +3039,7 @@ $("signup-nickname-form").onsubmit = async (event) => {
         .setAttribute("aria-label", "カードアルバムのトップへ");
       document.querySelector('[data-signup-marker="id"]').textContent =
         "ID発行";
-      $("guest-browse-link").hidden = !!session;
+      $("guest-browse-link").hidden = !!session || window.CARD_GUEST_ACCESS?.enabled !== true;
       document.querySelector(".id-expiry-note").textContent =
         "このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。";
       $("auth-normal-panel").querySelector("h2").textContent =

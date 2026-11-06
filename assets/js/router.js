@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261103-coordinate-rounded-v31";
+  const version = "20261104-guest-browse-v32";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -551,7 +551,9 @@
   const visibilityModule = Promise.all([
     script("vendor/supabase.js"),
     script("config.js"),
-  ]).then(() => script("card-visibility.js"));
+  ]).then(() => script("guest-access.js"))
+    .then(() => window.CARD_GUEST_ACCESS.ready)
+    .then(() => script("card-visibility.js"));
   const dependencies = visibilityModule.then(
     () => window.CARD_VISIBILITY.ready,
   );
@@ -585,6 +587,10 @@
       document.body.style.visibility = initialVisibility;
     })
     .catch((error) => {
+      if (error?.code === "GUEST_BROWSE_PAUSED" || error?.code === "GUEST_BROWSE_UNAVAILABLE") {
+        window.CARD_GUEST_ACCESS.showStopped(error.code === "GUEST_BROWSE_UNAVAILABLE");
+        return;
+      }
       document.body.classList.remove("auth-checking");
       document.getElementById("auth-checking-status")?.remove();
       document.body.style.visibility = initialVisibility;
