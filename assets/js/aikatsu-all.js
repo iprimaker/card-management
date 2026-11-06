@@ -956,8 +956,11 @@
   function moveDetail(delta) {
     const cards = filtered(),
       index = cards.findIndex((c) => c.id === selected?.id);
-    if (cards[index + delta]) showDetail(cards[index + delta].id);
+    if (index < 0 || !cards[index + delta]) return false;
+    showDetail(cards[index + delta].id);
+    return true;
   }
+  window.CARD_DETAIL_SWIPE(dialog, ".viewer", moveDetail);
   document.addEventListener("click", (event) => {
     const numbered = event.target.closest("[data-all-page]");
     if (numbered) {

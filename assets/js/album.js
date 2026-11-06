@@ -1093,6 +1093,61 @@ if (invitationPage) {
 let signupReservation = null;
 let signupStep = "id";
 let signupBusy = false;
+let signupIssueState = "unknown", signupIssueBusy = false, signupIssueFlight = null;
+const signupIssueStorageKey = "card-album-reservation-attempt-v1";
+async function signupIssueKey() {
+  const readOrCreate = () => {
+    const existing = localStorage.getItem(signupIssueStorageKey);
+    if (/^[a-f0-9]{64}$/.test(existing || "")) return existing;
+    const key = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, "0")).join("");
+    // Do not issue if the recovery key cannot survive a reload.
+    localStorage.setItem(signupIssueStorageKey, key);
+    if (localStorage.getItem(signupIssueStorageKey) !== key) throw Error("登録状態を保存できません。");
+    return key;
+  };
+  return navigator.locks ? navigator.locks.request(signupIssueStorageKey, readOrCreate) : readOrCreate();
+}
+async function signupIssueRPC(issue) {
+  const key = await signupIssueKey();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    let request = db.rpc("card_album_reservation_v1", { p_key: key, p_issue: issue });
+    if (typeof request.abortSignal === "function") request = request.abortSignal(controller.signal);
+    const { data, error } = await request;
+    if (error || !["unissued", "issued", "completed"].includes(data?.state) ||
+        (data.state === "issued" && (!data.album_id || !data.reservation_token)))
+      throw error || Error("発行状況を確認できませんでした。");
+    return data;
+  } finally { clearTimeout(timeout); }
+}
+function applySignupIssueState(data) {
+  signupIssueState = data.state;
+  if (data.state === "issued") {
+    const same = signupReservation?.album_id === data.album_id;
+    signupReservation = data;
+    if (!same && mode === "signup") renderSignupStep("id");
+  } else if (signupReservation && !invitationPage) {
+    signupReservation = null;
+    if (mode === "signup") renderSignupStep("id");
+  }
+}
+async function checkSignupIssue() {
+  if (!db || invitationPage || session || signupIssueBusy) return;
+  if (signupIssueFlight) return signupIssueFlight;
+  signupIssueFlight = signupIssueRPC(false).then(data => {
+    applySignupIssueState(data);
+    return data;
+  }).catch(() => {
+    if (signupIssueState === "unknown") signupIssueState = "unavailable";
+  }).finally(() => {
+    signupIssueFlight = null;
+    renderSignupRegistrationAvailability();
+  });
+  renderSignupRegistrationAvailability();
+  return signupIssueFlight;
+}
+$("signup-issue-recheck").onclick = () => void checkSignupIssue();
 let signupRegistrationAllowed = null;
 let signupInvitationAllowed = false;
 let signupCapacityLimited = false, signupCapacityRetryAt = null, signupCapacityFetchFailed = false;
@@ -1150,8 +1205,17 @@ function renderSignupRegistrationAvailability() {
       !signupReservation &&
       signupRegistrationAllowed === false,
   );
+  const issue = $("issue-album-id"), notice = $("signup-issue-notice"), retry = $("signup-issue-recheck");
+  const canIssue = !invitationPage && !session && !signupReservation && signupRegistrationAllowed === true;
+  const showIssue = canIssue && signupIssueState === "unissued";
+  issue.hidden = !showIssue;
+  notice.hidden = !showIssue;
+  retry.hidden = !canIssue || signupIssueState !== "unavailable";
+  retry.disabled = !!signupIssueFlight;
+  issue.disabled = signupBusy || !!signupIssueFlight;
+  issue.setAttribute("aria-busy", String(signupIssueBusy));
+  issue.textContent = signupIssueBusy ? "発行しています…" : "アルバムIDを発行";
   if (invitationPage) {
-    $("issue-album-id").hidden = true;
     const status = $("signup-registration-status");
     status.hidden = !!signupReservation;
     status.textContent = invitationEnded
@@ -1159,13 +1223,14 @@ function renderSignupRegistrationAvailability() {
       : "招待URLを確認し、アルバムIDを割り当てています…";
     return;
   }
-  $("issue-album-id").hidden =
-    !!signupReservation || signupRegistrationAllowed !== true;
-  $("issue-album-id").disabled = signupBusy;
   const status = $("signup-registration-status");
   status.hidden =
-    !!signupReservation || signupRegistrationAllowed === true || inviteOnly || signupCapacityLimited;
-  status.textContent = signupRegistrationMessage;
+    !!signupReservation || (signupRegistrationAllowed === true && signupIssueState === "unissued") || inviteOnly || signupCapacityLimited;
+  status.textContent = signupIssueState === "completed"
+    ? "登録済みです。発行されたアルバムIDでログインしてください。"
+    : signupRegistrationAllowed !== true ? signupRegistrationMessage
+    : signupIssueState === "unavailable" ? "発行状況を確認できませんでした。通信環境をご確認ください。"
+    : "発行状況を確認しています…";
 }
 function scheduleSignupRegistrationCheck() {
   clearTimeout(signupRegistrationTimer);
@@ -1236,12 +1301,16 @@ async function refreshSignupRegistrationStatus({ force = false } = {}) {
 }
 document.addEventListener("visibilitychange", () => {
   clearTimeout(signupRegistrationTimer);
-  if (!document.hidden && mode === "signup" && !$("auth").hidden)
+  if (!document.hidden && mode === "signup" && !$("auth").hidden) {
     void refreshSignupRegistrationStatus();
+    void checkSignupIssue();
+  }
 });
 window.addEventListener("online", () => {
-  if (mode === "signup" && !$("auth").hidden)
+  if (mode === "signup" && !$("auth").hidden) {
     void refreshSignupRegistrationStatus();
+    void checkSignupIssue();
+  }
 });
 
 try {
@@ -1249,6 +1318,7 @@ try {
 } catch {}
 window.addEventListener("pagehide", () => {
   signupReservation = null;
+  signupIssueState = "unknown";
   if (invitationPage) {
     invitationToken = null;
     invitationEnded = true;
@@ -1259,7 +1329,10 @@ window.addEventListener("pagehide", () => {
   $("signup-password").value = $("signup-password-confirm").value = "";
 });
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted && mode === "signup") renderSignupStep("id");
+  if (event.persisted && mode === "signup") {
+    renderSignupStep("id");
+    void checkSignupIssue();
+  }
 });
 async function startInvitationRegistration(existingSession) {
   if (invitationStarted) return;
@@ -1313,6 +1386,7 @@ function authMode(m) {
   const enteringSignup = m === "signup" && mode !== "signup";
   if (enteringSignup) {
     if (!invitationPage) {
+      signupIssueState = "unknown";
       signupRegistrationAllowed = null;
       signupCapacityLimited = false;
       signupCapacityRetryAt = null;
@@ -1348,6 +1422,7 @@ function authMode(m) {
   if (m === "signup") {
     renderSignupStep(signupStep);
     void refreshSignupRegistrationStatus({ force: enteringSignup });
+    if (enteringSignup || signupIssueState === "unknown") void checkSignupIssue();
   } else clearTimeout(signupRegistrationTimer);
 }
 function translatedError(e) {
@@ -2392,8 +2467,9 @@ function moveDetail(delta) {
   const index = detailCardIds.indexOf(selected.id);
   if (index < 0 || (delta !== -1 && delta !== 1)) return;
   const id = detailCardIds[index + delta];
-  if (id && catalog.cards.some((card) => card.id === id))
-    openDetail(id, lastFocus, true);
+  if (!id || !catalog.cards.some((card) => card.id === id)) return false;
+  openDetail(id, lastFocus, true);
+  return true;
 }
 $("card-prev").onclick = () => moveDetail(-1);
 $("card-next").onclick = () => moveDetail(1);
@@ -2626,7 +2702,10 @@ function configureAlbumAuth(remember = albumRememberSession) {
     global: { fetch: accountGuardFetch },
   });
   db = client;
-  if (mode === "signup") void refreshSignupRegistrationStatus();
+  if (mode === "signup") {
+    void refreshSignupRegistrationStatus();
+    if (signupIssueState === "unknown") void checkSignupIssue();
+  }
   albumAuthSubscription = client.auth.onAuthStateChange((event, session) => {
     setTimeout(() => {
       if (db === client) authChanged(event, session);
@@ -2813,13 +2892,6 @@ for (const id of ["nickname", "email", "password"])
 async function albumAuth(body) {
   if ((await window.CARD_MAINTENANCE.check()).maintenance)
     throw Error("ただ今メンテナンス中です。");
-  if (body.action === "reserve") {
-    const { data, error } = await db.rpc("card_album_reserve_id");
-    if (error) throw error;
-    if (!data?.album_id)
-      throw Error(data?.error || "IDを発行できませんでした。");
-    return data;
-  }
   if (body.action === "login" || body.action === "legacy") {
     let email;
     if (body.action === "legacy")
@@ -2949,20 +3021,29 @@ async function copyAlbumID(id) {
   }
 }
 $("issue-album-id").onclick = async () => {
-  if (!db || signupBusy || invitationPage) return;
-  signupBusy = true;
+  if (!db || session || signupBusy || signupIssueFlight || invitationPage || signupIssueState !== "unissued") return;
+  signupBusy = signupIssueBusy = true;
+  $("signup-message").textContent = "";
   renderSignupRegistrationAvailability();
   try {
+    const before = await signupIssueRPC(false);
+    applySignupIssueState(before);
+    if (before.state !== "unissued") return;
     await refreshSignupRegistrationStatus({ force: true });
     if (signupRegistrationAllowed !== true) return;
-    signupReservation = await albumAuth({ action: "reserve" });
-    renderSignupStep("id");
+    if ((await window.CARD_MAINTENANCE.check()).maintenance) throw Error("ただ今メンテナンス中です。");
+    const result = await signupIssueRPC(true);
+    applySignupIssueState(result);
+    if (result.error) {
+      if (result.capacity_limited) await refreshSignupRegistrationStatus({ force: true });
+      if (signupRegistrationAllowed !== false) $("signup-message").textContent = result.error;
+    }
   } catch (error) {
-    await refreshSignupRegistrationStatus({ force: true });
-    if (signupRegistrationAllowed !== false)
-      $("signup-message").textContent = window.CARD_ERROR.message(error);
+    // A timeout does not tell us whether the database committed. Read by the same key.
+    try { applySignupIssueState(await signupIssueRPC(false)); } catch {}
+    if (signupIssueState === "unissued") $("signup-message").textContent = window.CARD_ERROR.message(error);
   } finally {
-    signupBusy = false;
+    signupBusy = signupIssueBusy = false;
     renderSignupRegistrationAvailability();
     $("signup-password-start").disabled = !signupReservation;
   }
@@ -3022,6 +3103,10 @@ $("signup-nickname-form").onsubmit = async (event) => {
       personal_info_ack: true,
     });
     await applyAlbumSession(result);
+    if (!invitationPage) {
+      try { localStorage.removeItem(signupIssueStorageKey); } catch {}
+      signupIssueState = "unknown";
+    }
     signupReservation = null;
     if (invitationPage) {
       invitationPage = false;
@@ -3669,7 +3754,7 @@ function commitMarqueeCard(index, entry) {
     !isOfficialMarqueeCard(
       catalog.cards.find((c) => c.id === entry.card.id) || entry.card,
     ) ||
-    marqueePaused ||
+    (marqueePaused || $("auth-art").classList.contains("is-dragging")) ||
     $("detail").open ||
     $("auth").hidden ||
     document.hidden
@@ -3725,7 +3810,7 @@ function commitMarqueeCard(index, entry) {
 function pumpMarquee() {
   if (
     !catalogFallback ||
-    marqueePaused ||
+    (marqueePaused || $("auth-art").classList.contains("is-dragging")) ||
     $("detail").open ||
     $("auth").hidden ||
     document.hidden
@@ -3897,6 +3982,90 @@ function setMarqueePaused(paused) {
   marqueePaused = paused;
   $("auth-art").classList.toggle("paused", paused);
 }
+// Scrub the existing infinite animation instead of creating a second track.
+(() => {
+  const rail = $("auth-art");
+  const track = rail.querySelector(".marquee-track");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let gesture, frame = 0, suppressUntil = 0;
+
+  function resume() {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    rail.classList.remove("is-dragging");
+  }
+  function setPhase(state, pixels) {
+    const raw = state.phase - pixels * state.duration / state.width;
+    state.animation.currentTime = ((raw % state.duration) + state.duration) % state.duration;
+  }
+  rail.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "touch" || reducedMotion.matches || $("detail").open) return;
+    if (!e.isPrimary) {
+      if (gesture?.dragging) suppressUntil = performance.now() + 400;
+      gesture = null;
+      resume();
+      return;
+    }
+    suppressUntil = 0;
+    resume();
+    gesture = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+  rail.addEventListener("pointermove", (e) => {
+    const state = gesture;
+    if (state?.id !== e.pointerId) return;
+    const dx = e.clientX - state.x, dy = e.clientY - state.y;
+    if (!state.dragging) {
+      if (Math.abs(dy) > 9 && Math.abs(dy) >= Math.abs(dx)) { gesture = null; return; }
+      if (Math.abs(dx) < 9 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+      const animation = track.getAnimations?.().find((a) => a.animationName === "card-ticker");
+      const duration = animation?.effect?.getComputedTiming().duration;
+      const width = track.getBoundingClientRect().width / 2;
+      const phase = animation?.currentTime;
+      if (!Number.isFinite(phase) || !Number.isFinite(duration) || duration <= 0 || width <= 0) {
+        gesture = null;
+        return;
+      }
+      Object.assign(state, { dragging: true, animation, duration, width, phase });
+      rail.classList.add("is-dragging");
+      rail.setPointerCapture(e.pointerId);
+    }
+    const now = performance.now();
+    state.velocity = state.time == null ? 0 :
+      Math.max(-1.25, Math.min(1.25, (dx - state.dx) / Math.max(now - state.time, 1)));
+    state.time = now;
+    state.dx = dx;
+    setPhase(state, dx);
+  });
+  function finish(e, glide) {
+    const state = gesture;
+    if (state?.id !== e.pointerId) return;
+    gesture = null;
+    if (!state.dragging) return;
+    const start = performance.now();
+    suppressUntil = start + 400;
+    const distance = glide && start - state.time < 90 ? state.velocity * 85 : 0;
+    if (Math.abs(distance) < 3) { resume(); return; }
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / 240);
+      setPhase(state, state.dx + distance * (1 - (1 - t) ** 3));
+      if (t < 1) frame = requestAnimationFrame(tick);
+      else resume();
+    };
+    frame = requestAnimationFrame(tick);
+  }
+  rail.addEventListener("pointerup", (e) => finish(e, true));
+  rail.addEventListener("pointercancel", (e) => finish(e, false));
+  rail.addEventListener("lostpointercapture", (e) => {
+    if (e.target === rail) finish(e, false);
+  });
+  rail.addEventListener("click", (e) => {
+    if (e.detail && performance.now() < suppressUntil) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+})();
+
 $("auth-art").onclick = (e) => {
   const button = e.target.closest("[data-preview]");
   if (!button) return;
@@ -6215,141 +6384,7 @@ init();
   window.CARD_SHARE = { sync, reset };
 })();
 
-/* mobile-modal-navigation.js */
-(() => {
-  "use strict";
-  const dialog = document.getElementById("detail");
-  const image = document.getElementById("modal-image");
-  const viewer = dialog?.querySelector(".viewer");
-  const navigation = dialog?.querySelector(".detail-navigation");
-  const previous = document.getElementById("card-prev");
-  const next = document.getElementById("card-next");
-  if (!dialog || !image || !viewer || !navigation || !previous || !next) return;
-
-  const media = window.matchMedia(
-    "(max-width: 760px), (max-height: 500px) and (pointer: coarse)",
-  );
-  const style = document.createElement("style");
-  style.textContent = `
-    #detail .mobile-card-nav { display:none!important; }
-    @media (max-width:760px), (max-height:500px) and (pointer:coarse) {
-      #detail .detail-navigation { display:none!important; }
-      #detail > .mobile-card-nav:not([hidden]) {
-        position:absolute;display:grid!important;place-items:center;
-        width:32px;height:32px;min-width:32px;min-height:32px;
-        box-sizing:border-box;padding:0;margin:0;flex:none;
-        border:1.5px solid var(--accent,#bd829c);border-radius:50%;
-        background:rgba(255,255,255,.95);color:var(--accent,#bd829c);
-        box-shadow:0 2px 8px #44334b12;z-index:6;
-        transform:translateY(-50%);line-height:1;touch-action:manipulation;
-        -webkit-tap-highlight-color:transparent;
-        transition:background .12s,opacity .12s;
-      }
-      #detail .mobile-card-nav::before { content:"";position:absolute;inset:-6px;border-radius:50%; }
-      #detail .mobile-card-nav svg { display:block;width:18px;height:18px;pointer-events:none; }
-      #detail .mobile-card-nav:disabled { opacity:.32;box-shadow:none;cursor:default; }
-      #detail .mobile-card-nav:not(:disabled):active { background:var(--soft,#f9edf2); }
-      #detail .mobile-card-nav:focus:not(:focus-visible) { outline:none; }
-      #detail .mobile-card-nav:focus-visible { outline:2px solid var(--accent,#bd829c);outline-offset:3px; }
-    }`;
-  document.head.append(style);
-  const make = (source, label, triangle) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "mobile-card-nav";
-    button.hidden = true;
-    button.setAttribute("aria-label", label);
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${triangle}" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>`;
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!button.disabled && !navigation.hidden) source.click();
-      schedule();
-    });
-    dialog.append(button);
-    return button;
-  };
-  const left = make(
-    previous,
-    "前のカードを見る",
-    "M14.5 5.5 6.5 12 14.5 18.5Z",
-  );
-  const right = make(next, "次のカードを見る", "M9.5 5.5 17.5 12 9.5 18.5Z");
-  let frame;
-  function update() {
-    frame = null;
-    const show = media.matches && dialog.open && !navigation.hidden;
-    left.hidden = right.hidden = !show;
-    if (!show) return;
-    left.disabled = previous.disabled;
-    right.disabled = next.disabled;
-    const picture = image.hidden ? viewer : image;
-    const rect = picture.getBoundingClientRect();
-    const modal = dialog.getBoundingClientRect();
-    let width = rect.width;
-    // object-fit:containによる余白がある場合は、実際の絵の左右へ配置。
-    if (
-      !image.hidden &&
-      image.naturalWidth &&
-      image.naturalHeight &&
-      getComputedStyle(image).objectFit === "contain"
-    ) {
-      width =
-        image.naturalWidth *
-        Math.min(
-          rect.width / image.naturalWidth,
-          rect.height / image.naturalHeight,
-        );
-    }
-    const edge = rect.left + (rect.width - width) / 2;
-    const size = 32;
-    const minimum = modal.left + dialog.clientLeft + 3;
-    const maximum = modal.right - dialog.clientLeft - size - 3;
-    const clamp = (x) => Math.max(minimum, Math.min(x, maximum));
-    const origin = modal.left + dialog.clientLeft - dialog.scrollLeft;
-    const top =
-      rect.top +
-      rect.height / 2 -
-      modal.top -
-      dialog.clientTop +
-      dialog.scrollTop;
-    left.style.left = `${clamp(edge - size - 5) - origin}px`;
-    right.style.left = `${clamp(edge + width + 5) - origin}px`;
-    left.style.top = right.style.top = `${top}px`;
-  }
-  function schedule() {
-    if (frame == null) frame = requestAnimationFrame(update);
-  }
-  new MutationObserver(schedule).observe(navigation, {
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["hidden", "disabled"],
-  });
-  new MutationObserver(schedule).observe(dialog, {
-    attributes: true,
-    attributeFilter: ["open"],
-  });
-  new MutationObserver(schedule).observe(image, {
-    attributes: true,
-    attributeFilter: ["src", "hidden", "class", "style"],
-  });
-  if (window.ResizeObserver) {
-    const observer = new ResizeObserver(schedule);
-    observer.observe(viewer);
-    observer.observe(image);
-    observer.observe(dialog);
-  }
-  image.addEventListener("load", schedule);
-  image.addEventListener("error", schedule);
-  dialog.addEventListener("close", schedule);
-  dialog.addEventListener("scroll", schedule, true);
-  window.addEventListener("resize", schedule, { passive: true });
-  window.visualViewport?.addEventListener("resize", schedule, {
-    passive: true,
-  });
-  media.addEventListener?.("change", schedule);
-  schedule();
-})();
+window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
 
 /* app-shortcut.js */
 (() => {
@@ -7642,12 +7677,29 @@ init();
         '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'
       }</div>`;
   }
-  function openDetail(id) {
+  let coordinateDetailIds = [];
+  function openDetail(id, trigger) {
     if (!catalog?.coordinates.some((c) => c.id === id)) return;
+    const collection = trigger?.closest("#verse-collection-list");
+    const ids = collection
+      ? [...collection.querySelectorAll("[data-verse-detail]")].map((node) => node.dataset.verseDetail)
+      : filtered().map((c) => c.id);
+    coordinateDetailIds = ids.includes(id) ? [...new Set(ids)] : [id];
     selected = id;
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
     renderDetail();
   }
+  window.CARD_DETAIL_SWIPE(dialog, ".verse-modal-full", (direction) => {
+    const index = coordinateDetailIds.indexOf(selected);
+    const id = index < 0 ? null : coordinateDetailIds[index + direction];
+    if (!id || !catalog?.coordinates.some((c) => c.id === id)) return false;
+    selected = id;
+    renderDetail();
+    dialog.scrollTop = 0;
+    $("verse-detail-content").scrollTop = 0;
+    window.CARD_MODAL_SCROLL?.refresh(dialog);
+    return true;
+  });
   function patchOwnership() {
     if (ownershipView !== "all" || duplicateOnly) {
       render();
@@ -8205,7 +8257,7 @@ init();
     }
     const d = e.target.closest("[data-verse-detail]");
     if (d) {
-      openDetail(d.dataset.verseDetail);
+      openDetail(d.dataset.verseDetail, d);
       return;
     }
     const o = e.target.closest("[data-verse-own]");

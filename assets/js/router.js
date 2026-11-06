@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261104-guest-browse-v32";
+  const version = "20261106-qr-limit-policy-v37";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(

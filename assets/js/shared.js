@@ -1020,6 +1020,18 @@
     page = 1;
     render();
   };
+  window.CARD_DETAIL_SWIPE($("public-detail"), ".public-modal-image", (direction) => {
+    const rows = filtered();
+    const index = rows.findIndex((c) => c.id === selected?.id);
+    if (index < 0 || !rows[index + direction]) return false;
+    selected = rows[index + direction];
+    side = 0;
+    detail();
+    $("public-detail").scrollTop = 0;
+    $("public-detail-content").scrollTop = 0;
+    window.CARD_MODAL_SCROLL?.refresh($("public-detail"));
+    return true;
+  });
   $("public-close").onclick = () => $("public-detail").close();
   $("public-banner-close").onclick = () => {
     $("public-banner").hidden = true;

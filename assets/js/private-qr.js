@@ -157,6 +157,23 @@
     b.setAttribute("aria-label", "QRコードを登録");
     return b.outerHTML;
   }
+  const limitPolicy = window.CARD_QR_POLICY;
+  const limitHelp = () => '<details class="qr-limit-help"><summary><span>' +
+    limitPolicy.heading + '</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary><div class="qr-limit-help-copy">' +
+    limitPolicy.paragraphs + '</div></details>';
+  const isLimitError = (error) => /上限/.test(error?.message || "");
+  function showLimitReached() {
+    stop();
+    captureFooter.replaceChildren();
+    updateCompatibilityNote(null);
+    content.innerHTML = '<section class="qr-limit-panel"><div class="qr-limit-intro" role="status"><span class="qr-limit-icon">' +
+      icon + '</span><div><h2>QRコードの登録上限に達しました</h2><p>新しく登録するには、不要なQRコードを削除してください。</p></div></div>' +
+      limitHelp() + '</section>';
+  }
+  function showError(error) {
+    if (isLimitError(error)) showLimitReached();
+    else message(err(error));
+  }
   function message(s) {
     content.replaceChildren();
     const p = document.createElement("p");
@@ -268,10 +285,8 @@
     const status = await db().rpc("card_qr_status");
     if (uid() !== u || token !== scanToken || !dialog.open) return;
     if (status.error) throw status.error;
-    if (status.data?.limit !== null && status.data.count >= status.data.limit) {
-      message(
-        "QRコードの登録上限に達しました。不要なQRコードを削除してください。",
-      );
+    if (status.data?.limit != null && status.data.count >= status.data.limit) {
+      showLimitReached();
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -344,7 +359,7 @@
             document.dispatchEvent(new Event("private-qr-changed"));
             show(t);
           } catch (e) {
-            message(err(e));
+            showError(e);
           }
           return;
         }
@@ -375,7 +390,7 @@
       if (rows.has(key(t))) show(t);
       else await scan(t);
     } catch (error) {
-      message(err(error));
+      showError(error);
     }
   });
   new MutationObserver(sync).observe(document.body, {
@@ -461,7 +476,7 @@
   manager.className = "qr-manager-dialog";
   manager.setAttribute("aria-labelledby", "qr-manager-title");
   manager.innerHTML =
-    '<div class="qr-manager-heading"><h2 id="qr-manager-title">登録済みQRコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><section class="qr-manager-summary" aria-label="QRコードの登録数と上限"></section><div class="qr-manager-filters" role="group" aria-label="タグで絞り込み"></div><p data-status role="status" aria-live="polite"></p><div data-entries></div><div class="qr-manager-footer"><button type="button" data-delete-all disabled>一括削除（セーブ・フレカを除く）</button><p>カード・コーデ・パーツのQRコードを削除します。</p><details class="qr-limit-help"><summary>QRコードの登録上限を増やすには</summary><p>アルバムを継続してご利用いただいている方など、アルバムの利用状況に応じて登録上限を増やす場合があります。利用状況が高いほど上限増加の対象となる場合がありますが、自動的な増加をお約束するものではありません。上限を変更した際は、個別のお知らせでご案内します。</p></details></div>';
+    '<div class="qr-manager-heading"><h2 id="qr-manager-title">登録済みQRコード</h2><button type="button" data-close aria-label="閉じる">×</button></div><section class="qr-manager-summary" aria-label="QRコードの登録数と上限"></section><div class="qr-manager-filters" role="group" aria-label="タグで絞り込み"></div><p data-status role="status" aria-live="polite"></p><div data-entries></div><div class="qr-manager-footer"><button type="button" data-delete-all disabled>一括削除（セーブ・フレカを除く）</button><p>カード・コーデ・パーツのQRコードを削除します。</p>' + limitHelp() + '</div>';
   document.body.append(manager);
   manager.querySelector("[data-close]").onclick = () => manager.close();
   const confirmation = document.createElement("dialog");
@@ -1307,8 +1322,10 @@
             await onRead(payload);
             if (uid() === user && dialog.open) dialog.close();
           } catch (error) {
-            if (uid() === user && dialog.open && form.isConnected)
-              status.textContent = err(error);
+            if (uid() === user && dialog.open && form.isConnected) {
+              if (isLimitError(error)) showLimitReached();
+              else status.textContent = err(error);
+            }
           } finally {
             saving = false;
             button.disabled = false;
@@ -1334,7 +1351,7 @@
           (scanToken === operation || scanToken === operation + 1) &&
           dialog.open
         )
-          message(err(e));
+          showError(e);
       }
     })();
     await Promise.race([prepare, closed]);
@@ -1376,13 +1393,13 @@
             if (removed !== false) dialog.close();
             else b.disabled = false;
           } catch (e) {
-            message(err(e));
+            showError(e);
           }
         };
         content.append(b);
       }
     } catch (e) {
-      message(err(e));
+      showError(e);
     }
   }
   window.CARD_QR = {
