@@ -10121,3 +10121,81 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
 
 /* Before issuing an ID, show only the admission-pause screen. */
 #signup-flow.capacity-paused > :not(#signup-capacity-notice) { display:none !important; }
+
+/* QR上限の案内と展開欄 */
+.qr-limit-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.private-qr-dialog .qr-limit-intro[role="status"] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin: 0;
+  color: #483b57;
+  text-align: left;
+}
+.qr-limit-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: #f2ebfa;
+  color: #654c82;
+}
+.qr-limit-icon svg { width: 22px; height: 22px; }
+.qr-limit-intro h2 { margin: 0; font-size: 1rem; line-height: 1.4; }
+.qr-limit-intro p { margin: 5px 0 0; font-size: .84rem; line-height: 1.55; }
+:is(.private-qr-dialog, .qr-manager-dialog) .qr-limit-help {
+  margin: 0;
+  padding: 0;
+  border: 1px solid #e9e1f0;
+  border-radius: 12px;
+  background: #faf7fd;
+  color: #483b57;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.qr-manager-dialog .qr-limit-help { margin-top: 12px; }
+:is(.private-qr-dialog, .qr-manager-dialog) .qr-limit-help summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  list-style: none;
+  color: #514265;
+  font-size: .83rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.qr-limit-help summary::-webkit-details-marker { display: none; }
+.qr-limit-help summary:focus-visible { outline: 2px solid #74568e; outline-offset: 2px; }
+.qr-limit-help summary svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.qr-limit-help[open] summary svg { transform: rotate(180deg); }
+.qr-limit-help-copy { padding: 10px 12px 12px; border-top: 1px solid #e9e1f0; }
+:is(.private-qr-dialog, .qr-manager-dialog) .qr-limit-help-copy p {
+  margin: 0;
+  color: inherit;
+  font-size: .82rem;
+  line-height: 1.65;
+}
+:is(.private-qr-dialog, .qr-manager-dialog) .qr-limit-help-copy p + p { margin-top: .65em; }
+.save-qr-terms-body h4 { margin: 1em 0 .4em; }
