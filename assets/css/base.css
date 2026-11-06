@@ -4180,3 +4180,14 @@ body.game-primagi .coordinate-image-placeholder, .qr-information-dialog[data-the
 .verse-part-image-frame > .coordinate-image-placeholder { position:absolute; inset:0; min-height:0; border-radius:18px; }
 .qr-information-image > .coordinate-image-placeholder { min-height:120px; }
 .public-part-list .coordinate-image-placeholder { min-height:70px; }
+
+#guest-browse-link[hidden] { display:none !important; }
+.guest-browse-stopped { min-height:100svh;display:grid;place-items:center;padding:28px 20px;background:#faf7fc;color:#51485e; }
+.guest-browse-stopped section { width:min(100%,520px);padding:38px 28px;text-align:center;background:#fff;border-radius:28px;box-shadow:0 12px 42px #66507810; }
+.guest-browse-stopped svg { width:76px;height:76px;fill:#f4eefa;stroke:#987ab0;stroke-width:2.3;stroke-linecap:round; }
+.guest-browse-stopped svg path { fill:none; }
+.guest-browse-stopped h1 { font-size:clamp(19px,4.5vw,24px);line-height:1.5;margin:20px 0 14px; }
+.guest-browse-stopped p { font-size:14px;line-height:1.9;margin:0;color:#7b7183; }
+.guest-browse-stopped section > div { display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:26px; }
+.guest-browse-stopped button,.guest-browse-stopped a { border:1px solid #e7ddec;border-radius:999px;padding:11px 20px;font:inherit;font-size:14px;text-decoration:none;background:#fff;color:#79608d;cursor:pointer; }
+.guest-browse-stopped button { background:#8c6ba6;color:#fff;border-color:#8c6ba6; }
