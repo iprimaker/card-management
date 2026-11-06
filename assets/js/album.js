@@ -4008,7 +4008,7 @@ function setMarqueePaused(paused) {
     }
     suppressUntil = 0;
     resume();
-    gesture = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    gesture = { id: e.pointerId, x: e.clientX, y: e.clientY, time: performance.now(), dx: 0 };
   });
   rail.addEventListener("pointermove", (e) => {
     const state = gesture;
@@ -4030,8 +4030,12 @@ function setMarqueePaused(paused) {
       rail.setPointerCapture(e.pointerId);
     }
     const now = performance.now();
-    state.velocity = state.time == null ? 0 :
-      Math.max(-1.25, Math.min(1.25, (dx - state.dx) / Math.max(now - state.time, 1)));
+    const elapsed = now - state.time;
+    const speed = Math.max(-3.2, Math.min(3.2, (dx - state.dx) / Math.max(elapsed, 8)));
+    const previous = state.velocity;
+    state.velocity = previous == null || elapsed > 95 || Math.sign(previous) !== Math.sign(speed)
+      ? speed
+      : previous * 0.3 + speed * 0.7;
     state.time = now;
     state.dx = dx;
     setPhase(state, dx);
@@ -4043,10 +4047,15 @@ function setMarqueePaused(paused) {
     if (!state.dragging) return;
     const start = performance.now();
     suppressUntil = start + 400;
-    const distance = glide && start - state.time < 90 ? state.velocity * 85 : 0;
-    if (Math.abs(distance) < 3) { resume(); return; }
+    const pause = start - state.time;
+    const releaseSpeed = glide ? state.velocity * Math.max(0, 1 - Math.max(0, pause - 40) / 95) : 0;
+    const strength = Math.abs(releaseSpeed);
+    if (strength < 0.085) { resume(); return; }
+    const duration = Math.min(820, 300 + strength * 165);
+    // Match the initial velocity of the cubic ease-out, with a travel cap.
+    const distance = Math.sign(releaseSpeed) * Math.min(760, strength * duration / 3);
     const tick = (now) => {
-      const t = Math.min(1, (now - start) / 240);
+      const t = Math.min(1, (now - start) / duration);
       setPhase(state, state.dx + distance * (1 - (1 - t) ** 3));
       if (t < 1) frame = requestAnimationFrame(tick);
       else resume();
