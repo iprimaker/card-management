@@ -10132,12 +10132,20 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
 }
 .private-qr-dialog .qr-limit-intro[role="status"] {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 12px;
+  gap: 11px;
+  padding: clamp(12px, 4vw, 17px);
   margin: 0;
-  color: #483b57;
+  border: 1px solid #efd9df;
+  border-radius: 16px;
+  background: #fff7f9;
+  color: #552638;
   text-align: left;
+}
+.qr-limit-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
 }
 .qr-limit-icon {
   display: grid;
@@ -10145,12 +10153,38 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
   width: 40px;
   aspect-ratio: 1;
   border-radius: 12px;
-  background: #f2ebfa;
-  color: #654c82;
+  background: #f7e3ea;
+  color: #8c3152;
 }
 .qr-limit-icon svg { width: 22px; height: 22px; }
-.qr-limit-intro h2 { margin: 0; font-size: 1rem; line-height: 1.4; }
-.qr-limit-intro p { margin: 5px 0 0; font-size: .84rem; line-height: 1.55; }
+.qr-limit-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #8c3152;
+  color: #fff;
+  font-size: .71rem;
+  font-weight: 700;
+}
+.qr-limit-intro h2 { margin: 0; color: inherit; font-size: 1rem; line-height: 1.4; }
+.qr-limit-count {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 3px 10px;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+.qr-limit-count strong { font-size: 1.12rem; }
+.qr-limit-bar { height: 6px; border-radius: 99px; background: #a64162; }
+.qr-limit-panel .qr-limit-next {
+  margin: 0;
+  color: #5d5069;
+  font-size: .85rem;
+  line-height: 1.6;
+}
 :is(.private-qr-dialog, .qr-manager-dialog) .qr-limit-help {
   margin: 0;
   padding: 0;
@@ -10199,3 +10233,23 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
 }
 :is(.private-qr-dialog, .qr-manager-dialog) .qr-limit-help-copy p + p { margin-top: .65em; }
 .save-qr-terms-body h4 { margin: 1em 0 .4em; }
+
+.private-qr-dialog .qr-limit-open-list {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid #69417b;
+  border-radius: 12px;
+  background: #69417b;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 650;
+  text-align: left;
+}
+.private-qr-dialog .qr-limit-open-list:hover { background: #583467; color: #fff; }
+.private-qr-dialog .qr-limit-open-list:focus-visible { outline: 2px solid #74568e; outline-offset: 2px; }
+.qr-limit-open-list span { flex: none; }
