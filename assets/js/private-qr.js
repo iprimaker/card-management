@@ -162,13 +162,28 @@
     limitPolicy.heading + '</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary><div class="qr-limit-help-copy">' +
     limitPolicy.paragraphs + '</div></details>';
   const isLimitError = (error) => /上限/.test(error?.message || "");
-  function showLimitReached() {
+  function showLimitReached(quota) {
     stop();
     captureFooter.replaceChildren();
     updateCompatibilityNote(null);
-    content.innerHTML = '<section class="qr-limit-panel"><div class="qr-limit-intro" role="status"><span class="qr-limit-icon">' +
-      icon + '</span><div><h2>QRコードの登録上限に達しました</h2><p>新しく登録するには、不要なQRコードを削除してください。</p></div></div>' +
+    const hasCounts = Number.isSafeInteger(quota?.count) && Number.isSafeInteger(quota?.limit) &&
+      quota.limit >= 0 && quota.count >= quota.limit;
+    const count = hasCounts
+      ? '<div class="qr-limit-count"><span>登録済み <strong>' + quota.count.toLocaleString("ja-JP") +
+        '</strong> 件</span><span>上限 ' + quota.limit.toLocaleString("ja-JP") + ' 件</span></div>'
+      : "";
+    content.innerHTML = '<section class="qr-limit-panel"><div class="qr-limit-intro" role="status">' +
+      '<div class="qr-limit-title"><span class="qr-limit-icon">' + icon + '</span><div>' +
+      '<span class="qr-limit-badge">空き枠なし</span><h2>QRコードの登録上限に達しました</h2></div></div>' +
+      count + '<div class="qr-limit-bar" aria-hidden="true"></div></div>' +
+      '<p class="qr-limit-next">新しく登録するには、しばらく使わないQRコードを削除してください。</p>' +
+      '<button type="button" class="qr-limit-open-list" aria-haspopup="dialog">登録済みQRコード一覧を開く<span aria-hidden="true">→</span></button>' +
       limitHelp() + '</section>';
+    content.querySelector(".qr-limit-open-list").onclick = () => {
+      if (!uid()) return;
+      dialog.close();
+      openManager();
+    };
   }
   function showError(error) {
     if (isLimitError(error)) showLimitReached();
@@ -286,7 +301,7 @@
     if (uid() !== u || token !== scanToken || !dialog.open) return;
     if (status.error) throw status.error;
     if (status.data?.limit != null && status.data.count >= status.data.limit) {
-      showLimitReached();
+      showLimitReached(status.data);
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -1151,6 +1166,24 @@
       if (uid() === managerOwner) renderManager();
     }
   };
+  function openManager() {
+    const user = uid();
+    if (!user) return;
+    if (information.open) information.close();
+    if (manager.open) {
+      manager.querySelector("[data-close]").focus();
+      void reloadManager();
+      return;
+    }
+    managerUser = user;
+    managerOwner = null;
+    managedRows = [];
+    renderManager();
+    manager.querySelector(".qr-manager-summary").textContent =
+      "登録数を確認しています…";
+    manager.showModal();
+    void reloadManager();
+  }
   function mountRemaining() {
     const settings = document.getElementById("display-settings-dialog");
     if (!settings || settings.querySelector("[data-qr-remaining]")) return;
@@ -1162,18 +1195,7 @@
     button.className = "qr-remaining-row";
     button.setAttribute("aria-haspopup", "dialog");
     button.textContent = "QRコード登録数　確認中…";
-    button.onclick = () => {
-      if (!uid()) return;
-      managerUser = uid();
-      if (information.open) information.close();
-      managerOwner = null;
-      managedRows = [];
-      renderManager();
-      manager.querySelector(".qr-manager-summary").textContent =
-        "登録数を確認しています…";
-      manager.showModal();
-      reloadManager();
-    };
+    button.onclick = openManager;
     account.prepend(button);
     if (settings.open) refreshRemaining();
   }
