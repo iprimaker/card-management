@@ -555,7 +555,7 @@ function renderCoordinates() {
       group.missing,
       group.members.map((card) =>
         card
-          ? [card.id, card.name, card.front, card.ap, owned.has(card.id)]
+          ? [card.id, card.name, card.front, card.frontTransform, card.ap, owned.has(card.id)]
           : null,
       ),
     ]),
@@ -576,7 +576,7 @@ function renderCoordinates() {
               ? `
           <button type="button" class="coordinate-card ${ownershipReady && owned.has(card.id) ? "is-owned" : "is-missing"}"
             data-coordinate-card="${esc(card.id)}" aria-label="${esc(name(card))}：${ownershipReady ? (owned.has(card.id) ? "持っている" : "持っていない") : "所持状況未確認"}。詳細を開く">
-            <span class="coordinate-card-image"><img src="${esc(card.front)}" alt="${esc(name(card))}" loading="${groupIndex < 6 ? "eager" : "lazy"}" decoding="async"></span>
+            <span class="coordinate-card-image">${window.CARD_IMAGE_TRANSFORM.wrap(`<img src="${esc(card.front)}" alt="${esc(name(card))}" loading="${groupIndex < 6 ? "eager" : "lazy"}" decoding="async">`, card.frontTransform)}</span>
           </button>`
               : "",
           )
@@ -2229,7 +2229,7 @@ function render(keepCardNodes = false) {
       .slice((page - 1) * size, page * size)
       .map(
         (c) =>
-          `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame">${window.CARD_QR?.badge("card", c.id) || ""}<img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady ? "disabled" : ""}>${owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+          `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame">${window.CARD_QR?.badge("card", c.id) || ""}${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">`, c.frontTransform)}${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span><span class="pill">${esc(displayRarity(c))}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? '<span class="parallel-tag">パラレル</span>' : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady ? "disabled" : ""}>${owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
       )
       .join("");
   else syncOwnershipCardNodes();
@@ -2481,6 +2481,7 @@ function showSide() {
   $("image-failure").textContent = url
     ? "画像を読み込めませんでした。"
     : "裏面画像は未登録です。";
+  window.CARD_IMAGE_TRANSFORM.apply($("modal-image"), side ? null : c.frontTransform);
   $("modal-image").src = url || "";
   $("modal-image").alt = `${name(c)} ${side ? "裏面" : "表面"}`;
   $("side-label").textContent = side ? "裏面" : "表面";
@@ -6599,7 +6600,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     entries.delete(image);
   }
   function draw(image) {
-    if (nativeVerseImage(image)) {
+    if (nativeVerseImage(image) || image.closest(".card-crop-frame")) {
       clear(image);
       return;
     }

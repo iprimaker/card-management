@@ -413,8 +413,12 @@
       : side && large
         ? c.back
         : c.front;
-    if (url)
-      return `<img src="${esc(window.CARD_PRIMAGI.image(url, large ? 900 : 420))}" alt="${esc(c.name || c.code)}" loading="${large ? "eager" : "lazy"}" decoding="async">`;
+    if (url) {
+      const markup = `<img src="${esc(window.CARD_PRIMAGI.image(url, large ? 900 : 420))}" alt="${esc(c.name || c.code)}" loading="${large ? "eager" : "lazy"}" decoding="async">`;
+      return !verse() && (!large || !side)
+        ? window.CARD_IMAGE_TRANSFORM.wrap(markup, c.frontTransform)
+        : markup;
+    }
     const images = (c.part_ids || [])
       .map((id) => window.CARD_PRIMAGI.verseImage(parts.get(id)?.image))
       .filter(Boolean);

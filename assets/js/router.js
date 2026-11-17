@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261117-catalog-audit-v2";
+  const version = "20261117-image-adjust-v1";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -568,6 +568,7 @@
           })
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
+    .then(() => (["album", "browse", "shared"].includes(page) ? script("card-image-transform.js") : undefined))
     .then(() => script("site-common.js"))
     .then(() => {
       window.CARD_SITE_COMMON.init(page);

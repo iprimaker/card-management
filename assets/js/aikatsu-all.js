@@ -732,7 +732,7 @@
           r =
             values(c, "レアリティ").join(" ／ ") ||
             values(c, "カード種別").join(" ／ ");
-        return `<article data-card-layout="rows" class="card ${n ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-image-frame">${window.CARD_QR?.badge("card", c.id) || ""}<img data-card-image src="${esc(c.front)}" alt="${esc(c.name)}" loading="${i < 4 ? "eager" : "lazy"}" decoding="async">${n ? `<span class="owned-badge" aria-label="所持枚数：${n}枚">${n}枚</span>` : ""}${n >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-meta"><span>${esc(values(c, "キャラ名").join(" ／ "))}</span><span class="pill">${esc(r || "レアリティ未取得")}</span></span><span class="card-name">${esc(c.name)}</span></button><button type="button" class="ownership-button ${n ? "is-owned" : ""}" data-all-own="${c.id}" aria-pressed="${n > 0}" ${!inventoryReady || saving.has(c.id) ? "disabled" : ""}>${n ? "✓ 持っている" : "＋ 持っていない"}</button></article>`;
+        return `<article data-card-layout="rows" class="card ${n ? "owned" : ""}"><button type="button" class="card-trigger card-image-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-image-frame">${window.CARD_QR?.badge("card", c.id) || ""}${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" alt="${esc(c.name)}" loading="${i < 4 ? "eager" : "lazy"}" decoding="async">`, c.frontTransform)}${n ? `<span class="owned-badge" aria-label="所持枚数：${n}枚">${n}枚</span>` : ""}${n >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="code">${esc(c.code)}</span></button>${favoriteButton(c)}</div><button type="button" class="card-trigger card-text-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-meta"><span>${esc(values(c, "キャラ名").join(" ／ "))}</span><span class="pill">${esc(r || "レアリティ未取得")}</span></span><span class="card-name">${esc(c.name)}</span></button><button type="button" class="ownership-button ${n ? "is-owned" : ""}" data-all-own="${c.id}" aria-pressed="${n > 0}" ${!inventoryReady || saving.has(c.id) ? "disabled" : ""}>${n ? "✓ 持っている" : "＋ 持っていない"}</button></article>`;
       })
       .join("");
     byId("all-empty").hidden = cards.length > 0;
@@ -921,6 +921,7 @@
     byId("all-image-failure").textContent = url
       ? "画像を読み込めませんでした。"
       : "裏面画像は未取得です。";
+    window.CARD_IMAGE_TRANSFORM.apply(image, side ? null : selected.frontTransform);
     image.src = url || "";
     image.alt = selected.name + " " + (side ? "裏面" : "表面");
     byId("all-side-label").textContent = side ? "裏面" : "表面";
