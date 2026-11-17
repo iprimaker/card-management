@@ -10253,3 +10253,12 @@ body :is(#cards, #all-cards) .card[data-card-layout="rows"] .card-code-row .favo
 .private-qr-dialog .qr-limit-open-list:hover { background: #583467; color: #fff; }
 .private-qr-dialog .qr-limit-open-list:focus-visible { outline: 2px solid #74568e; outline-offset: 2px; }
 .qr-limit-open-list span { flex: none; }
+
+#verse-detail .verse-provisional-parts {
+  margin-top: 16px;
+}
+#verse-detail .verse-provisional-parts a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
