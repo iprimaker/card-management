@@ -7684,7 +7684,9 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
           })
           .join("") ||
         '<p class="verse-data-unavailable">構成パーツ未取得。部位・番号・BPは確認でき次第追加します。</p>'
-      }</div>`;
+      }</div>${c.metadata?.part_structure_status === "provisional_four"
+        ? '<p class="verse-data-unavailable verse-provisional-parts">このコーデはパーツなどの登録情報を確認中のため、暫定で仮登録しています。実際の構成と異なる場合は、<a href="./contact/">お問い合わせ</a>からコーデ名と正しい部位をお知らせください。</p>'
+        : ""}`;
   }
   let coordinateDetailIds = [];
   function openDetail(id, trigger) {

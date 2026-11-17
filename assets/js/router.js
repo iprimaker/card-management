@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261117-issue-limit-v1";
+  const version = "20261117-catalog-audit-v2";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
