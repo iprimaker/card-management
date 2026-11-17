@@ -1163,7 +1163,7 @@ signupCapacityNotice.querySelector("button").onclick = async (event) => {
   await refreshSignupRegistrationStatus({force:true});
 };
 function renderSignupCapacityNotice() {
-  const limited = !invitationPage && signupCapacityLimited;
+  const limited = !invitationPage && !signupReservation && signupCapacityLimited;
   signupCapacityNotice.hidden = !limited;
   $("signup-flow").classList.toggle("capacity-paused", limited && !signupReservation);
   if (limited) {
@@ -3088,7 +3088,7 @@ $("signup-nickname-form").onsubmit = async (event) => {
   try {
     if (!invitationPage) {
       await refreshSignupRegistrationStatus({force:true});
-      if (signupRegistrationAllowed !== true) {
+      if (signupRegistrationAllowed !== true && !(signupCapacityLimited && !signupCapacityFetchFailed)) {
         authResultShowing = false;
         if (!signupCapacityLimited) $("signup-message").textContent = signupRegistrationMessage;
         return;
