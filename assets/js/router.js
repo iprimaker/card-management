@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261118-ownership-image-v74";
+  const version = "20261118-ownership-image-v78";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(

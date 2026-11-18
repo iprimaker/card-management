@@ -2,7 +2,8 @@
   "use strict";
   const cache = new Map();
   const rendered = new Map();
-  const IMAGE_CACHE_LIMIT = 96;
+  // Keep a full 100-card page cached for redraws after a display setting changes.
+  const IMAGE_CACHE_LIMIT = 128;
   const RENDER_CACHE_LIMIT = 6;
   const RENDER_CACHE_BYTES = 8 * 1024 * 1024;
   const IMAGE_CONCURRENCY = 8;

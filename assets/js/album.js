@@ -8776,7 +8776,7 @@ verseScript.dispatchEvent(new Event("load"));
   "use strict";
   const host = window.CARD_TRADE_HOST;
   const exporterURL = new URL(
-    "./trade-image-export.js?v=20261118-ownership-image-v65",
+    "./trade-image-export.js?v=20261118-ownership-image-v75",
     document.currentScript.src,
   ).href;
   let exportSheets = [],

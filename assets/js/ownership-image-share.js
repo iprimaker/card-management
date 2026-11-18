@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const exporterURL = new URL("./trade-image-export.js?v=20261118-ownership-image-v65", document.currentScript.src);
+  const exporterURL = new URL("./trade-image-export.js?v=20261118-ownership-image-v75", document.currentScript.src);
   const columns = 10;
   const imageConcurrency = 12;
   const imageLoadShare = 0.95;
@@ -90,16 +90,25 @@
     const landscape = !transform && item.rotate && img.naturalWidth > img.naturalHeight;
     const iw = img.naturalWidth, ih = img.naturalHeight;
     const fit = Math.min(w / (landscape ? ih : iw), h / (landscape ? iw : ih));
+    const centerX = x + w / 2 + w * (transform?.x || 0) / 100;
+    const centerY = y + h / 2 + h * (transform?.y || 0) / 100;
+    const angle = (landscape ? 90 : transform?.angle || 0) * Math.PI / 180;
+    const scale = fit * (transform?.zoom || 1);
     ctx.save();
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, 8);
     else ctx.rect(x, y, w, h);
     ctx.clip();
-    ctx.translate(x + w / 2 + w * (transform?.x || 0) / 100, y + h / 2 + h * (transform?.y || 0) / 100);
-    ctx.rotate((landscape ? 90 : transform?.angle || 0) * Math.PI / 180);
-    const scale = fit * (transform?.zoom || 1);
+    ctx.translate(centerX, centerY);
+    ctx.rotate(angle);
     ctx.drawImage(img, -iw * scale / 2, -ih * scale / 2, iw * scale, ih * scale);
     ctx.restore();
+    const cos = Math.abs(Math.cos(angle));
+    const sin = Math.abs(Math.sin(angle));
+    return {
+      left: Math.max(x, centerX - (iw * cos + ih * sin) * scale / 2),
+      top: Math.max(y, centerY - (iw * sin + ih * cos) * scale / 2),
+    };
   }
 
   function wrapText(ctx, text, maxWidth, font) {
@@ -216,7 +225,11 @@
     }, 200);
   }
 
-  async function create(sections, { heading, caption, conditions, edition, theme, issueDate, page, pages, pageQR, display }, current, onProgress) {
+  function yieldToBrowser() {
+    return globalThis.scheduler?.yield?.() ?? new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  async function create(sections, { heading, caption, conditions, edition, theme, issueDate, page, pages, pageQR, display, isCard }, current, onProgress) {
     const items = sections.flatMap(({ rows }) => rows);
     const [images, qr] = await Promise.all([loadPageImages(items, current, onProgress), pageQR]);
     if (!current()) return null;
@@ -336,12 +349,14 @@
         label(line, x, y, conditionFont, theme.dark, conditionWidth);
       });
 
-      layout.forEach((section) => {
+      let drawn = 0;
+      let drawDeadline = performance.now() + 12;
+      for (const section of layout) {
         if (section.label) {
           box(theme.wash, left, section.y - 4, width - 2 * left, 28, 9);
           label(section.label, left + 13, section.y + 16, "bold 18px", theme.dark, width - 2 * left - 24);
         }
-        section.rows.forEach((item, i) => {
+        for (const [i, item] of section.rows.entries()) {
           const x = left + 4 + (i % columns) * 154;
           const y = section.y + (section.label ? 38 : 0) + Math.floor(i / columns) * cellHeight;
           const img = images.get(item.image);
@@ -352,7 +367,7 @@
           const partsOnly = !item.collected && ownedParts.length > 0;
           const { opacity, grayscale } = pictureStyle(item, display, partsOnly);
           ctx.globalAlpha = opacity;
-          if (img) drawPicture(ctx, img, item, x, y, cellWidth, 204);
+          const picture = img && drawPicture(ctx, img, item, x, y, cellWidth, 204);
           ctx.globalAlpha = 1;
           if (grayscale) {
             ctx.globalCompositeOperation = "saturation";
@@ -370,9 +385,9 @@
           }
           const badges = partsOnly
             ? (display.hidePartTags ? [] : ownedParts)
-            : item.collected
-              ? [item.quantity > 0 && !display.hideQuantity ? String(item.quantity) : "✓"]
-              : display.allColor ? ["0"] : [];
+            : !display.hideQuantity && (item.quantity > 0 || display.allColor)
+              ? [String(item.quantity || 0)]
+              : [];
           if (display.showRarity && item.rarity) {
             ctx.textAlign = "left";
             box(theme.light, x + 4, y + 179, cellWidth - 8, 21, 6);
@@ -384,16 +399,26 @@
           badges.forEach((badge, index) => {
             ctx.font = badgeFont + " sans-serif";
             const badgeWidth = Math.min(cellWidth - 8, Math.max(32, Math.ceil(ctx.measureText(badge).width) + 16));
-            const badgeX = x + cellWidth - badgeWidth - 4;
-            const badgeY = y + 4 + index * (badgeHeight + 3);
+            const cardQuantity = isCard && !partsOnly && /^\d+$/.test(badge);
+            const badgeX = cardQuantity
+              ? Math.min(x + cellWidth - badgeWidth - 2, (picture?.left ?? x) + 2)
+              : x + cellWidth - badgeWidth - 4;
+            const badgeY = cardQuantity
+              ? Math.min(y + 202 - badgeHeight, (picture?.top ?? y) + 2)
+              : y + 4 + index * (badgeHeight + 3);
             box("#fff", badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
             box(theme.badge, badgeX + 1, badgeY + 1, badgeWidth - 2, badgeHeight - 2, badgeHeight / 2 - 1);
             label(badge, badgeX + badgeWidth / 2, badgeY + (partsOnly ? 16 : 22),
               badgeFont, theme.dark, badgeWidth - 9);
           });
           ctx.textAlign = "left";
-        });
-      });
+          if (++drawn % columns === 0 && performance.now() >= drawDeadline) {
+            await yieldToBrowser();
+            if (!current()) return null;
+            drawDeadline = performance.now() + 12;
+          }
+        }
+      }
 
       box(theme.border, left, footer + 7, width - 2 * left, 196, 24);
       box(theme.light, left + 1, footer + 8, width - 2 * left - 2, 194, 23);
@@ -431,7 +456,9 @@
       const encode = (type, quality) => new Promise((resolve, reject) => {
         canvas.toBlob((blob) => blob ? resolve(blob) : reject(Error("画像を保存できませんでした。")), type, quality);
       });
+      if (!current()) return null;
       const png = items.length >= 80 ? null : await encode("image/png");
+      if (!current()) return null;
       const blob = png && png.size <= 4718592 ? png : await encode("image/jpeg", 0.88);
       return { blob, height: canvas.height, missing: items.filter((item) => !images.has(item.image)).length,
         retryable: items.some((item) => item.image && !images.has(item.image)) };
@@ -762,11 +789,23 @@
       return value;
     });
     let offset = 0, directorySize = 0;
+    let zipDeadline = performance.now() + 12;
+    const chunkSize = 512 * 1024;
     for (const file of files) {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (!current()) return null;
       let crc = 0xffffffff;
-      for (const byte of bytes) crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 255];
+      for (let start = 0; start < bytes.length; start += chunkSize) {
+        const end = Math.min(start + chunkSize, bytes.length);
+        for (let index = start; index < end; index++) {
+          crc = (crc >>> 8) ^ crcTable[(crc ^ bytes[index]) & 255];
+        }
+        if (performance.now() >= zipDeadline) {
+          await yieldToBrowser();
+          if (!current()) return null;
+          zipDeadline = performance.now() + 12;
+        }
+      }
       const name = encoder.encode(file.name);
       const local = new DataView(new ArrayBuffer(30));
       local.setUint32(0, 0x04034b50, true);
@@ -927,7 +966,7 @@
         if (!hideSharedPage) pageQR ??= sharedPage.then(sharedQR);
         const output = await create(pageSections[index], {
           heading: snapshot.title, caption, conditions, edition, theme: themes[snapshot.theme] || themes.rose,
-          issueDate, page: index, pages, pageQR, display,
+          issueDate, page: index, pages, pageQR, display, isCard: snapshot.unit !== "コーデ",
         }, current, progress);
         if (current() && output) {
           generatedPages.set(index, output);
@@ -1187,7 +1226,7 @@
         hideQuantity.disabled = allColor.checked;
         if (allColor.checked) hideQuantity.checked = false;
         saveDisplaySettings();
-        update({ resetPage: false });
+        update({ resetPage: false, delay: 120 });
       });
       dialog.addEventListener("close", (event) => {
         if (event.target !== dialog || dialog.open) return;
