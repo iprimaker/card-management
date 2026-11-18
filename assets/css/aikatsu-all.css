@@ -1369,7 +1369,6 @@ body.display-hideRates #all-collection > .progress-card {
 }
 body.all-aikatsu-active
   :is(
-    #ownership-export-open,
     #probability-open,
     #probability-back,
     #trade-open,
