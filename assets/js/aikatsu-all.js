@@ -226,7 +226,6 @@
     document.body.classList.toggle("all-aikatsu-active", active());
     if (active())
       for (const id of [
-        "ownership-export-open",
         "probability-open",
         "probability-back",
         "trade-open",
@@ -563,9 +562,11 @@
   const quantity = (id) =>
     inventoryReady && owner === uid() ? inventory.get(id) || 0 : 0;
   const hasQr = (id) => !!window.CARD_QR?.badge("card", id);
-  function filtered(includeOwnership = true) {
+  function filtered(includeOwnership = true, {
+    search = query, selected = filters, favorite = favoriteFilter, qr = qrFilter,
+  } = {}) {
     if (!catalog) return [];
-    const terms = query.trim().split(/\s+/).filter(Boolean).map(normalize);
+    const terms = search.trim().split(/\s+/).filter(Boolean).map(normalize);
     let cards = catalog.cards.filter((c) => {
       const haystack = normalize(
         [c.name, c.code, ...c.series, ...Object.values(c.details).flat()].join(
@@ -576,21 +577,21 @@
         terms.every((term) => haystack.includes(term)) &&
         filterKeys.every(
           (k) =>
-            !filters[k] ||
-            (filters[k] === "__unknown__"
+            !selected[k] ||
+            (selected[k] === "__unknown__"
               ? values(c, k).length === 0 ||
                 values(c, k).every((v) => v === "-")
-              : values(c, k).some((v) => v.normalize("NFKC") === filters[k])),
+              : values(c, k).some((v) => v.normalize("NFKC") === selected[k])),
         ) &&
-        (!favoriteFilter || (favoritesReady && favorites.has(c.id))) &&
-        (!filters.duplicate || quantity(c.id) >= 2) &&
+        (!favorite || (favoritesReady && favorites.has(c.id))) &&
+        (!selected.duplicate || quantity(c.id) >= 2) &&
         (!includeOwnership ||
           ownedFilter === "all" ||
           (ownedFilter === "yes"
             ? quantity(c.id) > 0
             : quantity(c.id) === 0)) &&
-        (qrFilter === "all" ||
-          (qrFilter === "yes" ? hasQr(c.id) : !hasQr(c.id)))
+        (qr === "all" ||
+          (qr === "yes" ? hasQr(c.id) : !hasQr(c.id)))
       );
     });
     const compare = (a, b) =>
@@ -1025,6 +1026,73 @@
     page = 1;
     render();
   });
+  function openOwnershipImage() {
+    const user = uid();
+    const view = viewGeneration;
+    const shareScope = "all-" + current;
+    if (!user || !active() || host.maintenance()) return;
+    if (!catalog || !inventoryReady || owner !== user) {
+      host.toast("カードや所持状況を読み込んでからお試しください。", "error");
+      return;
+    }
+    const filterPanel = byId("all-filter-fields");
+    const controls = [
+      { key: "query", label: "検索", value: query, placeholder: byId("all-query").placeholder },
+      ...[...filterPanel.querySelectorAll("select")].map((input) => {
+        const key = input.dataset.allFilter ?? ({
+          "all-favorite-filter": "favorite", "all-qr-filter": "qr", "all-duplicates": "duplicate",
+        })[input.id];
+        return {
+          key: key === "だん数" ? "series" : key,
+          label: input.getAttribute("aria-label"),
+          value: input.value,
+          disabled: input.disabled,
+          options: [...input.options].map(({ value, text, disabled }) => ({ value, text, disabled })),
+        };
+      }),
+    ];
+    const editionControl = controls.find(({ key }) => key === "series");
+    window.CARD_OWNERSHIP_IMAGE.open({
+      title: byId("all-title").textContent,
+      theme: "rose",
+      unit: "種",
+      editionLabel: editionControl.label,
+      controls,
+      select(local) {
+        const selected = Object.fromEntries(filterKeys.map((key) => [
+          key, local[key === "だん数" ? "series" : key],
+        ]));
+        selected.duplicate = local.duplicate;
+        const rows = filtered(false, {
+          search: local.query,
+          selected,
+          favorite: local.favorite === "only",
+          qr: local.qr,
+        }).map((card) => {
+          const count = quantity(card.id);
+          return {
+            name: card.name, code: card.code, image: card.front,
+            editions: card.series.map((label) => label.normalize("NFKC")),
+            character: values(card, "キャラ名").join(" ／ "), rarity: values(card, "レアリティ").join(" ／ "),
+            transform: card.frontTransform, quantity: count, collected: count > 0,
+          };
+        });
+        const conditions = controls.flatMap(({ key, label, options }) => {
+          const value = local[key]?.trim();
+          if (!value || value === "all" || key === "series") return [];
+          const text = options?.find((option) => option.value === value)?.text || value;
+          return [`${label}：${text}`];
+        });
+        return {
+          edition: editionControl.options.find(({ value }) => value === local.series)?.text,
+          filtered: rows,
+          rateBase: rows,
+          conditions,
+        };
+      },
+    }, () => uid() === user && viewGeneration === view && active() && !host.maintenance(),
+    () => window.CARD_SHARE.publicPageURL(shareScope));
+  }
   byId("all-query").oninput = (e) => {
     query = e.target.value;
     page = 1;
@@ -1100,10 +1168,31 @@
     active,
     openSelection,
     openSystem,
+    openOwnershipImage,
     syncNavigation,
     reset,
     resolve,
     enrichQrRows,
+    async shareCatalog(scope) {
+      return (await loadSystem(scope.slice(4))).cards;
+    },
+    async shareRates(scopes, seriesFilters) {
+      const user = uid();
+      const [catalogs] = await Promise.all([
+        Promise.all(scopes.map((scope) => loadSystem(scope.slice(4)))),
+        loadInventory(),
+      ]);
+      if (!user || uid() !== user || owner !== user || !inventoryReady)
+        throw Error("所持状況を確認できませんでした。");
+      return Object.fromEntries(scopes.map((scope, index) => {
+        const selected = seriesFilters[scope];
+        const rows = Array.isArray(selected)
+          ? catalogs[index].cards.filter((card) => card.series.some((series) => selected.includes(series)))
+          : catalogs[index].cards;
+        const owned = rows.filter((card) => quantity(card.id) > 0).length;
+        return [scope, (rows.length ? owned / rows.length * 100 : 0).toFixed(1)];
+      }));
+    },
     character(id) {
       for (const data of cache.values()) {
         const c = data.index.get(id);

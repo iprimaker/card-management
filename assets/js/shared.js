@@ -95,12 +95,12 @@
   };
   for (const [key, title] of Object.entries(archiveSystems))
     labels[key] = "アイカツALL｜" + title;
-  const archive = () => browseOnly && Object.hasOwn(archiveSystems, scope);
+  const archive = () => Object.hasOwn(archiveSystems, scope);
   const archiveRoot = new URL("../aikatsu-all/", document.currentScript.src);
   const archiveCache = new Map(),
     archiveFlights = new Map();
   async function loadArchive(key) {
-    if (!browseOnly || !Object.hasOwn(archiveSystems, key))
+    if (!Object.hasOwn(archiveSystems, key))
       throw Error("カード情報を表示できません");
     if (archiveCache.has(key)) return archiveCache.get(key);
     if (archiveFlights.has(key)) return archiveFlights.get(key);
@@ -517,14 +517,14 @@
     $("public-scopes").innerHTML =
       snapshot.scopes
         .filter(
-          (id) => !Object.hasOwn(archiveSystems, id) || id === "all-cardlist",
+          (id) => !browseOnly || !Object.hasOwn(archiveSystems, id) || id === "all-cardlist",
         )
         .map(
           (id) =>
-            `<button type="button" data-public-scope="${esc(id)}" aria-pressed="${id === scope || (id === "all-cardlist" && archive())}">${esc(id === "all-cardlist" ? "アイカツALL" : labels[id])}</button>`,
+            `<button type="button" data-public-scope="${esc(id)}" aria-pressed="${id === scope || (browseOnly && id === "all-cardlist" && archive())}">${esc(browseOnly && id === "all-cardlist" ? "アイカツALL" : labels[id])}</button>`,
         )
         .join("") +
-      (archive()
+      (browseOnly && archive()
         ? `<div class="public-all-systems" role="group" aria-label="アイカツALLの作品を切り替える">${Object.entries(
             archiveSystems,
           )
@@ -830,8 +830,16 @@
       const snap = r.data;
       let rows,
         partMap = new Map();
-      if (browseOnly && Object.hasOwn(archiveSystems, snap.scope)) {
+      if (Object.hasOwn(archiveSystems, snap.scope)) {
+        if (!snap.scopes.includes(snap.scope)) {
+          unavailable();
+          return;
+        }
         rows = await loadArchive(snap.scope);
+        if (!browseOnly && Array.isArray(snap.series_filter)) {
+          const allowed = new Set(snap.series_filter);
+          rows = rows.filter((card) => values(card.series).some((label) => allowed.has(label)));
+        }
       } else if (snap.scope.startsWith("verse-")) {
         const c = { data: await window.CARD_VERSE_CATALOG.load(client, { family: snap.scope.slice(6) }), error: null };
         if (

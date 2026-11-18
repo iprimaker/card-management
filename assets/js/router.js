@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261117-image-adjust-v1";
+  const version = "20261118-ownership-image-v74";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -538,7 +538,7 @@
       ? ["album"]
       : [page === "browse" ? "shared" : page]
     )
-      .concat("primagi", ...(page === "album" ? ["aikatsu-all"] : []))
+      .concat("primagi", ...(page === "album" ? ["aikatsu-all", "ownership-image-share"] : []))
       .map(stylesheet),
   );
   styles.then(
@@ -574,6 +574,7 @@
       window.CARD_SITE_COMMON.init(page);
       window.CARD_SHARED_PAGE_READY = page;
     })
+    .then(() => (page === "album" ? script("ownership-image-share.js") : undefined))
     .then(() => (page === "album" ? script("private-qr.js") : undefined))
     .then(() =>
       page === "card-registration"

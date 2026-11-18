@@ -384,5 +384,5 @@
     };
     dialog.showModal();
   }
-  window.CARD_TRADE_IMAGE = { create, show, close };
+  window.CARD_TRADE_IMAGE = { create, show, close, loadPublicImage: exportImage };
 })();

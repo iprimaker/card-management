@@ -2048,15 +2048,17 @@ function normalizeCardCode(value) {
     .toLowerCase()
     .replace(/[-‐‑‒–—―−\s]/g, "");
 }
-function filtered(includeOwnership = true) {
-  const q = $("query").value.normalize("NFKC").toLowerCase().trim();
+function filtered(includeOwnership = true, local = null) {
+  const q = (local?.query ?? $("query").value).normalize("NFKC").toLowerCase().trim();
+  const selectedOwnership = local?.ownership ?? ownershipFilter;
   const compactQuery = normalizeCardCode(q);
+  const selectedFields = local ? fields[game].map(([key]) => [key, local[key]]) : Object.entries(filters);
   return albumCards().filter(
     (c) =>
-      (!favoriteFilter || (favoritesReady && favorites.has(c.id))) &&
-      (!duplicateFilter || (ownershipReady && quantityOf(c.id) >= 2)) &&
-      (window.CARD_TRADE?.matches("card", c.id) ?? true) &&
-      (window.CARD_QR?.matches("card", c.id) ?? true) &&
+      (!(local ? local.favorite === "only" : favoriteFilter) || (favoritesReady && favorites.has(c.id))) &&
+      (!(local ? local.duplicate === "only" : duplicateFilter) || (ownershipReady && quantityOf(c.id) >= 2)) &&
+      (window.CARD_TRADE?.matches("card", c.id, local?.trade) ?? true) &&
+      imageQRMatches("card", c.id, [], local?.qr) &&
       (!q ||
         [
           c.name,
@@ -2075,7 +2077,7 @@ function filtered(includeOwnership = true) {
           [c.code, ...values(c.codeAliases)].some((code) =>
             normalizeCardCode(code).includes(compactQuery),
           ))) &&
-      Object.entries(filters).every(
+      selectedFields.every(
         ([k, v]) =>
           !v ||
           (k === "songs"
@@ -2084,14 +2086,39 @@ function filtered(includeOwnership = true) {
           ).includes(v),
       ) &&
       (!includeOwnership ||
-        ownershipFilter === "all" ||
-        (ownershipFilter === "yes" ? owned.has(c.id) : !owned.has(c.id))),
+        selectedOwnership === "all" ||
+        (selectedOwnership === "yes" ? owned.has(c.id) : !owned.has(c.id))),
   );
 }
 function name(c) {
   return c.name || "カード名未取得";
 }
-function renderActiveFilters() {
+function imageQRMatches(kind, id, parts, selected) {
+  if (selected === undefined) return window.CARD_QR?.matches(kind, id, parts) ?? true;
+  if (selected === "all") return true;
+  return Boolean(window.CARD_QR?.badge(kind, id, parts)) === (selected === "yes");
+}
+function ownershipImageControls(specs) {
+  return specs.flatMap(([key, selector, label]) => {
+    const input = document.querySelector(selector);
+    if (!input || input.closest("label")?.hidden) return [];
+    return [{
+      key, label,
+      value: input.value, disabled: input.disabled,
+      options: input.options ? Array.from(input.options, ({ value, text, disabled }) => ({ value, text, disabled })) : null,
+      placeholder: input.placeholder,
+    }];
+  });
+}
+function ownershipImageConditions(controls, local) {
+  return controls.flatMap(({ key, label, options }) => {
+    const value = local[key]?.trim();
+    if (!value || value === "all" || key === "series") return [];
+    const text = options?.find((option) => option.value === value)?.text || value;
+    return [`${label}：${text}`];
+  });
+}
+function activeCardFilters() {
   const active = Object.entries(filters)
     .filter(([, value]) => value)
     .map(([key, value]) => ({
@@ -2109,6 +2136,10 @@ function renderActiveFilters() {
   if (trade) active.push(trade);
   const query = $("query").value.trim();
   if (query) active.push({ key: "query", label: "検索", value: query });
+  return active;
+}
+function renderActiveFilters() {
+  const active = activeCardFilters();
   $("active-filters").innerHTML = active.length
     ? `<span class="active-filters-label">適用中</span>${active.map(({ key, label, value }) => `<button type="button" class="filter-chip" data-remove-condition="${esc(key)}" aria-label="${esc(label + "：" + value)}を解除"><span>${esc(label)}：<strong>${esc(value)}</strong></span><span class="filter-chip-close" aria-hidden="true">×</span></button>`).join("")}`
     : '<span class="no-active-filters">絞り込みなし</span>';
@@ -4863,8 +4894,17 @@ function requireShareVerse() {
   }
   return shareVerseWaiting;
 }
+const allShareLabels = Object.freeze({
+  "all-cardlist": "アイカツ！",
+  "all-stars": "アイカツスターズ！",
+  "all-friends": "アイカツフレンズ！",
+  "all-onparade": "アイカツオンパレード！",
+  "all-planet": "アイカツプラネット！",
+  "all-academy": "アイカツアカデミー！",
+});
 window.CARD_SHARE_HOST = {
   async scopeItems(scope) {
+    if (Object.hasOwn(allShareLabels, scope)) return window.CARD_ALL.shareCatalog(scope);
     if (scope.startsWith("verse-"))
       return (await requireShareVerse()).shareCatalog(scope.slice(6));
     return catalog.cards.filter((c) =>
@@ -4880,13 +4920,12 @@ window.CARD_SHARE_HOST = {
     const uid = session?.user.id;
     if (!uid) throw Error("再ログインしてください。");
     const result = {};
-    if (scopes.some((scope) => !scope.startsWith("verse-"))) {
+    const cardScopes = scopes.filter((scope) => !scope.startsWith("verse-") && !Object.hasOwn(allShareLabels, scope));
+    if (cardScopes.length) {
       if (!ownershipReady) await loadOwnership();
       if (!ownershipReady || uid !== session?.user.id)
         throw Error("所持状況を確認できませんでした。");
-      for (const scope of scopes.filter(
-        (scope) => !scope.startsWith("verse-"),
-      )) {
+      for (const scope of cardScopes) {
         const cards = catalog.cards.filter((c) =>
           scope === "aikatsu"
             ? c.game === "aikatsu"
@@ -4916,6 +4955,8 @@ window.CARD_SHARE_HOST = {
       const verse = await requireShareVerse();
       Object.assign(result, await verse.shareRates(scopes, seriesFilters));
     }
+    const allScopes = scopes.filter((scope) => Object.hasOwn(allShareLabels, scope));
+    if (allScopes.length) Object.assign(result, await window.CARD_ALL.shareRates(allScopes, seriesFilters));
     if (uid !== session?.user.id) throw Error("再ログインしてください。");
     return result;
   },
@@ -5828,6 +5869,7 @@ init();
       "verse-onegai": "おねがいアイプリバース",
       "verse-himitsu": "ひみつのアイプリバース",
       "verse-primagi": "ワッチャプリマジ！",
+      ...allShareLabels,
     };
   let owner = null,
     scopes = [],
@@ -5843,22 +5885,36 @@ init();
     confirmedFilters = {},
     mutations = [],
     savingSettings = false,
-    settingsLoaded = false;
+    settingsLoaded = false,
+    settingsCheck = null;
   const seriesOptions = new Map();
   const dialog = document.createElement("dialog");
   dialog.id = "ownership-share-dialog";
   dialog.className = "ownership-share-dialog";
   dialog.setAttribute("aria-labelledby", "share-settings-title");
-  dialog.innerHTML = `<button type="button" class="share-close" id="share-settings-close" aria-label="閉じる">×</button><span class="eyebrow">SHARE ALBUM</span><h2 id="share-settings-title">所持状況を共有</h2><p class="share-settings-intro">公開するアルバムを選んで、あなたのコレクションを共有。</p><details class="share-help"><summary>公開する情報・URLの取り扱い</summary><div><dl><dt>表示される情報</dt><dd>ニックネーム、「〇〇のカードアルバム」、公開をONにしたアルバムの、選択した弾数の所持状況・所持数。</dd><dt>表示されない情報</dt><dd>アルバムID・メールアドレス・お気に入り・譲求。URLにもアルバムIDは含まれません。</dd><dt>公開範囲と有効期間</dt><dd>URLを知っている方は登録・ログインなしで閲覧できます。URLは削除するまで有効で、ログアウト後も継続します。</dd><dt>変更の反映</dt><dd>公開設定と所持状況は同じURLへ反映されます。閲覧中も通信がつながっている間は自動更新されます。共有文の所持率は公開範囲に対して計算した値で、送信後は自動更新されません。</dd><dt>公開をやめるとき</dt><dd>種類ごとにOFFにするか、共有URLを削除してください。既に閲覧・保存・送信された情報は取り消せません。</dd></dl></div></details><div class="share-scope-settings">${Object.entries(
+  dialog.innerHTML = `
+    <button type="button" class="share-close" id="share-settings-close" aria-label="閉じる">×</button>
+    <h2 id="share-settings-title">所持状況を共有</h2>
+    <section class="share-method share-method-image" aria-labelledby="share-image-heading">
+      <h3 id="share-image-heading">画像で共有</h3>
+      <p class="share-method-description">表示中の作品と絞り込みをもとに、所持状況の一覧画像を作れます。</p>
+      <button class="share-send" id="share-ownership-image" type="button">共有用画像を作成</button>
+    </section>
+    <section class="share-method share-method-url" aria-labelledby="share-url-heading">
+      <h3 id="share-url-heading">URLで共有</h3>
+      <p class="share-method-description">公開するアルバムを選んで、閲覧用URLを発行できます。</p>
+      <details class="share-help"><summary>公開する情報・URLの取り扱い</summary><div><dl><dt>表示される情報</dt><dd>ニックネーム、「〇〇のカードアルバム」、公開をONにしたアルバムの、選択した弾数の所持状況・所持数。</dd><dt>表示されない情報</dt><dd>アルバムID・メールアドレス・お気に入り・譲求。URLにもアルバムIDは含まれません。</dd><dt>公開範囲と有効期間</dt><dd>URLを知っている方は登録・ログインなしで閲覧できます。URLは削除するまで有効で、ログアウト後も継続します。</dd><dt>変更の反映</dt><dd>公開設定と所持状況は同じURLへ反映されます。閲覧中も通信がつながっている間は自動更新されます。共有文の所持率は公開範囲に対して計算した値で、送信後は自動更新されません。</dd><dt>公開をやめるとき</dt><dd>種類ごとにOFFにするか、共有URLを削除してください。既に閲覧・保存・送信された情報は取り消せません。</dd></dl></div></details><div class="share-scope-settings">${Object.entries(
     labels,
   )
     .map(
       ([id, label]) =>
-        `<div class="share-scope-row"><div class="share-scope-label"><span>${label}</span><small class="share-scope-state" id="share-scope-state-${id}" data-share-state="${id}"></small><button type="button" class="share-series-toggle" data-share-details="${id}" aria-expanded="false" aria-controls="share-series-${id}"><span class="share-details-chevron" aria-hidden="true"></span>細かく設定</button></div><button type="button" role="switch" aria-checked="false" data-share-scope="${id}" aria-describedby="share-scope-state-${id}" aria-label="${label}を公開"><span aria-hidden="true"></span></button><div class="share-series-panel" id="share-series-${id}" data-series-panel="${id}" hidden><p>公開する弾数・プロモにチェックを入れてください。</p><div class="share-series-list"></div><button type="button" class="share-series-all" data-share-series-all="${id}">すべて公開（今後の追加分も含む）</button></div></div>`,
+        `<div class="share-scope-row"><div class="share-scope-label"><span>${label}</span><small class="share-scope-state" id="share-scope-state-${id}" data-share-state="${id}"></small><button type="button" class="share-series-toggle" data-share-details="${id}" aria-expanded="false" aria-controls="share-series-${id}"><span class="share-details-chevron" aria-hidden="true"></span>細かく設定</button></div><button type="button" role="switch" aria-checked="false" data-share-scope="${id}" aria-describedby="share-scope-state-${id}" aria-label="${label}を公開"><span aria-hidden="true"></span></button><div class="share-series-panel" id="share-series-${id}" data-series-panel="${id}" hidden><p>公開する${id === "all-academy" ? "収録区分" : "弾数・プロモ"}にチェックを入れてください。</p><div class="share-series-list"></div><button type="button" class="share-series-all" data-share-series-all="${id}">すべて公開（今後の追加分も含む）</button></div></div>`,
     )
     .join(
       "",
-    )}</div><p class="share-live-note">公開設定・所持状況は、発行済みのURLへ自動で反映されます。</p><p id="share-settings-status" role="status"></p><button type="button" id="share-issue" class="share-issue">所持状況を公開する</button><div id="share-link-area" hidden><label>閲覧用URL<input id="share-link-value" readonly type="text"></label><button type="button" id="share-send" class="share-send">所持率とURLを共有</button><div class="share-link-actions"><button type="button" id="share-link-copy">URLをコピー</button><a id="share-link-open" target="_blank" rel="noopener noreferrer">閲覧画面を開く</a></div></div><div id="share-restore-area" hidden><label>以前の共有URL<input id="share-restore-input" type="url" placeholder="発行済みのURLを貼り付け" autocomplete="off"></label><button type="button" id="share-restore">このURLを引き継ぐ</button></div><button type="button" id="share-delete" hidden>このURLの公開を終了</button><div id="share-delete-confirm" hidden role="group" aria-labelledby="share-delete-title"><strong id="share-delete-title">共有URLを削除しますか？</strong><p>今のURLは無効になり、閲覧できなくなります。カードや所持記録は残ります。再び公開する場合は、新しいURLを発行できます。</p><div><button type="button" id="share-delete-cancel">キャンセル</button><button type="button" id="share-delete-yes">URLを削除</button></div></div>`;
+    )}</div><p class="share-live-note">公開設定・所持状況は、発行済みのURLへ自動で反映されます。</p><p id="share-settings-status" role="status"></p><button type="button" id="share-issue" class="share-issue">所持状況を公開する</button><div id="share-link-area" hidden><label>閲覧用URL<input id="share-link-value" readonly type="text"></label><button type="button" id="share-send" class="share-send">所持率とURLを共有</button><div class="share-link-actions"><button type="button" id="share-link-copy">URLをコピー</button><a id="share-link-open" target="_blank" rel="noopener noreferrer">閲覧画面を開く</a></div></div><div id="share-restore-area" hidden><label>以前の共有URL<input id="share-restore-input" type="url" placeholder="発行済みのURLを貼り付け" autocomplete="off"></label><button type="button" id="share-restore">このURLを引き継ぐ</button></div><button type="button" id="share-delete" hidden>このURLの公開を終了</button>
+    </section>
+    <div id="share-delete-confirm" hidden role="group" aria-labelledby="share-delete-title"><strong id="share-delete-title">共有URLを削除しますか？</strong><p>今のURLは無効になり、閲覧できなくなります。カードや所持記録は残ります。再び公開する場合は、新しいURLを発行できます。</p><div><button type="button" id="share-delete-cancel">キャンセル</button><button type="button" id="share-delete-yes">URLを削除</button></div></div>`;
   document.body.append(dialog);
   const previousConfirm = $("share-delete-confirm");
   const deleteDialog = document.createElement("dialog");
@@ -5884,6 +5940,21 @@ init();
   $("ownership-export-dialog")?.remove();
   $("ownership-export-open").textContent = "所持状況を共有";
   const current = () => host.session()?.user.id || null;
+  function shareURL() {
+    if (!hasLink || !/^[0-9a-f]{64}$/.test(token || "")) return null;
+    const url = new URL("share/", host.base());
+    url.hash = token;
+    return url.href;
+  }
+  async function publicPageURL(requiredScope) {
+    await settingsCheck;
+    if (!settingsLoaded || !owner || owner !== current() || host.maintenance()) return null;
+    return confirmedScopes.some((scope) =>
+      (!requiredScope || scope === requiredScope) &&
+      (!Array.isArray(confirmedFilters[scope]) || confirmedFilters[scope].length))
+      ? shareURL()
+      : null;
+  }
   function update() {
     dialog.querySelectorAll("[data-share-scope]").forEach((b) => {
       b.setAttribute(
@@ -5928,13 +5999,11 @@ init();
     $("share-delete-cancel").disabled = busy;
     deleteClose.disabled = busy;
     syncSeriesChecks();
-    const valid = /^[0-9a-f]{64}$/.test(token || "");
-    $("share-link-area").hidden = !valid;
-    if (valid) {
-      const url = new URL("share/", host.base());
-      url.hash = token;
-      $("share-link-value").value = url.href;
-      $("share-link-open").href = url.href;
+    const url = shareURL();
+    $("share-link-area").hidden = !url;
+    if (url) {
+      $("share-link-value").value = url;
+      $("share-link-open").href = url;
     } else {
       $("share-link-value").value = "";
       $("share-link-open").removeAttribute("href");
@@ -5969,6 +6038,7 @@ init();
     "verse-onegai": "おねがいバース",
     "verse-himitsu": "ひみつバース",
     "verse-primagi": "プリマジ",
+    ...allShareLabels,
   };
   $("share-send").onclick = async () => {
     if (
@@ -6031,11 +6101,13 @@ init();
     prepareRates();
   }
   function reset() {
+    window.CARD_OWNERSHIP_IMAGE.close();
     generation++;
     rateGeneration++;
     mutations = [];
     savingSettings = false;
     settingsLoaded = false;
+    settingsCheck = null;
     confirmedScopes = [];
     confirmedFilters = {};
     seriesFilters = {};
@@ -6098,7 +6170,7 @@ init();
     dialog.tabIndex = -1;
     dialog.focus({ preventScroll: true });
     $("share-settings-status").textContent = "公開設定を確認中…";
-    await run("card_album_share_settings", {}, (data) => {
+    settingsCheck = run("card_album_share_settings", {}, (data) => {
       if (!Array.isArray(data?.scopes))
         throw Error("公開設定用SQLをご確認ください。");
       settingsLoaded = true;
@@ -6108,6 +6180,7 @@ init();
           ? "以前のURLはこの画面に再表示できません。以前のURLを貼り付けると、同じURLを引き継げます。"
           : "URLは削除するまで継続します。再ログイン後もここで確認できます。";
     });
+    await settingsCheck;
   }
   function optimisticState() {
     const active = new Set(confirmedScopes);
@@ -6389,9 +6462,60 @@ init();
         "URLを選択してコピーしてください。";
     }
   };
+  $("share-ownership-image").onclick = () => {
+    const uid = current();
+    if (!uid || host.maintenance()) return;
+    if (window.CARD_ALL?.active()) {
+      window.CARD_ALL.openOwnershipImage();
+      return;
+    }
+    const inVerse = Boolean($("verse") && !$("verse").hidden);
+    const snapshot = inVerse ? window.CARD_VERSE?.ownershipImage() : (() => {
+      if (!game || game === "primagi" || !ownershipReady) return null;
+      const toRow = (c) => ({
+        name: name(c), code: c.code, image: c._visibility?.image ? "" : c.front,
+        editions: values(c.series), character: values(c.character).join(" ／ "), rarity: displayRarity(c),
+        transform: c.frontTransform, quantity: quantityOf(c.id),
+        collected: owned.has(c.id), duplicate: quantityOf(c.id) >= 2, rotate: c.game === "aikatsu",
+      });
+      const controls = ownershipImageControls([
+        ["query", "#query", "検索"],
+        ...fields[game].map(([key, label]) => [key, `#filters select[data-filter="${key}"]`, label]),
+        ["favorite", "#favorite-filter", "お気に入り"],
+        ["duplicate", "#duplicate-filter", "重複"],
+        ["trade", '#filters [data-trade-filter="card"]', "譲渡関係"],
+        ["qr", '#filters [data-qr-filter="card"]', "QRコード"],
+      ]);
+      return {
+        title: game === "aikatsu" ? "アイカツ！アンコール" : (aipriFamily === "ひみつ" ? "ひみつのアイプリ" : "おねがいアイプリ"),
+        theme: game === "aipri" ? "blue" : "rose",
+        unit: "種", editionLabel: "弾数", controls,
+        select: (local) => {
+          const rows = filtered(false, local).map(toRow);
+          return {
+            edition: game === "aipri" && aipriFamily !== "ひみつ"
+              ? local.series?.match(/^【?おねがいアイプリ\s*([0-9０-９]+(?:だん|弾))】?$/)?.[1] || local.series
+              : local.series,
+            filtered: rows,
+            rateBase: rows,
+            conditions: ownershipImageConditions(controls, local),
+          };
+        },
+      };
+    })();
+    if (!snapshot) {
+      host.toast("所持状況を読み込み中です。", "error");
+      return;
+    }
+    window.CARD_OWNERSHIP_IMAGE.open(
+      snapshot,
+      () => current() === uid && !host.maintenance(),
+      publicPageURL,
+    );
+  };
   $("share-settings-close").onclick = () => dialog.close();
   $("ownership-export-open").onclick = open;
-  window.CARD_SHARE = { sync, reset };
+  window.CARD_SHARE = { sync, reset, open, publicPageURL };
 })();
 
 window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
@@ -7206,31 +7330,35 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
       } catch {} finally { clearTimeout(timeout); }
     }, 300);
   }
-  function filtered(includeOwnership = true) {
-    const needle = compact(query);
+  function filtered(includeOwnership = true, local = null) {
+    const needle = compact(local?.query ?? query);
+    const selectedSeries = local?.series ?? series;
+    const selectedGroup = local?.group ?? group;
+    const selectedRarity = local?.rarity ?? primagiRarity;
+    const selectedOwnership = local?.ownership ?? ownershipView;
     return pool().filter(
       (c) =>
         (family !== "primagi" ||
-          !primagiRarity ||
-          c.rarity.split(" ／ ").includes(primagiRarity)) &&
+          !selectedRarity ||
+          c.rarity.split(" ／ ").includes(selectedRarity)) &&
         (family !== "primagi" ||
           window.CARD_PRIMAGI_VERSE_COMPAT.matches(
             c,
             parts,
-            primagiVerseCompatibility,
+            local?.compatibility ?? primagiVerseCompatibility,
           )) &&
-        (!favoriteOnly || favorites.has(c.id)) &&
-        (!duplicateOnly || duplicate(c)) &&
-        (trade()?.matches("coordinate", c.id) ?? true) &&
-        (window.CARD_QR?.matches("coordinate", c.id, c.part_ids) ?? true) &&
+        (!(local ? local.favorite === "only" : favoriteOnly) || favorites.has(c.id)) &&
+        (!(local ? local.duplicate === "only" : duplicateOnly) || duplicate(c)) &&
+        (trade()?.matches("coordinate", c.id, local?.trade) ?? true) &&
+        imageQRMatches("coordinate", c.id, c.part_ids, local?.qr) &&
         appearances(c).some(
           (a) =>
-            (!series || a.series === series) && (!group || a.group === group),
+            (!selectedSeries || a.series === selectedSeries) && (!selectedGroup || a.group === selectedGroup),
         ) &&
         matchesQuery(c, needle) &&
         (!includeOwnership ||
-          ownershipView === "all" ||
-          state(c) === ownershipView),
+          selectedOwnership === "all" ||
+          state(c) === selectedOwnership),
     );
   }
   function representative(value) {
@@ -7431,7 +7559,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
       .join("");
     $("verse-collection-empty").hidden = all.length > 0;
   }
-  function renderActiveFilters() {
+  function activeVerseFilters() {
     const entries = [
       ["query", "検索", query],
       [
@@ -7459,6 +7587,10 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     if (qr) entries.push([qr.key, qr.label, qr.value]);
     const item = trade()?.entry("coordinate");
     if (item) entries.push(["trade", item.label, item.value]);
+    return entries;
+  }
+  function renderActiveFilters() {
+    const entries = activeVerseFilters();
     $("verse-filter-summary").textContent = entries.length
       ? `適用中 ${entries.length}件`
       : "";
@@ -8550,6 +8682,44 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     open,
     reset,
     family: () => family,
+    ownershipImage() {
+      if (!ready || owner !== currentUser() || !catalog) return null;
+      const toRow = (c) => ({
+        name: c.name, code: c.code,
+        editions: [...new Set(appearances(c).map((a) => a.series).filter(Boolean))],
+        character: values(c.character).join(" ／ "), rarity: c.rarity,
+        image: c._visibility?.image ? "" : window.CARD_PRIMAGI.verseImage(c.image || c.thumbnail),
+        quantity: quantity(c), collected: collected(c), duplicate: duplicate(c),
+        ownedParts: full(c) ? [] : [...new Set(c.part_ids
+          .filter((id) => owned.has(id))
+          .map((id) => parts.get(id)?.slot || "部位不明"))],
+      });
+      const editionLabel = family === "primagi" ? "章" : "弾数";
+      const controls = ownershipImageControls([
+        ["query", "#verse-query", "検索"], ["series", "#verse-series", editionLabel],
+        ["rarity", "#primagi-rarity", "レアリティ"],
+        ["compatibility", "#primagi-verse-compat", "アイプリバース対応"],
+        ["group", "#verse-group", family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"],
+        ["favorite", "#verse-favorite-filter", "お気に入り"],
+        ["duplicate", "#verse-duplicate-filter", "重複"],
+        ["trade", '#verse [data-trade-filter="coordinate"]', "譲渡関係"],
+        ["qr", '#verse [data-qr-filter="coordinate"]', "QRコード"],
+      ]);
+      return {
+        title: ({ onegai: "おねがいアイプリバース", himitsu: "ひみつのアイプリバース", primagi: "ワッチャプリマジ！" })[family],
+        theme: family === "primagi" ? "yellow" : "blue",
+        unit: "コーデ", editionLabel, controls,
+        select: (local) => {
+          const rows = filtered(false, local).map(toRow);
+          return {
+            edition: local.series ? chapterDisplayLabel(local.series) : "",
+            filtered: rows,
+            rateBase: rows,
+            conditions: ownershipImageConditions(controls, local),
+          };
+        },
+      };
+    },
     tradeData: () => catalog,
     tradeQuantity(kind, id) {
       if (!ready || owner !== currentUser()) return 0;
@@ -8606,7 +8776,7 @@ verseScript.dispatchEvent(new Event("load"));
   "use strict";
   const host = window.CARD_TRADE_HOST;
   const exporterURL = new URL(
-    "./trade-image-export.js?v=20261030-registration-30min-v2",
+    "./trade-image-export.js?v=20261118-ownership-image-v65",
     document.currentScript.src,
   ).href;
   let exportSheets = [],
@@ -8931,8 +9101,7 @@ verseScript.dispatchEvent(new Event("load"));
     const value = filters[kind] || "all";
     return `<label class="trade-filter"><span class="filter-label">譲渡関係<button type="button" class="filter-clear" data-trade-clear="${kind}" ${value === "all" ? "disabled" : ""}>解除</button></span><select data-trade-filter="${kind}" ${!ready ? "disabled" : ""}><option value="all" ${value === "all" ? "selected" : ""}>すべて</option><option value="offer" ${value === "offer" ? "selected" : ""}>譲れるもの</option><option value="want" ${value === "want" ? "selected" : ""}>求めるもの</option></select></label>`;
   }
-  function matches(kind, id) {
-    const side = filters[kind];
+  function matches(kind, id, side = filters[kind]) {
     if (!side || side === "all") return true;
     if (!ready) return false;
     return (
