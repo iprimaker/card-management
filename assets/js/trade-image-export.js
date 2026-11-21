@@ -168,6 +168,15 @@
   }
 
   async function create(sheet, title, progress = () => {}, current = () => true) {
+    if (sheet.layout === "shared") {
+      if (!current()) throw Error("画像の作成を中止しました。");
+      const key = "shared:" + JSON.stringify([title, sheet]);
+      if (rendered.has(key)) return rendered.get(key);
+      const blob = await window.CARD_OWNERSHIP_IMAGE.createTrade(sheet, title, progress, current);
+      if (!current()) throw Error("画像の作成を中止しました。");
+      rememberOutput(key, blob);
+      return blob;
+    }
     if (!sheet.cards?.length || sheet.cards.length > CAPACITY)
       throw Error("1画像に配置できるカードは1〜36枚です。");
     const cards = sheet.cards.map((card) => ({
@@ -349,7 +358,7 @@
       dialog.className = "trade-export-dialog";
       dialog.setAttribute("aria-labelledby", "trade-export-dialog-title");
       dialog.innerHTML =
-        '<div class="trade-export-dialog-heading"><h2 id="trade-export-dialog-title"></h2><button type="button" data-export-close aria-label="閉じる">×</button></div><p>低画質JPEGで作成しました。画像を保存して、交換希望の文章と一緒にご利用ください。</p><img alt="出力した交換希望の一覧"><div class="trade-actions"><a data-export-save>画像を保存</a><button type="button" data-export-share>画像を共有</button></div><small>保存できない場合は、画像を長押しして保存してください。</small><p data-export-error role="status"></p>';
+        '<div class="trade-export-dialog-heading"><h2 id="trade-export-dialog-title"></h2><button type="button" data-export-close aria-label="閉じる">×</button></div><p>画像を保存して、交換希望の文章と一緒にご利用ください。</p><img alt="出力した交換希望の一覧"><div class="trade-actions"><a data-export-save>画像を保存</a><button type="button" data-export-share>画像を共有</button></div><small>保存できない場合は、画像を長押しして保存してください。</small><p data-export-error role="status"></p>';
       document.body.append(dialog);
       dialog.querySelector("[data-export-close]").onclick = close;
       dialog.addEventListener("click", (event) => {
@@ -370,7 +379,7 @@
     const save = dialog.querySelector("[data-export-save]");
     save.href = objectURL;
     save.download = filename;
-    const file = new File([blob], filename, { type: "image/jpeg" });
+    const file = new File([blob], filename, { type: blob.type });
     const share = dialog.querySelector("[data-export-share]");
     share.hidden = !navigator.canShare?.({ files: [file] });
     dialog.querySelector("[data-export-error]").textContent = "";

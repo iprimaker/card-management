@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261121-onegai-edition-v87";
+  const version = "20261122-presence-session-v100";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -538,7 +538,7 @@
       ? ["album"]
       : [page === "browse" ? "shared" : page]
     )
-      .concat("primagi", ...(["album", "browse", "shared"].includes(page) ? ["multi-filter"] : []), ...(page === "album" ? ["aikatsu-all", "ownership-image-share", "list-sort"] : []))
+      .concat("primagi", "maintenance-warning", ...(["album", "browse", "shared"].includes(page) ? ["multi-filter"] : []), ...(page === "album" ? ["aikatsu-all", "ownership-image-share", "list-sort", "trade-image-previews"] : []))
       .map(stylesheet),
   );
   styles.then(
@@ -551,7 +551,8 @@
   const visibilityModule = Promise.all([
     script("vendor/supabase.js"),
     script("config.js"),
-  ]).then(() => script("guest-access.js"))
+  ]).then(() => script("maintenance-warning.js"))
+    .then(() => script("guest-access.js"))
     .then(() => window.CARD_GUEST_ACCESS.ready)
     .then(() => script("card-visibility.js"));
   const dependencies = visibilityModule.then(
@@ -576,6 +577,7 @@
       window.CARD_SHARED_PAGE_READY = page;
     })
     .then(() => (page === "album" ? script("ownership-image-share.js") : undefined))
+    .then(() => (page === "album" ? script("trade-image-controls.js") : undefined))
     .then(() => (page === "album" ? script("private-qr.js") : undefined))
     .then(() =>
       page === "card-registration"

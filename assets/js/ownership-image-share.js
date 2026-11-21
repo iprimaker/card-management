@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const exporterURL = new URL("./trade-image-export.js?v=20261118-ownership-image-v75", document.currentScript.src);
+  const exporterURL = new URL("./trade-image-export.js?v=20261121-trade-modal-v96", document.currentScript.src);
   const columns = 10;
   const imageConcurrency = 12;
   const imageLoadShare = 0.95;
@@ -178,9 +178,11 @@
     });
   }
 
+  const imageSources = (item) => item.image ? [item.image] : item.collage || [];
+
   async function loadPageImages(items, current, onProgress) {
     const images = new Map();
-    const urls = [...new Set(items.map((item) => item.image).filter(Boolean))];
+    const urls = [...new Set(items.flatMap(imageSources).filter(Boolean))];
     onProgress(0, urls.length);
     if (!current() || !urls.length) return images;
     const loader = await loadExporter();
@@ -229,7 +231,7 @@
     return globalThis.scheduler?.yield?.() ?? new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  async function create(sections, { heading, caption, conditions, edition, theme, issueDate, page, pages, pageQR, display, isCard }, current, onProgress) {
+  async function create(sections, { heading, caption, conditions, edition, theme, issueDate, page, pages, pageQR, display, isCard, trade }, current, onProgress) {
     const items = sections.flatMap(({ rows }) => rows);
     const [images, qr] = await Promise.all([loadPageImages(items, current, onProgress), pageQR]);
     if (!current()) return null;
@@ -304,7 +306,16 @@
       const headingSize = Math.floor(maxHeadingSize * Math.min(1, summaryWidth / ctx.measureText(heading).width));
       label(heading, summaryX, 86, `bold ${headingSize}px`, theme.dark, summaryWidth);
 
-      if (display.hideRate) {
+      if (trade) {
+        box(theme.badge, summaryX, 110, 68, 42, 16);
+        ctx.textAlign = "center";
+        label(trade.side === "offer" ? "譲" : "求", summaryX + 34, 140, "bold 27px", theme.accent, 58);
+        ctx.textAlign = "left";
+        label((trade.side === "offer" ? "譲れる" : "求める") + trade.unit,
+          summaryX + 86, 143, "bold 40px", theme.accent, summaryWidth - 86);
+        label(trade.priority ? "赤枠は優先して交換したいものです" : "",
+          summaryX, 174, "17px", theme.muted, summaryWidth);
+      } else if (display.hideRate) {
         box(theme.badge, summaryX, 112, 176, 32, 16);
         label("コレクション", summaryX + 17, 135, "bold 18px", theme.accent, 144);
       } else {
@@ -360,21 +371,35 @@
           const x = left + 4 + (i % columns) * 154;
           const y = section.y + (section.label ? 38 : 0) + Math.floor(i / columns) * cellHeight;
           const img = images.get(item.image);
-          box(theme.border, x - 4, y - 4, cellWidth + 8, cellHeight - 5, 12);
-          box("#fff", x - 3, y - 3, cellWidth + 6, cellHeight - 7, 11);
+          box(trade && item.priority ? "#d45869" : theme.border, x - 4, y - 4, cellWidth + 8, cellHeight - 5, 12);
+          const border = trade && item.priority ? 3 : 1;
+          box("#fff", x - 4 + border, y - 4 + border, cellWidth + 8 - 2 * border, cellHeight - 5 - 2 * border, 11);
           box(theme.light, x, y, cellWidth, 204, 8);
           const ownedParts = item.ownedParts || [];
           const partsOnly = !item.collected && ownedParts.length > 0;
           const { opacity, grayscale } = pictureStyle(item, display, partsOnly);
           ctx.globalAlpha = opacity;
-          const picture = img && drawPicture(ctx, img, item, x, y, cellWidth, 204);
+          let picture = null;
+          if (img) picture = drawPicture(ctx, img, item, x, y, cellWidth, 204);
+          else if (item.collage?.length) {
+            const columns = item.collage.length === 1 ? 1 : 2;
+            const rows = Math.ceil(item.collage.length / columns);
+            item.collage.forEach((url, index) => {
+              const partImage = images.get(url);
+              if (!partImage) return;
+              drawPicture(ctx, partImage, { rotate: true },
+                x + (index % columns) * cellWidth / columns,
+                y + Math.floor(index / columns) * 204 / rows,
+                cellWidth / columns - 3, 204 / rows - 3);
+            });
+          }
           ctx.globalAlpha = 1;
           if (grayscale) {
             ctx.globalCompositeOperation = "saturation";
             box("#808080", x, y, cellWidth, 204, 8);
             ctx.globalCompositeOperation = "source-over";
           }
-          if (!img) label(item.name, x + 5, y + 104, "16px", theme.dark, cellWidth - 10);
+          if (!img && !item.collage?.some((url) => images.has(url))) label(item.name, x + 5, y + 104, "16px", theme.dark, cellWidth - 10);
           if (display.showNames) {
             ctx.textAlign = "center";
             label(item.name, x + cellWidth / 2, y + 225, "16px", theme.dark, cellWidth - 8);
@@ -383,7 +408,7 @@
             ctx.textAlign = "center";
             label(item.code, x + cellWidth / 2, y + (display.showNames ? 249 : 225), "17px", item.collected ? theme.dark : theme.muted, cellWidth - 8);
           }
-          const badges = partsOnly
+          const badges = trade ? [...(!display.hideQuantity ? [String(item.quantity || 0)] : []), ...(item.slot && !display.hidePartTags ? [item.slot] : [])] : partsOnly
             ? (display.hidePartTags ? [] : ownedParts)
             : !display.hideQuantity && (item.quantity > 0 || display.allColor)
               ? [String(item.quantity || 0)]
@@ -393,10 +418,12 @@
             box(theme.light, x + 4, y + 179, cellWidth - 8, 21, 6);
             label(item.rarity, x + 9, y + 194, "bold 14px", theme.dark, cellWidth - 18);
           }
-          const badgeFont = partsOnly ? "bold 14px" : "bold 19px";
-          const badgeHeight = partsOnly ? 22 : 30;
+          
           ctx.textAlign = "center";
           badges.forEach((badge, index) => {
+            const isPartBadge = partsOnly || (trade && item.slot && !/^\d+$/.test(badge));
+            const badgeFont = isPartBadge ? "bold 14px" : "bold 19px";
+            const badgeHeight = isPartBadge ? 22 : 30;
             ctx.font = badgeFont + " sans-serif";
             const badgeWidth = Math.min(cellWidth - 8, Math.max(32, Math.ceil(ctx.measureText(badge).width) + 16));
             const cardQuantity = isCard && !partsOnly && /^\d+$/.test(badge);
@@ -408,7 +435,7 @@
               : y + 4 + index * (badgeHeight + 3);
             box("#fff", badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
             box(theme.badge, badgeX + 1, badgeY + 1, badgeWidth - 2, badgeHeight - 2, badgeHeight / 2 - 1);
-            label(badge, badgeX + badgeWidth / 2, badgeY + (partsOnly ? 16 : 22),
+            label(badge, badgeX + badgeWidth / 2, badgeY + (isPartBadge ? 16 : 22),
               badgeFont, theme.dark, badgeWidth - 9);
           });
           ctx.textAlign = "left";
@@ -460,11 +487,39 @@
       const png = items.length >= 80 ? null : await encode("image/png");
       if (!current()) return null;
       const blob = png && png.size <= 4718592 ? png : await encode("image/jpeg", 0.88);
-      return { blob, height: canvas.height, missing: items.filter((item) => !images.has(item.image)).length,
-        retryable: items.some((item) => item.image && !images.has(item.image)) };
+      return { blob, height: canvas.height, missing: items.filter((item) => !imageSources(item).length || imageSources(item).some((url) => !images.has(url))).length,
+        retryable: items.some((item) => imageSources(item).some((url) => !images.has(url))) };
     } finally {
       canvas.width = canvas.height = 1;
     }
+  }
+
+  function tradeRows(rows, display = {}) {
+    return display.excludeZero ? rows.filter(row => Math.max(0, (Number(row.quantity) || 0) - (display.subtractOne ? 1 : 0)) > 0) : rows;
+  }
+
+  function tradePages(rows, options = {}) {
+    return arrangePages(tradeRows(rows, options.display).map(row => ({ ...row, editions: row.editions || row.series || [] })), {
+      display: options.display || {}, completeEditions: new Set(),
+      editionLabels: new Map((options.editionOptions || []).map(({ value, text }) => [value, text])),
+      selectedEdition: options.selectedEdition || "", editionLabel: options.editionLabel || "弾数",
+    });
+  }
+  async function createTrade(sheet, heading, progress = () => {}, current = () => true) {
+    if (!sheet.cards?.length || sheet.cards.length > size) throw Error("1画像に掲載できる項目は1〜100件です。");
+    const options = sheet.display || { showNames: true, serial: false, showRarity: true };
+    const sections = (sheet.sections || [{ label: "", rows: sheet.cards }]).map(section => ({ ...section,
+      rows: section.rows.map(card => ({ ...card, quantity: options.subtractOne ? Math.max(0, (Number(card.quantity) || 0) - 1) : card.quantity, collected: true, rotate: card.rotate ?? card.kind !== "coordinate" })) }));
+    const result = await create(sections, {
+      heading, caption: "", conditions: sheet.conditions || [], edition: sheet.edition || "全弾",
+      theme: themes[sheet.theme] || themes.rose,
+      issueDate: sheet.issueDate || issueDateFormat.format(new Date()), page: sheet.page - 1, pages: sheet.pages,
+      pageQR: null, isCard: sheet.kind === "card",
+      display: { ...options, allColor: true, hideQuantity: !options.showQuantity },
+      trade: { side: sheet.side, unit: sheet.kind === "card" ? "カード" : "コーデ・パーツ", priority: sheet.cards.some(card => card.priority) },
+    }, current, progress);
+    if (!current() || !result) throw Error("画像の作成を中止しました。");
+    return result.blob;
   }
 
   function keepSettingsPosition(change) {
@@ -1289,5 +1344,5 @@
   }
 
   function close() { if (dialog?.open) dialog.close(); }
-  window.CARD_OWNERSHIP_IMAGE = Object.freeze({ open, close });
+  window.CARD_OWNERSHIP_IMAGE = Object.freeze({ open, close, createTrade, tradePages, tradeRows, capacity: size, zipImages });
 })();

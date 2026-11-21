@@ -1039,6 +1039,7 @@ function finishAuthCheck() {
 }
 function screen(id) {
   finishAuthCheck();
+  for (const dialog of document.querySelectorAll("dialog.album-tool-dialog[open]")) dialog.close();
   if (maintenanceActive) id = "auth";
   if (id === "auth" && $("auth").hidden) randomizeAuthTheme();
   for (const s of [
@@ -1519,6 +1520,7 @@ function recordAccountPresence(logout = false) {
         return;
       const controller = new AbortController(),
         timer = setTimeout(() => controller.abort(), 4000);
+      const requestToken = session?.access_token;
       try {
         let request = client.rpc("card_account_presence_touch", {
           p_logout: logout,
@@ -1527,7 +1529,17 @@ function recordAccountPresence(logout = false) {
         if (typeof request.abortSignal === "function")
           request = request.abortSignal(controller.signal);
         const result = await request;
-        if (result.error) accountPresenceSent = 0;
+        if (result.error) {
+          accountPresenceSent = 0;
+          const invalidSession = result.status === 403 && result.error.code === "42501" &&
+            ["認証が必要です", "認証セッションが無効です"].includes(String(result.error.message || "").trim());
+          if (!logout && invalidSession && db === client && session?.user?.id === uid &&
+              session?.access_token === requestToken && !maintenanceActive) {
+            accountPresenceLoggingOut = true;
+            showLoginRequired("ログイン状態を確認できません。もう一度ログインしてください。");
+            void client.auth.signOut({ scope: "local" }).catch(() => {});
+          }
+        }
       } catch {
         accountPresenceSent = 0;
       } finally {
@@ -2617,7 +2629,7 @@ function requireEditingSession() {
   showLoginRequired();
   return false;
 }
-function showLoginRequired() {
+function showLoginRequired(message = "ログインしてください") {
   if (maintenanceActive) return;
   const now = Date.now();
   if (now - loginRequiredAt < 800) return;
@@ -2630,8 +2642,8 @@ function showLoginRequired() {
   authMode("login");
   screen("auth");
   history.replaceState(null, "", location.pathname + location.search);
-  toast("ログインしてください", "error");
-  setTimeout(() => toast("ログインしてください", "error"), 0);
+  toast(message, "error");
+  setTimeout(() => toast(message, "error"), 0);
 }
 function isAccountEditRequest(input, options = {}) {
   const url = new URL(
@@ -4333,7 +4345,8 @@ function openProbabilities() {
   if (!$("probabilities").hidden) return;
   $("show-cost").checked = false;
   $("probability-series").value = "";
-  screen("probabilities");
+  probabilityModal.open();
+  updateHeader();
   renderProbabilities();
   history.replaceState(
     null,
@@ -4345,14 +4358,13 @@ function openProbabilities() {
           ? "onegai"
           : "himitsu"),
   );
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 $("probability-open").onclick = openProbabilities;
-$("probability-back").onclick = () => {
-  screen("collection");
-  render();
-  history.replaceState(null, "", "#" + game);
-};
+const probabilityModal = window.CARD_TRADE_TOOLS.modal($("probabilities"), "確率確認", () => {
+  if (location.hash.startsWith("#probabilities-")) history.replaceState(null, "", "#" + (game || ""));
+  updateHeader();
+});
+$("probability-back").onclick = () => probabilityModal.close();
 $("probability-series").onchange = renderProbabilities;
 $("show-cost").onchange = renderProbabilities;
 $("quantity-plus").onclick = () => selected && saveQuantity(selected.id, 1);
@@ -8800,7 +8812,7 @@ verseScript.dispatchEvent(new Event("load"));
   "use strict";
   const host = window.CARD_TRADE_HOST;
   const exporterURL = new URL(
-    "./trade-image-export.js?v=20261118-ownership-image-v75",
+    "./trade-image-export.js?v=20261121-trade-modal-v96",
     document.currentScript.src,
   ).href;
   let exportSheets = [],
@@ -8849,12 +8861,31 @@ verseScript.dispatchEvent(new Event("load"));
   const panel = document.createElement("section");
   panel.id = "trade-page";
   panel.hidden = true;
-  panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="text-button">アルバムに戻る</button></div>
+  panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="album-tool-close" aria-label="交換希望を閉じる">×</button></div>
  <details id="trade-filter-panel" class="filter-panel trade-filter-panel"><summary>絞り込み<small id="trade-filter-count"></small></summary><div class="filter-content"><div id="trade-filter-search"></div><div class="filter-grid trade-filters" id="trade-filter-fields"></div></div></details><div id="trade-active-filters" class="active-filters" aria-label="適用中の絞り込み"></div><p id="trade-load-status" role="status"></p>
- <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求のカードを確認</h2><p id="trade-review-description">絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のものです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
- <section class="trade-step trade-export-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>希望画像を出力</h2><p id="trade-export-description">1画像に最大36枚。譲・求ごとに、保存する画像を選んでください。</p></div></div><div id="trade-export-buttons" class="trade-export-buttons"></div><p id="trade-export-status" role="status" aria-live="polite"></p></section>
- <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">3</span><div><h2>交換希望の文章をコピー</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。出力した画像は共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
+ <section class="trade-step trade-preview-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求の画像プレビュー</h2><p id="trade-review-description">画像をタップすると拡大できます。画像下の番号でページを切り替えられます。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div><div id="trade-export-buttons" hidden></div>${window.CARD_TRADE_TOOLS.progressMarkup()}<p id="trade-export-status" role="status" aria-live="polite"></p>${window.CARD_TRADE_TOOLS.settingsMarkup()}</section>
+ <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>交換希望を文章と画像で共有</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div><div class="trade-share-area"><button id="trade-share" type="button" disabled>画像と文章を共有</button></div></section><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
   $("collection").after(panel);
+  const tradeModal = window.CARD_TRADE_TOOLS.modal(panel, "交換希望", () => {
+    outputVersion++;
+    clearTradePreviews();
+    window.CARD_TRADE_IMAGE?.close();
+  });
+  const previewStep = panel.querySelector(".trade-preview-step");
+  const previewTotals = panel.querySelector("#trade-output-count");
+  previewStep.insertBefore(panel.querySelector("#trade-filter-panel"), previewTotals);
+  previewStep.insertBefore(panel.querySelector("#trade-active-filters"), previewTotals);
+  previewStep.insertBefore(panel.querySelector("#trade-generation-progress"), panel.querySelector("#trade-sheets"));
+  previewStep.insertBefore(panel.querySelector("#trade-export-status"), panel.querySelector("#trade-sheets"));
+  window.CARD_TRADE_TOOLS.stage(panel);
+  let tradeDisplay = { ...window.CARD_TRADE_TOOLS.defaults };
+  panel.querySelector("#trade-image-settings").addEventListener("change", () => {
+    const anchor = panel.querySelector("#trade-image-settings").getBoundingClientRect().top;
+    tradeDisplay = window.CARD_TRADE_TOOLS.readSettings(panel);
+    try { localStorage.setItem("card-album:trade-image-options:" + uid(), JSON.stringify(tradeDisplay)); } catch {}
+    renderOutput();
+    tradeModal.dialog.scrollTop += panel.querySelector("#trade-image-settings").getBoundingClientRect().top - anchor;
+  });
   function reset() {
     generation++;
     outputVersion++;
@@ -8869,8 +8900,10 @@ verseScript.dispatchEvent(new Event("load"));
     imageQueue.clear();
     filters.card = filters.coordinate = "all";
     origin = null;
+    clearTradePreviews();
     tradeSource = null;
     tradeControls = [];
+    tradeModal.close();
     panel.hidden = true;
     for (const id of ["trade-post", "trade-text", "trade-method"])
       $(id).value = "";
@@ -9164,6 +9197,7 @@ verseScript.dispatchEvent(new Event("load"));
           code: c.code,
           name: c.name || "カード名未取得",
           image: c.front,
+          transform: c.frontTransform,
           series: c.series || [],
           rarity: c.rarity || "",
           groups: [],
@@ -9363,6 +9397,116 @@ verseScript.dispatchEvent(new Event("load"));
       ? `<span class="trade-collage">${images.map((url) => frame(url, true)).join("")}</span>`
       : c.kind === "card" ? `<span class="catalog-image-unavailable">画像なし</span>` : window.CARD_UI.coordinatePlaceholder(c.kind === "part" ? c.slot || "part" : "full");
   }
+  const previewPages = { offer: 0, want: 0 };
+  const previewImages = new Map();
+  const previewURLs = new Map();
+  let previewTimer;
+  function clearTradePreviews() {
+    clearTimeout(previewTimer);
+    for (const url of previewURLs.values()) URL.revokeObjectURL(url);
+    previewURLs.clear();
+    previewImages.clear();
+    previewPages.offer = previewPages.want = 0;
+    $("trade-generation-progress").hidden = true;
+  }
+  function paintTradePreview(side) {
+    const sheets = exportSheets.map((sheet, index) => ({ sheet, index })).filter((row) => row.sheet.side === side);
+    const container = $("trade-sheets").querySelector('[data-trade-preview-side="' + side + '"]');
+    if (!container) return;
+    const selected = sheets[previewPages[side]];
+    const button = container.querySelector("[data-trade-preview]");
+    const picture = container.querySelector("img");
+    const status = container.querySelector("[data-preview-note]");
+    const url = selected && previewURLs.get(selected.index);
+    button.disabled = !url;
+    button.dataset.tradePreview = selected?.index ?? "";
+    picture.hidden = !url;
+    if (url) picture.src = url;
+    else picture.removeAttribute("src");
+    status.hidden = Boolean(url);
+    container.classList.toggle("is-empty", !sheets.length);
+    status.classList.toggle("trade-empty", !sheets.length);
+    if(sheets.length) status.textContent="画像作成中…";
+    else status.innerHTML='<strong>登録なし</strong><span>一覧から「'+(side === "offer" ? '譲' : '求')+'」を登録すると<br>ここに画像が表示されます</span>';
+    const nav = container.querySelector("[data-preview-pages]");
+    nav.hidden = sheets.length < 2;
+    const width = container.clientWidth || 300;
+    const budget = width < 260 ? 1 : width < 360 ? 3 : 5;
+    const selectedPage = previewPages[side];
+    const selectedPages = new Set([selectedPage]);
+    if (budget >= 3) { selectedPages.add(0); selectedPages.add(sheets.length - 1); }
+    for (let distance = 1; selectedPages.size < Math.min(budget, sheets.length); distance++) {
+      for (const n of [selectedPage - distance, selectedPage + distance]) {
+        if (n >= 0 && n < sheets.length && selectedPages.size < budget) selectedPages.add(n);
+      }
+    }
+    const controls = [];
+    const makeButton = (page, label, disabled, direction) => {
+      const number = document.createElement("button");
+      number.type = "button";
+      number.textContent = label;
+      number.disabled = disabled;
+      number.dataset.tradePreviewPage = page;
+      number.dataset.tradePreviewSide = side;
+      number.setAttribute("aria-label", (side === "offer" ? "譲" : "求") + " " + (direction || (page + 1) + "枚目"));
+      if (!direction && page === selectedPage) number.setAttribute("aria-current", "page");
+      return number;
+    };
+    controls.push(makeButton(selectedPage - 1, width < 420 ? "前へ" : "前のページ", selectedPage === 0, "前のページ"));
+    let previous = -1;
+    for (const page of [...selectedPages].sort((a, b) => a - b)) {
+      if (budget >= 3 && previous >= 0 && page > previous + 1) {
+        const gap = document.createElement("span");
+        gap.textContent = "…"; gap.setAttribute("aria-hidden", "true");
+        controls.push(gap);
+      }
+      controls.push(makeButton(page, String(page + 1), false));
+      previous = page;
+    }
+    controls.push(makeButton(selectedPage + 1, width < 420 ? "次へ" : "次のページ", selectedPage === sheets.length - 1, "次のページ"));
+    nav.replaceChildren(...controls);
+  }
+  async function prepareTradePreviews(version, user, generationAtStart) {
+    const current = () => version === outputVersion && user === uid() && generationAtStart === generation && !panel.hidden && !host.maintenance();
+    try {
+      const exporter = await ensureExporter();
+      if (!current()) return;
+      const sheets = exportSheets;
+      for (let index = 0; index < sheets.length; index++) {
+        if (!current()) return;
+        $("trade-export-status").textContent = "";
+        window.CARD_TRADE_TOOLS.progress(panel, index / sheets.length, index + 1, sheets.length);
+        const sheet = sheets[index];
+        const blob = await exporter.create(sheet, sheet.heading, (value, maximum) => {
+          if (current()) window.CARD_TRADE_TOOLS.progress(panel,
+            (index + (maximum ? value / maximum : 1) * .95) / sheets.length, index + 1, sheets.length);
+        }, current);
+        if (!current()) return;
+        previewImages.set(index, blob);
+        previewURLs.set(index, URL.createObjectURL(blob));
+        paintTradePreview(sheet.side);
+        window.CARD_TRADE_TOOLS.progress(panel, (index + 1) / sheets.length, index + 1, sheets.length);
+      }
+      if (!current()) return;
+      $("trade-generation-progress").hidden = true;
+      const files = tradeShareFiles();
+      $("trade-share").textContent = navigator.share && navigator.canShare?.({ files }) ? "画像と文章を共有" : "画像と文章を保存";
+      $("trade-share").disabled = files.length === 0;
+      $("trade-export-status").textContent = "";
+    } catch (error) {
+      if (current()) {
+        $("trade-generation-progress").hidden = true;
+        $("trade-export-status").textContent = window.CARD_ERROR.message(error);
+        host.toast("画像を作成できませんでした。絞り込みを選び直してお試しください。", "error");
+      }
+    }
+  }
+  function tradeShareFiles() {
+    return exportSheets.flatMap((sheet, index) => {
+      const blob = previewImages.get(index);
+      return blob ? [new File([blob], (sheet.side === "offer" ? "譲" : "求") + "_" + sheet.page + (blob.type === "image/png" ? ".png" : ".jpg"), { type: blob.type })] : [];
+    });
+  }
   function renderOutput() {
     if (!origin || panel.hidden) return;
     const active = tradeControls.flatMap((control) => {
@@ -9382,85 +9526,77 @@ verseScript.dispatchEvent(new Event("load"));
       button.disabled = input.value === input.dataset.tradeDefault || input.disabled;
     });
     outputVersion++;
+    clearTradePreviews();
+    $("trade-share").disabled = true;
+    window.CARD_TRADE_IMAGE?.close();
+    const chosen = tradeSelection();
+    const imageFilters = tradeSource?.select(chosen);
+    const edition = imageFilters?.edition || (tradeSource?.editionLabel === "章" ? "全章" : "全弾");
+    const conditions = imageFilters?.conditions || [];
     const all = filtered(),
       rank = (side) => (a, b) =>
         level(b.kind, b.id, side) - level(a.kind, a.id, side),
       offer = all.filter((c) => has(c.kind, c.id, "offer")).sort(rank("offer")),
       want = all.filter((c) => has(c.kind, c.id, "want")).sort(rank("want")),
-      capacity = 36;
+      capacity = window.CARD_OWNERSHIP_IMAGE.capacity;
     const priorityNote =
       [...offer].some((c) => level(c.kind, c.id, "offer") === 2) ||
       want.some((c) => level(c.kind, c.id, "want") === 2)
         ? "※ 赤枠は優先して交換したいものです。"
         : "";
-    const groups = [
-        { side: "譲", rows: offer },
-        { side: "求", rows: want },
-      ],
-      count = groups.reduce(
-        (n, g) => n + Math.ceil(g.rows.length / capacity),
-        0,
-      );
+    const metadata = new Map((imageFilters?.filtered || []).map(row => [row.id, row]));
+    const groups = [{ side: "譲", rows: offer }, { side: "求", rows: want }].map(group => {
+      const side = group.side === "譲" ? "offer" : "want";
+      const rows = group.rows.map(card => ({ ...metadata.get(card.id), ...card,
+        editions: card.series || metadata.get(card.id)?.editions || [],
+        rotate: card.kind === "card" ? origin.game === "aikatsu" : card.kind === "part",
+        quantity: Math.max(0, Number(host.quantity(card.kind, card.id)) || 0), priority: level(card.kind, card.id, side) === 2,
+      }));
+      const sections = window.CARD_OWNERSHIP_IMAGE.tradePages(rows, { display: tradeDisplay,
+        editionOptions: tradeControls.find(control => control.key === "series")?.options || [],
+        selectedEdition: chosen.series, editionLabel: tradeSource.editionLabel,
+      });
+      return { ...group, rows, sections };
+    });
+    const count = groups.reduce((n, group) => n + group.sections.length, 0);
     exportSheets = [];
     let n = 0;
     const numbers = { 譲: [], 求: [] };
-    for (const g of groups)
-      for (let offset = 0; offset < g.rows.length; offset += capacity) {
+    for (const group of groups) {
+      for (const [index, sections] of group.sections.entries()) {
         n++;
-        numbers[g.side].push(n);
-        const side = g.side === "譲" ? "offer" : "want";
-        const cards = g.rows.slice(offset, offset + capacity).map((c) => ({
-          ...c,
-          quantity: Math.max(0, Number(host.quantity(c.kind, c.id)) || 0),
-          priority: level(c.kind, c.id, side) === 2,
-        }));
-        const sheet = {
-          side,
-          cards,
-          number: n,
-          page: numbers[g.side].length,
-          pages: Math.ceil(g.rows.length / capacity),
-          total: count,
-        };
-        sheet.kind = origin.kind;
-        exportSheets.push(sheet);
+        numbers[group.side].push(n);
+        exportSheets.push({ side: group.side === "譲" ? "offer" : "want", sections,
+          cards: sections.flatMap(section => section.rows), number: n, page: index + 1, pages: group.sections.length,
+          total: count, kind: origin.kind, layout: "shared", heading: tradeSource.title,
+          theme: tradeSource.theme, edition, conditions, display: { ...tradeDisplay },
+          issueDate: new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "long", day: "numeric" }).format(new Date()),
+        });
       }
+    }
     $("trade-output-count").innerHTML =
-      `<span><strong>譲</strong> ${offer.length}件</span><span><strong>求</strong> ${want.length}件</span>`;
+      `<span><strong>譲</strong> ${groups[0].sections.flatMap(sections => sections.flatMap(section => section.rows)).length}件</span><span><strong>求</strong> ${groups[1].sections.flatMap(sections => sections.flatMap(section => section.rows)).length}件</span>`;
     const overflow = count >= 4;
     $("trade-overflow").textContent = overflow
       ? `譲・求合わせて${count}画像になります。共有先の添付枚数をご確認ください。すべての画像を出力できます。`
       : "";
     const unit = origin.kind === "coordinate" ? "コーデ" : "カード";
-    $("trade-review-title").textContent = `譲・求の${unit}を確認`;
-    $("trade-review-description").textContent = `絞り込みを使って、画像に入れる${unit}を確認してください。赤枠は優先のものです。`;
-    $("trade-export-description").textContent = `1画像に最大36${origin.kind === "coordinate" ? "コーデ" : "枚"}。譲・求ごとに、保存する画像を選んでください。`;
+    $("trade-review-title").textContent = `譲・求の${unit}の画像プレビュー`;
+    $("trade-review-description").textContent = "画像をタップして拡大。1枚最大100件で、画像下のボタンから切り替えられます。";
     $("trade-copy-text").textContent = `${unit}情報をコピー`;
     $("trade-text").setAttribute("aria-label", `譲・求の${unit}情報`);
     $("trade-text-panel").querySelector("p").textContent =
       `${unit}情報を文字で確認・コピーできます。`;
-    $("trade-sheets").innerHTML = count
-      ? `<div class="trade-review">${groups
-          .map((group) => {
-            const side = group.side === "譲" ? "offer" : "want";
-            return `<section class="trade-review-group" data-side="${side}"><h3>${group.side === "譲" ? "譲れる" : "欲しい"}${unit}<small>${group.rows.length}件</small></h3><div class="trade-review-grid">${group.rows.length ? group.rows.map((c) => `<article class="trade-review-card ${level(c.kind, c.id, side) === 2 ? "is-priority" : ""}" data-kind="${c.kind}" title="${esc(c.code)} ${esc(c.name)}">${image(c)}<small>${esc(c.code || "コード記載なし")}</small></article>`).join("") : '<p class="trade-review-empty">登録なし</p>'}</div></section>`;
-          })
-          .join("")}</div>`
-      : '<p class="trade-empty">譲・求の登録がありません。モーダルから登録してください。</p>';
-    $("trade-export-buttons").innerHTML = ["offer", "want"]
-      .map((side) => {
-        const rows = exportSheets
-          .map((sheet, index) => ({ sheet, index }))
-          .filter((r) => r.sheet.side === side);
-        return `<div class="trade-export-group" data-side="${side}"><h3>${side === "offer" ? "譲れる" : "欲しい"}${unit}<small>${rows.length}画像</small></h3><div>${rows.length ? rows.map(({ sheet, index }) => `<button type="button" data-trade-export="${index}"><span>${sheet.page}枚目を出力</span><small>画像${sheet.number}枚目 · ${sheet.cards.length}枚</small></button>`).join("") : "<p>登録なし</p>"}</div></div>`;
-      })
-      .join("");
+    $("trade-sheets").innerHTML = '<div class="trade-output-previews">' + ["offer", "want"].map((side) => {
+      const name = side === "offer" ? "譲れる" : "求める";
+      return `<section class="trade-output-preview" data-trade-preview-side="${side}"><h3>${name}${unit}</h3><button type="button" class="trade-preview-open" data-trade-preview disabled aria-label="${name}${unit}の画像を拡大"><img hidden alt="${name}${unit}の交換希望画像"><span data-preview-note></span></button><div role="navigation" class="trade-preview-pages" data-preview-pages aria-label="${name}${unit}の画像切り替え"></div></section>`;
+    }).join("") + '</div>';
+    paintTradePreview("offer");
+    paintTradePreview("want");
     $("trade-export-status").textContent = "";
-    imageQueue.clear();
-    for (const image of $("trade-sheets").querySelectorAll(
-      ".trade-shot-image>img",
-    ))
-      if (image.complete) queueShotImage(image);
+    if (count) window.CARD_TRADE_TOOLS.progress(panel, 0, 1, count);
+    const previewVersion = outputVersion, previewUser = uid(), previewGeneration = generation;
+    previewTimer = setTimeout(() => prepareTradePreviews(previewVersion, previewUser, previewGeneration), 150);
     const refs = (side) =>
       numbers[side].length
         ? "画像" + numbers[side].join("、") + "枚目"
@@ -9468,7 +9604,7 @@ verseScript.dispatchEvent(new Event("load"));
     $("trade-post").value =
       `${title()}　交換希望\n\n譲　${refs("譲")}\n求　${refs("求")}\n\n交換方法　${$("trade-method").value.trim() || "（記載してください）"}${priorityNote ? "\n\n" + priorityNote : ""}`;
     $("trade-copy-post").disabled = count === 0;
-    $("trade-share").disabled = count === 0;
+    $("trade-share").disabled = true;
     $("trade-text").value =
       title() +
       "　交換希望\n\n" +
@@ -9524,76 +9660,19 @@ verseScript.dispatchEvent(new Event("load"));
     return exportLoading;
   }
   async function outputImage(button) {
-    const sheet = exportSheets[Number(button.dataset.tradeExport)];
-    if (!sheet || button.disabled || !uid() || host.maintenance()) return;
-    const label = button.querySelector("span");
-    const originalLabel = label?.textContent || "画像を出力";
-    const wasExported = button.dataset.exportState === "done";
-    if (label) label.textContent = `${sheet.page}枚目 · 出力中`;
-    button.dataset.exportState = "busy";
-    button.setAttribute("aria-busy", "true");
-    let completed = false;
-    const version = outputVersion,
-      user = uid(),
-      g = generation;
-    const current = () =>
-      version === outputVersion &&
-      user === uid() &&
-      g === generation &&
-      !panel.hidden &&
-      !host.maintenance();
-    const heading = title().replace(
-      "アイカツアンコール",
-      "アイカツ！アンコール",
-    );
-    const buttons = [...$("trade-export-buttons").querySelectorAll("button")];
-    buttons.forEach((b) => {
-      b.disabled = true;
-    });
-    $("trade-export-status").textContent = "画像を準備しています…";
-    try {
-      const exporter = await ensureExporter();
-      if (!current()) return;
-      const blob = await exporter.create(
-        sheet,
-        heading,
-        (done, total) => {
-          if (current())
-            $("trade-export-status").textContent =
-              `画像を準備しています… ${done} / ${total}`;
-        },
-        current,
-      );
-      if (!current()) return;
-      exporter.show(
-        blob,
-        `${heading}_${sheet.side === "offer" ? "譲" : "求"}_${sheet.page}.jpg`,
-        `${sheet.side === "offer" ? "譲" : "求"} ${sheet.page}枚目（画像${sheet.number}枚目）`,
-      );
-      completed = true;
-      button.dataset.exportState = "done";
-      if (label) label.textContent = `${sheet.page}枚目 · 出力済み`;
-      $("trade-export-status").textContent =
-        "画像を作成しました。「画像を保存」から保存できます。";
-    } catch (error) {
-      if (current()) {
-        $("trade-export-status").textContent = window.CARD_ERROR.message(error);
-        host.toast("画像を作成できませんでした", "error");
-      }
-    } finally {
-      button.removeAttribute("aria-busy");
-      if (!completed) {
-        button.dataset.exportState = wasExported ? "done" : "";
-        if (label) label.textContent = originalLabel;
-      }
-      if (current())
-        buttons.forEach((b) => {
-          b.disabled = false;
-        });
-    }
+    const index = Number(button.dataset.tradePreview);
+    const sheet = exportSheets[index], blob = previewImages.get(index);
+    if (!sheet || !blob || button.disabled || !uid() || host.maintenance()) return;
+    const user = uid(), version = outputVersion;
+    const exporter = await ensureExporter();
+    if (user !== uid() || version !== outputVersion || panel.hidden) return;
+    exporter.show(blob, (sheet.side === "offer" ? "譲" : "求") + "_" + sheet.page + (blob.type === "image/png" ? ".png" : ".jpg"),
+      (sheet.side === "offer" ? "譲れる" : "求める") + (sheet.kind === "card" ? "カード" : "コーデ・パーツ") + " " + sheet.page + " / " + sheet.pages);
   }
   async function open() {
     if (!uid() || host.maintenance()) return;
+    outputVersion++;
+    clearTradePreviews();
     const isVerse = host.isVerse();
     origin = {
       kind: isVerse ? "coordinate" : "card",
@@ -9610,7 +9689,13 @@ verseScript.dispatchEvent(new Event("load"));
             : "おねがい"
         : host.family(),
     };
-    host.screen("trade-page");
+    closeMenu();
+    tradeModal.open();
+    tradeDisplay = { ...window.CARD_TRADE_TOOLS.defaults };
+    try { Object.assign(tradeDisplay, JSON.parse(localStorage.getItem("card-album:trade-image-options:" + uid()) || "{}")); } catch {}
+    window.CARD_TRADE_TOOLS.applySettings(panel, tradeDisplay);
+    tradeDisplay = window.CARD_TRADE_TOOLS.readSettings(panel);
+    panel.querySelector("[data-trade-part-setting]").hidden = origin.kind === "card";
     $("trade-title").textContent = title() + "の交換希望";
     $("trade-load-status").textContent = "読み込み中…";
     $("trade-text-panel").hidden = true;
@@ -9669,17 +9754,7 @@ verseScript.dispatchEvent(new Event("load"));
     }
   }
   button.onclick = open;
-  $("trade-back").onclick = () => {
-    if (origin?.kind === "coordinate")
-      window.CARD_VERSE.open(
-        origin.family === "primagi"
-          ? "primagi"
-          : origin.family === "ひみつ"
-            ? "himitsu"
-            : "onegai",
-      );
-    else host.back();
-  };
+  $("trade-back").onclick = () => tradeModal.close();
   panel.addEventListener("click", (event) => {
     const button = event.target.closest("[data-trade-clear]");
     if (!button) return;
@@ -9705,20 +9780,30 @@ verseScript.dispatchEvent(new Event("load"));
   };
   $("trade-share").onclick = async () => {
     if ($("trade-share").disabled || !uid() || host.maintenance()) return;
-    const data = {
-      title: title() + " 交換希望",
-      text: exportText("trade-post"),
-    };
-    if (!navigator.share) {
-      await copy("trade-post");
-      return;
-    }
+    const files = tradeShareFiles();
+    if (files.length !== exportSheets.length || !files.length) return;
+    const data = { files, title: title() + " 交換希望", text: exportText("trade-post") };
+    const user = uid(), version = outputVersion;
+    const current = () => user === uid() && version === outputVersion && !panel.hidden && !host.maintenance();
     try {
-      await navigator.share(data);
+      if (navigator.share && navigator.canShare?.(data)) {
+        await navigator.share(data);
+        if (current()) host.toast("正常に完了しました");
+      } else {
+        $("trade-share").disabled = true;
+        const text = new File([data.text], "交換希望文.txt", { type: "text/plain;charset=utf-8" });
+        const zip = await window.CARD_OWNERSHIP_IMAGE.zipImages([...files, text], current);
+        if (!current() || !zip) return;
+        const url = URL.createObjectURL(zip);
+        const link = document.createElement("a");
+        link.href = url; link.download = "カードアルバム_交換希望.zip";
+        panel.append(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        host.toast("保存できました");
+      }
     } catch (error) {
-      if (error?.name !== "AbortError")
-        host.toast("共有できませんでした。コピーをご利用ください。", "error");
-    }
+      if (current() && error?.name !== "AbortError") host.toast("共有できませんでした。時間をおいて、もう一度お試しください。", "error");
+    } finally { if (current()) $("trade-share").disabled = false; }
   };
   $("trade-copy-post").onclick = () => copy("trade-post");
   $("trade-copy-text").onclick = () => copy("trade-text");
@@ -9728,7 +9813,14 @@ verseScript.dispatchEvent(new Event("load"));
     $("trade-show-text").setAttribute("aria-expanded", String(show));
   };
   document.addEventListener("click", (e) => {
-    const exportButton = e.target.closest("[data-trade-export]");
+    const page = e.target.closest("[data-trade-preview-page]");
+    if (page) {
+      if (page.disabled) return;
+      const count = exportSheets.filter((sheet) => sheet.side === page.dataset.tradePreviewSide).length;
+      previewPages[page.dataset.tradePreviewSide] = Math.max(0, Math.min(count - 1, Number(page.dataset.tradePreviewPage)));
+      paintTradePreview(page.dataset.tradePreviewSide);
+    }
+    const exportButton = e.target.closest("[data-trade-preview]");
     if (exportButton) outputImage(exportButton);
     const side = e.target.closest("[data-trade-side]");
     if (side) {
