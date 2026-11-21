@@ -69,7 +69,7 @@ dialog.album-tool-dialog {
 #trade-page .trade-step { background: #fff; padding: 18px; margin: 18px 0; }
 #trade-page .trade-step-heading h2 { font-size: 16px; font-weight: 650; }
 #trade-page .trade-step-heading p { font-size: 13px; color: var(--muted); }
-#trade-page .trade-filter-panel { margin: 14px 0; padding: 0; background: var(--soft); border: 1px solid var(--line); border-radius: 14px; }
+#trade-page .trade-filter-panel { margin: 14px 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
 #trade-page .trade-filter-panel summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-weight: 500; font-size: 14px; color: var(--accent); }
 #trade-page .trade-filter-panel summary::after { content: ''; width: 7px; height: 7px; margin-left: auto; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
 #trade-page .trade-filter-panel[open] summary::after { transform: rotate(225deg); }
@@ -157,3 +157,26 @@ dialog.album-tool-dialog {
 @media (max-width:600px) {
   #trade-page .trade-output-previews { grid-template-columns:minmax(0,1fr); gap:16px; }
 }
+
+/* Read generated previews only after load, without a GPU filter on long images. */
+#trade-page .trade-preview-open img { filter:none; opacity:1; visibility:visible; object-fit:contain; }
+#trade-page .trade-preview-open img[hidden] { display:none; }
+#trade-page [data-trade-image-details] :is(#trade-export-status,#trade-overflow):empty { display:none; }
+
+#trade-page .trade-filter-panel > summary,#trade-page .trade-filter-panel > summary:hover { background:#fff; border-radius:inherit; }
+
+/* Use the album filter's rounded triangle on the left. */
+#trade-page #trade-filter-panel > summary { list-style:none; }
+#trade-page #trade-filter-panel > summary::-webkit-details-marker { display:none; }
+#trade-page #trade-filter-panel > summary::marker { content:''; }
+#trade-page #trade-filter-panel > summary::after { content:none; display:none; }
+#trade-page #trade-filter-panel > summary::before {
+ content:''; display:block; flex:0 0 16px; width:16px; height:16px; margin-right:2px;
+ background:currentColor; color:var(--accent); border:0; transform:none;
+ -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 3L16 10L5 17Z' fill='black' stroke='black' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+ mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 3L16 10L5 17Z' fill='black' stroke='black' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+ -webkit-mask-size:contain; mask-size:contain; -webkit-mask-position:center; mask-position:center; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+ transition:transform .16s ease;
+}
+#trade-page #trade-filter-panel[open] > summary::before { transform:rotate(90deg); }
+@media(prefers-reduced-motion:reduce){#trade-page #trade-filter-panel > summary::before{transition:none;}}

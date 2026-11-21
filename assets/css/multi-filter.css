@@ -167,3 +167,13 @@
 
 /* A thin white gap separates adjacent highlighted choices. */
 .album-select-menu.multi-filter-options > label { margin-block:2px; border-radius:7px; }
+
+/* White surfaces for filter boxes, while retaining selection accents. */
+:is(#filter-panel,#all-filter-panel,#verse-filters),
+.filter-panel:not(.ownership-image-settings),
+:is(#filter-panel,#all-filter-panel,#verse-filters) > summary,
+.filter-panel:not(.ownership-image-settings) > summary { background:#fff; }
+:is(#filter-panel,#all-filter-panel,#verse-filters) > summary:hover,
+.filter-panel:not(.ownership-image-settings) > summary:hover { background:#fff; }
+.album-select.multi-filter > .album-select-trigger,
+:is(#filters,#all-filter-fields,#verse-filters,.filter-grid,.trade-filters,.ownership-image-filter-field) :is(input:not([type="checkbox"]),select,.album-select-trigger) { background:#fff; }
