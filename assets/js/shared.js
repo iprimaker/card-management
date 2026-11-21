@@ -260,7 +260,7 @@
         : "no";
   }
   const chapterLabel = (value) =>
-    scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value;
+    scope === "verse-primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : window.CARD_MULTI_FILTER.edition(value);
   function series(c) {
     const labels = verse()
       ? [...new Set((c.appearances || []).map((a) => a.series))]
@@ -376,7 +376,7 @@
             ].join(" "),
           ).includes(q)) &&
         Object.entries(filters).every(
-          ([key, value]) => !value || fieldValues(c, key).includes(value),
+          ([key, value]) => window.CARD_MULTI_FILTER.matches(fieldValues(c, key), value),
         ) &&
         (!includeOwned || ownership === "all" || state(c) === ownership),
     );
@@ -386,7 +386,7 @@
       .map(([key, label]) => {
         const rows = items.filter((c) =>
           Object.entries(filters).every(
-            ([k, v]) => k === key || !v || fieldValues(c, k).includes(v),
+            ([k, v]) => k === key || window.CARD_MULTI_FILTER.matches(fieldValues(c, k), v),
           ),
         );
         const options = [
@@ -400,9 +400,8 @@
               : String(b).localeCompare(String(a), "ja", { numeric: true })
             : String(a).localeCompare(String(b), "ja", { numeric: true }),
         );
-        if (filters[key] && !options.includes(filters[key]))
-          options.unshift(filters[key]);
-        return `<label>${esc(label)}<select data-public-filter="${esc(key)}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}" ${v === filters[key] ? "selected" : ""}>${esc(window.CARD_UI.value(key, key === "series" ? chapterLabel(v) : v))}</option>`).join("")}</select></label>`;
+        options.unshift(...window.CARD_MULTI_FILTER.values(filters[key]).filter((value) => !options.includes(value)));
+        return `<label>${esc(label)}<select multiple data-public-filter="${esc(key)}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}" ${window.CARD_MULTI_FILTER.values(filters[key]).includes(v) ? "selected" : ""}>${esc(window.CARD_UI.value(key, key === "series" ? chapterLabel(v) : v))}</option>`).join("")}</select></label>`;
       })
       .join("");
   }
@@ -574,7 +573,7 @@
         .filter(([, v]) => v)
         .map(
           ([key, value]) =>
-            `<button class="filter-chip" type="button" data-public-clear="${esc(key)}">${esc(fields().find(([k]) => k === key)?.[1] || key)}：${esc(window.CARD_UI.value(key, key === "series" ? chapterLabel(value) : value))}<span aria-hidden="true">×</span></button>`,
+            `<button class="filter-chip" type="button" data-public-clear="${esc(key)}">${esc(fields().find(([k]) => k === key)?.[1] || key)}：${esc(window.CARD_MULTI_FILTER.text(value, (choice) => window.CARD_UI.value(key, key === "series" ? chapterLabel(choice) : choice)))}<span aria-hidden="true">×</span></button>`,
         )
         .join("") +
       ($("public-query").value.trim()
@@ -1011,6 +1010,11 @@
     filters[key] = e.target.value;
     page = 1;
     fillFields();
+    const refreshed = [...$("public-fields").querySelectorAll("select")].find((input) => input.dataset.publicFilter === key);
+    if (refreshed) {
+      window.CARD_MULTI_FILTER.enhance(refreshed);
+      refreshed.closest(".multi-filter").open = true;
+    }
     render();
   };
   $("public-query").oninput = () => {

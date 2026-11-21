@@ -186,7 +186,7 @@
     <details id="all-filter-panel" class="filter-panel"><summary>カードを絞り込む<span id="all-filter-summary" class="all-filter-count"></span></summary><div class="filter-content"><label class="search-label" for="all-query">フリーワード検索<input id="all-query" type="search" placeholder="カード名・コードなど" autocomplete="off"><button type="button" id="all-clear-query" class="filter-clear" data-all-clear="query" aria-label="フリーワード検索を解除">解除</button></label><div id="all-filter-fields" class="filter-grid"></div><div class="filter-footer"><button type="button" class="text-button" id="all-clear">すべての絞り込みを解除</button></div></div></details>
     <div id="all-active-filters" class="active-filters" aria-label="適用中の絞り込み" aria-live="polite"></div>
     <div class="ownership-toolbar"><div class="owned-tabs all-owned-tabs" role="group" aria-label="所持状況で絞り込む"><span class="owned-tabs-slider" aria-hidden="true"></span><button type="button" class="active" data-all-owned="all" aria-pressed="true">すべて</button><button type="button" data-all-owned="yes" aria-pressed="false">持っている</button><button type="button" data-all-owned="no" aria-pressed="false">持っていない</button></div></div>
-    <div class="results-heading"><h2 id="all-filtered-count"></h2><div class="results-controls card-display-toolbar"><label class="display-count"><span class="display-control-label">並び順</span><select id="all-sort"><option value="official">公式掲載順</option><option value="code">番号順</option><option value="name">名前順</option><option value="rarity">レアリティ順</option><option value="quantity">所持数順</option></select></label><label class="display-count"><span class="display-control-label">表示件数</span><select id="all-size"><option value="20">20枚</option><option value="50">50枚</option><option value="100">100枚</option><option value="all">すべて</option></select></label><div class="mobile-column-control" role="group" aria-label="カード一覧の列数"><span class="mobile-column-label">カードの並び</span><div class="mobile-column-buttons"><button type="button" data-all-columns="2" aria-pressed="false">2列</button><button type="button" data-all-columns="3" aria-pressed="true">3列</button></div></div></div></div>
+    <div class="results-heading"><h2 id="all-filtered-count"></h2><div class="results-controls card-display-toolbar"><label class="display-count"><span class="display-control-label">並び順</span><select id="all-sort"><option value="official">公式掲載順</option><option value="code">番号順</option><option value="name">カード名順</option><option value="character">キャラ順</option><option value="rarity">レアリティ順</option><option value="quantity">所持数順</option></select></label><label class="display-count"><span class="display-control-label">表示件数</span><select id="all-size"><option value="20">20枚</option><option value="50">50枚</option><option value="100">100枚</option><option value="all">すべて</option></select></label><div class="mobile-column-control" role="group" aria-label="カード一覧の列数"><span class="mobile-column-label">カードの並び</span><div class="mobile-column-buttons"><button type="button" data-all-columns="2" aria-pressed="false">2列</button><button type="button" data-all-columns="3" aria-pressed="true">3列</button></div></div></div></div>
     <p id="all-status" role="status" aria-live="polite"></p><div id="all-cards" class="card-grid" data-mobile-columns="3"></div><p id="all-empty" hidden><strong>見つかりませんでした</strong><span>条件を変えて探してみてください</span></p>
     <div class="pagination"><button type="button" id="all-prev">前のページ</button><nav id="all-page-numbers" aria-label="カード一覧のページ"></nav><button type="button" id="all-next">次のページ</button></div>
 `;
@@ -543,7 +543,7 @@
             k === "だん数" && current === "academy"
               ? "収録区分"
               : window.CARD_UI.label(k);
-          return `<label><span class="filter-label">${esc(label)}<button type="button" class="filter-clear" data-all-clear="${esc(k)}" disabled>解除</button></span><select data-all-filter="${esc(k)}" id="all-filter-${i}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}">${esc(window.CARD_UI.value(k, v))}</option>`).join("")}<option value="__unknown__">未取得・未設定</option></select></label>`;
+          return `<label><span class="filter-label">${esc(label)}<button type="button" class="filter-clear" data-all-clear="${esc(k)}" disabled>解除</button></span><select multiple data-all-filter="${esc(k)}" id="all-filter-${i}"><option value="">すべて</option>${options.map((v) => `<option value="${esc(v)}">${esc(window.CARD_UI.value(k, v))}</option>`).join("")}<option value="__unknown__">未取得・未設定</option></select></label>`;
         })
         .join("") +
       `<label><span class="filter-label">お気に入り<button type="button" class="filter-clear" data-all-clear="favorite" disabled>解除</button></span><select id="all-favorite-filter" ${favoritesReady ? "" : "disabled"}><option value="all">すべて</option><option value="only">☆ お気に入りのみ</option></select></label><label><span class="filter-label">QRコード<button type="button" class="filter-clear" data-all-clear="qr" disabled>解除</button></span><select id="all-qr-filter"><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label><label><span class="filter-label">重複<button type="button" class="filter-clear" data-all-clear="duplicate" disabled>解除</button></span><select id="all-duplicates"><option value="">すべて</option><option value="only">重複あり</option></select></label>`;
@@ -578,10 +578,10 @@
         filterKeys.every(
           (k) =>
             !selected[k] ||
-            (selected[k] === "__unknown__"
-              ? values(c, k).length === 0 ||
-                values(c, k).every((v) => v === "-")
-              : values(c, k).some((v) => v.normalize("NFKC") === selected[k])),
+            window.CARD_MULTI_FILTER.values(selected[k]).some((choice) =>
+              choice === "__unknown__"
+                ? values(c, k).length === 0 || values(c, k).every((v) => v === "-")
+                : values(c, k).some((v) => v.normalize("NFKC") === choice)),
         ) &&
         (!favorite || (favoritesReady && favorites.has(c.id))) &&
         (!selected.duplicate || quantity(c.id) >= 2) &&
@@ -610,6 +610,7 @@
                 ? 4
                 : 5;
     };
+    if (sort === "character") return sortCatalogList(cards, sort, (card) => quantity(card.id), (card) => values(card, "キャラ名"));
     if (sort !== "official")
       cards = [...cards].sort((a, b) =>
         sort === "quantity"
@@ -778,7 +779,7 @@
             ? "未取得・未設定"
             : k === "duplicate"
               ? "あり"
-              : window.CARD_UI.value(k, v),
+              : window.CARD_MULTI_FILTER.text(v, (choice) => choice === "__unknown__" ? "未取得・未設定" : window.CARD_UI.value(k, choice)),
         ]),
       ...(favoriteFilter ? [["favorite", "お気に入り", "登録済み"]] : []),
       ...(qrFilter !== "all"
@@ -1046,7 +1047,7 @@
           key: key === "だん数" ? "series" : key,
           label: input.getAttribute("aria-label"),
           value: input.value,
-          disabled: input.disabled,
+          disabled: input.disabled, multiple: Boolean(input.dataset.allFilter),
           options: [...input.options].map(({ value, text, disabled }) => ({ value, text, disabled })),
         };
       }),
@@ -1080,11 +1081,11 @@
         const conditions = controls.flatMap(({ key, label, options }) => {
           const value = local[key]?.trim();
           if (!value || value === "all" || key === "series") return [];
-          const text = options?.find((option) => option.value === value)?.text || value;
+          const text = window.CARD_MULTI_FILTER.optionsText(options || [], value);
           return [`${label}：${text}`];
         });
         return {
-          edition: editionControl.options.find(({ value }) => value === local.series)?.text,
+          edition: window.CARD_MULTI_FILTER.optionsText(editionControl.options, local.series),
           filtered: rows,
           rateBase: rows,
           conditions,

@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261118-ownership-image-v78";
+  const version = "20261121-onegai-edition-v87";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
@@ -538,7 +538,7 @@
       ? ["album"]
       : [page === "browse" ? "shared" : page]
     )
-      .concat("primagi", ...(page === "album" ? ["aikatsu-all", "ownership-image-share"] : []))
+      .concat("primagi", ...(["album", "browse", "shared"].includes(page) ? ["multi-filter"] : []), ...(page === "album" ? ["aikatsu-all", "ownership-image-share", "list-sort"] : []))
       .map(stylesheet),
   );
   styles.then(
@@ -569,6 +569,7 @@
       : Promise.resolve();
   Promise.all([styles, dependencies, preview])
     .then(() => (["album", "browse", "shared"].includes(page) ? script("card-image-transform.js") : undefined))
+    .then(() => (["album", "browse", "shared"].includes(page) ? script("multi-filter.js") : undefined))
     .then(() => script("site-common.js"))
     .then(() => {
       window.CARD_SITE_COMMON.init(page);

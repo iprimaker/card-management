@@ -508,7 +508,8 @@
     const byEdition = display.byEdition || display.markComplete;
     const groups = new Map();
     for (const row of rows) {
-      const edition = selectedEdition || row.editions?.[0];
+      const selectedEditions = window.CARD_MULTI_FILTER.values(selectedEdition);
+      const edition = row.editions?.find((value) => selectedEditions.includes(value)) || row.editions?.[0];
       const name = editionLabels.get(edition) || edition || `${editionLabel}不明`;
       const editionTitle = completeEditions.has(edition) ? `${name}（コンプ）` : name;
       const label = [
@@ -1086,6 +1087,7 @@
         input.placeholder = control.placeholder || "";
       }
       input.id = inputId;
+      if (control.multiple) input.dataset.imageMultiple = "";
       input.dataset.imageFilter = control.key;
       input.dataset.imageDefault = control.options?.[0]?.value || "";
       input.value = requiredEdition ? (control.value === "all" ? "" : control.value || "") : control.value;
@@ -1109,6 +1111,9 @@
       if (!requiredEdition) heading.append(clear);
       field.append(heading, input);
       (control.options ? grid : search).append(field);
+      if (control.multiple) window.CARD_MULTI_FILTER.enhance(input);
+      input.value = requiredEdition ? (control.value === "all" ? "" : control.value || "") : control.value;
+      clear.disabled = input.disabled || input.value === defaultValue;
     }
   }
 

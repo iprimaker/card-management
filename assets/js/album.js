@@ -1974,7 +1974,7 @@ function renderSeriesProgress() {
       const cards = all.filter((c) => values(c.series).includes(label));
       const got = cards.filter((c) => owned.has(c.id)).length;
       const rate = cards.length ? (got / cards.length) * 100 : 0;
-      return `<div class="progress-card progress-card-small"><div><span>${esc(label)}</span><strong>${ownershipReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${ownershipReady ? rate : 0}%"></span></div><p>${ownershipReady ? `取得済 ${window.CARD_UI.number(got)}枚 ／ 未取得 ${window.CARD_UI.number(cards.length - got)}枚` : "所持データを読み込み中"}</p></div>`;
+      return `<div class="progress-card progress-card-small"><div><span>${esc(window.CARD_MULTI_FILTER.edition(label))}</span><strong>${ownershipReady ? rate.toFixed(1) + "%" : "—"}</strong></div><div class="progress-track"><span style="width:${ownershipReady ? rate : 0}%"></span></div><p>${ownershipReady ? `取得済 ${window.CARD_UI.number(got)}枚 ／ 未取得 ${window.CARD_UI.number(cards.length - got)}枚` : "所持データを読み込み中"}</p></div>`;
     })
     .join("");
 }
@@ -2020,8 +2020,8 @@ function fillFilters() {
                 a.localeCompare(b, "ja", { numeric: true })
             : a.localeCompare(b, "ja", { numeric: true });
         });
-        if (filters[key] && !opts.includes(filters[key])) delete filters[key];
-        return `<label><span class="filter-label">${label}<button type="button" class="filter-clear" data-clear-filter="${key}" aria-label="${label}の絞り込みを解除">解除</button></span><select data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${filters[key] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
+        filters[key] = window.CARD_MULTI_FILTER.retain(filters[key], opts);
+        return `<label><span class="filter-label">${label}<button type="button" class="filter-clear" data-clear-filter="${key}" aria-label="${label}の絞り込みを解除">解除</button></span><select multiple data-filter="${key}"><option value="">すべて</option>${opts.map((v) => `<option value="${esc(v)}" ${window.CARD_MULTI_FILTER.values(filters[key]).includes(v) ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
       })
       .join("") +
     favoriteFilterMarkup() +
@@ -2048,12 +2048,28 @@ function normalizeCardCode(value) {
     .toLowerCase()
     .replace(/[-‐‑‒–—―−\s]/g, "");
 }
+function sortCatalogList(rows, order, quantity, character = (row) => row.character) {
+  if (!order || order === "official") return rows;
+  const compare = (a, b) => String(a || "").localeCompare(String(b || ""), "ja", { numeric: true });
+  return [...rows].sort((a, b) => {
+    if (order === "character") {
+      const key = (row) => (Array.isArray(character(row)) ? character(row).join(" ／ ") : String(character(row) || "")).normalize("NFKC").trim();
+      const first = key(a), second = key(b);
+      if (!first || !second) return Number(!first) - Number(!second) || compare(a.code, b.code);
+      return compare(first, second) || compare(a.code, b.code);
+    }
+    if (order === "quantity") return quantity(b) - quantity(a) || compare(a.code, b.code);
+    if (order === "name") return compare(a.name, b.name) || compare(a.code, b.code);
+    return compare(a.code, b.code);
+  });
+}
+
 function filtered(includeOwnership = true, local = null) {
   const q = (local?.query ?? $("query").value).normalize("NFKC").toLowerCase().trim();
   const selectedOwnership = local?.ownership ?? ownershipFilter;
   const compactQuery = normalizeCardCode(q);
   const selectedFields = local ? fields[game].map(([key]) => [key, local[key]]) : Object.entries(filters);
-  return albumCards().filter(
+  const rows = albumCards().filter(
     (c) =>
       (!(local ? local.favorite === "only" : favoriteFilter) || (favoritesReady && favorites.has(c.id))) &&
       (!(local ? local.duplicate === "only" : duplicateFilter) || (ownershipReady && quantityOf(c.id) >= 2)) &&
@@ -2079,16 +2095,14 @@ function filtered(includeOwnership = true, local = null) {
           ))) &&
       selectedFields.every(
         ([k, v]) =>
-          !v ||
-          (k === "songs"
-            ? values(c.songs).map(songFilterValue)
-            : values(c[k])
-          ).includes(v),
+          window.CARD_MULTI_FILTER.matches(k === "songs"
+            ? values(c.songs).map(songFilterValue) : values(c[k]), v),
       ) &&
       (!includeOwnership ||
         selectedOwnership === "all" ||
         (selectedOwnership === "yes" ? owned.has(c.id) : !owned.has(c.id))),
   );
+  return sortCatalogList(rows, $("card-sort").value, (card) => ownershipReady ? quantityOf(card.id) : 0);
 }
 function name(c) {
   return c.name || "カード名未取得";
@@ -2104,17 +2118,51 @@ function ownershipImageControls(specs) {
     if (!input || input.closest("label")?.hidden) return [];
     return [{
       key, label,
-      value: input.value, disabled: input.disabled,
+      value: input.value, disabled: input.disabled, multiple: input.matches("select[data-filter], #verse-series, #verse-group, #primagi-rarity, #primagi-verse-compat"),
       options: input.options ? Array.from(input.options, ({ value, text, disabled }) => ({ value, text, disabled })) : null,
       placeholder: input.placeholder,
     }];
   });
 }
+function cardOwnershipImage() {
+  if (!game || game === "primagi" || !ownershipReady) return null;
+  const toRow = (c) => ({
+    id: c.id, name: name(c), code: c.code, image: c._visibility?.image ? "" : c.front,
+    editions: values(c.series), character: values(c.character).join(" ／ "), rarity: displayRarity(c),
+    transform: c.frontTransform, quantity: quantityOf(c.id),
+    collected: owned.has(c.id), duplicate: quantityOf(c.id) >= 2, rotate: c.game === "aikatsu",
+  });
+  const controls = ownershipImageControls([
+    ["query", "#query", "検索"],
+    ...fields[game].map(([key, label]) => [key, `#filters select[data-filter="${key}"]`, label]),
+    ["favorite", "#favorite-filter", "お気に入り"],
+    ["duplicate", "#duplicate-filter", "重複"],
+    ["trade", '#filters [data-trade-filter="card"]', "譲渡関係"],
+    ["qr", '#filters [data-qr-filter="card"]', "QRコード"],
+  ]);
+  return {
+    title: game === "aikatsu" ? "アイカツ！アンコール" : (aipriFamily === "ひみつ" ? "ひみつのアイプリ" : "おねがいアイプリ"),
+    theme: game === "aipri" ? "blue" : "rose",
+    unit: "種", editionLabel: "弾数", controls,
+    select: (local) => {
+      const rows = filtered(false, local).map(toRow);
+      return {
+        edition: game === "aipri" && aipriFamily !== "ひみつ"
+          ? window.CARD_MULTI_FILTER.text(local.series, (v) => v.match(/^【?おねがいアイプリ\s*([0-9０-９]+(?:だん|弾))】?$/)?.[1] || v)
+          : window.CARD_MULTI_FILTER.text(local.series),
+        filtered: rows,
+        rateBase: rows,
+        conditions: ownershipImageConditions(controls, local),
+      };
+    },
+  };
+}
+
 function ownershipImageConditions(controls, local) {
   return controls.flatMap(({ key, label, options }) => {
     const value = local[key]?.trim();
     if (!value || value === "all" || key === "series") return [];
-    const text = options?.find((option) => option.value === value)?.text || value;
+    const text = window.CARD_MULTI_FILTER.optionsText(options || [], value);
     return [`${label}：${text}`];
   });
 }
@@ -2124,7 +2172,7 @@ function activeCardFilters() {
     .map(([key, value]) => ({
       key,
       label: fields[game].find(([field]) => field === key)?.[1] || key,
-      value,
+      value: window.CARD_MULTI_FILTER.text(value),
     }));
   if (favoriteFilter)
     active.push({ key: "favorites", label: "お気に入り", value: "のみ" });
@@ -2465,7 +2513,7 @@ function openDetail(id, trigger, navigating = false) {
     $("modal-fields").innerHTML = fields[c.game]
       .map(
         ([k, label]) =>
-          `<dt>${c.game === "aipri" && k === "family" ? "シリーズ" : label}</dt><dd>${esc(values(c[k]).join(" ／ ") || "未取得")}</dd>`,
+          `<dt>${c.game === "aipri" && k === "family" ? "シリーズ" : label}</dt><dd>${esc(k === "series" ? window.CARD_MULTI_FILTER.edition(values(c[k]).join(" ／ ") || "未取得") : values(c[k]).join(" ／ ") || "未取得")}</dd>`,
       )
       .join("");
   }
@@ -3469,6 +3517,10 @@ $("cards").onclick = (e) => {
     toggleButton = e.target.closest("[data-toggle]");
   if (detail) openDetail(detail.dataset.detail, detail);
   if (toggleButton) toggle(toggleButton.dataset.toggle);
+};
+$("card-sort").onchange = () => {
+  page = 1;
+  render();
 };
 $("page-size").onchange = () => {
   const value = $("page-size").value;
@@ -4836,6 +4888,7 @@ window.CARD_TRADE_HOST = {
   game: () => game,
   family: () => aipriFamily,
   cards: () => catalog.cards,
+  ownershipImage: (isVerse) => isVerse ? window.CARD_VERSE?.ownershipImage() : cardOwnershipImage(),
   verse: () => window.CARD_VERSE?.tradeData(),
   quantity: (kind, id) =>
     kind === "card"
@@ -6336,10 +6389,10 @@ init();
           label.append(
             input,
             document.createTextNode(
-              (scope === "verse-primagi"
+              window.CARD_MULTI_FILTER.edition((scope === "verse-primagi"
                 ? window.CARD_PRIMAGI.chapterLabel(value)
                 : value
-              ).replaceAll("弾", "だん"),
+              ).replaceAll("弾", "だん")),
             ),
           );
           return label;
@@ -6470,39 +6523,7 @@ init();
       return;
     }
     const inVerse = Boolean($("verse") && !$("verse").hidden);
-    const snapshot = inVerse ? window.CARD_VERSE?.ownershipImage() : (() => {
-      if (!game || game === "primagi" || !ownershipReady) return null;
-      const toRow = (c) => ({
-        name: name(c), code: c.code, image: c._visibility?.image ? "" : c.front,
-        editions: values(c.series), character: values(c.character).join(" ／ "), rarity: displayRarity(c),
-        transform: c.frontTransform, quantity: quantityOf(c.id),
-        collected: owned.has(c.id), duplicate: quantityOf(c.id) >= 2, rotate: c.game === "aikatsu",
-      });
-      const controls = ownershipImageControls([
-        ["query", "#query", "検索"],
-        ...fields[game].map(([key, label]) => [key, `#filters select[data-filter="${key}"]`, label]),
-        ["favorite", "#favorite-filter", "お気に入り"],
-        ["duplicate", "#duplicate-filter", "重複"],
-        ["trade", '#filters [data-trade-filter="card"]', "譲渡関係"],
-        ["qr", '#filters [data-qr-filter="card"]', "QRコード"],
-      ]);
-      return {
-        title: game === "aikatsu" ? "アイカツ！アンコール" : (aipriFamily === "ひみつ" ? "ひみつのアイプリ" : "おねがいアイプリ"),
-        theme: game === "aipri" ? "blue" : "rose",
-        unit: "種", editionLabel: "弾数", controls,
-        select: (local) => {
-          const rows = filtered(false, local).map(toRow);
-          return {
-            edition: game === "aipri" && aipriFamily !== "ひみつ"
-              ? local.series?.match(/^【?おねがいアイプリ\s*([0-9０-９]+(?:だん|弾))】?$/)?.[1] || local.series
-              : local.series,
-            filtered: rows,
-            rateBase: rows,
-            conditions: ownershipImageConditions(controls, local),
-          };
-        },
-      };
-    })();
+    const snapshot = inVerse ? window.CARD_VERSE?.ownershipImage() : cardOwnershipImage();
     if (!snapshot) {
       host.toast("所持状況を読み込み中です。", "error");
       return;
@@ -7085,10 +7106,9 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
   const seriesName = (value) =>
     value === "primagi" ? "ワッチャプリマジ！" : familyName(value) + "アイプリ";
   const displayLabel = (value) => String(value || "").replaceAll("弾", "だん");
-  const chapterDisplayLabel = (value) =>
-    displayLabel(
+  const chapterDisplayLabel = (selection) => window.CARD_MULTI_FILTER.text(selection, (value) => (displayLabel(
       family === "primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value,
-    );
+    )));
   const cacheKey =
     "card-verse-public:" + new URL(window.APP_CONFIG.supabaseUrl).hostname;
   let catalog = null,
@@ -7193,7 +7213,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     <details id="verse-filters"><summary><span>コーデを絞り込む</span><span id="verse-filter-summary" class="filter-summary"></span><span class="verse-chevron" aria-hidden="true"></span></summary><div class="verse-disclosure"><label class="verse-search"><span>フリーワード検索<button type="button" class="filter-clear" data-verse-clear="query">解除</button></span><input id="verse-query" type="search" placeholder="コーデ名・コード・キャンペーン名" autocomplete="off"></label><div class="verse-filter-grid"><label id="primagi-verse-compat-field" hidden><span>アイプリバース対応<button type="button" class="filter-clear" data-verse-clear="primagi-verse-compat">解除</button></span><select id="primagi-verse-compat"><option value="">すべて</option><option value="supported">対応コーデ（全パーツ）</option><option value="partial">一部パーツのみ対応</option><option value="unlisted">公式一覧に掲載なし・未確認</option></select></label><label id="primagi-rarity-field" hidden><span>レアリティ<button type="button" class="filter-clear" data-verse-clear="primagi-rarity">解除</button></span><select id="primagi-rarity"></select></label><label><span>弾数<button type="button" class="filter-clear" data-verse-clear="series">解除</button></span><select id="verse-series"></select></label><label><span>ガチャ・キャンペーン<button type="button" class="filter-clear" data-verse-clear="group">解除</button></span><select id="verse-group"></select></label><label><span>お気に入り<button type="button" class="filter-clear" data-verse-clear="favorite">解除</button></span><select id="verse-favorite-filter"><option value="all">すべて</option><option value="only">お気に入りのみ</option></select></label><label><span>重複<button type="button" class="filter-clear" data-verse-clear="duplicate">解除</button></span><select id="verse-duplicate-filter"><option value="all">すべて</option><option value="only">重複あり</option></select></label><label id="verse-qr-filter" for="verse-qr-select"><span class="filter-label">QRコード<button type="button" class="filter-clear" data-qr-clear="coordinate">解除</button></span><select id="verse-qr-select" data-qr-filter="coordinate" disabled><option value="all">すべて</option><option value="yes">QR登録済み</option><option value="no">QR未登録</option></select></label></div><p id="primagi-verse-compat-source" hidden class="primagi-verse-compat-source">対応状況は公式の対象一覧（2026年10月30日確認）に基づきます。<a href="https://aipri.jp/verse/howto/6.html" target="_blank" rel="noopener noreferrer">公式情報</a></p><div class="verse-clear-row"><button id="verse-clear" type="button" class="text-button">すべての絞り込みを解除</button></div></div></details>
     <div id="verse-active-filters" class="verse-active-filters"></div>
     <div class="verse-owned-tabs owned-tabs" role="group" aria-label="コーデの所持状態"><span class="verse-owned-slider owned-tabs-slider" aria-hidden="true"></span><button type="button" data-verse-view="all">すべて</button><button type="button" data-verse-view="full">持っている</button><button type="button" data-verse-view="partial">一部持っている</button><button type="button" data-verse-view="none">持っていない</button></div>
-    <p id="verse-message" role="status"></p><div class="verse-list-toolbar"><h2 id="verse-found"></h2><div class="verse-display-controls"><label class="verse-display-count display-count"><span>表示件数</span><select id="verse-size"><option value="20">20件</option><option value="50">50件</option><option value="100">100件</option><option value="all">すべて</option></select></label><div class="verse-column-control"><span>コーデの並び</span><div class="verse-column-segment" role="group" aria-label="スマホのコーデ列数"><button type="button" data-verse-columns="2">2列</button><button type="button" data-verse-columns="3">3列</button></div></div></div></div>
+    <p id="verse-message" role="status"></p><div class="verse-list-toolbar"><h2 id="verse-found"></h2><div class="verse-display-controls"><label class="verse-display-count display-count"><span>並び順</span><select id="verse-sort" aria-label="コーデ一覧の並び順"><option value="official">標準順</option><option value="code">番号順</option><option value="name">コーデ名順</option><option value="character">キャラ順</option><option value="quantity">所持数順</option></select></label><label class="verse-display-count display-count"><span>表示件数</span><select id="verse-size"><option value="20">20件</option><option value="50">50件</option><option value="100">100件</option><option value="all">すべて</option></select></label><div class="verse-column-control"><span>コーデの並び</span><div class="verse-column-segment" role="group" aria-label="スマホのコーデ列数"><button type="button" data-verse-columns="2">2列</button><button type="button" data-verse-columns="3">3列</button></div></div></div></div>
     <div id="verse-cards" class="verse-cards"></div><p id="verse-empty" hidden><strong>見つかりませんでした</strong><span>条件を変えて探してみてください</span></p><section id="verse-related-search" class="verse-related-search" aria-label="別シリーズの検索結果" hidden><p data-related-message role="status"></p><button type="button" data-verse-related-family></button><small>フリーワードを引き継ぎ、ほかの絞り込みを解除して表示します。</small></section><nav id="verse-pages" class="verse-pages" aria-label="コーデ一覧のページ"></nav>
     <div class="verse-sync"><button id="verse-sync" type="button" class="catalog-update-text" aria-label="コーデ情報を更新する">コーデ情報の更新</button></div>`;
   $("collection").after(panel);
@@ -7336,30 +7356,29 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     const selectedGroup = local?.group ?? group;
     const selectedRarity = local?.rarity ?? primagiRarity;
     const selectedOwnership = local?.ownership ?? ownershipView;
-    return pool().filter(
+    const rows = pool().filter(
       (c) =>
         (family !== "primagi" ||
           !selectedRarity ||
-          c.rarity.split(" ／ ").includes(selectedRarity)) &&
+          window.CARD_MULTI_FILTER.matches(c.rarity.split(" ／ "), selectedRarity)) &&
         (family !== "primagi" ||
-          window.CARD_PRIMAGI_VERSE_COMPAT.matches(
-            c,
-            parts,
-            local?.compatibility ?? primagiVerseCompatibility,
-          )) &&
+          (!(window.CARD_MULTI_FILTER.values(local?.compatibility ?? primagiVerseCompatibility).length) ||
+            window.CARD_MULTI_FILTER.values(local?.compatibility ?? primagiVerseCompatibility).some(
+              (value) => window.CARD_PRIMAGI_VERSE_COMPAT.matches(c, parts, value)))) &&
         (!(local ? local.favorite === "only" : favoriteOnly) || favorites.has(c.id)) &&
         (!(local ? local.duplicate === "only" : duplicateOnly) || duplicate(c)) &&
         (trade()?.matches("coordinate", c.id, local?.trade) ?? true) &&
         imageQRMatches("coordinate", c.id, c.part_ids, local?.qr) &&
         appearances(c).some(
           (a) =>
-            (!selectedSeries || a.series === selectedSeries) && (!selectedGroup || a.group === selectedGroup),
+            window.CARD_MULTI_FILTER.matches(a.series, selectedSeries) && window.CARD_MULTI_FILTER.matches(a.group, selectedGroup),
         ) &&
         matchesQuery(c, needle) &&
         (!includeOwnership ||
           selectedOwnership === "all" ||
           state(c) === selectedOwnership),
     );
+    return sortCatalogList(rows, $("verse-sort").value, (coordinate) => ready ? quantity(coordinate) : 0);
   }
   function representative(value) {
     const all =
@@ -7438,6 +7457,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
             `<option value="${esc(v)}">${esc(id === "verse-series" || id === "verse-collection-series" ? chapterDisplayLabel(v) : displayLabel(v))}</option>`,
         )
         .join("");
+    if ($(id).matches("#verse-series, #verse-group, #primagi-rarity, #verse-collection-series")) window.CARD_MULTI_FILTER.enhance($(id));
     $(id).value = value;
   }
   function fillFilters(latest = false) {
@@ -7474,11 +7494,11 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
       return rank(b) - rank(a) || a.localeCompare(b, "ja");
     });
     if (latest) series = labels[0] || "";
-    if (!labels.includes(series)) series = "";
+    series = window.CARD_MULTI_FILTER.retain(series, labels);
     options("verse-series", labels, series, "すべて");
     options("verse-collection-series", labels, collectionSeries, "すべて");
     const matching = all.filter((c) =>
-      appearances(c).some((a) => !series || a.series === series),
+      appearances(c).some((a) => window.CARD_MULTI_FILTER.matches(a.series, series)),
     );
     const starRank = (label) =>
       Math.max(
@@ -7489,12 +7509,12 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
       ...new Set(
         matching.flatMap((c) =>
           appearances(c)
-            .filter((a) => !series || a.series === series)
+            .filter((a) => window.CARD_MULTI_FILTER.matches(a.series, series))
             .map((a) => a.group),
         ),
       ),
     ].sort((a, b) => starRank(b) - starRank(a) || a.localeCompare(b, "ja"));
-    if (!groups.includes(group)) group = "";
+    group = window.CARD_MULTI_FILTER.retain(group, groups);
     options("verse-group", groups, group, "すべて");
   }
 
@@ -7529,7 +7549,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     const base = pool().filter(
       (c) =>
         !collectionSeries ||
-        appearances(c).some((a) => a.series === collectionSeries),
+        appearances(c).some((a) => window.CARD_MULTI_FILTER.matches(a.series, collectionSeries)),
     );
     const completed = base.filter(collected).length;
     $("verse-collection-count").textContent =
@@ -7570,16 +7590,16 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
       [
         "primagi-rarity",
         "レアリティ",
-        family === "primagi" ? primagiRarity : "",
+        family === "primagi" ? window.CARD_MULTI_FILTER.text(primagiRarity) : "",
       ],
       [
         "primagi-verse-compat",
         "アイプリバース対応",
         family === "primagi" && primagiVerseCompatibility
-          ? window.CARD_PRIMAGI_VERSE_COMPAT.labels[primagiVerseCompatibility]
+          ? window.CARD_MULTI_FILTER.text(primagiVerseCompatibility, (v) => window.CARD_PRIMAGI_VERSE_COMPAT.labels[v])
           : "",
       ],
-      ["group", "ガチャ・キャンペーン", group],
+      ["group", "ガチャ・キャンペーン", window.CARD_MULTI_FILTER.text(group)],
       ["favorite", "お気に入り", favoriteOnly ? "登録済み" : ""],
       ["duplicate", "重複", duplicateOnly ? "重複あり" : ""],
     ].filter((x) => x[2]);
@@ -7922,7 +7942,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     const base = pool().filter(
         (c) =>
           !collectionSeries ||
-          appearances(c).some((a) => a.series === collectionSeries),
+          appearances(c).some((a) => window.CARD_MULTI_FILTER.matches(a.series, collectionSeries)),
       ),
       n = base.filter(collected).length;
     $("verse-collection-count").textContent =
@@ -8477,6 +8497,10 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     collectionSeries = $("verse-collection-series").value;
     renderCollection();
   };
+  $("verse-sort").onchange = () => {
+    page = 1;
+    render();
+  };
   $("verse-size").onchange = () => {
     size = $("verse-size").value;
     page = 1;
@@ -8685,7 +8709,7 @@ window.CARD_DETAIL_SWIPE($("detail"), ".viewer", moveDetail);
     ownershipImage() {
       if (!ready || owner !== currentUser() || !catalog) return null;
       const toRow = (c) => ({
-        name: c.name, code: c.code,
+        id: c.id, partIds: c.part_ids, name: c.name, code: c.code,
         editions: [...new Set(appearances(c).map((a) => a.series).filter(Boolean))],
         character: values(c.character).join(" ／ "), rarity: c.rarity,
         image: c._visibility?.image ? "" : window.CARD_PRIMAGI.verseImage(c.image || c.thumbnail),
@@ -8804,6 +8828,8 @@ verseScript.dispatchEvent(new Event("load"));
     priorities = new Map(),
     busy = new Set(),
     origin = null;
+  let tradeSource = null;
+  let tradeControls = [];
   const filters = { card: "all", coordinate: "all" };
   const uid = () => host.session()?.user.id || null;
   const key = (kind, id, side) => JSON.stringify([kind, String(id), side]);
@@ -8824,7 +8850,7 @@ verseScript.dispatchEvent(new Event("load"));
   panel.id = "trade-page";
   panel.hidden = true;
   panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="text-button">アルバムに戻る</button></div>
- <details id="trade-filter-panel" class="trade-filter-panel"><summary><span class="trade-chevron" aria-hidden="true"></span><span>交換希望を絞り込む</span><small id="trade-filter-count"></small></summary><div class="trade-filters"><label>キーワード<input id="trade-query" type="search" placeholder="名前・コード"></label><label>弾数<select id="trade-series"></select></label><label id="trade-rarity-label">レアリティ<select id="trade-rarity"></select></label><label id="trade-group-label">ガチャ・キャンペーン<select id="trade-group"></select></label></div></details><p id="trade-load-status" role="status"></p>
+ <details id="trade-filter-panel" class="filter-panel trade-filter-panel"><summary>絞り込み<small id="trade-filter-count"></small></summary><div class="filter-content"><div id="trade-filter-search"></div><div class="filter-grid trade-filters" id="trade-filter-fields"></div></div></details><div id="trade-active-filters" class="active-filters" aria-label="適用中の絞り込み"></div><p id="trade-load-status" role="status"></p>
  <section class="trade-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求のカードを確認</h2><p id="trade-review-description">絞り込みを使って、画像に入れるカードを確認してください。赤枠は優先のものです。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div></section>
  <section class="trade-step trade-export-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>希望画像を出力</h2><p id="trade-export-description">1画像に最大36枚。譲・求ごとに、保存する画像を選んでください。</p></div></div><div id="trade-export-buttons" class="trade-export-buttons"></div><p id="trade-export-status" role="status" aria-live="polite"></p></section>
  <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">3</span><div><h2>交換希望の文章をコピー</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div></section><div class="trade-share-area"><button id="trade-share" type="button">共有</button><p>文章を共有します。出力した画像は共有先で添付してください。</p></div><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
@@ -8843,6 +8869,8 @@ verseScript.dispatchEvent(new Event("load"));
     imageQueue.clear();
     filters.card = filters.coordinate = "all";
     origin = null;
+    tradeSource = null;
+    tradeControls = [];
     panel.hidden = true;
     for (const id of ["trade-post", "trade-text", "trade-method"])
       $(id).value = "";
@@ -9197,43 +9225,57 @@ verseScript.dispatchEvent(new Event("load"));
     return [...full, ...parts.values()];
   }
   const values = (v) => (Array.isArray(v) ? v : v ? [v] : []);
-  function filtered() {
-    const query = $("trade-query")
-      .value.normalize("NFKC")
-      .toLowerCase()
-      .replace(/[\s-]/g, "");
-    return items().filter(
-      (c) =>
-        (!query ||
-          [c.code, c.name, c.character, ...values(c.songs)]
-            .join(" ")
-            .normalize("NFKC")
-            .toLowerCase()
-            .replace(/[\s-]/g, "")
-            .includes(query)) &&
-        (!$("trade-series").value ||
-          values(c.series).includes($("trade-series").value)) &&
-        (!$("trade-rarity").value || c.rarity === $("trade-rarity").value) &&
-        (!$("trade-group").value ||
-          values(c.groups).includes($("trade-group").value)),
-    );
+  function tradeSelection() {
+    return Object.fromEntries(tradeControls.map((control) => [control.key, $("trade-" + control.key).value]));
   }
-  function options(id, rows) {
-    $(id).innerHTML =
-      '<option value="">すべて</option>' +
-      [...new Set(rows.filter(Boolean))]
-        .sort((a, b) =>
-          id === "trade-series" && origin?.game === "primagi"
-            ? window.CARD_PRIMAGI.chapterRank(b) -
-                window.CARD_PRIMAGI.chapterRank(a) ||
-              b.localeCompare(a, "ja", { numeric: true })
-            : b.localeCompare(a, "ja", { numeric: true }),
-        )
-        .map(
-          (v) =>
-            `<option value="${esc(v)}">${esc(origin?.game === "primagi" && id === "trade-series" ? window.CARD_PRIMAGI.chapterLabel(v) : v)}</option>`,
-        )
-        .join("");
+  function filtered() {
+    if (!tradeSource) return [];
+    const selected = tradeSource.select(tradeSelection()).filtered;
+    const coordinates = new Set(selected.map((row) => row.id));
+    const partIds = new Set(selected.flatMap((row) => row.partIds || []));
+    return items().filter((row) => row.kind === "part" ? partIds.has(row.id) : coordinates.has(row.id));
+  }
+  function mountTradeFilters() {
+    $("trade-filter-search").replaceChildren();
+    $("trade-filter-fields").replaceChildren();
+    for (const control of tradeControls) {
+      const id = "trade-" + control.key;
+      const field = document.createElement("div");
+      field.className = "ownership-image-filter-field";
+      field.dataset.tradeFilterField = "";
+      const heading = document.createElement("div");
+      heading.className = "ownership-image-filter-heading";
+      const label = document.createElement("label");
+      label.htmlFor = id;
+      label.textContent = control.key === "query" ? "フリーワード検索" : control.label;
+      const input = document.createElement(control.options ? "select" : "input");
+      input.id = id;
+      input.dataset.tradeLocalFilter = control.key;
+      input.dataset.tradeDefault = control.options?.[0]?.value || "";
+      input.disabled = control.key === "trade" ? !ready : Boolean(control.disabled);
+      if (control.options) {
+        input.replaceChildren(...control.options.map(({ text, value, disabled }) => Object.assign(new Option(text, value), { disabled: Boolean(disabled) })));
+      } else {
+        input.type = "search";
+        input.placeholder = control.placeholder || "名前・コード";
+      }
+      const clearButton = document.createElement("button");
+      clearButton.type = "button";
+      clearButton.className = "filter-clear";
+      clearButton.dataset.tradeClear = id;
+      clearButton.textContent = "解除";
+      clearButton.setAttribute("aria-label", label.textContent + "の絞り込みを解除");
+      clearButton.disabled = true;
+      heading.append(label);
+      if (control.key !== "series") heading.append(clearButton);
+      field.append(heading, input);
+      $(control.options ? "trade-filter-fields" : "trade-filter-search").append(field);
+      if (control.multiple) {
+        input.dataset.tradeMultiple = "";
+        window.CARD_MULTI_FILTER.enhance(input);
+      }
+      input.value = input.dataset.tradeDefault;
+    }
   }
   function title() {
     if (origin?.game === "primagi") return "ワッチャプリマジ！";
@@ -9323,13 +9365,22 @@ verseScript.dispatchEvent(new Event("load"));
   }
   function renderOutput() {
     if (!origin || panel.hidden) return;
-    const applied = [
-      $("trade-query").value.trim(),
-      $("trade-series").value,
-      $("trade-rarity").value,
-      $("trade-group").value,
-    ].filter(Boolean).length;
-    $("trade-filter-count").textContent = applied ? `適用中 ${applied}件` : "";
+    const active = tradeControls.flatMap((control) => {
+      const id = "trade-" + control.key;
+      const input = $(id);
+      if (!input || input.value === input.dataset.tradeDefault || !input.value) return [];
+      return [[id, control.label, control.options
+        ? window.CARD_MULTI_FILTER.optionsText([...input.options], input.value) : input.value.trim()]];
+    }).filter(([, , value]) => value);
+    $("trade-filter-count").textContent = active.length ? `適用中 ${active.length}件` : "";
+    $("trade-active-filters").innerHTML = active.length
+      ? '<span class="active-filters-label">適用中</span>' + active.map(([id, label, value]) =>
+          `<button type="button" class="filter-chip" data-trade-clear="${id}" aria-label="${esc(label)}の絞り込みを解除"><span>${esc(label)}：<strong>${esc(value)}</strong></span><span class="filter-chip-close" aria-hidden="true">×</span></button>`).join("")
+      : "";
+    panel.querySelectorAll(".filter-clear[data-trade-clear]").forEach((button) => {
+      const input = $(button.dataset.tradeClear);
+      button.disabled = input.value === input.dataset.tradeDefault || input.disabled;
+    });
     outputVersion++;
     const all = filtered(),
       rank = (side) => (a, b) =>
@@ -9381,8 +9432,6 @@ verseScript.dispatchEvent(new Event("load"));
       ? `譲・求合わせて${count}画像になります。共有先の添付枚数をご確認ください。すべての画像を出力できます。`
       : "";
     const unit = origin.kind === "coordinate" ? "コーデ" : "カード";
-    $("trade-series").closest("label").firstChild.textContent = origin.family === "primagi" ? "章" : "弾数";
-    $("trade-group-label").firstChild.textContent = origin.family === "primagi" ? "入手方法" : "ガチャ・キャンペーン";
     $("trade-review-title").textContent = `譲・求の${unit}を確認`;
     $("trade-review-description").textContent = `絞り込みを使って、画像に入れる${unit}を確認してください。赤枠は優先のものです。`;
     $("trade-export-description").textContent = `1画像に最大36${origin.kind === "coordinate" ? "コーデ" : "枚"}。譲・求ごとに、保存する画像を選んでください。`;
@@ -9566,7 +9615,11 @@ verseScript.dispatchEvent(new Event("load"));
     $("trade-load-status").textContent = "読み込み中…";
     $("trade-text-panel").hidden = true;
     $("trade-show-text").setAttribute("aria-expanded", "false");
-    $("trade-query").value = "";
+    tradeSource = null;
+    tradeControls = [];
+    $("trade-active-filters").replaceChildren();
+    $("trade-filter-search").replaceChildren();
+    $("trade-filter-fields").replaceChildren();
     $("trade-filter-panel").open = false;
     $("trade-sheets").replaceChildren();
     const user = uid(),
@@ -9574,21 +9627,10 @@ verseScript.dispatchEvent(new Event("load"));
     try {
       await load();
       if (user !== uid() || g !== generation || panel.hidden) return;
-      const all = items();
-      options(
-        "trade-series",
-        all.flatMap((c) => values(c.series)),
-      );
-      options(
-        "trade-rarity",
-        all.map((c) => c.rarity),
-      );
-      options(
-        "trade-group",
-        all.flatMap((c) => values(c.groups)),
-      );
-      $("trade-group-label").hidden = origin.kind === "card";
-      $("trade-rarity-label").hidden = origin.kind !== "card";
+      tradeSource = host.ownershipImage(origin.kind === "coordinate");
+      if (!tradeSource) throw Error("カードや所持状況を読み込んでからお試しください。");
+      tradeControls = tradeSource.controls;
+      mountTradeFilters();
       $("trade-load-status").textContent = "";
       renderOutput();
     } catch (error) {
@@ -9638,7 +9680,19 @@ verseScript.dispatchEvent(new Event("load"));
       );
     else host.back();
   };
-  $("trade-query").oninput = renderOutput;
+  panel.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-trade-clear]");
+    if (!button) return;
+    const input = $(button.dataset.tradeClear);
+    input.value = input.dataset.tradeDefault;
+    renderOutput();
+  });
+  panel.addEventListener("input", (event) => {
+    if (event.target.matches('input[data-trade-local-filter]')) renderOutput();
+  });
+  panel.addEventListener("change", (event) => {
+    if (event.target.matches('select[data-trade-local-filter]')) renderOutput();
+  });
   $("trade-method").oninput = () => {
     for (const id of ["trade-post", "trade-text"]) {
       $(id).value = $(id).value.replace(
@@ -9649,8 +9703,6 @@ verseScript.dispatchEvent(new Event("load"));
       );
     }
   };
-  for (const id of ["trade-series", "trade-rarity", "trade-group"])
-    $(id).onchange = renderOutput;
   $("trade-share").onclick = async () => {
     if ($("trade-share").disabled || !uid() || host.maintenance()) return;
     const data = {
@@ -9684,7 +9736,7 @@ verseScript.dispatchEvent(new Event("load"));
       toggle(c.dataset.tradeKind, c.dataset.tradeId, side.dataset.tradeSide);
     }
     const clearButton = e.target.closest("[data-trade-clear]");
-    if (clearButton) {
+    if (clearButton && ["card", "coordinate"].includes(clearButton.dataset.tradeClear)) {
       clear(clearButton.dataset.tradeClear);
       host.changed(true);
     }
