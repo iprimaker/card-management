@@ -13,6 +13,10 @@
     blue: { accent: "#306398", dark: "#294767", light: "#f6fbff", canvas: "#f8fbff", border: "#dce8f5", muted: "#4b6886", wash: "#e0edfb", badge: "#dceafb" },
     yellow: { accent: "#805915", dark: "#503d20", light: "#fffaf0", canvas: "#fffdf6", border: "#efe1b9", muted: "#70582d", wash: "#fbedbe", badge: "#f6e8b7" },
   };
+  function applyTheme(target, key) {
+    const {accent,dark,light,border,muted,wash}=themes[key]||themes.rose;
+    for(const [name,value] of Object.entries({'--accent':accent,'--line':border,'--muted':muted,'--soft':wash,'--ownership-image-surface':light,'--ownership-image-ink':dark}))target.style.setProperty(name,value);
+  }
   const left = 36;
   const issueDateFormat = new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo", year: "numeric", month: "long", day: "numeric",
@@ -1307,13 +1311,7 @@
     const isCoordinate = data.unit === "コーデ";
     settings.querySelector("[data-image-part-setting]").hidden = !isCoordinate;
     settings.querySelector("[data-image-card-setting]").hidden = isCoordinate;
-    const { accent, dark, light, border, muted, wash } = themes[data.theme] || themes.rose;
-    dialog.style.setProperty("--accent", accent);
-    dialog.style.setProperty("--line", border);
-    dialog.style.setProperty("--muted", muted);
-    dialog.style.setProperty("--soft", wash);
-    dialog.style.setProperty("--ownership-image-surface", light);
-    dialog.style.setProperty("--ownership-image-ink", dark);
+    applyTheme(dialog, data.theme);
     authorized = isAuthorized;
     const hideSharedPage = dialog.querySelector("[data-hide-shared-page]");
     const shareOption = hideSharedPage.closest("label");
@@ -1344,5 +1342,5 @@
   }
 
   function close() { if (dialog?.open) dialog.close(); }
-  window.CARD_OWNERSHIP_IMAGE = Object.freeze({ open, close, createTrade, tradePages, tradeRows, capacity: size, zipImages });
+  window.CARD_OWNERSHIP_IMAGE = Object.freeze({ open, close, applyTheme, createTrade, tradePages, tradeRows, capacity: size, zipImages });
 })();

@@ -8863,7 +8863,7 @@ verseScript.dispatchEvent(new Event("load"));
   panel.hidden = true;
   panel.innerHTML = `<div class="trade-heading"><div><span class="eyebrow">TRADE LIST</span><h1 id="trade-title">交換希望</h1><p class="trade-intro">登録した譲・求をまとめて、交換希望を作成できます。</p></div><button type="button" id="trade-back" class="album-tool-close" aria-label="交換希望を閉じる">×</button></div>
  <details id="trade-filter-panel" class="filter-panel trade-filter-panel"><summary>絞り込み<small id="trade-filter-count"></small></summary><div class="filter-content"><div id="trade-filter-search"></div><div class="filter-grid trade-filters" id="trade-filter-fields"></div></div></details><div id="trade-active-filters" class="active-filters" aria-label="適用中の絞り込み"></div><p id="trade-load-status" role="status"></p>
- <section class="trade-step trade-preview-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求の画像プレビュー</h2><p id="trade-review-description">画像をタップすると拡大できます。画像下の番号でページを切り替えられます。</p></div></div><div class="trade-totals" id="trade-output-count"></div><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div><div id="trade-export-buttons" hidden></div>${window.CARD_TRADE_TOOLS.progressMarkup()}<p id="trade-export-status" role="status" aria-live="polite"></p>${window.CARD_TRADE_TOOLS.settingsMarkup()}</section>
+ <section class="trade-step trade-preview-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求の画像プレビュー</h2><p id="trade-review-description">画像をタップすると拡大できます。画像下の番号でページを切り替えられます。</p></div></div><dl class="ownership-image-metrics" id="trade-output-count"></dl><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div><div id="trade-export-buttons" hidden></div>${window.CARD_TRADE_TOOLS.progressMarkup()}<p id="trade-export-status" role="status" aria-live="polite"></p>${window.CARD_TRADE_TOOLS.settingsMarkup()}</section>
  <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>交換希望を文章と画像で共有</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div><div class="trade-share-area"><button id="trade-share" type="button" disabled>画像と文章を共有</button></div></section><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
   $("collection").after(panel);
   const tradeModal = window.CARD_TRADE_TOOLS.modal(panel, "交換希望", () => {
@@ -9420,13 +9420,15 @@ verseScript.dispatchEvent(new Event("load"));
     const url = selected && previewURLs.get(selected.index);
     button.disabled = !url;
     button.dataset.tradePreview = selected?.index ?? "";
-    picture.hidden = !url;
-    if (url) picture.src = url;
-    else picture.removeAttribute("src");
-    status.hidden = Boolean(url);
+    window.CARD_TRADE_TOOLS.paintImage(picture, url, state => {
+      status.hidden = state === "ready";
+      if (state !== "ready") status.textContent = state === "error"
+        ? "プレビューを読み込めません。タップすると画像を確認できます。" : "画像を表示しています…";
+    });
+    if (!url) status.hidden = false;
     container.classList.toggle("is-empty", !sheets.length);
     status.classList.toggle("trade-empty", !sheets.length);
-    if(sheets.length) status.textContent="画像作成中…";
+    if(sheets.length) { if(!url) status.textContent="画像作成中…"; }
     else status.innerHTML='<strong>登録なし</strong><span>一覧から「'+(side === "offer" ? '譲' : '求')+'」を登録すると<br>ここに画像が表示されます</span>';
     const nav = container.querySelector("[data-preview-pages]");
     nav.hidden = sheets.length < 2;
@@ -9483,7 +9485,9 @@ verseScript.dispatchEvent(new Event("load"));
         }, current);
         if (!current()) return;
         previewImages.set(index, blob);
-        previewURLs.set(index, URL.createObjectURL(blob));
+        const previewURL = await window.CARD_TRADE_TOOLS.makePreview(blob, current);
+        if (!current()) { if(previewURL)URL.revokeObjectURL(previewURL); return; }
+        previewURLs.set(index, previewURL);
         paintTradePreview(sheet.side);
         window.CARD_TRADE_TOOLS.progress(panel, (index + 1) / sheets.length, index + 1, sheets.length);
       }
@@ -9531,6 +9535,7 @@ verseScript.dispatchEvent(new Event("load"));
     window.CARD_TRADE_IMAGE?.close();
     const chosen = tradeSelection();
     const imageFilters = tradeSource?.select(chosen);
+    window.CARD_OWNERSHIP_IMAGE.applyTheme(panel.querySelector("[data-trade-image-details]"), tradeSource?.theme);
     const edition = imageFilters?.edition || (tradeSource?.editionLabel === "章" ? "全章" : "全弾");
     const conditions = imageFilters?.conditions || [];
     const all = filtered(),
@@ -9575,7 +9580,7 @@ verseScript.dispatchEvent(new Event("load"));
       }
     }
     $("trade-output-count").innerHTML =
-      `<span><strong>譲</strong> ${groups[0].sections.flatMap(sections => sections.flatMap(section => section.rows)).length}件</span><span><strong>求</strong> ${groups[1].sections.flatMap(sections => sections.flatMap(section => section.rows)).length}件</span>`;
+      `<div><dt>譲</dt><dd>${groups[0].sections.flatMap(sections => sections.flatMap(section => section.rows)).length}件</dd></div><div><dt>求</dt><dd>${groups[1].sections.flatMap(sections => sections.flatMap(section => section.rows)).length}件</dd></div>`;
     const overflow = count >= 4;
     $("trade-overflow").textContent = overflow
       ? `譲・求合わせて${count}画像になります。共有先の添付枚数をご確認ください。すべての画像を出力できます。`

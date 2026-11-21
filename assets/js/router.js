@@ -396,7 +396,7 @@
 })();
 (() => {
   "use strict";
-  const version = "20261122-presence-session-v100";
+  const version = "20261122-filter-triangle-v104";
   const requested = new URLSearchParams(location.search).get("view");
   const invitationRoute = requested === "invite";
   const page = ["shared", "browse", "contact", "card-registration"].includes(
