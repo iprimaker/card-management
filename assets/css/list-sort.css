@@ -1,0 +1,39 @@
+#collection .card-display-toolbar,
+#verse .verse-display-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem .85rem;
+}
+#collection .card-display-toolbar > .display-count,
+#verse .verse-display-controls > .display-count {
+  min-width: 0;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  #collection .card-display-toolbar,
+  #verse .verse-display-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    align-items: end;
+  }
+  #collection .card-display-toolbar > .display-count,
+  #verse .verse-display-controls > .display-count {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: .35rem;
+  }
+  #collection .card-display-toolbar .display-count :is(select, .album-select),
+  #verse .verse-display-controls .display-count :is(select, .album-select) {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+  #collection .card-display-toolbar .mobile-column-control,
+  #verse .verse-display-controls .verse-column-control {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,166 @@
+/* Reuse the single-selection control's typography, border and chevron. */
+.album-select.multi-filter {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.multi-filter > .multi-filter-source { display: none !important; }
+.album-select.multi-filter > .album-select-trigger {
+  position: relative;
+  inset: auto;
+  box-sizing: border-box;
+  min-height: 42px;
+}
+.multi-filter .album-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.multi-filter > .album-select-trigger:disabled { opacity: .5; cursor: default; }
+.album-select-menu.multi-filter-options {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  z-index: 10000;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.multi-filter-options::backdrop { background: transparent; }
+.album-select-menu.multi-filter-options > label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+  text-align: left;
+}
+.multi-filter-options > label > span { min-width: 0; overflow-wrap: anywhere; }
+.album-select-menu.multi-filter-options input[type="checkbox"] {
+  appearance: auto;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+.multi-filter-options > label:hover { background: var(--soft, #f4f6fa); }
+.multi-filter-options > label:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.trade-filters .multi-filter,
+.ownership-image-filter-field > .multi-filter { margin-top: 0; }
+.trade-filters > label { min-width: 0; }
+.trade-filters .multi-filter > .album-select-trigger { font: inherit; }
+
+/* Selected text never changes the dimensions of the collapsed control. */
+.album-select.multi-filter { max-width: 100%; }
+.album-select.multi-filter > .album-select-trigger {
+  width: 100%;
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  overflow: hidden;
+}
+.multi-filter > .album-select-trigger > .album-select-value {
+  display: block;
+  flex: 1 1 0;
+  width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:is(#filters, #all-filter-fields, #public-fields, .filter-grid, .trade-filters) > label {
+  min-width: 0;
+}
+:is(#active-filters, #all-active-filters, #verse-active-filters, #public-tags, #trade-active-filters) .filter-chip {
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+:is(#active-filters, #all-active-filters, #verse-active-filters, #trade-active-filters) .filter-chip > span:first-child {
+  min-width: 0;
+  width: auto;
+  height: auto;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+#trade-filter-panel > summary {
+  display: list-item;
+  padding: 18px 22px;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--accent);
+  list-style: disclosure-closed inside;
+}
+#trade-filter-panel[open] > summary { list-style-type: disclosure-open; }
+#trade-filter-panel > summary::-webkit-details-marker { display: inline-block; }
+#trade-filter-count { margin-left: .5rem; }
+#trade-filter-panel > .filter-content {
+  margin: 0;
+  padding: 0 clamp(.8rem, 3vw, 1.2rem) clamp(.8rem, 3vw, 1.2rem);
+}
+#trade-filter-panel .trade-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: .8rem 1rem;
+  margin-top: .8rem;
+  padding: 0;
+}
+#trade-filter-panel .ownership-image-filter-field {
+  display: grid;
+  gap: .35rem;
+  min-width: 0;
+}
+#trade-filter-panel .ownership-image-filter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .4rem;
+  min-height: 28px;
+}
+#trade-filter-panel .ownership-image-filter-heading label {
+  display: block;
+  margin: 0;
+  line-height: 1.3;
+  font: inherit;
+}
+#trade-filter-panel .filter-clear {
+  position: static;
+  flex: none;
+  min-height: 28px;
+  margin: 0;
+  padding: .2rem .55rem;
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  background: #fff;
+  color: var(--accent);
+  box-shadow: none;
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#trade-filter-panel .ownership-image-filter-field > :is(input, .album-select) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  margin: 0;
+}
+@media (max-width: 520px) {
+  #trade-filter-panel .trade-filters { gap: .55rem; }
+}
+#trade-filter-panel [data-trade-filter-field][hidden] { display: none !important; }
