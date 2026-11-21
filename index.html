@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
     <link rel="stylesheet" href="./assets/css/base.css?v=20261106-qr-limit-policy-v40" />
-    <script defer src="./assets/js/router.js?v=20261118-ownership-image-v78"></script>
+    <script defer src="./assets/js/router.js?v=20261121-onegai-edition-v87"></script>
     <script defer src="./assets/js/login-position.js?v=20261106-qr-limit-policy-v40"></script>
   </head>
   <body>
@@ -438,6 +438,7 @@
           <div class="results-heading">
             <h2 id="result-count"></h2>
             <div class="results-controls card-display-toolbar">
+              <label class="display-count"><span class="display-control-label">並び順</span><select id="card-sort" aria-label="カード一覧の並び順"><option value="official">標準順</option><option value="code">番号順</option><option value="name">カード名順</option><option value="character">キャラ順</option><option value="quantity">所持数順</option></select></label>
               <label class="display-count">
                 <span class="display-control-label">表示件数</span>
                 <select aria-label="一覧の表示件数" id="page-size">
