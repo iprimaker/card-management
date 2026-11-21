@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
     <link rel="stylesheet" href="./assets/css/base.css?v=20261106-qr-limit-policy-v40" />
-    <script defer src="./assets/js/router.js?v=20261121-onegai-edition-v87"></script>
+    <script defer src="./assets/js/router.js?v=20261122-presence-session-v100"></script>
     <script defer src="./assets/js/login-position.js?v=20261106-qr-limit-policy-v40"></script>
   </head>
   <body>
@@ -478,7 +478,7 @@
               <span class="eyebrow">MY CARD STATS</span>
               <h1 id="probability-title">確率確認</h1>
             </div>
-            <button type="button" hidden="" id="probability-back">アルバムに戻る</button>
+            <button type="button" id="probability-back" class="album-tool-close" aria-label="確率確認を閉じる">×</button>
           </div>
           <p class="muted">
             登録した所持枚数から計算した割合です。公式の排出確率ではありません。
