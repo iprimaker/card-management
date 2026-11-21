@@ -164,3 +164,6 @@
   #trade-filter-panel .trade-filters { gap: .55rem; }
 }
 #trade-filter-panel [data-trade-filter-field][hidden] { display: none !important; }
+
+/* A thin white gap separates adjacent highlighted choices. */
+.album-select-menu.multi-filter-options > label { margin-block:2px; border-radius:7px; }
