@@ -1,0 +1,4498 @@
+/* Card Album: common.js. Original vendor notices: assets/licenses. */
+(() => {
+  const { modules, loadModule, ensureQRBundle, ensureQREncoder } = window.CARD_RUNTIME;
+  modules["card-visibility.js"] = function (sourceURL) {
+    (() => {
+      let snapshot = null,
+        flight = null,
+        timer,
+        stamp,
+        fingerprint;
+      let cardIndex = new Map();
+      let lastSuccess = 0,
+        retryAt = 0,
+        failures = 0,
+        lastError,
+        scheduledData = null;
+      const MIN_FRESH = 15000,
+        POLL_MS = 120000;
+      const offline = () => typeof navigator !== "undefined" && navigator.onLine === false;
+      const client = window.supabase.createClient(
+        window.APP_CONFIG.supabaseUrl,
+        window.APP_CONFIG.supabaseKey,
+        {
+          auth: {
+            storageKey: "card-visibility-anonymous",
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        },
+      );
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&apos;",
+            })[c],
+        );
+      function placeholder(v) {
+        const date = v.until
+          ? new Date(v.until).toLocaleString("ja-JP", {
+              timeZone: "Asia/Tokyo",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+          : null;
+        const reason =
+          {
+            secret: "シークレットカード",
+            prerelease: "発売前のカード",
+            review: "確認中のカード",
+          }[v.reason] || "公開準備中のカード";
+        const lines = date
+          ? [reason + "のため", date + "まで", "画像を非公開にしています"]
+          : [reason + "のため", "画像を非公開にしています", "公開日時は決まり次第ご案内します"];
+        const svg =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="600" viewBox="0 0 420 600"><rect width="420" height="600" rx="24" fill="#f3effb"/><rect x="18" y="18" width="384" height="564" rx="18" fill="white" stroke="#ddd1ef"/><g text-anchor="middle" fill="#625371" font-family="sans-serif">' +
+          lines
+            .map(
+              (s, i) =>
+                '<text x="210" y="' +
+                (225 + i * 45) +
+                '" font-size="' +
+                (i ? 18 : 25) +
+                '">' +
+                esc(s) +
+                "</text>",
+            )
+            .join("") +
+          "</g></svg>";
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+      }
+      function mask(cards) {
+        return cards.map((card) => {
+          const canonical = cardIndex.get(card.id);
+          if (!canonical) return card;
+          if (!canonical._visibility) return card;
+          const v = canonical._visibility;
+          let c = v.details ? { ...canonical } : { ...card, _visibility: v };
+          if (v.name) c.name = canonical.name;
+          if (v.image) {
+            c.front = placeholder(v);
+            c.back = null;
+            c.image = c.front;
+            c.thumbnail = c.front;
+            delete c.coordinateDefinitions;
+          }
+          return c;
+        });
+      }
+      function mark() {
+        return JSON.stringify(snapshot.cards);
+      }
+      function schedule(data, failed = false) {
+        clearTimeout(timer);
+        if (data && !failed) scheduledData = data;
+        if (document.hidden || offline()) return;
+        const transition = Date.parse(data?.next_transition) - Date.parse(data?.server_time);
+        const poll = POLL_MS * (1 + Math.random() * 0.2);
+        const boundary = Number.isFinite(transition)
+          ? transition > 0
+            ? Math.max(250, transition + 150)
+            : 10000
+          : Infinity;
+        const delay = failed ? Math.max(1000, retryAt - Date.now()) : Math.min(poll, boundary);
+        timer = setTimeout(() => {
+          if (!document.hidden && !offline()) refresh({ force: true }).catch(() => {});
+        }, delay);
+      }
+      async function rpc(name) {
+        const controller = new AbortController(),
+          timeout = setTimeout(() => controller.abort(), 10000);
+        try {
+          let request = client.rpc(name);
+          if (typeof request.abortSignal === "function")
+            request = request.abortSignal(controller.signal);
+          return await request;
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+      async function refresh({ force = false } = {}) {
+        if (flight) return flight;
+        if (Date.now() < retryAt) throw lastError;
+        if (snapshot && !force && Date.now() - lastSuccess < MIN_FRESH) return snapshot;
+        flight = (async () => {
+          if (offline()) throw Error("通信状態を確認して再読み込みしてください。");
+          const statusResult = await rpc("card_visibility_public_status");
+          // Never turn an unavailable status check into an expensive full-catalog read.
+          if (statusResult.error || !statusResult.data?.fingerprint)
+            throw Error("公開設定を確認できませんでした。時間をおいて再度お試しください。");
+          const status = statusResult.data;
+          if (snapshot && status.fingerprint === fingerprint) {
+            lastSuccess = Date.now();
+            failures = 0;
+            retryAt = 0;
+            schedule(status);
+            return snapshot;
+          }
+          const { data, error } = await rpc("card_visibility_display_catalog");
+          if (error || !Array.isArray(data?.cards))
+            throw Error(
+              "公開設定を確認できませんでした。通信状態を確認して再読み込みしてください。",
+            );
+          const oldFingerprint = fingerprint;
+          snapshot = data;
+          cardIndex = new Map();
+          for (const card of snapshot.cards) {
+            if (!cardIndex.has(card.id)) cardIndex.set(card.id, card);
+          }
+          fingerprint = status.fingerprint;
+          lastSuccess = Date.now();
+          failures = 0;
+          retryAt = 0;
+          const next = mark();
+          const changed = stamp !== undefined && (next !== stamp || oldFingerprint !== fingerprint);
+          stamp = next;
+          if (changed) document.dispatchEvent(new CustomEvent("card-visibility-updated"));
+          schedule(data);
+          return data;
+        })()
+          .catch((error) => {
+            lastError = error;
+            failures = Math.min(failures + 1, 6);
+            retryAt =
+              Date.now() +
+              Math.min(300000, 15000 * 2 ** (failures - 1)) * (1 + Math.random() * 0.2);
+            schedule(null, true);
+            throw error;
+          })
+          .finally(() => {
+            flight = null;
+          });
+        return flight;
+      }
+      function rarityCode(value) {
+        const s = String(value || "")
+          .normalize("NFKC")
+          .trim();
+        if (/^[★☆]{1,4}$/.test(s)) return "★" + s.length;
+        const m = s.match(/^[★☆]\s*([1-4])$/);
+        return m ? "★" + m[1] : s;
+      }
+      function rarity(value) {
+        const code = rarityCode(value);
+        return /^★[1-4]$/.test(code)
+          ? "☆" + String.fromCharCode(0xff10 + Number(code.slice(1)))
+          : value;
+      }
+      const api = {
+        mask,
+        refresh,
+        rarity,
+        rarityCode,
+        get cards() {
+          return snapshot ? mask(snapshot.cards) : [];
+        },
+        cache() {
+          return snapshot
+            ? {
+                version: 1,
+                cards: api.cards,
+                overrides: [],
+                state: { updated_at: snapshot.server_time, running: false },
+              }
+            : null;
+        },
+      };
+      window.CARD_VISIBILITY = api;
+      api.ready = refresh();
+      window.addEventListener("online", () => refresh().catch(() => {}));
+      document.addEventListener("visibilitychange", () => {
+        clearTimeout(timer);
+        if (!document.hidden)
+          refresh()
+            .then(() => schedule(scheduledData))
+            .catch(() => schedule(null, true));
+      });
+      window.addEventListener("offline", () => clearTimeout(timer));
+    })();
+  };
+
+  modules["guest-access.js"] = function (sourceURL) {
+    /* Guest browsing switch. Album sessions and shared links keep their existing flow. */
+    (() => {
+      "use strict";
+      const browse = new URLSearchParams(location.search).get("view") === "browse";
+      const nativeFetch = window.fetch.bind(window);
+      let enabled = false,
+        flight = null,
+        checkedAt = 0;
+      const link = document.getElementById("guest-browse-link");
+      function updateLink() {
+        if (link) link.hidden = !enabled || document.body.classList.contains("invitation-route");
+      }
+      async function refresh() {
+        if (flight) return flight;
+        flight = (async () => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 8000);
+          try {
+            const config = window.APP_CONFIG;
+            const response = await nativeFetch(
+              config.supabaseUrl + "/rest/v1/rpc/card_guest_browse_status",
+              {
+                method: "POST",
+                headers: {
+                  apikey: config.supabaseKey,
+                  "Content-Type": "application/json",
+                },
+                body: "{}",
+                cache: "no-store",
+                signal: controller.signal,
+              },
+            );
+            if (!response.ok) throw Error("閲覧設定を確認できませんでした。");
+            const data = await response.json();
+            if (typeof data?.enabled !== "boolean") throw Error("閲覧設定を確認できませんでした。");
+            enabled = data.enabled;
+            checkedAt = Date.now();
+            updateLink();
+            return enabled;
+          } finally {
+            clearTimeout(timer);
+          }
+        })()
+          .catch((error) => {
+            enabled = false;
+            updateLink();
+            throw error;
+          })
+          .finally(() => {
+            flight = null;
+          });
+        return flight;
+      }
+      function showStopped(unavailable = false) {
+        document.querySelectorAll("dialog[open]").forEach((dialog) => dialog.close?.());
+        document.body.classList.remove("auth-checking");
+        document.getElementById("auth-checking-status")?.remove();
+        document.body.style.visibility = "visible";
+        const main = document.createElement("main");
+        main.className = "guest-browse-stopped";
+        main.innerHTML = `<section aria-labelledby="guest-stop-title"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="7" width="36" height="47" rx="9"/><path d="M22 22h12M22 30h9"/><circle cx="46" cy="46" r="13"/><path d="M42 41v10M50 41v10"/></svg><h1 id="guest-stop-title"></h1><p></p><div><button type="button">状態を更新</button><a href="./">ログイン画面へ</a></div></section>`;
+        main.querySelector("h1").textContent = unavailable
+          ? "通信状態をご確認ください"
+          : "閲覧専用ページは一時停止中です";
+        main.querySelector("p").textContent = unavailable
+          ? "現在の利用状況を確認できませんでした。時間をおいて、もう一度お試しください。"
+          : "ただいま「ログインせずに利用」をお休みしています。時間をおいて、またアクセスしてください。アルバムをお持ちの方はログインしてご利用いただけます。";
+        main.querySelector("button").onclick = () => location.reload();
+        document.body.replaceChildren(main);
+        document.title = "閲覧専用ページ｜カードアルバム";
+      }
+      const task = refresh();
+      const ready = browse
+        ? task.then(
+            (allowed) => {
+              if (!allowed)
+                throw Object.assign(Error("閲覧専用ページは一時停止中です。"), {
+                  code: "GUEST_BROWSE_PAUSED",
+                });
+            },
+            () => {
+              throw Object.assign(Error("閲覧設定を確認できませんでした。"), {
+                code: "GUEST_BROWSE_UNAVAILABLE",
+              });
+            },
+          )
+        : Promise.resolve();
+      if (!browse) task.catch(() => {});
+      if (link)
+        link.addEventListener("click", async (event) => {
+          event.preventDefault();
+          try {
+            if (await refresh()) location.assign(link.href);
+          } catch {}
+        });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && Date.now() - checkedAt > 60000)
+          refresh()
+            .then((allowed) => {
+              if (browse && !allowed) showStopped();
+            })
+            .catch(() => {});
+      });
+      if (browse)
+        setInterval(() => {
+          if (!document.hidden)
+            refresh()
+              .then((allowed) => {
+                if (!allowed) showStopped();
+              })
+              .catch(() => {});
+        }, 60000);
+      window.CARD_GUEST_ACCESS = Object.freeze({
+        ready,
+        refresh,
+        showStopped,
+        get enabled() {
+          return enabled;
+        },
+      });
+    })();
+  };
+
+  modules["maintenance-warning.js"] = function (sourceURL) {
+    (() => {
+      "use strict";
+      const lead = 20 * 60 * 1000;
+      const prefix = "card-album:maintenance-warning:";
+      const dismissed = new Set();
+      let plan = null,
+        dialog,
+        currentKey = "",
+        timer;
+      const format = (value) =>
+        new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date(value));
+      function isDismissed(key) {
+        if (dismissed.has(key)) return true;
+        try {
+          return localStorage.getItem(prefix + key) === "1";
+        } catch {
+          return false;
+        }
+      }
+      function remember() {
+        if (!currentKey) return;
+        dismissed.add(currentKey);
+        try {
+          localStorage.setItem(prefix + currentKey, "1");
+        } catch {}
+      }
+      function closeAutomatically() {
+        currentKey = "";
+        if (dialog?.open) dialog.close();
+      }
+      function makeDialog() {
+        if (dialog) return;
+        dialog = document.createElement("dialog");
+        dialog.className = "maintenance-warning-dialog";
+        dialog.tabIndex = -1;
+        dialog.setAttribute("aria-labelledby", "maintenance-warning-title");
+        dialog.setAttribute("aria-describedby", "maintenance-warning-intro");
+        dialog.innerHTML =
+          '<div class="maintenance-warning-topbar"><div class="maintenance-warning-label"><span class="maintenance-warning-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span><span>メンテナンスのお知らせ</span></div><button class="maintenance-warning-close" type="button" data-dismiss aria-label="メンテナンスのお知らせを閉じる">×</button></div><div class="maintenance-warning-body"><h2 id="maintenance-warning-title">まもなくメンテナンスが<span class="maintenance-warning-title-end">始まります</span></h2><p id="maintenance-warning-intro">開始時刻までに、登録・編集などの操作を終了してください。</p><div class="maintenance-warning-time"><span>開始予定<span class="maintenance-warning-timezone">日本時間</span></span><strong data-start></strong></div><details><summary>詳細・操作時のご注意<span class="maintenance-warning-chevron" aria-hidden="true"></span></summary><div class="maintenance-warning-details"><p>開始直前の所持数の変更、QRコードの登録、交換希望の編集などは、正常に保存されない場合があります。</p><p>保存の完了を確認し、時間に余裕をもって操作を終了してください。メンテナンス中は、一部またはすべての機能をご利用いただけません。</p><p data-message hidden></p><p data-end hidden></p></div></details></div><div class="maintenance-warning-actions"><p>閉じると、この予定の警告は再表示しません。</p><button type="button" data-dismiss>確認しました</button></div>';
+        dialog.querySelectorAll("[data-dismiss]").forEach(
+          (button) =>
+            (button.onclick = () => {
+              remember();
+              dialog.close();
+            }),
+        );
+        dialog.addEventListener("cancel", () => remember());
+        document.body.append(dialog);
+      }
+      function evaluate() {
+        clearTimeout(timer);
+        if (!plan) {
+          closeAutomatically();
+          return;
+        }
+        const now = Date.now(),
+          remaining = plan.start - now;
+        if (remaining <= 0) {
+          closeAutomatically();
+          return;
+        }
+        if (remaining > lead) {
+          closeAutomatically();
+          timer = setTimeout(evaluate, Math.min(remaining - lead, 2147483647));
+          return;
+        }
+        if (isDismissed(plan.key)) {
+          closeAutomatically();
+          return;
+        }
+        makeDialog();
+        currentKey = plan.key;
+        dialog.querySelector("[data-start]").textContent = format(plan.start);
+        const message = dialog.querySelector("[data-message]");
+        message.textContent = plan.message || "";
+        message.hidden = !plan.message;
+        const end = dialog.querySelector("[data-end]");
+        end.textContent = plan.end ? "終了予定：" + format(plan.end) : "";
+        end.hidden = !plan.end;
+        if (!dialog.open) {
+          dialog.showModal();
+          dialog.focus({ preventScroll: true });
+        }
+        timer = setTimeout(evaluate, Math.min(remaining, 2147483647));
+      }
+      function update(input) {
+        // The caller supplies the verified schedule; no date is guessed from notice text.
+        const start = input?.starts_at && Date.parse(input.starts_at);
+        const end = input?.ends_at && Date.parse(input.ends_at);
+        plan =
+          input?.enabled !== false && Number.isFinite(start)
+            ? {
+                start,
+                end: Number.isFinite(end) && end > start ? end : null,
+                key: String(start),
+                message: typeof input.message === "string" ? input.message : "",
+              }
+            : null;
+        evaluate();
+      }
+      addEventListener("storage", (event) => {
+        if (event.key?.startsWith(prefix)) evaluate();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) evaluate();
+      });
+      addEventListener("pageshow", evaluate);
+      window.CARD_MAINTENANCE_WARNING = Object.freeze({ update });
+      let request;
+      const nativeFetch = window.fetch?.bind(window);
+      async function refresh() {
+        if (document.hidden || request || !nativeFetch) return;
+        const config = window.APP_CONFIG;
+        if (!config?.supabaseUrl || !config?.supabaseKey) return;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        request = (async () => {
+          try {
+            const response = await nativeFetch(
+              config.supabaseUrl.replace(/\/$/, "") +
+                "/rest/v1/rpc/card_album_maintenance_warning_schedule",
+              {
+                method: "POST",
+                headers: {
+                  apikey: config.supabaseKey,
+                  "Content-Type": "application/json",
+                },
+                body: "{}",
+                cache: "no-store",
+                signal: controller.signal,
+              },
+            );
+            if (!response.ok) return;
+            const data = await response.json();
+            if (data && typeof data.enabled === "boolean") update(data);
+          } catch {
+            /* A failed notice request must not block the album. */
+          } finally {
+            clearTimeout(timeout);
+            request = null;
+          }
+        })();
+        await request;
+      }
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refresh();
+      });
+      if (window.APP_CONFIG?.supabaseUrl) {
+        refresh();
+        setInterval(refresh, 60000);
+      }
+    })();
+  };
+
+  modules["site-common.js"] = function (sourceURL) {
+    /* QRコードの規約と上限案内で共通の文面を使用する。 */
+    window.CARD_QR_POLICY = Object.freeze({
+      heading: "登録上限を設定している理由",
+      paragraphs:
+        "<p>カードアルバムのQRコード登録機能は、普段のプレイで持ち運ぶカードの枚数を減らし、手軽にゲームを楽しんでいただくための補助的な機能です。</p>" +
+        "<p>他の方が所有するカードや、店舗で販売されているカードのQRコードを無断で読み取って登録するなどの不適切な利用を防ぐため、登録できる件数に上限を設けています。</p>" +
+        "<p>上限に達した場合は、お手数ですが、しばらく使わないQRコードを削除し、次に使うカードやコーデのQRコードに入れ替えてご利用ください。</p>" +
+        "<p>現在、個別の上限引き上げのご要望には対応しておりません。皆さまに安心してご利用いただけるよう、ご理解とご協力をお願いいたします。</p>",
+    });
+
+    /* 横スワイプは画像から開始。縦スクロール・ピンチ・ボタン操作はブラウザーに任せる。 */
+    window.CARD_DETAIL_SWIPE = (() => {
+      const mobile = window.matchMedia(
+        "(max-width: 760px), (max-height: 500px) and (pointer: coarse)",
+      );
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      return (dialog, surface, move) => {
+        let start;
+        dialog.addEventListener("pointerdown", (event) => {
+          if (event.pointerType !== "touch") return;
+          if (!event.isPrimary) {
+            start = null;
+            return;
+          }
+          start = null;
+          if (
+            !mobile.matches ||
+            !dialog.open ||
+            !event.target.closest(surface) ||
+            event.target.closest("button,a,input,select,textarea,[role=button]")
+          )
+            return;
+          start = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        });
+        dialog.addEventListener("pointermove", (event) => {
+          if (start?.id !== event.pointerId) return;
+          const x = Math.abs(event.clientX - start.x);
+          const y = Math.abs(event.clientY - start.y);
+          if (y > 16 && y > x) start = null;
+        });
+        dialog.addEventListener("pointerup", (event) => {
+          if (start?.id !== event.pointerId) return;
+          const x = event.clientX - start.x;
+          const y = event.clientY - start.y;
+          start = null;
+          if (
+            !mobile.matches ||
+            !dialog.open ||
+            Math.abs(x) < 48 ||
+            Math.abs(x) < 1.5 * Math.abs(y)
+          )
+            return;
+          const direction = x < 0 ? 1 : -1;
+          if (move(direction) && !reduceMotion.matches) {
+            dialog.querySelector(surface)?.animate?.(
+              [
+                { transform: `translateX(${direction * 16}px)`, opacity: 0.6 },
+                { transform: "translateX(0)", opacity: 1 },
+              ],
+              { duration: 140, easing: "ease-out" },
+            );
+          }
+        });
+        const cancel = () => {
+          start = null;
+        };
+        dialog.addEventListener("pointercancel", cancel);
+        dialog.addEventListener("close", cancel);
+      };
+    })();
+
+    /* Shared presentation rules. Raw catalog values stay unchanged. */
+    (() => {
+      const numberFormat = new Intl.NumberFormat("ja-JP");
+      const labels = {
+        だん数: "弾数",
+        キャラ名: "キャラクター",
+        カテゴリー: "カテゴリ",
+      };
+      const zodiac = {
+        aries: "おひつじ座",
+        taurus: "おうし座",
+        gemini: "ふたご座",
+        cancer: "かに座",
+        leo: "しし座",
+        virgo: "おとめ座",
+        libra: "てんびん座",
+        scorpio: "さそり座",
+        sagittarius: "いて座",
+        capricorn: "やぎ座",
+        aquarius: "みずがめ座",
+        pisces: "うお座",
+      };
+      function coordinatePlaceholder(slot = "full") {
+        const value = String(slot || "part")
+          .normalize("NFKC")
+          .replace(/[\s・＆&]/g, "");
+        const kind = /^(full|フルコーデ|コーデ)$/.test(value)
+          ? "full"
+          : /トップス|tops/i.test(value)
+            ? "tops"
+            : /ボトムス|bottoms/i.test(value)
+              ? "bottoms"
+              : /ワンピ|onepiece|dress/i.test(value)
+                ? "onepiece"
+                : /シューズ|shoes/i.test(value)
+                  ? "shoes"
+                  : /アクセ|accessory/i.test(value)
+                    ? "accessory"
+                    : "part";
+        const labels = {
+          full: "フルコーデ",
+          tops: "トップス",
+          bottoms: "ボトムス",
+          onepiece: "ワンピース",
+          shoes: "シューズ",
+          accessory: "アクセサリー",
+          part: "パーツ",
+        };
+        const drawings = {
+          full: '<path d="M35 22q2-4 6-1l7 5 7-5q4-3 6 1l9 13q3 4-1 7l-5 3q-3 2-5-2l-3-4v11q0 4 2 7l9 15q3 6-3 7-16 4-32 0-6-1-3-7l9-15q2-3 2-7V39l-3 4q-2 4-5 2l-5-3q-4-3-1-7Z"/><path d="M39 49q9 3 18 0M41 61q-2 8-5 15m12-14v16m7-17q2 8 5 15"/><path class="coordinate-icon-detail" d="M44 31q-8-6-8 0t8 0m8 0q8-6 8 0t-8 0"/><circle class="coordinate-icon-detail" cx="48" cy="31" r="3"/><path d="M35 83q-6 0-7 4t11 3h5v-7Zm26 0q6 0 7 4t-11 3h-5v-7Z"/>',
+          tops: '<path d="M34 25q2-3 6-1l8 6 8-6q4-2 6 1l14 15q4 4 0 7l-6 5q-4 3-7-1l-4-5v24q0 6-6 6H43q-6 0-6-6V46l-4 5q-3 4-7 1l-6-5q-4-3 0-7Z"/><path class="coordinate-icon-detail" d="m34 26 6 14q1 3 3 0l5-10 5 10q2 3 3 0l6-14"/><path d="M39 68q9 3 18 0"/><path class="coordinate-icon-detail" d="M45 47q-7-5-7 0t7 0m6 0q7-5 7 0t-7 0"/><circle class="coordinate-icon-detail" cx="48" cy="47" r="3"/>',
+          bottoms:
+            '<path d="M36 26h24q5 0 6 5l10 36q2 6-4 8-24 8-48 0-6-2-4-8l10-36q1-5 6-5Z"/><path class="coordinate-icon-detail" d="M31 35q17 4 34 0l-1-5q-1-4-5-4H37q-5 0-6 5Z"/><path d="M39 43q-1 15-6 30m15-29v32m9-33q1 15 6 30"/>',
+          onepiece:
+            '<path d="M35 22q2-4 6-1l7 6 7-6q4-3 6 1l7 12q3 4-2 7l-8 4-3 10 14 18q4 6-3 8-18 6-36 0-7-2-3-8l14-18-3-10-8-4q-5-3-2-7Z"/><path d="M41 54q7 2 14 0m-10 10q-2 10-7 15m13-15q2 10 7 15"/><path class="coordinate-icon-detail" d="M44 36q-7-5-7 0t7 0m8 0q7-5 7 0t-7 0"/><circle class="coordinate-icon-detail" cx="48" cy="36" r="3"/>',
+          shoes:
+            '<path d="M19 43q-5 1-5 6v14q0 10 11 10h25q11 0 11-8 0-9-12-11l-10-4-5-12q-2-4-6-1Z"/><path class="coordinate-icon-detail" d="M18 48q8 5 18-3l3 7q-8 8-20 5Z"/><path d="M16 65q21 4 43 0"/><path d="M45 29q-5 1-5 6v10l13 5q14 3 16 13h7q10 0 10-8t-12-11l-10-4-4-11q-2-4-6-2Z"/><path class="coordinate-icon-detail" d="M44 35q7 5 16-3l3 7q-7 8-18 5Z"/>',
+          accessory:
+            '<path d="M43 40q-10-10-18-12-7-2-8 6-3 15 2 27 2 6 8 3l16-10m10-14q10-10 18-12 7-2 8 6 3 15-2 27-2 6-8 3L53 54"/><path d="m40 55-5 17q-2 6 4 4l9-5 9 5q6 2 4-4l-5-17"/><path class="coordinate-icon-detail" d="M48 57c-14-8-13-19-6-19 4 0 6 4 6 4s2-4 6-4c7 0 8 11-6 19Z"/>',
+          part: '<path d="M41 31q0-9 8-9t8 8q0 4-5 7l-4 4v7L22 63q-8 5-7 9 1 4 8 4h50q7 0 8-4 1-4-7-9L48 48"/><path class="coordinate-icon-sparkle" d="M75 23v9m-4-4h8M23 39v7m-3-3h6"/>',
+        };
+        return `<span class="coordinate-image-placeholder" data-coordinate-placeholder="${kind}" role="img" aria-label="${labels[kind]}（画像未登録）"><svg viewBox="0 0 96 96" aria-hidden="true" focusable="false"><circle class="coordinate-icon-halo" cx="48" cy="48" r="36"/>${drawings[kind]}</svg></span>`;
+      }
+      window.CARD_UI = Object.freeze({
+        coordinatePlaceholder,
+        number: (value) => numberFormat.format(value),
+        label: (key) => labels[key] || key,
+        value(key, value) {
+          const text = String(value ?? "");
+          return /星座/.test(key)
+            ? text.replace(
+                /\b(?:aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b/gi,
+                (word) => zodiac[word.toLowerCase()],
+              )
+            : text;
+        },
+      });
+    })();
+
+    /* Remove retired guide progress from this browser without touching other settings. */
+    (() => {
+      for (const area of ["localStorage", "sessionStorage"]) {
+        try {
+          const storage = window[area];
+          const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));
+          for (const key of keys)
+            if (/^card-album-tutorial-v\d+:/.test(key || "")) storage.removeItem(key);
+        } catch {}
+      }
+    })();
+
+    /* ===== Primagi / Aipri Verse compatibility ===== */
+    /* Official Aipri Verse migration list. Only exact card IDs are used as evidence. */
+    (() => {
+      "use strict";
+      const source = "https://aipri.jp/verse/howto/6.html";
+      const checkedAt = "2026-10-30";
+      const supportedCodes = new Set([
+        "C-001",
+        "C-002",
+        "C-003",
+        "C-004",
+        "C-005",
+        "C-006",
+        "C-007",
+        "C-008",
+        "C-009",
+        "C-010",
+        "C-011",
+        "C-012",
+        "C-013",
+        "C-014",
+        "C-015",
+        "C-016",
+        "C-017",
+        "C-018",
+        "C-019",
+        "C-020",
+        "C-021",
+        "C-022",
+        "C-023",
+        "C-024",
+        "C-025",
+        "C-026",
+        "C-027",
+        "C-028",
+        "C-029",
+        "C-030",
+        "C-031",
+        "C-032",
+        "C-033",
+        "C-034",
+        "C-035",
+        "C-036",
+        "C-037",
+        "C-038",
+        "C-039",
+        "C-040",
+        "C-041",
+        "C-042",
+        "C-043",
+        "C-044",
+        "C-045",
+        "C-046",
+        "C-047",
+        "C-048",
+        "C-049",
+        "C-050",
+        "C-051",
+        "C-052",
+        "C-053",
+        "C-054",
+        "C-055",
+        "C-056",
+        "C-057",
+        "C-058",
+        "C-059",
+        "C-060",
+        "C-061",
+        "C-062",
+        "C-063",
+        "C-064",
+        "C-065",
+        "C-066",
+        "C-067",
+        "C-068",
+        "C-069",
+        "C-070",
+        "C-071",
+        "C-072",
+        "C-073",
+        "C-074",
+        "C-075",
+        "C-076",
+        "C-077",
+        "C-078",
+        "C-079",
+        "C-080",
+        "C-081",
+        "C-082",
+        "C-083",
+        "C-084",
+        "C-085",
+        "C-086",
+        "C-087",
+        "C-088",
+        "C-089",
+        "C-090",
+        "P-003",
+        "P-004",
+        "P-005",
+        "P-015",
+        "P-016",
+        "P-017",
+        "P-018",
+        "P-019",
+        "P-020",
+        "P-021",
+        "P-022",
+        "P-023",
+        "P-024",
+        "P-025",
+        "P-026",
+        "P-038",
+        "P-039",
+        "P-040",
+        "P-041",
+        "P-042",
+        "P-043",
+        "P-044",
+        "P-045",
+        "P-054",
+        "P-055",
+        "P-056",
+        "P-057",
+        "P-062",
+        "P-063",
+        "P-064",
+        "P-065",
+        "P-066",
+        "P-067",
+        "P-068",
+        "P-069",
+        "P-101",
+        "P-102",
+        "P-103",
+        "P-104",
+        "P-105",
+        "P-106",
+        "P-107",
+        "P-108",
+        "P-109",
+        "P-110",
+        "P-111",
+        "P-112",
+        "P-137",
+        "P-138",
+        "P-139",
+        "P-140",
+        "P-141",
+        "P-142",
+        "P-143",
+        "P-144",
+        "P-181",
+        "P-182",
+        "P-183",
+        "P-184",
+        "P-185",
+        "P-186",
+        "P-187",
+        "P-188",
+        "P-189",
+        "P-190",
+        "P-191",
+        "P-192",
+        "P-205",
+        "P-206",
+        "P-207",
+        "P-216",
+        "P-217",
+        "P-218",
+        "P-219",
+        "P-220",
+        "P-221",
+        "P-222",
+        "P-223",
+        "P-224",
+        "P-225",
+        "P-226",
+        "P-227",
+        "P-228",
+        "P-229",
+        "P-230",
+        "P-231",
+        "P-232",
+        "P-233",
+        "P-234",
+        "P-235",
+        "P-236",
+        "P-237",
+        "P-238",
+        "P-239",
+        "P-240",
+        "P-241",
+        "P-242",
+        "P-243",
+        "P-244",
+        "P-245",
+        "P-246",
+        "P-247",
+        "P-248",
+        "P-249",
+        "P-250",
+        "P-261",
+        "P-262",
+        "P-263",
+        "P-264",
+        "P-299",
+        "P-308",
+        "P-309",
+        "P-310",
+        "P-311",
+        "P-312",
+        "P-313",
+        "P-314",
+        "P-315",
+        "P-316",
+        "P-317",
+        "P-318",
+        "P-325",
+        "P-326",
+        "P-327",
+        "P-328",
+        "P-329",
+        "P-330",
+        "P-331",
+        "P-332",
+        "P-333",
+        "P-334",
+        "P-335",
+        "P-336",
+        "P-348",
+        "P-349",
+        "P-350",
+        "P-355",
+        "P-356",
+        "P-357",
+        "P-358",
+        "P-359",
+        "P-360",
+        "P-361",
+        "P-362",
+        "P-363",
+        "P-364",
+        "P-365",
+        "P-366",
+        "P-367",
+        "P-368",
+        "P-379",
+        "P-380",
+        "P-381",
+        "P-382",
+        "P-389",
+        "P-390",
+        "P-391",
+        "P-392",
+        "P-393",
+        "P-394",
+        "P-395",
+        "P-396",
+        "P-397",
+        "P-398",
+        "P-399",
+        "P-400",
+        "P-401",
+        "P-402",
+        "P-406",
+        "P-407",
+        "P-408",
+        "P-409",
+        "P-413",
+        "P-414",
+        "P-415",
+        "P-416",
+        "P-417",
+        "P-418",
+        "P-419",
+        "P-420",
+        "P-421",
+        "P-422",
+        "P-423",
+        "P-424",
+        "P-425",
+        "P-426",
+        "P-427",
+        "P-428",
+        "P-429",
+        "P-435",
+        "P-436",
+        "P-437",
+        "P-438",
+        "P-462",
+        "P-463",
+        "P-464",
+        "P-465",
+        "P-466",
+        "P-467",
+        "P-468",
+        "P-469",
+        "P-470",
+        "P-471",
+        "P-472",
+        "P-473",
+        "P-474",
+        "P-493",
+        "P-494",
+        "P-495",
+        "P-496",
+        "P-497",
+        "P-498",
+        "P-499",
+        "P-500",
+        "PM1-001",
+        "PM1-002",
+        "PM1-003",
+        "PM1-004",
+        "PM1-005",
+        "PM1-006",
+        "PM1-007",
+        "PM1-008",
+        "PM1-009",
+        "PM1-010",
+        "PM1-011",
+        "PM1-012",
+        "PM1-013",
+        "PM1-014",
+        "PM1-015",
+        "PM1-016",
+        "PM1-017",
+        "PM1-018",
+        "PM1-019",
+        "PM1-020",
+        "PM1-021",
+        "PM1-022",
+        "PM1-023",
+        "PM1-024",
+        "PM1-025",
+        "PM1-026",
+        "PM1-027",
+        "PM1-028",
+        "PM1-029",
+        "PM1-030",
+        "PM1-031",
+        "PM1-032",
+        "PM1-033",
+        "PM1-034",
+        "PM1-035",
+        "PM1-036",
+        "PM1-037",
+        "PM1-038",
+        "PM1-039",
+        "PM1-040",
+        "PM1-041",
+        "PM1-042",
+        "PM1-043",
+        "PM1-044",
+        "PM1-045",
+        "PM1-046",
+        "PM1-047",
+        "PM1-048",
+        "PM1-049",
+        "PM1-050",
+        "PM1-051",
+        "PM1-052",
+        "PM1-053",
+        "PM1-054",
+        "PM1-055",
+        "PM1-056",
+        "PM1-057",
+        "PM1-058",
+        "PM1-059",
+        "PM1-060",
+        "PM1-061",
+        "PM1-062",
+        "PM1-063",
+        "PM1-064",
+        "PM1-065",
+        "PM1-066",
+        "PM1-067",
+        "PM1-068",
+        "PM1-069",
+        "PM1-070",
+        "PM1-071",
+        "PM1-072",
+        "PM1-073",
+        "PM1-074",
+        "PM1-075",
+        "PM1-076",
+        "PM1-077",
+        "PM1-078",
+        "PM1-079",
+        "PM1-080",
+        "PM1-081",
+        "PM1-082",
+        "PM1-083",
+        "PM1-084",
+        "PM1-085",
+        "PM1-086",
+        "PM1-087",
+        "PM1-088",
+        "PM1-089",
+        "PM1-090",
+        "PM1-091",
+        "PM1-092",
+        "PM1-093",
+        "PM1-094",
+        "PM1-095",
+        "PM1-096",
+        "PM1-097",
+        "PM1-098",
+        "PM1-099",
+        "PM1-100",
+        "PM1-101",
+        "PM1-102",
+        "PM1-103",
+        "PM1-104",
+        "PM1-105",
+        "PM1-106",
+        "PM1-107",
+        "PM1-108",
+        "PM1-109",
+        "PM1-110",
+        "PM1-111",
+        "PM1-112",
+        "PM1-113",
+        "PM1-114",
+        "PM1-115",
+        "PM1-116",
+        "PM1-117",
+        "PM1-118",
+        "PM1-119",
+        "PM1-120",
+        "PM1-121",
+        "PM1-122",
+        "PM1-123",
+        "PM1-124",
+        "PM1-125",
+        "PM1-126",
+        "PM1-127",
+        "PM1-128",
+        "PM1-129",
+        "PM1-130",
+        "PM1-131",
+        "PM1-132",
+        "PM1-133",
+        "PM1-134",
+        "PM1-135",
+        "PM1-136",
+        "PM1-137",
+        "PM1-138",
+        "PM1-139",
+        "PM1-140",
+        "PM1-141",
+        "PM1-142",
+        "PM1-143",
+        "PM1-144",
+        "PM1-145",
+        "PM1-146",
+        "PM1-147",
+        "PM1-148",
+        "PM1-149",
+        "PM1-150",
+        "PM1-151",
+        "PM2-001",
+        "PM2-002",
+        "PM2-003",
+        "PM2-004",
+        "PM2-005",
+        "PM2-006",
+        "PM2-007",
+        "PM2-008",
+        "PM2-009",
+        "PM2-010",
+        "PM2-011",
+        "PM2-012",
+        "PM2-013",
+        "PM2-014",
+        "PM2-015",
+        "PM2-016",
+        "PM2-017",
+        "PM2-018",
+        "PM2-019",
+        "PM2-020",
+        "PM2-021",
+        "PM2-022",
+        "PM2-023",
+        "PM2-024",
+        "PM2-025",
+        "PM2-026",
+        "PM2-027",
+        "PM2-028",
+        "PM2-029",
+        "PM2-030",
+        "PM2-031",
+        "PM2-032",
+        "PM2-033",
+        "PM2-034",
+        "PM2-035",
+        "PM2-036",
+        "PM2-037",
+        "PM2-038",
+        "PM2-039",
+        "PM2-040",
+        "PM2-041",
+        "PM2-042",
+        "PM2-043",
+        "PM2-044",
+        "PM2-045",
+        "PM2-046",
+        "PM2-047",
+        "PM2-048",
+        "PM2-049",
+        "PM2-050",
+        "PM2-051",
+        "PM2-052",
+        "PM2-053",
+        "PM2-054",
+        "PM2-055",
+        "PM2-056",
+        "PM2-057",
+        "PM2-058",
+        "PM2-059",
+        "PM2-060",
+        "PM2-061",
+        "PM2-062",
+        "PM2-063",
+        "PM2-064",
+        "PM2-065",
+        "PM2-066",
+        "PM2-067",
+        "PM2-068",
+        "PM2-069",
+        "PM2-070",
+        "PM2-071",
+        "PM2-072",
+        "PM2-073",
+        "PM2-074",
+        "PM2-075",
+        "PM2-076",
+        "PM2-077",
+        "PM2-078",
+        "PM2-079",
+        "PM2-080",
+        "PM2-081",
+        "PM2-082",
+        "PM2-083",
+        "PM2-084",
+        "PM2-085",
+        "PM2-086",
+        "PM2-087",
+        "PM2-088",
+        "PM2-089",
+        "PM2-090",
+        "PM2-091",
+        "PM2-092",
+        "PM2-093",
+        "PM2-094",
+        "PM2-095",
+        "PM2-096",
+        "PM2-097",
+        "PM2-098",
+        "PM2-099",
+        "PM2-1-001",
+        "PM2-1-002",
+        "PM2-1-003",
+        "PM2-1-004",
+        "PM2-1-005",
+        "PM2-1-006",
+        "PM2-1-007",
+        "PM2-1-008",
+        "PM2-1-009",
+        "PM2-1-010",
+        "PM2-1-011",
+        "PM2-1-012",
+        "PM2-1-013",
+        "PM2-1-014",
+        "PM2-1-015",
+        "PM2-1-016",
+        "PM2-1-017",
+        "PM2-1-018",
+        "PM2-1-019",
+        "PM2-1-020",
+        "PM2-1-021",
+        "PM2-1-022",
+        "PM2-1-023",
+        "PM2-1-024",
+        "PM2-1-025",
+        "PM2-1-026",
+        "PM2-1-027",
+        "PM2-1-028",
+        "PM2-1-029",
+        "PM2-1-030",
+        "PM2-1-031",
+        "PM2-1-032",
+        "PM2-1-033",
+        "PM2-1-034",
+        "PM2-1-035",
+        "PM2-1-036",
+        "PM2-1-037",
+        "PM2-1-038",
+        "PM2-1-039",
+        "PM2-1-040",
+        "PM2-1-041",
+        "PM2-1-042",
+        "PM2-1-043",
+        "PM2-1-044",
+        "PM2-1-045",
+        "PM2-1-046",
+        "PM2-1-047",
+        "PM2-1-048",
+        "PM2-1-049",
+        "PM2-1-050",
+        "PM2-1-051",
+        "PM2-1-052",
+        "PM2-1-053",
+        "PM2-1-054",
+        "PM2-1-055",
+        "PM2-1-056",
+        "PM2-1-057",
+        "PM2-1-058",
+        "PM2-1-059",
+        "PM2-1-060",
+        "PM2-1-061",
+        "PM2-1-062",
+        "PM2-1-063",
+        "PM2-1-064",
+        "PM2-1-065",
+        "PM2-1-066",
+        "PM2-1-067",
+        "PM2-1-068",
+        "PM2-1-069",
+        "PM2-1-070",
+        "PM2-1-071",
+        "PM2-1-072",
+        "PM2-1-073",
+        "PM2-1-074",
+        "PM2-1-075",
+        "PM2-1-076",
+        "PM2-1-077",
+        "PM2-1-078",
+        "PM2-1-079",
+        "PM2-1-080",
+        "PM2-1-081",
+        "PM2-1-082",
+        "PM2-1-083",
+        "PM2-1-084",
+        "PM2-1-085",
+        "PM2-1-086",
+        "PM2-1-087",
+        "PM2-1-088",
+        "PM2-1-089",
+        "PM2-1-090",
+        "PM2-1-091",
+        "PM2-1-092",
+        "PM2-1-093",
+        "PM2-1-094",
+        "PM2-1-095",
+        "PM2-1-096",
+        "PM2-1-097",
+        "PM2-1-098",
+        "PM2-1-099",
+        "PM2-1-100",
+        "PM2-1-101",
+        "PM2-1-102",
+        "PM2-1-103",
+        "PM2-1-104",
+        "PM2-1-105",
+        "PM2-1-106",
+        "PM2-1-107",
+        "PM2-1-108",
+        "PM2-1-109",
+        "PM2-1-110",
+        "PM2-1-111",
+        "PM2-1-112",
+        "PM2-1-113",
+        "PM2-1-114",
+        "PM2-1-115",
+        "PM2-1-116",
+        "PM2-1-117",
+        "PM2-1-118",
+        "PM2-1-119",
+        "PM2-1-120",
+        "PM2-1-121",
+        "PM2-1-122",
+        "PM2-1-123",
+        "PM2-1-124",
+        "PM2-1-125",
+        "PM2-1-126",
+        "PM2-1-127",
+        "PM2-1-128",
+        "PM2-1-129",
+        "PM2-1-130",
+        "PM2-1-131",
+        "PM2-1-132",
+        "PM2-1-133",
+        "PM2-1-134",
+        "PM2-1-135",
+        "PM2-1-136",
+        "PM2-1-137",
+        "PM2-1-138",
+        "PM2-1-139",
+        "PM2-1-140",
+        "PM2-1-141",
+        "PM2-1-142",
+        "PM2-1-143",
+        "PM2-1-144",
+        "PM2-1-145",
+        "PM2-1-146",
+        "PM2-1-147",
+        "PM2-1-148",
+        "PM2-1-149",
+        "PM2-1-150",
+        "PM2-1-151",
+        "PM2-1-152",
+        "PM2-1-153",
+        "PM2-1-154",
+        "PM2-1-155",
+        "PM2-1-156",
+        "PM2-1-157",
+        "PM2-1-158",
+        "PM2-1-159",
+        "PM2-1-160",
+        "PM2-1-161",
+        "PM2-1-162",
+        "PM2-1-163",
+        "PM2-1-164",
+        "PM2-1-165",
+        "PM2-1-166",
+        "PM2-1-167",
+        "PM2-1-168",
+        "PM2-1-169",
+        "PM2-1-170",
+        "PM2-1-171",
+        "PM2-1-172",
+        "PM2-1-173",
+        "PM2-1-174",
+        "PM2-1-175",
+        "PM2-1-176",
+        "PM2-1-177",
+        "PM2-1-178",
+        "PM2-1-179",
+        "PM2-1-180",
+        "PM2-1-182",
+        "PM2-1-183",
+        "PM2-1-184",
+        "PM2-1-185",
+        "PM2-1-186",
+        "PM2-1-187",
+        "PM2-1-188",
+        "PM2-1-189",
+        "PM2-1-190",
+        "PM2-1-191",
+        "PM2-1-192",
+        "PM2-1-193",
+        "PM2-1-194",
+        "PM2-1-195",
+        "PM2-1-196",
+        "PM2-1-197",
+        "PM2-1-198",
+        "PM2-1-199",
+        "PM2-1-200",
+        "PM2-1-201",
+        "PM2-1-202",
+        "PM2-1-203",
+        "PM2-1-204",
+        "PM2-1-205",
+        "PM2-1-206",
+        "PM2-1-207",
+        "PM2-1-208",
+        "PM2-1-209",
+        "PM2-1-210",
+        "PM2-1-211",
+        "PM2-1-212",
+        "PM2-1-213",
+        "PM2-1-214",
+        "PM2-1-215",
+        "PM2-1-216",
+        "PM2-1-217",
+        "PM2-1-218",
+        "PM2-1-219",
+        "PM2-1-220",
+        "PM2-1-230",
+        "PM2-1-231",
+        "PM2-1-232",
+        "PM2-1-233",
+        "PM2-1-234",
+        "PM2-1-235",
+        "PM2-1-236",
+        "PM2-1-237",
+        "PM2-1-238",
+        "PM2-1-242",
+        "PM2-1-243",
+        "PM2-1-244",
+        "PM2-1-245",
+        "PM2-1-246",
+        "PM2-1-247",
+        "PM2-1-248",
+        "PM2-1-249",
+        "PM2-1-250",
+        "PM2-1-251",
+        "PM2-1-252",
+        "PM2-1-253",
+        "PM2-1-254",
+        "PM2-1-255",
+        "PM2-1-256",
+        "PM2-1-257",
+        "PM2-1-258",
+        "PM2-1-259",
+        "PM2-1-260",
+        "PM2-1-261",
+        "PM2-1-262",
+        "PM2-1-263",
+        "PM2-1-264",
+        "PM2-1-265",
+        "PM2-1-266",
+        "PM2-1-267",
+        "PM2-1-268",
+        "PM2-1-269",
+        "PM2-100",
+        "PM2-101",
+        "PM2-102",
+        "PM2-103",
+        "PM2-104",
+        "PM2-105",
+        "PM2-106",
+        "PM2-107",
+        "PM2-108",
+        "PM2-109",
+        "PM2-110",
+        "PM2-111",
+        "PM2-112",
+        "PM2-113",
+        "PM2-114",
+        "PM2-115",
+        "PM2-116",
+        "PM2-117",
+        "PM2-118",
+        "PM2-119",
+        "PM2-120",
+        "PM2-121",
+        "PM2-122",
+        "PM2-123",
+        "PM2-124",
+        "PM2-125",
+        "PM2-126",
+        "PM2-127",
+        "PM2-128",
+        "PM2-129",
+        "PM2-130",
+        "PM2-131",
+        "PM2-132",
+        "PM2-133",
+        "PM2-134",
+        "PM2-135",
+        "PM2-136",
+        "PM2-137",
+        "PM2-138",
+        "PM2-139",
+        "PM2-140",
+        "PM2-141",
+        "PM2-142",
+        "PM2-143",
+        "PM2-144",
+        "PM2-145",
+        "PM2-146",
+        "PM2-147",
+        "PM2-148",
+        "PM2-149",
+        "PM2-150",
+        "PM2-151",
+        "PM2-152",
+        "PM2-153",
+        "PM2-154",
+        "PM2-155",
+        "PM2-156",
+        "PM2-2-001",
+        "PM2-2-002",
+        "PM2-2-003",
+        "PM2-2-004",
+        "PM2-2-005",
+        "PM2-2-006",
+        "PM2-2-007",
+        "PM2-2-008",
+        "PM2-2-009",
+        "PM2-2-010",
+        "PM2-2-011",
+        "PM2-2-012",
+        "PM2-2-013",
+        "PM2-2-014",
+        "PM2-2-015",
+        "PM2-2-016",
+        "PM2-2-017",
+        "PM2-2-018",
+        "PM2-2-019",
+        "PM2-2-020",
+        "PM2-2-021",
+        "PM2-2-022",
+        "PM2-2-023",
+        "PM2-2-024",
+        "PM2-2-025",
+        "PM2-2-026",
+        "PM2-2-027",
+        "PM2-2-028",
+        "PM2-2-029",
+        "PM2-2-030",
+        "PM2-2-031",
+        "PM2-2-032",
+        "PM2-2-033",
+        "PM2-2-034",
+        "PM2-2-035",
+        "PM2-2-036",
+        "PM2-2-037",
+        "PM2-2-038",
+        "PM2-2-039",
+        "PM2-2-040",
+        "PM2-2-041",
+        "PM2-2-042",
+        "PM2-2-043",
+        "PM2-2-044",
+        "PM2-2-045",
+        "PM2-2-046",
+        "PM2-2-047",
+        "PM2-2-048",
+        "PM2-2-049",
+        "PM2-2-050",
+        "PM2-2-051",
+        "PM2-2-052",
+        "PM2-2-053",
+        "PM2-2-054",
+        "PM2-2-055",
+        "PM2-2-056",
+        "PM2-2-057",
+        "PM2-2-058",
+        "PM2-2-059",
+        "PM2-2-060",
+        "PM2-2-061",
+        "PM2-2-062",
+        "PM2-2-063",
+        "PM2-2-064",
+        "PM2-2-065",
+        "PM2-2-066",
+        "PM2-2-067",
+        "PM2-2-068",
+        "PM2-2-069",
+        "PM2-2-070",
+        "PM2-2-071",
+        "PM2-2-072",
+        "PM2-2-073",
+        "PM2-2-074",
+        "PM2-2-075",
+        "PM2-2-076",
+        "PM2-2-077",
+        "PM2-2-078",
+        "PM2-2-079",
+        "PM2-2-080",
+        "PM2-2-081",
+        "PM2-2-082",
+        "PM2-2-083",
+        "PM2-2-084",
+        "PM2-2-085",
+        "PM2-2-086",
+        "PM2-2-087",
+        "PM2-2-088",
+        "PM2-2-089",
+        "PM2-2-090",
+        "PM2-2-091",
+        "PM2-2-092",
+        "PM2-2-093",
+        "PM2-2-094",
+        "PM2-2-095",
+        "PM2-2-096",
+        "PM2-2-097",
+        "PM2-2-098",
+        "PM2-2-099",
+        "PM2-2-100",
+        "PM2-2-101",
+        "PM2-2-102",
+        "PM2-2-103",
+        "PM2-2-104",
+        "PM2-2-105",
+        "PM2-2-106",
+        "PM2-2-107",
+        "PM2-2-108",
+        "PM2-2-109",
+        "PM2-2-110",
+        "PM2-2-111",
+        "PM2-2-112",
+        "PM2-2-113",
+        "PM2-2-114",
+        "PM2-2-115",
+        "PM2-2-116",
+        "PM2-2-117",
+        "PM2-2-118",
+        "PM2-2-119",
+        "PM2-2-120",
+        "PM2-2-121",
+        "PM2-2-122",
+        "PM2-2-123",
+        "PM2-2-124",
+        "PM2-2-125",
+        "PM2-2-126",
+        "PM2-2-127",
+        "PM2-2-128",
+        "PM2-2-129",
+        "PM2-2-130",
+        "PM2-2-131",
+        "PM2-2-132",
+        "PM2-2-133",
+        "PM2-2-134",
+        "PM2-2-135",
+        "PM2-2-136",
+        "PM2-2-137",
+        "PM2-2-138",
+        "PM2-2-139",
+        "PM2-2-140",
+        "PM2-2-141",
+        "PM2-2-142",
+        "PM2-2-143",
+        "PM2-2-144",
+        "PM2-2-145",
+        "PM2-2-146",
+        "PM2-2-147",
+        "PM2-2-148",
+        "PM2-2-149",
+        "PM2-2-150",
+        "PM2-2-151",
+        "PM2-2-152",
+        "PM2-2-153",
+        "PM2-2-154",
+        "PM2-2-155",
+        "PM2-2-156",
+        "PM2-2-157",
+        "PM2-2-158",
+        "PM2-2-159",
+        "PM2-2-160",
+        "PM2-2-161",
+        "PM2-2-162",
+        "PM2-2-163",
+        "PM2-2-164",
+        "PM2-2-165",
+        "PM2-2-166",
+        "PM2-2-167",
+        "PM2-2-168",
+        "PM2-2-169",
+        "PM2-2-170",
+        "PM2-2-171",
+        "PM2-2-172",
+        "PM2-2-173",
+        "PM2-2-174",
+        "PM2-2-175",
+        "PM2-2-176",
+        "PM2-2-177",
+        "PM2-2-178",
+        "PM2-2-179",
+        "PM2-2-180",
+        "PM2-2-181",
+        "PM2-2-182",
+        "PM2-2-183",
+        "PM2-2-184",
+        "PM2-2-185",
+        "PM2-2-186",
+        "PM2-2-196",
+        "PM2-2-197",
+        "PM2-2-198",
+        "PM2-2-199",
+        "PM2-2-200",
+        "PM2-2-201",
+        "PM2-2-202",
+        "PM2-2-203",
+        "PM2-2-204",
+        "PM2-2-205",
+        "PM2-2-206",
+        "PM2-2-207",
+        "PM2-2-208",
+        "PM2-2-209",
+        "PM2-2-210",
+        "PM2-2-211",
+        "PM2-2-212",
+        "PM2-2-213",
+        "PM2-2-214",
+        "PM2-2-215",
+        "PM2-2-216",
+        "PM2-2-217",
+        "PM2-2-218",
+        "PM2-2-219",
+        "PM2-2-220",
+        "PM2-2-221",
+        "PM2-2-222",
+        "PM2-2-223",
+        "PM2-2-224",
+        "PM2-2-225",
+        "PM2-2-226",
+        "PM2-2-227",
+        "PM2-2-228",
+        "PM2-2-229",
+        "PM2-2-230",
+        "PM2-2-231",
+        "PM2-2-232",
+        "PM2-2-233",
+        "PM2-2-234",
+        "PM2-2-235",
+        "PM2-2-236",
+        "PM2-2-237",
+        "PM2-2-238",
+        "PM2-2-239",
+        "PM2-2-240",
+        "PM2-2-241",
+        "PM2-2-245",
+        "PM2-2-246",
+        "PM2-2-247",
+        "PM2-2-248",
+        "PM2-2-249",
+        "PM2-2-250",
+        "PM2-2-251",
+        "PM2-2-252",
+        "PM2-2-253",
+        "PM2-2-254",
+        "PM2-2-255",
+        "PM2-2-256",
+        "PM2-2-257",
+        "PM2-2-258",
+        "PM2-2-259",
+        "PM2-2-260",
+        "PM2-2-261",
+        "PM2-2-262",
+        "PM2-2-263",
+        "PM2-2-264",
+        "PM2-2-265",
+        "PM2-2-266",
+        "PM2-2-267",
+        "PM2-2-268",
+        "PM2-2-269",
+        "PM2-2-270",
+        "PM2-2-271",
+        "PM2-2-272",
+        "PM2-2-273",
+        "PM2-2-274",
+        "PM2-2-275",
+        "PM2-2-276",
+        "PM2-2-277",
+        "PM2-2-278",
+        "PM2-2-279",
+        "PM2-2-280",
+        "PM2-2-281",
+        "PM2-2-282",
+        "PM2-2-283",
+        "PM2-2-284",
+        "PM2-2-285",
+        "PM2-2-286",
+        "PM2-2-287",
+        "PM2-2-288",
+        "PM2-2-289",
+        "PM2-2-290",
+        "PM2-2-291",
+        "PM2-2-292",
+        "PM2-2-293",
+        "PM2-2-294",
+        "PM2-2-295",
+        "PM2-2-296",
+        "PM2-2-297",
+        "PM2-2-298",
+        "PM2-2-299",
+        "PM2-2-300",
+        "PM2-2-301",
+        "PM2-2-302",
+        "PM2-2-303",
+        "PM2-2-304",
+        "PM2-2-305",
+        "PM2-2-306",
+        "PM2-2-307",
+        "PM2-2-308",
+        "PM2-2-309",
+        "PM2-2-310",
+        "PM2-2-311",
+        "PM2-2-312",
+        "PM2-2-313",
+        "PM2-2-314",
+        "PM2-2-315",
+        "PM2-2-316",
+        "PM2-2-317",
+        "PM2-2-318",
+        "PM2-2-319",
+        "PM2-2-320",
+        "PM2-2-321",
+        "PM2-2-322",
+        "PM2-2-323",
+        "PM2-2-324",
+        "PM2-2-325",
+        "PM2-2-326",
+        "PM2-2-327",
+        "PM2-2-328",
+        "PM2-2-329",
+        "PM2-2-330",
+        "PM2-2-331",
+        "PM2-2-332",
+        "PM2-2-333",
+        "PM2-2-334",
+        "PM2-2-335",
+        "PM2-2-336",
+        "PM2-2-337",
+        "PM2-2-338",
+        "PM2-2-339",
+        "PM2-2-340",
+        "PM2-2-341",
+        "PM2-2-342",
+        "PM2-2-343",
+        "PM2-2-344",
+        "PM2-2-345",
+        "PM2-2-346",
+        "PM2-2-347",
+        "PM2-2-348",
+        "PM2-2-349",
+        "PM2-2-350",
+        "PM2-2-351",
+        "PM2-2-352",
+        "PM2-2-353",
+        "PM2-2-354",
+        "PM2-2-355",
+        "PM2-2-356",
+        "PM2-2-357",
+        "PM2-2-358",
+        "PM2-2-359",
+        "PM2-2-360",
+        "PM2-2-361",
+        "PM2-2-362",
+        "PM2-2-363",
+        "PM2-2-364",
+        "PM2-2-365",
+        "PM2-2-366",
+        "PM2-2-367",
+        "PM2-2-368",
+        "PM2-2-369",
+        "PM2-2-370",
+        "PM2-2-371",
+        "PM2-2-372",
+        "PM2-2-373",
+        "PM2-2-374",
+        "PM2-2-375",
+        "PM2-3-001",
+        "PM2-3-002",
+        "PM2-3-003",
+        "PM2-3-004",
+        "PM2-3-005",
+        "PM2-3-006",
+        "PM2-3-007",
+        "PM2-3-008",
+        "PM2-3-009",
+        "PM2-3-010",
+        "PM2-3-011",
+        "PM2-3-012",
+        "PM2-3-013",
+        "PM2-3-014",
+        "PM2-3-015",
+        "PM2-3-016",
+        "PM2-3-017",
+        "PM2-3-018",
+        "PM2-3-019",
+        "PM2-3-020",
+        "PM2-3-021",
+        "PM2-3-022",
+        "PM2-3-023",
+        "PM2-3-024",
+        "PM2-3-025",
+        "PM2-3-026",
+        "PM2-3-027",
+        "PM2-3-028",
+        "PM2-3-029",
+        "PM2-3-030",
+        "PM2-3-031",
+        "PM2-3-032",
+        "PM2-3-033",
+        "PM2-3-034",
+        "PM2-3-035",
+        "PM2-3-036",
+        "PM2-3-037",
+        "PM2-3-038",
+        "PM2-3-039",
+        "PM2-3-040",
+        "PM2-3-041",
+        "PM2-3-042",
+        "PM2-3-043",
+        "PM2-3-044",
+        "PM2-3-045",
+        "PM2-3-046",
+        "PM2-3-047",
+        "PM2-3-048",
+        "PM2-3-049",
+        "PM2-3-050",
+        "PM2-3-051",
+        "PM2-3-052",
+        "PM2-3-053",
+        "PM2-3-054",
+        "PM2-3-055",
+        "PM2-3-056",
+        "PM2-3-057",
+        "PM2-3-058",
+        "PM2-3-059",
+        "PM2-3-060",
+        "PM2-3-061",
+        "PM2-3-062",
+        "PM2-3-063",
+        "PM2-3-064",
+        "PM2-3-065",
+        "PM2-3-066",
+        "PM2-3-067",
+        "PM2-3-068",
+        "PM2-3-069",
+        "PM2-3-070",
+        "PM2-3-071",
+        "PM2-3-072",
+        "PM2-3-073",
+        "PM2-3-074",
+        "PM2-3-075",
+        "PM2-3-076",
+        "PM2-3-077",
+        "PM2-3-078",
+        "PM2-3-079",
+        "PM2-3-080",
+        "PM2-3-081",
+        "PM2-3-082",
+        "PM2-3-083",
+        "PM2-3-084",
+        "PM2-3-085",
+        "PM2-3-086",
+        "PM2-3-087",
+        "PM2-3-088",
+        "PM2-3-089",
+        "PM2-3-090",
+        "PM2-3-091",
+        "PM2-3-092",
+        "PM2-3-093",
+        "PM2-3-094",
+        "PM2-3-095",
+        "PM2-3-096",
+        "PM2-3-097",
+        "PM2-3-098",
+        "PM2-3-099",
+        "PM2-3-100",
+        "PM2-3-101",
+        "PM2-3-102",
+        "PM2-3-103",
+        "PM2-3-104",
+        "PM2-3-105",
+        "PM2-3-106",
+        "PM2-3-107",
+        "PM2-3-108",
+        "PM2-3-109",
+        "PM2-3-110",
+        "PM2-3-111",
+        "PM2-3-112",
+        "PM2-3-113",
+        "PM2-3-114",
+        "PM2-3-115",
+        "PM2-3-116",
+        "PM2-3-117",
+        "PM2-3-118",
+        "PM2-3-119",
+        "PM2-3-120",
+        "PM2-3-121",
+        "PM2-3-122",
+        "PM2-3-123",
+        "PM2-3-124",
+        "PM2-3-125",
+        "PM2-3-126",
+        "PM2-3-127",
+        "PM2-3-128",
+        "PM2-3-129",
+        "PM2-3-130",
+        "PM2-3-131",
+        "PM2-3-132",
+        "PM2-3-133",
+        "PM2-3-134",
+        "PM2-3-135",
+        "PM2-3-136",
+        "PM2-3-137",
+        "PM2-3-138",
+        "PM2-3-139",
+        "PM2-3-140",
+        "PM2-3-141",
+        "PM2-3-142",
+        "PM2-3-143",
+        "PM2-3-144",
+        "PM2-3-145",
+        "PM2-3-146",
+        "PM2-3-147",
+        "PM2-3-148",
+        "PM2-3-149",
+        "PM2-3-150",
+        "PM2-3-151",
+        "PM2-3-152",
+        "PM2-3-153",
+        "PM2-3-154",
+        "PM2-3-155",
+        "PM2-3-156",
+        "PM2-3-164",
+        "PM2-3-165",
+        "PM2-3-166",
+        "PM2-3-167",
+        "PM2-3-168",
+        "PM2-3-169",
+        "PM2-3-170",
+        "PM2-3-171",
+        "PM2-3-172",
+        "PM2-3-173",
+        "PM2-3-174",
+        "PM2-3-175",
+        "PM2-3-176",
+        "PM2-3-177",
+        "PM2-3-178",
+        "PM2-3-179",
+        "PM2-3-180",
+        "PM2-3-181",
+        "PM2-3-182",
+        "PM2-3-183",
+        "PM2-3-184",
+        "PM2-3-185",
+        "PM2-3-186",
+        "PM2-3-187",
+        "PM2-3-188",
+        "PM2-3-189",
+        "PM2-3-190",
+        "PM2-3-191",
+        "PM2-3-192",
+        "PM2-3-193",
+        "PM2-3-194",
+        "PM2-3-201",
+        "PM2-3-202",
+        "PM2-3-203",
+        "PM2-3-204",
+        "PM2-3-205",
+        "PM2-3-206",
+        "PM2-3-207",
+        "PM2-3-208",
+        "PM2-3-209",
+        "PM2-3-210",
+        "PM2-3-211",
+        "PM2-3-212",
+        "PM2-3-213",
+        "PM2-3-214",
+        "PM2-3-215",
+        "PM2-3-216",
+        "PM2-3-217",
+        "PM2-3-218",
+        "PM2-3-219",
+        "PM2-3-220",
+        "PM2-3-221",
+        "PM2-3-222",
+        "PM2-3-223",
+        "PM2-3-224",
+        "PM2-3-225",
+        "PM2-3-226",
+        "PM2-3-227",
+        "PM2-3-228",
+        "PM2-3-229",
+        "PM2-3-230",
+        "PM2-3-231",
+        "PM2-3-232",
+        "PM2-3-233",
+        "PM2-3-234",
+        "PM2-3-235",
+        "PM2-3-236",
+        "PM2-3-237",
+        "PM2-3-238",
+        "PM2-3-239",
+        "PM2-3-240",
+        "PM2-3-241",
+        "PM2-3-242",
+        "PM2-3-243",
+        "PM2-3-244",
+        "PM2-3-245",
+        "PM2-3-246",
+        "PM2-3-247",
+        "PM2-3-248",
+        "PM2-3-249",
+        "PM2-3-250",
+        "PM2-3-251",
+        "PM2-3-252",
+        "PM2-3-253",
+        "PM2-3-254",
+        "PM2-3-255",
+        "PM2-3-256",
+        "PM2-3-257",
+        "PM2-3-258",
+        "PM2-3-259",
+        "PM2-3-260",
+        "PM2-3-261",
+        "PM2-3-262",
+        "PM2-3-263",
+        "PM2-3-264",
+        "PM2-3-265",
+        "PM2-3-266",
+        "PM2-3-267",
+        "PM2-3-268",
+        "PM2-3-269",
+        "PM2-3-270",
+        "PM2-3-271",
+        "PM2-3-272",
+        "PM2-3-273",
+        "PM2-3-274",
+        "PM2-3-275",
+        "PM2-3-276",
+        "PM2-3-277",
+        "PM2-3-278",
+        "PM2-3-279",
+        "PM2-3-280",
+        "PM2-3-281",
+        "PM2-3-282",
+        "PM2-3-284",
+        "PM2-3-285",
+        "PM2-3-286",
+        "PM2-3-287",
+        "PM2-3-288",
+        "PM2-3-289",
+        "PM2-3-290",
+        "PM2-3-291",
+        "PM2-3-292",
+        "PM2-3-293",
+        "PM2-3-294",
+        "PM2-3-295",
+        "PM2-3-296",
+        "PM2-3-297",
+        "PM2-3-298",
+        "PM2-3-299",
+        "PM2-3-300",
+        "PM2-3-301",
+        "PM2-3-302",
+        "PM2-3-303",
+        "PM2-3-304",
+        "PM2-3-305",
+        "PM2-3-306",
+        "PM2-3-307",
+        "PM2-3-308",
+        "PM2-3-309",
+        "PM2-3-310",
+        "PM2-3-311",
+        "PM2-3-312",
+        "PM2-3-313",
+        "PM2-3-314",
+        "PM2-3-315",
+        "PM2-3-316",
+        "PM2-3-317",
+        "PM2-3-318",
+        "PM2-3-319",
+        "PM2-3-320",
+        "PM2-3-321",
+        "PM2-3-322",
+        "PM2-3-323",
+        "PM2-3-324",
+        "PM2-3-325",
+        "PM2-3-326",
+        "PM2-3-327",
+        "PM2-3-328",
+        "PM2-3-329",
+        "PM2-3-330",
+        "PM2-3-331",
+        "PM2-3-332",
+        "PM2-3-333",
+        "PM2-3-334",
+        "PM2-3-335",
+        "PM2-3-336",
+        "PM2-3-337",
+        "PM2-3-338",
+        "PM2-3-339",
+        "PM2-3-340",
+        "PM2-3-341",
+        "PM2-3-342",
+        "PM2-3-343",
+        "PM2-3-344",
+        "PM2-3-345",
+        "PM2-3-346",
+        "PM2-3-347",
+        "PM2-3-348",
+        "PM2-3-349",
+        "PM2-3-350",
+        "PM2-3-351",
+        "PM2-3-352",
+        "PM2-3-353",
+        "PM2-3-354",
+        "PM2-3-355",
+        "PM2-3-356",
+        "PM2-3-357",
+        "PM2-3-358",
+        "PM2-3-359",
+        "PM2-3-360",
+        "PM2-3-361",
+        "PM2-3-362",
+        "PM2-3-363",
+        "PM2-3-364",
+        "PM2-4-001",
+        "PM2-4-002",
+        "PM2-4-003",
+        "PM2-4-004",
+        "PM2-4-005",
+        "PM2-4-006",
+        "PM2-4-007",
+        "PM2-4-008",
+        "PM2-4-009",
+        "PM2-4-010",
+        "PM2-4-011",
+        "PM2-4-012",
+        "PM2-4-013",
+        "PM2-4-014",
+        "PM2-4-015",
+        "PM2-4-016",
+        "PM2-4-017",
+        "PM2-4-018",
+        "PM2-4-019",
+        "PM2-4-020",
+        "PM2-4-021",
+        "PM2-4-022",
+        "PM2-4-023",
+        "PM2-4-024",
+        "PM2-4-025",
+        "PM2-4-026",
+        "PM2-4-027",
+        "PM2-4-028",
+        "PM2-4-029",
+        "PM2-4-030",
+        "PM2-4-031",
+        "PM2-4-032",
+        "PM2-4-033",
+        "PM2-4-034",
+        "PM2-4-035",
+        "PM2-4-036",
+        "PM2-4-037",
+        "PM2-4-038",
+        "PM2-4-039",
+        "PM2-4-040",
+        "PM2-4-041",
+        "PM2-4-042",
+        "PM2-4-043",
+        "PM2-4-044",
+        "PM2-4-045",
+        "PM2-4-046",
+        "PM2-4-047",
+        "PM2-4-048",
+        "PM2-4-049",
+        "PM2-4-050",
+        "PM2-4-051",
+        "PM2-4-052",
+        "PM2-4-053",
+        "PM2-4-054",
+        "PM2-4-055",
+        "PM2-4-056",
+        "PM2-4-057",
+        "PM2-4-058",
+        "PM2-4-059",
+        "PM2-4-060",
+        "PM2-4-061",
+        "PM2-4-062",
+        "PM2-4-063",
+        "PM2-4-064",
+        "PM2-4-065",
+        "PM2-4-066",
+        "PM2-4-067",
+        "PM2-4-068",
+        "PM2-4-069",
+        "PM2-4-070",
+        "PM2-4-071",
+        "PM2-4-072",
+        "PM2-4-073",
+        "PM2-4-074",
+        "PM2-4-075",
+        "PM2-4-076",
+        "PM2-4-077",
+        "PM2-4-078",
+        "PM2-4-079",
+        "PM2-4-080",
+        "PM2-4-081",
+        "PM2-4-082",
+        "PM2-4-083",
+        "PM2-4-084",
+        "PM2-4-085",
+        "PM2-4-086",
+        "PM2-4-087",
+        "PM2-4-088",
+        "PM2-4-089",
+        "PM2-4-090",
+        "PM2-4-091",
+        "PM2-4-092",
+        "PM2-4-093",
+        "PM2-4-094",
+        "PM2-4-095",
+        "PM2-4-096",
+        "PM2-4-097",
+        "PM2-4-098",
+        "PM2-4-099",
+        "PM2-4-100",
+        "PM2-4-101",
+        "PM2-4-102",
+        "PM2-4-103",
+        "PM2-4-104",
+        "PM2-4-105",
+        "PM2-4-106",
+        "PM2-4-107",
+        "PM2-4-108",
+        "PM2-4-109",
+        "PM2-4-110",
+        "PM2-4-111",
+        "PM2-4-112",
+        "PM2-4-113",
+        "PM2-4-114",
+        "PM2-4-115",
+        "PM2-4-116",
+        "PM2-4-117",
+        "PM2-4-118",
+        "PM2-4-119",
+        "PM2-4-120",
+        "PM2-4-121",
+        "PM2-4-122",
+        "PM2-4-123",
+        "PM2-4-124",
+        "PM2-4-125",
+        "PM2-4-126",
+        "PM2-4-127",
+        "PM2-4-128",
+        "PM2-4-129",
+        "PM2-4-130",
+        "PM2-4-131",
+        "PM2-4-132",
+        "PM2-4-133",
+        "PM2-4-134",
+        "PM2-4-135",
+        "PM2-4-136",
+        "PM2-4-137",
+        "PM2-4-142",
+        "PM2-4-143",
+        "PM2-4-144",
+        "PM2-4-145",
+        "PM2-4-146",
+        "PM2-4-147",
+        "PM2-4-148",
+        "PM2-4-149",
+        "PM2-4-150",
+        "PM2-4-151",
+        "PM2-4-152",
+        "PM2-4-153",
+        "PM2-4-154",
+        "PM2-4-155",
+        "PM2-4-169",
+        "PM2-4-170",
+        "PM2-4-171",
+        "PM2-4-172",
+        "PM2-4-173",
+        "PM2-4-174",
+        "PM2-4-175",
+        "PM2-4-176",
+        "PM2-4-177",
+        "PM2-4-178",
+        "PM2-4-187",
+        "PM2-4-188",
+        "PM2-4-189",
+        "PM2-4-190",
+        "PM2-4-191",
+        "PM2-4-192",
+        "PM2-4-193",
+        "PM2-4-194",
+        "PM2-4-195",
+        "PM2-4-196",
+        "PM2-4-197",
+        "PM2-4-198",
+        "PM2-4-199",
+        "PM2-4-200",
+        "PM2-4-201",
+        "PM2-4-202",
+        "PM2-4-203",
+        "PM2-4-204",
+        "PM2-4-205",
+        "PM2-4-206",
+        "PM2-4-207",
+        "PM2-4-208",
+        "PM2-4-209",
+        "PM2-4-210",
+        "PM2-4-211",
+        "PM2-4-212",
+        "PM2-4-213",
+        "PM2-4-214",
+        "PM2-4-215",
+        "PM2-4-216",
+        "PM2-4-217",
+        "PM2-4-218",
+        "PM2-4-219",
+        "PM2-4-220",
+        "PM2-4-221",
+        "PM2-4-222",
+        "PM2-4-232",
+        "PM2-4-233",
+        "PM2-4-234",
+        "PM2-4-235",
+        "PM2-4-236",
+        "PM2-4-237",
+        "PM2-4-238",
+        "PM2-4-239",
+        "PM2-4-240",
+        "PM2-4-241",
+        "PM2-4-242",
+        "PM2-4-243",
+        "PM2-4-244",
+        "PM2-4-245",
+        "PM2-4-246",
+        "PM2-4-247",
+        "PM2-4-248",
+        "PM2-4-249",
+        "PM2-4-250",
+        "PM2-4-251",
+        "PM2-4-252",
+        "PM2-4-253",
+        "PM2-4-254",
+        "PM2-4-255",
+        "PM2-4-256",
+        "PM2-4-257",
+        "PM2-4-258",
+        "PM2-4-259",
+        "PM2-4-260",
+        "PM2-4-261",
+        "PM2-4-262",
+        "PM2-4-263",
+        "PM2-4-264",
+        "PM2-4-265",
+        "PM2-4-266",
+        "PM2-4-267",
+        "PM2-4-268",
+        "PM2-4-269",
+        "PM2-4-270",
+        "PM2-4-271",
+        "PM2-4-272",
+        "PM2-4-273",
+        "PM2-4-274",
+        "PM2-4-275",
+        "PM2-4-276",
+        "PM2-4-277",
+        "PM2-4-278",
+        "PM2-4-279",
+        "PM2-4-280",
+        "PM2-4-281",
+        "PM2-4-282",
+        "PM2-4-283",
+        "PM2-4-284",
+        "PM2-4-285",
+        "PM2-4-286",
+        "PM2-4-287",
+        "PM2-4-288",
+        "PM2-4-289",
+        "PM2-4-290",
+        "PM2-4-291",
+        "PM2-4-292",
+        "PM2-4-293",
+        "PM2-4-294",
+        "PM2-4-295",
+        "PM2-4-296",
+        "PM2-4-297",
+        "PM2-4-298",
+        "PM2-4-299",
+        "PM2-4-300",
+        "PM2-4-301",
+        "PM2-4-302",
+        "PM2-4-303",
+        "PM2-4-304",
+        "PM2-4-305",
+        "PM2-4-306",
+        "PM2-4-307",
+        "PM2-4-308",
+        "PM2-4-309",
+        "PM2-4-310",
+        "PM2-4-311",
+        "PM2-4-312",
+        "PM2-4-313",
+        "PM2-4-314",
+        "PM2-4-315",
+        "PM2-4-316",
+        "PM2-4-317",
+        "PM2-4-318",
+        "PM2-4-319",
+        "PM2-4-320",
+        "PM2-4-321",
+        "PM2-4-322",
+        "PM2-4-323",
+        "PM2-4-324",
+        "PM2-4-325",
+        "PM2-4-326",
+        "PM2-4-327",
+        "PM2-4-328",
+        "PM2-4-329",
+        "PM2-4-330",
+        "PM2-4-331",
+        "PM2-4-332",
+        "PM2-4-333",
+        "PM2-4-334",
+        "PM2-4-335",
+        "PM2-4-336",
+        "PM2-4-337",
+        "PM2-4-338",
+        "PM2-4-339",
+        "PM2-4-340",
+        "PM2-4-341",
+        "PM2-4-342",
+        "PM2-4-343",
+        "PM2-4-344",
+        "PM2-4-345",
+        "PM2-4-346",
+        "PM2-4-347",
+        "PM2-4-348",
+        "PM2-4-349",
+        "PM2-4-350",
+        "PM2-4-351",
+        "PM2-4-352",
+        "PM2-4-353",
+        "PM2-4-354",
+        "PM2-4-355",
+        "PM2-4-356",
+        "PM2-4-357",
+        "PM2-5-001",
+        "PM2-5-002",
+        "PM2-5-003",
+        "PM2-5-004",
+        "PM2-5-005",
+        "PM2-5-006",
+        "PM2-5-007",
+        "PM2-5-008",
+        "PM2-5-009",
+        "PM2-5-010",
+        "PM2-5-011",
+        "PM2-5-012",
+        "PM2-5-013",
+        "PM2-5-014",
+        "PM2-5-015",
+        "PM2-5-016",
+        "PM2-5-017",
+        "PM2-5-018",
+        "PM2-5-019",
+        "PM2-5-020",
+        "PM2-5-021",
+        "PM2-5-022",
+        "PM2-5-023",
+        "PM2-5-024",
+        "PM2-5-025",
+        "PM2-5-026",
+        "PM2-5-027",
+        "PM2-5-028",
+        "PM2-5-029",
+        "PM2-5-030",
+        "PM2-5-031",
+        "PM2-5-032",
+        "PM2-5-033",
+        "PM2-5-034",
+        "PM2-5-035",
+        "PM2-5-036",
+        "PM2-5-037",
+        "PM2-5-038",
+        "PM2-5-039",
+        "PM2-5-040",
+        "PM2-5-041",
+        "PM2-5-042",
+        "PM2-5-043",
+        "PM2-5-044",
+        "PM2-5-045",
+        "PM2-5-046",
+        "PM2-5-047",
+        "PM2-5-048",
+        "PM2-5-049",
+        "PM2-5-050",
+        "PM2-5-051",
+        "PM2-5-052",
+        "PM2-5-053",
+        "PM2-5-054",
+        "PM2-5-055",
+        "PM2-5-056",
+        "PM2-5-057",
+        "PM2-5-058",
+        "PM2-5-059",
+        "PM2-5-060",
+        "PM2-5-061",
+        "PM2-5-062",
+        "PM2-5-063",
+        "PM2-5-064",
+        "PM2-5-065",
+        "PM2-5-066",
+        "PM2-5-067",
+        "PM2-5-068",
+        "PM2-5-069",
+        "PM2-5-070",
+        "PM2-5-071",
+        "PM2-5-072",
+        "PM2-5-073",
+        "PM2-5-074",
+        "PM2-5-075",
+        "PM2-5-076",
+        "PM2-5-077",
+        "PM2-5-078",
+        "PM2-5-079",
+        "PM2-5-080",
+        "PM2-5-081",
+        "PM2-5-082",
+        "PM2-5-083",
+        "PM2-5-084",
+        "PM2-5-085",
+        "PM2-5-086",
+        "PM2-5-087",
+        "PM2-5-088",
+        "PM2-5-089",
+        "PM2-5-090",
+        "PM2-5-091",
+        "PM2-5-092",
+        "PM2-5-093",
+        "PM2-5-094",
+        "PM2-5-095",
+        "PM2-5-096",
+        "PM2-5-097",
+        "PM2-5-098",
+        "PM2-5-099",
+        "PM2-5-100",
+        "PM2-5-101",
+        "PM2-5-102",
+        "PM2-5-103",
+        "PM2-5-104",
+        "PM2-5-105",
+        "PM2-5-106",
+        "PM2-5-107",
+        "PM2-5-108",
+        "PM2-5-109",
+        "PM2-5-110",
+        "PM2-5-111",
+        "PM3-001",
+        "PM3-002",
+        "PM3-003",
+        "PM3-004",
+        "PM3-005",
+        "PM3-006",
+        "PM3-007",
+        "PM3-008",
+        "PM3-009",
+        "PM3-010",
+        "PM3-011",
+        "PM3-012",
+        "PM3-013",
+        "PM3-014",
+        "PM3-015",
+        "PM3-016",
+        "PM3-017",
+        "PM3-018",
+        "PM3-019",
+        "PM3-020",
+        "PM3-021",
+        "PM3-022",
+        "PM3-023",
+        "PM3-024",
+        "PM3-025",
+        "PM3-026",
+        "PM3-027",
+        "PM3-028",
+        "PM3-029",
+        "PM3-030",
+        "PM3-031",
+        "PM3-032",
+        "PM3-033",
+        "PM3-034",
+        "PM3-035",
+        "PM3-036",
+        "PM3-037",
+        "PM3-038",
+        "PM3-039",
+        "PM3-040",
+        "PM3-041",
+        "PM3-042",
+        "PM3-043",
+        "PM3-044",
+        "PM3-045",
+        "PM3-046",
+        "PM3-047",
+        "PM3-048",
+        "PM3-049",
+        "PM3-050",
+        "PM3-051",
+        "PM3-052",
+        "PM3-053",
+        "PM3-054",
+        "PM3-055",
+        "PM3-056",
+        "PM3-057",
+        "PM3-058",
+        "PM3-059",
+        "PM3-060",
+        "PM3-061",
+        "PM3-062",
+        "PM3-063",
+        "PM3-064",
+        "PM3-065",
+        "PM3-066",
+        "PM3-067",
+        "PM3-068",
+        "PM3-069",
+        "PM3-070",
+        "PM3-071",
+        "PM3-072",
+        "PM3-073",
+        "PM3-074",
+        "PM3-075",
+        "PM3-076",
+        "PM3-077",
+        "PM3-078",
+        "PM3-079",
+        "PM3-080",
+        "PM3-081",
+        "PM3-082",
+        "PM3-083",
+        "PM3-084",
+        "PM3-085",
+        "PM3-086",
+        "PM3-087",
+        "PM3-088",
+        "PM3-089",
+        "PM3-090",
+        "PM3-091",
+        "PM3-092",
+        "PM3-093",
+        "PM3-094",
+        "PM3-095",
+        "PM3-096",
+        "PM3-097",
+        "PM3-098",
+        "PM3-099",
+        "PM3-100",
+        "PM3-101",
+        "PM3-102",
+        "PM3-103",
+        "PM3-104",
+        "PM3-105",
+        "PM3-106",
+        "PM3-107",
+        "PM3-108",
+        "PM3-109",
+        "PM3-110",
+        "PM3-111",
+        "PM3-112",
+        "PM3-113",
+        "PM3-114",
+        "PM3-115",
+        "PM3-116",
+        "PM3-117",
+        "PM3-118",
+        "PM3-119",
+        "PM3-120",
+        "PM3-121",
+        "PM3-122",
+        "PM3-123",
+        "PM3-124",
+        "PM3-125",
+        "PM3-126",
+        "PM3-127",
+        "PM3-128",
+        "PM3-129",
+        "PM3-130",
+        "PM3-131",
+        "PM3-132",
+        "PM3-133",
+        "PM3-134",
+        "PM3-135",
+        "PM3-136",
+        "PM3-137",
+        "PM3-138",
+        "PM3-139",
+        "PM3-140",
+        "PM3-141",
+        "PM3-146",
+        "PM3-147",
+        "PM3-148",
+        "PM4-001",
+        "PM4-002",
+        "PM4-003",
+        "PM4-004",
+        "PM4-005",
+        "PM4-006",
+        "PM4-007",
+        "PM4-008",
+        "PM4-009",
+        "PM4-010",
+        "PM4-011",
+        "PM4-012",
+        "PM4-013",
+        "PM4-014",
+        "PM4-015",
+        "PM4-016",
+        "PM4-017",
+        "PM4-018",
+        "PM4-019",
+        "PM4-020",
+        "PM4-021",
+        "PM4-022",
+        "PM4-023",
+        "PM4-024",
+        "PM4-025",
+        "PM4-026",
+        "PM4-027",
+        "PM4-028",
+        "PM4-029",
+        "PM4-030",
+        "PM4-031",
+        "PM4-032",
+        "PM4-033",
+        "PM4-034",
+        "PM4-035",
+        "PM4-036",
+        "PM4-037",
+        "PM4-038",
+        "PM4-039",
+        "PM4-040",
+        "PM4-041",
+        "PM4-042",
+        "PM4-043",
+        "PM4-044",
+        "PM4-045",
+        "PM4-046",
+        "PM4-047",
+        "PM4-048",
+        "PM4-049",
+        "PM4-050",
+        "PM4-051",
+        "PM4-052",
+        "PM4-053",
+        "PM4-054",
+        "PM4-055",
+        "PM4-056",
+        "PM4-057",
+        "PM4-058",
+        "PM4-059",
+        "PM4-060",
+        "PM4-061",
+        "PM4-062",
+        "PM4-063",
+        "PM4-064",
+        "PM4-065",
+        "PM4-066",
+        "PM4-067",
+        "PM4-068",
+        "PM4-069",
+        "PM4-070",
+        "PM4-071",
+        "PM4-072",
+        "PM4-073",
+        "PM4-074",
+        "PM4-075",
+        "PM4-076",
+        "PM4-077",
+        "PM4-078",
+        "PM4-079",
+        "PM4-080",
+        "PM4-081",
+        "PM4-082",
+        "PM4-083",
+        "PM4-084",
+        "PM4-085",
+        "PM4-086",
+        "PM4-087",
+        "PM4-088",
+        "PM4-089",
+        "PM4-090",
+        "PM4-091",
+        "PM4-092",
+        "PM4-093",
+        "PM4-094",
+        "PM4-095",
+        "PM4-096",
+        "PM4-097",
+        "PM4-098",
+        "PM4-099",
+        "PM4-100",
+        "PM4-101",
+        "PM4-102",
+        "PM4-103",
+        "PM4-104",
+        "PM4-105",
+        "PM4-106",
+        "PM4-107",
+        "PM4-108",
+        "PM4-109",
+        "PM4-110",
+        "PM4-111",
+        "PM4-112",
+        "PM4-113",
+        "PM4-114",
+        "PM4-115",
+        "PM4-116",
+        "PM4-117",
+        "PM4-118",
+        "PM4-119",
+        "PM4-120",
+        "PM4-121",
+        "PM4-122",
+        "PM4-123",
+        "PM4-124",
+        "PM4-125",
+        "PM4-126",
+        "PM4-127",
+        "PM4-128",
+        "PM4-129",
+        "PM4-130",
+        "PM4-131",
+        "PM4-132",
+        "PM4-133",
+        "PM4-134",
+        "PM4-135",
+        "PM4-136",
+        "PM4-137",
+        "PM4-138",
+        "PM4-139",
+        "PM4-140",
+        "PM4-141",
+        "PM4-142",
+        "PM4-143",
+        "PM4-144",
+        "PM4-145",
+        "PM4-146",
+        "PM4-147",
+        "PM4-148",
+        "PM4-149",
+        "PM4-150",
+        "PM4-151",
+        "PM4-152",
+        "PM4-153",
+        "PM4-154",
+        "PM4-155",
+        "PM4-156",
+        "PM4-157",
+        "PM4-158",
+        "PM4-159",
+        "PM4-160",
+        "PM4-161",
+        "PM4-162",
+        "PM4-163",
+        "PM4-164",
+        "PM4-177",
+        "PM4-178",
+        "PM4-179",
+        "PM4-180",
+        "PM4-181",
+        "PM4-182",
+        "PM4-183",
+        "PM4-184",
+        "PM4-185",
+        "PM4-186",
+        "PM4-187",
+        "PM4-188",
+        "PM5-001",
+        "PM5-002",
+        "PM5-003",
+        "PM5-004",
+        "PM5-005",
+        "PM5-006",
+        "PM5-007",
+        "PM5-008",
+        "PM5-009",
+        "PM5-010",
+        "PM5-011",
+        "PM5-012",
+        "PM5-013",
+        "PM5-014",
+        "PM5-015",
+        "PM5-016",
+        "PM5-017",
+        "PM5-018",
+        "PM5-019",
+        "PM5-020",
+        "PM5-021",
+        "PM5-022",
+        "PM5-023",
+        "PM5-024",
+        "PM5-025",
+        "PM5-026",
+        "PM5-027",
+        "PM5-028",
+        "PM5-029",
+        "PM5-030",
+        "PM5-031",
+        "PM5-032",
+        "PM5-033",
+        "PM5-034",
+        "PM5-035",
+        "PM5-036",
+        "PM5-037",
+        "PM5-038",
+        "PM5-039",
+        "PM5-040",
+        "PM5-041",
+        "PM5-042",
+        "PM5-043",
+        "PM5-044",
+        "PM5-045",
+        "PM5-046",
+        "PM5-047",
+        "PM5-048",
+        "PM5-049",
+        "PM5-050",
+        "PM5-051",
+        "PM5-052",
+        "PM5-053",
+        "PM5-054",
+        "PM5-055",
+        "PM5-056",
+        "PM5-057",
+        "PM5-058",
+        "PM5-059",
+        "PM5-060",
+        "PM5-061",
+        "PM5-062",
+        "PM5-063",
+        "PM5-064",
+        "PM5-065",
+        "PM5-066",
+        "PM5-067",
+        "PM5-068",
+        "PM5-069",
+        "PM5-070",
+        "PM5-071",
+        "PM5-072",
+        "PM5-073",
+        "PM5-074",
+        "PM5-075",
+        "PM5-076",
+        "PM5-077",
+        "PM5-078",
+        "PM5-079",
+        "PM5-080",
+        "PM5-081",
+        "PM5-082",
+        "PM5-083",
+        "PM5-084",
+        "PM5-085",
+        "PM5-086",
+        "PM5-087",
+        "PM5-088",
+        "PM5-089",
+        "PM5-090",
+        "PM5-091",
+        "PM5-092",
+        "PM5-093",
+        "PM5-094",
+        "PM5-095",
+        "PM5-096",
+        "PM5-097",
+        "PM5-098",
+        "PM5-099",
+        "PM5-100",
+        "PM5-101",
+        "PM5-102",
+        "PM5-103",
+        "PM5-104",
+        "PM5-105",
+        "PM5-106",
+        "PM5-107",
+        "PM5-108",
+        "PM5-109",
+        "PM5-110",
+        "PM5-111",
+        "PM5-112",
+        "PM5-113",
+        "PM5-114",
+        "PM5-115",
+        "PM5-116",
+        "PM5-117",
+        "PM5-118",
+        "PM5-119",
+        "PM5-120",
+        "PM5-121",
+        "PM5-122",
+        "PM5-123",
+        "PM5-124",
+        "PM5-125",
+        "PM5-126",
+        "PM5-127",
+        "PM5-128",
+        "PM5-129",
+        "PM5-130",
+        "PM5-131",
+        "PM5-132",
+        "PM5-133",
+        "PM5-134",
+        "PM5-135",
+        "PM5-136",
+        "PM5-137",
+        "PM5-138",
+        "PM5-139",
+        "PM5-140",
+        "PM5-141",
+        "PM5-142",
+        "PM5-143",
+        "PM5-144",
+        "PM5-145",
+        "PM5-146",
+        "PM5-147",
+        "PM5-148",
+        "PM5-149",
+        "PM5-150",
+        "PM5-151",
+        "PM5-152",
+        "PM5-153",
+        "PM5-154",
+        "PM5-155",
+        "PM5-156",
+        "PM5-157",
+        "PM5-158",
+        "PM5-159",
+        "PM5-160",
+        "PM5-161",
+        "PM5-162",
+        "PM5-163",
+        "PM5-164",
+        "PM5-165",
+        "PM5-166",
+        "PM5-167",
+        "PM5-168",
+        "PM5-169",
+        "PM5-170",
+        "PM5-171",
+        "PM5-172",
+        "PM5-181",
+        "PM5-182",
+        "PM5-183",
+        "PM5-184",
+        "PM5-185",
+        "PM5-186",
+        "PM5-187",
+        "PM5-188",
+        "PM5-189",
+        "PM5-190",
+        "PM5-191",
+        "PM5-192",
+        "PM5-193",
+        "PM5-194",
+        "PM5-195",
+        "PM6-001",
+        "PM6-002",
+        "PM6-003",
+        "PM6-004",
+        "PM6-005",
+        "PM6-006",
+        "PM6-007",
+        "PM6-008",
+        "PM6-009",
+        "PM6-010",
+        "PM6-011",
+        "PM6-012",
+        "PM6-013",
+        "PM6-014",
+        "PM6-015",
+        "PM6-016",
+        "PM6-017",
+        "PM6-018",
+        "PM6-019",
+        "PM6-020",
+        "PM6-021",
+        "PM6-022",
+        "PM6-023",
+        "PM6-024",
+        "PM6-025",
+        "PM6-026",
+        "PM6-027",
+        "PM6-028",
+        "PM6-029",
+        "PM6-030",
+        "PM6-031",
+        "PM6-032",
+        "PM6-033",
+        "PM6-034",
+        "PM6-035",
+        "PM6-036",
+        "PM6-037",
+        "PM6-038",
+        "PM6-039",
+        "PM6-040",
+        "PM6-041",
+        "PM6-042",
+        "PM6-043",
+        "PM6-044",
+        "PM6-045",
+        "PM6-046",
+        "PM6-047",
+        "PM6-048",
+        "PM6-049",
+        "PM6-050",
+        "PM6-051",
+        "PM6-052",
+        "PM6-053",
+        "PM6-054",
+        "PM6-055",
+        "PM6-056",
+        "PM6-057",
+        "PM6-058",
+        "PM6-059",
+        "PM6-060",
+        "PM6-061",
+        "PM6-062",
+        "PM6-063",
+        "PM6-064",
+        "PM6-065",
+        "PM6-066",
+        "PM6-067",
+        "PM6-068",
+        "PM6-069",
+        "PM6-070",
+        "PM6-071",
+        "PM6-072",
+        "PM6-073",
+        "PM6-074",
+        "PM6-075",
+        "PM6-076",
+        "PM6-077",
+        "PM6-078",
+        "PM6-079",
+        "PM6-080",
+        "PM6-081",
+        "PM6-082",
+        "PM6-083",
+        "PM6-084",
+        "PM6-085",
+        "PM6-086",
+        "PM6-087",
+        "PM6-088",
+        "PM6-089",
+        "PM6-090",
+        "PM6-091",
+        "PM6-092",
+        "PM6-093",
+        "PM6-094",
+        "PM6-095",
+        "PM6-096",
+        "PM6-097",
+        "PM6-098",
+        "PM6-099",
+        "PM6-100",
+        "PM6-101",
+        "PM6-102",
+        "PM6-103",
+        "PM6-104",
+        "PM6-105",
+        "PM6-106",
+        "PM6-107",
+        "PM6-108",
+        "PM6-109",
+        "PM6-110",
+        "PM6-111",
+        "PM6-112",
+        "PM6-113",
+        "PM6-114",
+        "PM6-115",
+        "PM6-116",
+        "PM6-117",
+        "PM6-118",
+        "PM6-119",
+        "PM6-120",
+        "PM6-121",
+        "PM6-122",
+        "PM6-123",
+        "PM6-124",
+        "PM6-125",
+        "PM6-126",
+        "PM6-127",
+        "PM6-128",
+        "PM6-129",
+        "PM6-130",
+        "PM6-131",
+        "PM6-132",
+        "PM6-133",
+        "PM6-134",
+        "PM6-135",
+        "PM6-136",
+        "PM6-137",
+        "PM6-138",
+        "PM6-139",
+        "PM6-140",
+        "PM6-141",
+        "PM6-142",
+        "PM6-143",
+        "PM6-144",
+        "PM6-145",
+        "PM6-146",
+        "PM6-147",
+        "PM6-148",
+        "PM6-149",
+        "PM6-150",
+        "PM6-151",
+        "PM6-152",
+        "PM6-153",
+        "PM6-154",
+        "PM6-155",
+        "PM6-156",
+        "PM6-157",
+        "PM6-158",
+        "PM6-159",
+        "PM6-160",
+        "PM6-161",
+        "PM6-162",
+        "PM6-163",
+        "PM6-164",
+        "PM6-165",
+        "PM6-166",
+        "PM6-167",
+        "PM6-168",
+        "PM6-169",
+        "PM6-170",
+        "PM6-171",
+        "PM6-172",
+        "PM6-173",
+        "PM6-174",
+        "PM6-175",
+        "PM6-176",
+        "PM6-177",
+        "PM6-178",
+        "PM6-179",
+        "PM6-180",
+        "PM6-181",
+        "PM6-182",
+        "PM6-183",
+        "PM6-184",
+        "PM6-185",
+        "PM6-186",
+        "PM6-187",
+        "PM6-188",
+        "PM6-189",
+        "PM6-190",
+        "PM6-191",
+        "PM6-192",
+        "PM6-201",
+        "PM6-202",
+        "PM6-203",
+        "PM6-204",
+        "PM6-205",
+        "PM6-206",
+        "PM6-207",
+        "PM6-208",
+        "PM6-209",
+        "PM6-210",
+        "PM6-211",
+        "PM6-212",
+        "PM6-213",
+        "PM6-214",
+        "PM6-215",
+        "PM6-216",
+        "PM6-217",
+        "PM6-218",
+        "PM6-219",
+        "PM6-220",
+        "PM6-221",
+        "PM6-222",
+        "PM6-223",
+        "PM6-224",
+        "PM6-225",
+        "PM6-226",
+        "PM6-227",
+        "PM6-228",
+        "PM6-229",
+        "PM6-230",
+        "PM6-231",
+        "PM6-232",
+        "PM6-233",
+        "PM6-234",
+        "PM6-235",
+        "PM6-236",
+        "RCT-005",
+        "RCT-006",
+        "RCT-007",
+        "RCT-008",
+        "RCT-009",
+        "RCT-010",
+        "RCT-011",
+        "RCT-012",
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-011",
+        "T-012",
+        "T-013",
+        "T-014",
+        "T-015",
+        "T-016",
+        "T-017",
+        "T-018",
+        "T-019",
+        "T-020",
+        "T-021",
+        "T-022",
+        "T-023",
+        "T-024",
+        "T-025",
+        "T-026",
+        "T-027",
+        "T-028",
+        "T-029",
+        "T-030",
+        "T-031",
+        "T-032",
+        "T-033",
+        "T-034",
+        "T-035",
+        "T-036",
+        "T-039",
+        "T-040",
+        "T-041",
+        "T-042",
+        "T-043",
+        "T-044",
+        "T-046",
+        "T-047",
+        "T-048",
+      ]);
+      const labels = Object.freeze({
+        supported: "対応コーデ（全パーツ）",
+        partial: "一部パーツのみ対応",
+        unlisted: "公式一覧に掲載なし・未確認",
+        unknown: "公式一覧に掲載なし・未確認",
+      });
+      function codes(value) {
+        const input = Array.isArray(value) ? value : [value];
+        return [
+          ...new Set(
+            input.flatMap(
+              (v) =>
+                String(v ?? "")
+                  .normalize("NFKC")
+                  .toUpperCase()
+                  .replace(/[‐‑‒–—−ー]/g, "-")
+                  .match(/[A-Z0-9]+(?:-\d+)+/g) || [],
+            ),
+          ),
+        ];
+      }
+      function partStatus(part) {
+        if (!part || part.family !== "primagi") return "unknown";
+        const ids = codes(part.codes);
+        if (!ids.length) return "unknown";
+        return ids.some((id) => supportedCodes.has(id)) ? "supported" : "unlisted";
+      }
+      function getPart(parts, id) {
+        return parts?.get?.(id) || parts?.get?.(String(id)) || parts?.get?.(Number(id));
+      }
+      function coordinateStatus(coordinate, parts) {
+        if (coordinate?.family !== "primagi") return "unknown";
+        const ids = coordinate.part_ids || coordinate.part_keys || [];
+        if (!ids.length) return "unknown";
+        const states = ids.map((id) => partStatus(getPart(parts, id)));
+        const matched = states.filter((state) => state === "supported").length;
+        if (matched === ids.length) return "supported";
+        if (matched) return "partial";
+        return states.includes("unknown") ? "unknown" : "unlisted";
+      }
+      function matches(coordinate, parts, value) {
+        if (!value || coordinate?.family !== "primagi") return true;
+        const state = coordinateStatus(coordinate, parts);
+        return value === "unlisted" ? state === "unlisted" || state === "unknown" : state === value;
+      }
+      function targetStatus(target) {
+        if (target?.family !== "primagi" || !["coordinate", "part"].includes(target.kind))
+          return null;
+        const catalog = window.CARD_VERSE?.tradeData?.();
+        const parts = new Map((catalog?.parts || []).map((part) => [part.id, part]));
+        if (target.kind === "part") return partStatus(getPart(parts, target.id));
+        const coordinate = catalog?.coordinates?.find((c) => c.id === String(target.id));
+        return coordinateStatus(coordinate, parts);
+      }
+      function warning(target) {
+        const state = targetStatus(target);
+        return state && state !== "supported"
+          ? "アイプリバースでの使用について：このコーデは対応していない可能性があります。" +
+              (state === "partial"
+                ? "一部パーツのみ公式の対象一覧に掲載されています。"
+                : "公式の対象一覧で確認できていません。")
+          : "";
+      }
+      window.CARD_PRIMAGI_VERSE_COMPAT = Object.freeze({
+        source,
+        checkedAt,
+        codeCount: supportedCodes.size,
+        labels,
+        codes,
+        partStatus,
+        coordinateStatus,
+        matches,
+        warning,
+      });
+    })();
+
+    /* ===== assets/js/primagi.js ===== */
+    /* Official images and chapter labels. Stored filter values remain unchanged. */
+    (() => {
+      "use strict";
+      function chapterLabel(value) {
+        return String(value ?? "").replace(/(?:プリティー)?オールスター第?([1１2２])章/g, (_, n) =>
+          n === "1" || n === "１" ? "スタジオ第9章" : "スタジオ第10章",
+        );
+      }
+      function chapterRank(value) {
+        const label = chapterLabel(value).normalize("NFKC"),
+          n = Number(label.match(/(?:第)?(\d+)章/)?.[1] || 0);
+        return (label.includes("オールスター") ? 300 : label.startsWith("スタジオ") ? 200 : 0) + n;
+      }
+      const unavailablePhotos = new Set([
+        "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000359562_cu0byqt.jpg",
+        "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000359572_ICgOHvD.jpg",
+        "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000359582_Tl3859N.jpg",
+        "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000407742_QymDqWg.jpg",
+        "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000407752_PffVobT.jpg",
+        "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000407762_XN8FFhT.jpg",
+        "https://img.fril.jp/img/830361831/l/2857948683.jpg",
+        "https://img.fril.jp/img/830779217/l/2859681357.jpg",
+        "https://img.fril.jp/img/833541759/l/2870918479.jpg",
+      ]);
+      function verseImage(value) {
+        return unavailablePhotos.has(String(value || "").split("?")[0]) ? "" : value || "";
+      }
+      window.CARD_PRIMAGI = Object.freeze({
+        image(value) {
+          return value || "";
+        },
+        verseImage,
+        chapterLabel,
+        chapterRank,
+      });
+    })();
+    /* Public family catalogs. Account data never enter this cache. */
+    (() => {
+      "use strict";
+      const families = ["onegai", "himitsu", "primagi"];
+      const prefix =
+        "card-verse-public:v3:" + new URL(window.APP_CONFIG.supabaseUrl).hostname + ":";
+      try {
+        const host = new URL(window.APP_CONFIG.supabaseUrl).hostname;
+        localStorage.removeItem("card-verse-public:v2:" + host);
+        localStorage.removeItem("card-verse-public:" + host);
+      } catch {}
+      const slots = new Map();
+      let currentVersion = null,
+        latestTime = 0;
+      const valid = (data, family) =>
+        data?.family === family &&
+        typeof data.version === "string" &&
+        Array.isArray(data.coordinates) &&
+        Array.isArray(data.parts) &&
+        data.coordinates.every((c) => c.family === family);
+      function slot(family) {
+        if (!families.includes(family)) throw Error("コーデのシリーズを確認してください。");
+        if (!slots.has(family)) {
+          let snapshot = null;
+          try {
+            const saved = JSON.parse(localStorage.getItem(prefix + family) || "null");
+            if (valid(saved, family)) snapshot = saved;
+          } catch {}
+          slots.set(family, {
+            snapshot,
+            flight: null,
+            expires: 0,
+            retryAt: 0,
+            failures: 0,
+            epoch: 0,
+          });
+        }
+        return slots.get(family);
+      }
+      function fresh(entry) {
+        return !!entry.snapshot && entry.expires > Date.now();
+      }
+      function peek(family) {
+        if (family) {
+          const entry = slot(family);
+          return fresh(entry) ? entry.snapshot : null;
+        }
+        const loaded = families
+          .map((name) => [name, slot(name)])
+          .filter(([, entry]) => fresh(entry));
+        if (!loaded.length) return null;
+        const parts = new Map();
+        for (const [, entry] of loaded)
+          for (const part of entry.snapshot.parts) parts.set(part.id, part);
+        return {
+          version: currentVersion,
+          coordinates: loaded.flatMap(([, entry]) => entry.snapshot.coordinates),
+          parts: [...parts.values()],
+          loaded_families: loaded.map(([name]) => name),
+        };
+      }
+      async function request(client, family, version) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        try {
+          let call = client.rpc("card_verse_catalog_family_cached", {
+            p_family: family,
+            p_version: version,
+          });
+          if (typeof call.abortSignal === "function") call = call.abortSignal(controller.signal);
+          const { data, error } = await call;
+          if (error) throw error;
+          if (!data)
+            throw Error("コーデ情報を取得できませんでした。時間をおいて再度お試しください。");
+          return data;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      async function load(client, { family, force = false } = {}) {
+        const entry = slot(family);
+        if (entry.flight) return entry.flight;
+        if (Date.now() < entry.retryAt) throw entry.lastError;
+        if (!force && fresh(entry)) return entry.snapshot;
+        const epoch = entry.epoch;
+        const task = (async () => {
+          if (navigator.onLine === false) throw Error("通信状態を確認して再度お試しください。");
+          const requestedAt = Date.now();
+          let data = await request(client, family, entry.snapshot?.version || null);
+          if (data.omitted) {
+            if (!entry.snapshot || entry.snapshot.version !== data.version)
+              data = await request(client, family, null);
+            else data = { ...entry.snapshot, ...data, omitted: false };
+          }
+          if (!valid(data, family))
+            throw Error("コーデ情報を確認できませんでした。時間をおいて再度お試しください。");
+          const serverTime = Date.parse(data.server_time) || Date.now();
+          if (currentVersion && currentVersion !== data.version && serverTime < latestTime)
+            throw Error("コーデ情報が更新されています。もう一度お試しください。");
+          if (currentVersion && currentVersion !== data.version) {
+            for (const [name, other] of slots)
+              if (name !== family) {
+                other.snapshot = null;
+                other.expires = 0;
+                try {
+                  localStorage.removeItem(prefix + name);
+                } catch {}
+              }
+          }
+          currentVersion = data.version;
+          latestTime = Math.max(latestTime, serverTime);
+          entry.snapshot = { ...data, omitted: false };
+          const until = Date.parse(data.next_transition);
+          entry.expires =
+            epoch === entry.epoch
+              ? requestedAt +
+                Math.min(300000, Number.isFinite(until) ? Math.max(0, until - serverTime) : 300000)
+              : 0;
+          entry.retryAt = 0;
+          entry.failures = 0;
+          try {
+            localStorage.setItem(prefix + family, JSON.stringify(entry.snapshot));
+          } catch {}
+          return entry.snapshot;
+        })()
+          .catch((error) => {
+            entry.lastError = error;
+            entry.failures = Math.min(entry.failures + 1, 6);
+            entry.retryAt = Date.now() + Math.min(300000, 15000 * 2 ** (entry.failures - 1));
+            throw error;
+          })
+          .finally(() => {
+            if (entry.flight === task) entry.flight = null;
+          });
+        entry.flight = task;
+        return task;
+      }
+      document.addEventListener("card-visibility-updated", () => {
+        for (const entry of slots.values()) {
+          entry.expires = 0;
+          entry.epoch++;
+        }
+      });
+      window.CARD_VERSE_CATALOG = Object.freeze({ load, peek });
+    })();
+
+    /* ===== assets/js/site-common.js ===== */
+    /* Shared page components. Initialized once after templates are mounted. */
+    (() => {
+      let initialized = false;
+      window.CARD_SITE_COMMON = {
+        init(page) {
+          if (initialized) return;
+          initialized = true;
+          if (["album", "contact", "card-registration"].includes(page)) {
+            /* site-info.js */
+            window.SITE_INFO = {
+              terms: {
+                title: "利用規約",
+                body:
+                  "<p>制定日：2026年10月8日<br>最終改定日：2026年11月6日</p>\n<p>この規約は、「カードアルバム」（以下「本サイト」）の利用条件を定めます。</p>\n<h3>1. サービスについて</h3>\n<p>本サイトは、カードやコーデの検索、所持状況の記録、QRコードの保管などを目的とした、個人運営の非公式サービスです。</p>\n<p>カードの売買や、公式のゲームデータとの連携は行っていません。本サイトでの登録・変更が、実際のゲームのデータに反映されることはありません。</p>\n<h3>2. アカウントについて</h3>\n<p>アルバムIDとパスワードは、ご自身で大切に管理してください。他人のアカウントの利用、なりすまし、第三者の個人情報を含むニックネームの登録は禁止します。</p>\n<p>パスワードを忘れた場合、再設定やアカウントの復旧はできません。</p>\n<p>1か月間ログイン・利用がないアカウントは、所持記録などの関連データとともに自動削除します。ログイン状態を維持して本サイトを利用している場合も、利用日時を更新します。削除されたアルバムIDは再利用できません。</p>\n<p>運営状況により、新規登録を招待制としたり、受付を停止したりする場合があります。</p>\n<h3>3. QRコードの登録・利用について</h3>\n<p>ご自身が利用する権限を持つQRコードを登録してください。他人のQRコードの無断利用や、不正に入手したコードの登録は禁止します。</p>\n<p>QRコードは読み取ったデータを保存し、表示時に再生成します。元のQRコードと模様が異なる場合があり、すべての端末・ゲーム機での読み取りを保証するものではありません。元のカードやコードも、ご自身で保管してください。</p>\n<h4>" +
+                  window.CARD_QR_POLICY.heading +
+                  "</h4>" +
+                  window.CARD_QR_POLICY.paragraphs +
+                  '<p>上限が現在の登録数を下回っても、登録済みのQRコードは自動では削除されません。新しく登録するには、現在の登録数を上限未満にしてください。</p>\n<p>セーブコード・フレンドカードの登録には、別途案内する「QRコード登録規約」も適用します。</p>\n<h3>4. 共有機能について</h3>\n<p>所持状況などの共有機能を利用する際は、公開する範囲を確認してください。共有URLを知っている人は、設定された範囲の情報を閲覧できます。</p>\n<p>登録したQRコードの読み取りデータは、共有情報には含めません。</p>\n<h3>5. 禁止事項</h3>\n<ul>\n<li>不正アクセス、権限の回避、他人のアカウントやデータへの不正な操作</li>\n<li>自動処理などによって、本サイトに過度な負荷をかける行為</li>\n<li>他の利用者や権利者への迷惑行為、権利を侵害する行為</li>\n<li>本サイトや登録データを利用した違法行為</li>\n<li>第三者の個人情報や、利用する権限のない情報の登録</li>\n</ul>\n<p>違反への対応や安全な運営のため、必要に応じて利用制限、登録情報の削除、アカウントの停止・削除を行う場合があります。</p>\n<h3>6. 掲載情報と権利について</h3>\n<p>作品名、カード画像、コーデ画像、名称などの権利は、各権利者に帰属します。</p>\n<p>掲載情報には、誤りや更新の遅れが含まれる場合があります。ゲームの仕様、配布期間、利用条件などは、各公式サイトもあわせてご確認ください。</p>\n<h3>7. サービスの変更・停止と責任について</h3>\n<p>保守、障害、外部サービスの変更、運営上の事情などにより、機能の変更やサービスの停止・終了を行う場合があります。重要な情報は、ご自身でも控えを残してください。</p>\n<p>運営者は、掲載情報の完全な正確性や、サービスの継続提供、データが失われないことを保証するものではありません。</p>\n<h3>8. 規約の変更について</h3>\n<p>規約を変更する場合は、本サイトで変更内容と適用日を案内します。利用者に重要な影響を及ぼす変更は、内容に応じて事前に案内します。</p>\n<h3>9. お問い合わせ・修正・削除依頼について</h3>\n<p>サービスに関するご相談や、掲載情報の修正・削除依頼は、お問い合わせフォームからご連絡ください。</p>\n<p>修正・削除をご希望の場合は、対象の情報と理由をお知らせください。内容を確認し、権利侵害などへの対応が必要な場合は、速やかに対応します。確認のため、追加の情報をお願いする場合があります。</p>\n<p><a href="https://iprimaker.github.io/card-management/contact/">お問い合わせフォームへ</a></p>',
+              },
+              privacy: {
+                title: "プライバシーポリシー",
+                body: '<p>制定日：2026年10月8日<br>最終改定日：2026年10月30日</p>\n<p>カードアルバムの運営者は、本サイトの提供と安全な運営に必要な範囲で、利用者の情報を取り扱います。</p>\n<h3>1. 取り扱う情報</h3>\n<ul>\n<li>アルバムID、ニックネーム、登録日時、ログイン・利用日時、メールアドレス（登録されている場合）</li>\n<li>カード・コーデ・パーツの所持数、お気に入り、交換希望などの登録内容</li>\n<li>QRコードの読み取りデータ</li>\n<li>セーブコード・フレンドカードに登録したマイキャラ名、ID、誕生日、メモなど</li>\n<li>共有URLの設定と共有範囲</li>\n<li>お問い合わせの種類、内容、任意のお名前、返信先メールアドレス（未ログインの場合）、アルバムID（ログイン済みの場合）、返信内容</li>\n<li>認証、不正利用の防止、通信・障害対応に必要な情報</li>\n</ul>\n<p>誕生日などの任意項目は、入力しなくても利用できます。個人を特定できる情報や、第三者の個人情報を必要以上に登録しないでください。</p>\n<h3>2. 利用目的</h3>\n<p>取得した情報は、次の目的で利用します。</p>\n<ul>\n<li>アカウントの登録、本人の認証、ログイン状態の管理</li>\n<li>所持状況やQRコードなどの保存・表示</li>\n<li>利用者が設定した範囲での情報共有</li>\n<li>登録上限の管理や、利用状況に応じたサービス運営</li>\n<li>お知らせやお問い合わせへの返信</li>\n<li>不正利用の防止、障害対応、サービスの改善</li>\n<li>登録情報の修正・削除への対応</li>\n</ul>\n<h3>3. QRコードとカメラについて</h3>\n<p>QRコードの読み取りでは、端末のカメラを使用します。カメラの映像は読み取り処理に利用し、画像や動画としてサーバーに保存しません。</p>\n<p>保存するのは、読み取ったデータと、登録先などの関連情報です。QRコードの読み取りデータやセーブコード・フレンドカードの登録内容は、暗号化して保存します。</p>\n<p>これらの読み取りデータは、他の一般利用者や共有URLの閲覧者には公開しません。</p>\n<h3>4. 共有機能について</h3>\n<p>共有機能を有効にした場合、ニックネームや、選択した範囲の所持状況などが、共有URLを知っている人に表示されます。</p>\n<p>共有URLを第三者へ送る際は、共有する内容を確認してください。登録したQRコードの読み取りデータは共有対象に含めません。</p>\n<h3>5. ブラウザへの保存と外部サービスについて</h3>\n<p>ログイン状態の保持や表示の高速化のため、ブラウザのローカルストレージなどを使用します。共有端末では、利用後にログアウトしてください。</p>\n<p>本サイトは、認証・データ保存にSupabase、サイトの配信にGitHub Pagesを利用しています。また、公式サイトの画像を読み込む際や、Xなどの外部リンクを開いた際には、接続先にIPアドレスなどの通信情報が送信されます。</p>\n<h3>6. 安全管理と保存期間について</h3>\n<p>情報へのアクセスを権限に応じて制限し、認証基盤によるパスワードの保護や、対象データの暗号化など、安全管理のための措置を講じます。</p>\n<p>情報は、サービスの提供や安全な運営に必要な期間保存し、不要になった情報は適切に削除します。バックアップや、不正利用への対応・法令上必要な記録は、削除に時間を要する場合があります。</p>\n<p>発行済みのアルバムIDは、重複や再発行を防ぐため、アカウント削除後も使用済みのIDとして保持します。</p>\n<h3>7. 情報の変更・削除について</h3>\n<p>ニックネーム、所持記録、登録したQRコードなどは、本サイトの各機能から変更・削除できます。アカウントは、ログアウト確認画面の「アカウント情報を削除」から削除できます。</p>\n<p>1か月間ログイン・利用がない場合も、アカウントと関連する登録データを自動削除します。削除されたアルバムIDは再利用できません。</p>\n<p>ご自身の情報の開示、訂正、利用停止、削除などに関するご相談は、お問い合わせフォームからご連絡ください。必要な本人確認を行い、法令に従って対応します。</p>\n<h3>8. 第三者への提供について</h3>\n<p>本人の同意がある場合や、法令に基づく場合などを除き、利用者の個人情報を第三者へ提供しません。</p>\n<p>ただし、利用者自身が設定した共有機能による公開や、利用目的の達成に必要な範囲で外部サービスに取扱いを委託する場合があります。</p>\n<h3>9. ポリシーの変更・お問い合わせ</h3>\n<p>内容を変更する場合は、本サイトで変更内容と適用日を案内します。</p>\n<p>個人情報の取扱いに関するご相談は、お問い合わせフォームをご利用ください。</p>\n<p><a href="https://iprimaker.github.io/card-management/contact/">お問い合わせフォームへ</a></p>',
+              },
+              about: {
+                title: "このサイトについて",
+                body: '<p>カードアルバムは、アイカツ！アンコール・アイプリ・ワッチャプリマジ！のカードやコーデを探し、集めたものを記録するための、個人運営の非公式サイトです。</p>\n<h3>できること</h3>\n<ul>\n<li>カード・コーデの検索と絞り込み</li>\n<li>掲載されている表面・裏面やパーツ画像の閲覧</li>\n<li>所持数の記録、お気に入りの登録、取得率の確認</li>\n<li>交換希望の記録</li>\n<li>カード・コーデのQRコードの保管と表示</li>\n<li>セーブコード・フレンドカードの管理</li>\n<li>選択した範囲の所持状況の共有</li>\n</ul>\n<p>作品やカードの種類によって、利用できる機能は異なります。</p>\n<h3>公式サービスとの関係</h3>\n<p>本サイトは、各作品・ゲームの公式運営とは関係ありません。作品名、カード画像、コーデ画像などの権利は、各権利者に帰属します。</p>\n<p>本サイトでの操作が、公式のゲームデータに反映されることはありません。本サイトに関するお問い合わせは、公式運営ではなく、下記のフォームへお願いいたします。</p>\n<h3>掲載情報について</h3>\n<p>公式サイトなどの情報を確認しながら、掲載内容を更新しています。確認できない情報は、推測で補わず「未取得」などと表示します。</p>\n<p>未掲載、誤記、反映の遅れがある場合があります。ゲームの仕様や最新情報は、各公式サイトもあわせてご確認ください。</p>\n<p>シークレットや発売前のカード・コーデについては、一定の期間、画像などを非表示にする場合があります。</p>\n<h3>ご利用にあたって</h3>\n<p>登録の受付方法やQRコードの登録上限は、運営状況に応じて変更する場合があります。</p>\n<p>大切なカードや元のQRコード、アルバムID・パスワードは、ご自身でも保管してください。</p>\n<h3>お問い合わせ</h3>\n<p>不具合の報告、カード・コーデ情報の修正や追加のご依頼、ご意見などは、お問い合わせフォームからお寄せください。</p>\n<p>運営者：ここっと</p>\n<p><a href="https://iprimaker.github.io/card-management/contact/">お問い合わせフォームへ</a></p>',
+              },
+            };
+          }
+          if (["album", "shared", "browse"].includes(page)) {
+            /* catalog-cache.js */
+            (() => {
+              window.PUBLIC_CATALOG_CACHE = {
+                peek: () => window.CARD_VISIBILITY.cache(),
+                invalidate() {},
+                async load() {
+                  await window.CARD_VISIBILITY.refresh();
+                  return window.CARD_VISIBILITY.cache();
+                },
+              };
+            })();
+          }
+          if (["album", "contact"].includes(page)) {
+            /* maintenance.js */
+            (() => {
+              "use strict";
+              const nativeFetch = window.fetch.bind(window);
+              let pending = null;
+              let freshUntil = 0,
+                retryAt = 0,
+                failures = 0,
+                lastError;
+              let state = { maintenance: false };
+              let notify = () => {};
+              async function check({ force = false } = {}) {
+                if (pending) return pending;
+                if (Date.now() < retryAt) throw lastError;
+                if (!force && Date.now() < freshUntil) return state;
+                pending = (async () => {
+                  const controller = new AbortController();
+                  const timeout = setTimeout(() => controller.abort(), 10000);
+                  try {
+                    const config = window.APP_CONFIG;
+                    const response = await nativeFetch(
+                      config.supabaseUrl + "/rest/v1/rpc/card_album_site_status",
+                      {
+                        method: "POST",
+                        headers: {
+                          apikey: config.supabaseKey,
+                          "Content-Type": "application/json",
+                        },
+                        body: "{}",
+                        cache: "no-store",
+                        signal: controller.signal,
+                      },
+                    );
+                    if (!response.ok)
+                      throw Error("接続が混み合っています。時間をおいて再度お試しください。");
+                    const data = await response.json();
+                    if (!data || typeof data.maintenance !== "boolean")
+                      throw Error("メンテナンス設定を確認できません。");
+                    state = data;
+                    freshUntil = Date.now() + 30000 * (1 + Math.random() * 0.2);
+                    failures = 0;
+                    retryAt = 0;
+                    notify(state);
+                    return state;
+                  } finally {
+                    clearTimeout(timeout);
+                  }
+                })()
+                  .catch((error) => {
+                    lastError = error;
+                    failures = Math.min(failures + 1, 6);
+                    retryAt =
+                      Date.now() +
+                      Math.min(300000, 15000 * 2 ** (failures - 1)) * (1 + Math.random() * 0.2);
+                    throw error;
+                  })
+                  .finally(() => {
+                    pending = null;
+                  });
+                return pending;
+              }
+              async function guardedFetch(input, options) {
+                const url = typeof input === "string" ? input : input.url || String(input);
+                if (!url.startsWith(window.APP_CONFIG.supabaseUrl + "/"))
+                  return nativeFetch(input, options);
+                const status = await check();
+
+                const publicRead =
+                  /\/rest\/v1\/(?:card_catalog(?:\?|$)|card_catalog_revision(?:\?|$)|rpc\/card_album_catalog_cached(?:\?|$)|rpc\/card_album_registration_status(?:\?|$))/.test(
+                    url,
+                  );
+                if (status.maintenance && !publicRead) {
+                  return new Response(
+                    JSON.stringify({
+                      code: "42501",
+                      message: "CARD_ALBUM_MAINTENANCE",
+                    }),
+                    {
+                      status: 403,
+                      headers: { "Content-Type": "application/json" },
+                    },
+                  );
+                }
+                const response = await nativeFetch(input, options);
+                if (!response.ok) {
+                  const text = await response.clone().text();
+                  if (text.includes("CARD_ALBUM_MAINTENANCE") || text.includes("user_banned"))
+                    await check({ force: true });
+                }
+                return response;
+              }
+              window.CARD_MAINTENANCE = {
+                check,
+                fetch: guardedFetch,
+                subscribe(fn) {
+                  notify = fn;
+                },
+                get state() {
+                  return state;
+                },
+              };
+            })();
+          }
+          if (["album", "shared", "browse", "contact"].includes(page)) {
+            /* dropdowns.js */
+            (() => {
+              "use strict";
+              if (window.CARD_SELECTS) return;
+              const enhanced = new WeakMap();
+              let active = null;
+              let serial = 0;
+              let query = "";
+              let queryTimer;
+
+              function close(restoreFocus = false) {
+                if (!active) return;
+                const { button, menu } = active;
+                active = null;
+                if (typeof menu.hidePopover === "function") {
+                  try {
+                    menu.hidePopover();
+                  } catch (_) {}
+                }
+                menu.remove();
+                button.setAttribute("aria-expanded", "false");
+                button.removeAttribute("aria-activedescendant");
+                if (restoreFocus && button.isConnected) button.focus();
+                query = "";
+                clearTimeout(queryTimer);
+              }
+
+              function sync(select) {
+                const state = enhanced.get(select);
+                if (!state) return;
+                const value = select.selectedOptions[0]?.textContent || "選択してください";
+                if (state.text.textContent !== value) state.text.textContent = value;
+                if (state.button.disabled !== select.disabled)
+                  state.button.disabled = select.disabled;
+                const labelCopy = (select.labels?.[0] || select.closest("label"))?.cloneNode(true);
+                labelCopy
+                  ?.querySelectorAll("button, select, input, .album-select")
+                  .forEach((node) => node.remove());
+                const label =
+                  select.getAttribute("aria-label") || labelCopy?.textContent.trim() || "選択項目";
+                state.button.setAttribute(
+                  "aria-label",
+                  `${label.trim()}：${state.text.textContent}`,
+                );
+              }
+
+              function highlight(index) {
+                if (!active) return;
+                active.index = index;
+                active.items.forEach((item, i) => item.classList.toggle("is-current", i === index));
+                const item = active.items[index];
+                if (item) {
+                  active.button.setAttribute("aria-activedescendant", item.id);
+                  const menu = active.menu,
+                    top = item.offsetTop,
+                    bottom = top + item.offsetHeight;
+                  if (top < menu.scrollTop) menu.scrollTop = top;
+                  else if (bottom > menu.scrollTop + menu.clientHeight)
+                    menu.scrollTop = bottom - menu.clientHeight;
+                }
+              }
+
+              function choose(index) {
+                if (!active) return;
+                const { select, options } = active;
+                const option = options[index];
+                if (!option || option.disabled || option.parentElement.disabled) return;
+                const changed = select.selectedIndex !== option.index;
+                select.selectedIndex = option.index;
+                close(true);
+                sync(select);
+                if (changed) {
+                  select.dispatchEvent(new Event("input", { bubbles: true }));
+                  select.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }
+
+              function open(select) {
+                close();
+                if (select.disabled) return;
+                const { button } = enhanced.get(select);
+                const options = Array.from(select.options);
+                if (!options.length) return;
+                const menu = document.createElement("div");
+                menu.className = "album-select-menu";
+                menu.id = button.getAttribute("aria-controls");
+                menu.setAttribute("role", "listbox");
+                menu.setAttribute("aria-label", button.getAttribute("aria-label"));
+                const theme = getComputedStyle(select);
+                for (const name of ["--accent", "--soft", "--line", "--muted"]) {
+                  menu.style.setProperty(name, theme.getPropertyValue(name));
+                }
+                let group = null;
+                const items = options.map((option, i) => {
+                  if (
+                    option.parentElement.tagName === "OPTGROUP" &&
+                    group !== option.parentElement
+                  ) {
+                    group = option.parentElement;
+                    const heading = document.createElement("div");
+                    heading.className = "album-select-group";
+                    heading.textContent = group.label;
+                    heading.setAttribute("role", "presentation");
+                    menu.append(heading);
+                  }
+                  const item = document.createElement("div");
+                  item.id = `${menu.id}-${i}`;
+                  item.className = "album-select-option";
+                  item.setAttribute("role", "option");
+                  item.setAttribute("aria-selected", String(option.selected));
+                  item.setAttribute(
+                    "aria-disabled",
+                    String(option.disabled || !!option.parentElement.disabled),
+                  );
+                  item.textContent = option.textContent;
+                  item.addEventListener("pointermove", () => highlight(i));
+                  item.addEventListener("click", () => choose(i));
+                  menu.append(item);
+                  return item;
+                });
+                const ownerDialog = select.closest("dialog");
+                (ownerDialog || document.body).append(menu);
+                if (ownerDialog && typeof menu.showPopover === "function") {
+                  menu.setAttribute("popover", "manual");
+                  menu.showPopover();
+                }
+                const rect = button.getBoundingClientRect();
+                const viewport = window.visualViewport;
+                const leftEdge = viewport?.offsetLeft || 0;
+                const topEdge = viewport?.offsetTop || 0;
+                const width = viewport?.width || innerWidth;
+                const height = viewport?.height || innerHeight;
+                const menuWidth = Math.min(Math.max(rect.width, 180), width - 24);
+                menu.style.width = `${menuWidth}px`;
+                menu.style.left = `${Math.max(leftEdge + 12, Math.min(rect.left, leftEdge + width - menuWidth - 12))}px`;
+                const below = topEdge + height - rect.bottom - 18;
+                const above = rect.top - topEdge - 18;
+                const upwards = below < 180 && above > below;
+                const maxHeight = Math.max(80, Math.min(320, upwards ? above : below));
+                menu.style.maxHeight = `${maxHeight}px`;
+                menu.style.top = `${upwards ? Math.max(topEdge + 12, rect.top - Math.min(menu.scrollHeight, maxHeight) - 6) : rect.bottom + 6}px`;
+                active = {
+                  select,
+                  button,
+                  menu,
+                  options,
+                  items,
+                  index: select.selectedIndex,
+                };
+                button.setAttribute("aria-expanded", "true");
+                highlight(select.selectedIndex);
+              }
+
+              function keydown(event, select) {
+                const key = event.key;
+                if (["ArrowDown", "ArrowUp", "Home", "End", "Enter", " "].includes(key)) {
+                  event.preventDefault();
+                  if (!active || active.select !== select) {
+                    open(select);
+                    return;
+                  }
+                  if (key === "Enter" || key === " ") {
+                    choose(active.index);
+                    return;
+                  }
+                  const allowed = active.options
+                    .map((option, i) => (option.disabled || option.parentElement.disabled ? -1 : i))
+                    .filter((i) => i >= 0);
+                  if (!allowed.length) return;
+                  const current = allowed.indexOf(active.index);
+                  const index =
+                    key === "Home"
+                      ? allowed[0]
+                      : key === "End"
+                        ? allowed.at(-1)
+                        : allowed[
+                            Math.max(
+                              0,
+                              Math.min(
+                                allowed.length - 1,
+                                current + (key === "ArrowDown" ? 1 : -1),
+                              ),
+                            )
+                          ];
+                  highlight(index);
+                } else if (key === "Escape") {
+                  event.preventDefault();
+                  close(true);
+                } else if (key === "Tab") close();
+                else if (key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                  if (!active) open(select);
+                  if (!active) return;
+                  query += key.toLocaleLowerCase();
+                  clearTimeout(queryTimer);
+                  queryTimer = setTimeout(() => {
+                    query = "";
+                  }, 650);
+                  const index = active.options.findIndex(
+                    (option) =>
+                      !option.disabled &&
+                      !option.parentElement.disabled &&
+                      option.textContent.trim().toLocaleLowerCase().startsWith(query),
+                  );
+                  if (index >= 0) highlight(index);
+                }
+              }
+
+              function enhance(select) {
+                if (enhanced.has(select) || select.multiple || select.size > 1) return;
+                const wrapper = document.createElement("span");
+                wrapper.className = "album-select";
+                select.before(wrapper);
+                wrapper.append(select);
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "album-select-trigger";
+                button.setAttribute("role", "combobox");
+                button.setAttribute("aria-haspopup", "listbox");
+                button.setAttribute("aria-expanded", "false");
+                button.setAttribute("aria-controls", `album-select-menu-${++serial}`);
+                if (select.getAttribute("aria-labelledby"))
+                  button.setAttribute("aria-labelledby", select.getAttribute("aria-labelledby"));
+                const text = document.createElement("span");
+                text.className = "album-select-value";
+                const arrow = document.createElement("span");
+                arrow.className = "album-select-chevron";
+                arrow.setAttribute("aria-hidden", "true");
+                button.append(text, arrow);
+                wrapper.append(button);
+                select.tabIndex = -1;
+                select.setAttribute("aria-hidden", "true");
+                enhanced.set(select, { button, text });
+                sync(select);
+                button.addEventListener("click", () =>
+                  active?.select === select ? close() : open(select),
+                );
+                button.addEventListener("keydown", (event) => keydown(event, select));
+                select.addEventListener("change", () => sync(select));
+                select.addEventListener("focus", () => button.focus());
+                select.addEventListener("invalid", () => {
+                  button.focus();
+                });
+              }
+
+              function refresh(root = document) {
+                if (root.matches?.("select")) enhance(root);
+                root.querySelectorAll("select").forEach(enhance);
+              }
+              window.CARD_SELECTS = Object.freeze({ refresh });
+              refresh();
+              new MutationObserver((records) => {
+                if (
+                  active &&
+                  (!active.select.isConnected ||
+                    active.select.disabled ||
+                    records.some((record) => active.select.contains(record.target)))
+                )
+                  close();
+                for (const record of records) {
+                  for (const node of record.addedNodes) {
+                    if (node.nodeType !== 1) continue;
+                    if (node.matches("select")) enhance(node);
+                    node.querySelectorAll("select").forEach(enhance);
+                  }
+                  const select = record.target.closest?.("select");
+                  if (select) sync(select);
+                }
+                document.querySelectorAll(".album-select > select").forEach(sync);
+              }).observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ["disabled", "selected", "label", "value"],
+              });
+              document.addEventListener("pointerdown", (event) => {
+                if (
+                  active &&
+                  !active.menu.contains(event.target) &&
+                  !active.button.contains(event.target)
+                )
+                  close();
+              });
+              for (const type of ["wheel", "touchmove"])
+                document.addEventListener(
+                  type,
+                  (event) => {
+                    if (
+                      active &&
+                      event.target !== active.menu &&
+                      !active.menu.contains(event.target)
+                    )
+                      close();
+                  },
+                  { capture: true, passive: true },
+                );
+              document.addEventListener(
+                "close",
+                (event) => {
+                  if (
+                    active &&
+                    event.target.matches?.("dialog") &&
+                    event.target.contains(active.select)
+                  )
+                    close();
+                },
+                true,
+              );
+              document.addEventListener(
+                "cancel",
+                (event) => {
+                  if (
+                    active &&
+                    event.target.matches?.("dialog") &&
+                    event.target.contains(active.select)
+                  ) {
+                    event.preventDefault();
+                    close(true);
+                  }
+                },
+                true,
+              );
+              window.addEventListener("resize", () => close());
+              window.visualViewport?.addEventListener("resize", () => close());
+              document.addEventListener("reset", (event) =>
+                setTimeout(() => event.target.querySelectorAll("select").forEach(sync), 0),
+              );
+            })();
+          }
+          if (["album", "shared", "browse"].includes(page)) {
+            /* modal-scrollbar.js */
+            (() => {
+              "use strict";
+              const desktop = matchMedia(
+                "(min-width: 761px) and (hover: hover) and (pointer: fine)",
+              );
+              const root = document.documentElement;
+              const rail = document.createElement("div");
+              rail.id = "modal-scroll-rail";
+              rail.setAttribute("popover", "manual");
+              rail.setAttribute("role", "scrollbar");
+              rail.setAttribute("aria-orientation", "vertical");
+              rail.setAttribute("aria-label", "モーダルをスクロール");
+              rail.tabIndex = 0;
+              const thumb = document.createElement("span");
+              thumb.className = "modal-scroll-thumb";
+              thumb.setAttribute("aria-hidden", "true");
+              rail.append(thumb);
+              let modal = null,
+                target = null,
+                frame = 0,
+                drag = null;
+              let trackHeight = 0,
+                thumbHeight = 0,
+                thumbTop = 0,
+                nextId = 0,
+                sequence = 0;
+              const order = new WeakMap();
+              const canPopover = typeof rail.showPopover === "function";
+              const resize = new ResizeObserver(schedule);
+              function scrollable(node) {
+                return (
+                  node instanceof HTMLElement &&
+                  node !== rail &&
+                  !rail.contains(node) &&
+                  node.clientHeight > 0 &&
+                  node.scrollHeight > node.clientHeight + 1 &&
+                  /auto|scroll/.test(getComputedStyle(node).overflowY)
+                );
+              }
+              function hideRail() {
+                if (target) target.classList.remove("external-modal-scroll");
+                if (rail.isConnected && canPopover) {
+                  try {
+                    rail.hidePopover();
+                  } catch (_) {}
+                }
+                if (drag && rail.hasPointerCapture(drag.id)) rail.releasePointerCapture(drag.id);
+                drag = null;
+              }
+              function clear() {
+                hideRail();
+                resize.disconnect();
+                rail.remove();
+                modal = target = null;
+              }
+              function schedule() {
+                if (!frame) frame = requestAnimationFrame(update);
+              }
+              function update() {
+                frame = 0;
+                const dialogs = [...document.querySelectorAll("dialog[open]")].filter((d) =>
+                  d.matches(":modal"),
+                );
+                dialogs.forEach((d) => {
+                  if (!order.has(d)) order.set(d, ++sequence);
+                });
+                const active = dialogs.sort((a, b) => order.get(a) - order.get(b)).at(-1);
+                root.classList.toggle("album-modal-open", Boolean(active));
+                if (!active) {
+                  clear();
+                  return;
+                }
+                if (active !== modal) {
+                  clear();
+                  modal = active;
+                  resize.observe(active);
+                }
+                // Settings can sit exactly at the overflow boundary. Removing its
+                // scrollbar gutter changes wrapping and can create a resize loop.
+                // Keep this dialog on a stable native scrollbar instead.
+                if (active.id === "display-settings-dialog") {
+                  hideRail();
+                  target = null;
+                  return;
+                }
+                if (!canPopover) {
+                  hideRail();
+                  target = null;
+                  return;
+                }
+                const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
+                const cardBody =
+                  active.id === "detail" ? active.querySelector(".modal-body") : null;
+                const scroller = cardBody
+                  ? scrollable(cardBody)
+                    ? cardBody
+                    : null
+                  : scrollable(target) && active.contains(target)
+                    ? target
+                    : candidates.includes(active)
+                      ? active
+                      : candidates.sort(
+                          (a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight,
+                        )[0];
+                if (!scroller) {
+                  hideRail();
+                  target = null;
+                  return;
+                }
+                if (target !== scroller) {
+                  hideRail();
+                  resize.disconnect();
+                  target = scroller;
+                  resize.observe(active);
+                  if (target !== active) resize.observe(target);
+                  if (target.firstElementChild) resize.observe(target.firstElementChild);
+                }
+                // 内部のスクロール領域に追従し、画面内に収めます。
+                const rect = target.getBoundingClientRect();
+                const box = active.getBoundingClientRect();
+                const vv = window.visualViewport;
+                const left = vv?.offsetLeft || 0,
+                  top = vv?.offsetTop || 0;
+                const width = vv?.width || innerWidth,
+                  height = vv?.height || innerHeight;
+                const y = Math.max(top + 8, box.top + 8);
+                const bottom = Math.min(top + height - 8, box.bottom - 8);
+                trackHeight = Math.max(0, bottom - y);
+                const max = Math.max(0, target.scrollHeight - target.clientHeight);
+                if (!max || trackHeight < 40) {
+                  hideRail();
+                  return;
+                }
+                if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
+                rail.style.left =
+                  Math.max(left + 2, Math.min(left + width - 10, box.right + 8)) + "px";
+                rail.style.top = y + "px";
+                rail.style.height = trackHeight + "px";
+                try {
+                  if (!rail.matches(":popover-open")) rail.showPopover();
+                } catch (_) {
+                  hideRail();
+                  return;
+                }
+                // 表示に成功した場合だけ、その領域の標準バーを隠します。
+                target.classList.add("external-modal-scroll");
+                if (!target.id) target.id = "modal-scroll-target-" + ++nextId;
+                rail.setAttribute("aria-controls", target.id);
+                rail.setAttribute("aria-valuemin", "0");
+                rail.setAttribute("aria-valuemax", String(Math.round(max)));
+                rail.setAttribute("aria-valuenow", String(Math.round(target.scrollTop)));
+                thumbHeight = Math.min(
+                  trackHeight,
+                  Math.max(28, (trackHeight * target.clientHeight) / target.scrollHeight),
+                );
+                thumbTop =
+                  (trackHeight - thumbHeight) * Math.min(1, Math.max(0, target.scrollTop / max));
+                thumb.style.height = thumbHeight + "px";
+                thumb.style.transform = "translateY(" + thumbTop + "px)";
+              }
+              function move(y, offset) {
+                if (!target) return;
+                const ratio =
+                  (y - rail.getBoundingClientRect().top - offset) /
+                  Math.max(1, trackHeight - thumbHeight);
+                target.scrollTop =
+                  Math.max(0, Math.min(1, ratio)) *
+                  Math.max(0, target.scrollHeight - target.clientHeight);
+                schedule();
+              }
+              rail.addEventListener("pointerdown", (e) => {
+                if (e.button !== 0 || !target) return;
+                e.preventDefault();
+                rail.focus({ preventScroll: true });
+                const y = e.clientY - rail.getBoundingClientRect().top;
+                drag = {
+                  id: e.pointerId,
+                  offset:
+                    y >= thumbTop && y <= thumbTop + thumbHeight ? y - thumbTop : thumbHeight / 2,
+                };
+                rail.setPointerCapture(e.pointerId);
+                move(e.clientY, drag.offset);
+              });
+              rail.addEventListener("pointermove", (e) => {
+                if (drag?.id === e.pointerId) move(e.clientY, drag.offset);
+              });
+              for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+                rail.addEventListener(type, () => {
+                  drag = null;
+                });
+              rail.addEventListener(
+                "wheel",
+                (e) => {
+                  if (!target) return;
+                  e.preventDefault();
+                  target.scrollTop +=
+                    e.deltaY *
+                    (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? target.clientHeight : 1);
+                  schedule();
+                },
+                { passive: false },
+              );
+              rail.addEventListener("keydown", (e) => {
+                if (
+                  !target ||
+                  !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)
+                )
+                  return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.key === "Home") target.scrollTop = 0;
+                else if (e.key === "End") target.scrollTop = target.scrollHeight;
+                else
+                  target.scrollTop +=
+                    (e.key.endsWith("Up") ? -1 : 1) *
+                    (e.key.startsWith("Page") ? target.clientHeight * 0.85 : 40);
+                schedule();
+              });
+              new MutationObserver((records) => {
+                let changed = false;
+                for (const record of records) {
+                  if (record.target === rail || rail.contains(record.target)) continue;
+                  if (
+                    record.attributeName === "open" &&
+                    record.target instanceof HTMLDialogElement
+                  ) {
+                    if (record.target.open) order.set(record.target, ++sequence);
+                    else order.delete(record.target);
+                  }
+                  changed = true;
+                }
+                if (changed) schedule();
+              }).observe(document.body, {
+                subtree: true,
+                childList: true,
+                characterData: true,
+                attributes: true,
+                attributeFilter: ["open", "hidden"],
+              });
+              document.addEventListener(
+                "scroll",
+                (e) => {
+                  if (!modal) return;
+                  if (modal.contains(e.target) && scrollable(e.target) && e.target !== target) {
+                    hideRail();
+                    target = e.target;
+                    resize.observe(target);
+                  }
+                  schedule();
+                },
+                true,
+              );
+              document.addEventListener(
+                "load",
+                () => {
+                  if (modal) schedule();
+                },
+                true,
+              );
+              document.addEventListener("close", schedule, true);
+              addEventListener("resize", schedule, { passive: true });
+              desktop.addEventListener("change", schedule);
+              window.visualViewport?.addEventListener("resize", schedule, {
+                passive: true,
+              });
+              window.visualViewport?.addEventListener("scroll", schedule, {
+                passive: true,
+              });
+              schedule();
+            })();
+          }
+          if (page === "card-registration") window.REGISTRATION_SITE_INFO = window.SITE_INFO;
+        },
+      };
+    })();
+  };
+})();
