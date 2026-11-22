@@ -20185,3 +20185,150 @@ body #verse-cards .verse-card {
   align-self: stretch;
   height: auto;
 }
+
+
+/* Registration pauses are separate from timed ID-issuance limits. */
+#signup-flow.registration-suspended > :not(#signup-pause-notice) {
+  display: none !important;
+}
+#signup-pause-notice[hidden] {
+  display: none !important;
+}
+#signup-flow #signup-pause-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  padding: clamp(24px, 5vw, 38px) clamp(18px, 4vw, 30px) 22px;
+  border: 1px solid #e8dfe9;
+  border-radius: 24px;
+  background: linear-gradient(165deg, #fffafd 0%, #fff 65%);
+  color: #544458;
+  text-align: center;
+  box-shadow: 0 8px 28px #79597708;
+}
+#signup-pause-notice .signup-pause-symbol {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 20px;
+  border: 1px solid #eee2ed;
+  border-radius: 25px;
+  background: #f8edf5;
+  color: #ac769d;
+}
+#signup-pause-notice .signup-pause-symbol svg {
+  width: 53px;
+  height: 53px;
+  overflow: visible;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#signup-pause-notice .signup-pause-symbol rect,
+#signup-pause-notice .signup-pause-symbol circle {
+  fill: #fffafd;
+}
+#signup-pause-notice .signup-pause-label {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #946184;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+#signup-pause-notice h3 {
+  display: block;
+  margin: 0;
+  color: #514055;
+  font-size: clamp(19px, 3.8vw, 23px);
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: .01em;
+  text-wrap: balance;
+}
+#signup-pause-notice .signup-pause-description {
+  max-width: 34em;
+  margin: 14px 0 0;
+  color: #756977;
+  font-size: 13px;
+  line-height: 1.95;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+#signup-pause-notice .signup-pause-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  margin: 22px 0 18px;
+  padding: 13px 14px;
+  border: 1px solid #eee6ec;
+  border-radius: 12px;
+  background: #faf7fa;
+  color: #817083;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.8;
+}
+#signup-pause-notice .signup-pause-dot {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #bc91af;
+}
+#signup-pause-notice .signup-pause-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 18px;
+  border: 1px solid #dac9da;
+  border-radius: 12px;
+  background: #fff;
+  color: #80597b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+#signup-pause-notice .signup-pause-refresh svg {
+  width: 17px;
+  height: 17px;
+}
+#signup-pause-notice .signup-pause-refresh:hover:not(:disabled) {
+  background: #faf4f9;
+}
+#signup-pause-notice .signup-pause-refresh:focus-visible {
+  outline: 3px solid #c7a4c1;
+  outline-offset: 3px;
+}
+#signup-pause-notice .signup-pause-refresh:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+#signup-pause-notice .signup-pause-login {
+  margin: 17px 0 0;
+  color: #817083;
+  font-size: 11px;
+  line-height: 1.8;
+}
+#signup-pause-notice[data-state="unavailable"] .signup-pause-symbol {
+  background: #f1f4f9;
+  color: #8292ac;
+}
+@media (max-width: 380px) {
+  #signup-flow #signup-pause-notice {
+    border-radius: 18px;
+    padding: 24px 16px 20px;
+  }
+  #signup-pause-notice h3 {
+    font-size: 18px;
+  }
+}
