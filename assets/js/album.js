@@ -1,6 +1,7 @@
 /* Card Album: album.js. Original vendor notices: assets/licenses. */
 (() => {
-  const { modules, loadModule, ensureQRBundle, ensureQREncoder } = window.CARD_RUNTIME;
+  const { modules, loadModule, ensureQRBundle, ensureQREncoder } =
+    window.CARD_RUNTIME;
   modules["album.js"] = function (sourceURL) {
     /* Site information is supplied by CARD_SITE_COMMON.init before this module. */
 
@@ -10,7 +11,9 @@
 
     /* app-title-fix.js */
     const albumSessionStorage = (() => {
-      const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(".")[0];
+      const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(
+        ".",
+      )[0];
       const baseKey = `sb-${project}-auth-token`;
       const preferenceKey = `${baseKey}-remember`;
       const memory = new Map();
@@ -47,7 +50,9 @@
       function options(remember = remembered()) {
         const area = remember ? "localStorage" : "sessionStorage";
 
-        const storageKey = remember ? baseKey : `${baseKey}-private-${crypto.randomUUID()}`;
+        const storageKey = remember
+          ? baseKey
+          : `${baseKey}-private-${crypto.randomUUID()}`;
         const savedKey = remember ? baseKey : `${baseKey}-session`;
         const mapKey = (key) => savedKey + key.slice(storageKey.length);
         return {
@@ -102,7 +107,10 @@
         element.style.boxSizing = boxSizing;
         completed?.();
       };
-      if (!element.animate || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      if (
+        !element.animate ||
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ) {
         finish();
         return;
       }
@@ -147,7 +155,8 @@
         backToTopButton.addEventListener("click", () => {
           window.scrollTo({
             top: 0,
-            behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+            behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
+              .matches
               ? "instant"
               : "smooth",
           });
@@ -185,7 +194,9 @@
 
     function cardAP(card) {
       const ap = card?.ap;
-      return typeof ap === "number" && Number.isInteger(ap) && ap >= 0 ? ap : null;
+      return typeof ap === "number" && Number.isInteger(ap) && ap >= 0
+        ? ap
+        : null;
     }
 
     function coordinateGroups(cards, ownership, ready, series = "all") {
@@ -205,19 +216,32 @@
       }
       return [...definitions.values()]
         .sort((a, b) => a.id.localeCompare(b.id))
-        .filter((definition) => series === "all" || values(definition.series).includes(series))
+        .filter(
+          (definition) =>
+            series === "all" || values(definition.series).includes(series),
+        )
         .map((definition) => {
           const ids = [...new Set(definition.cardIds)].slice(0, 4);
           const members = ids.map((id) => byID.get(id) || null);
-          const missing = values(definition.missingParts).slice(0, 4 - ids.length);
+          const missing = values(definition.missingParts).slice(
+            0,
+            4 - ids.length,
+          );
           const total = ids.length + missing.length;
           const got = ready ? ids.filter((id) => ownership.has(id)).length : 0;
-          const complete = ready && total > 0 && got === total && members.every(Boolean);
-          const allAPKnown = missing.length === 0 && members.every((card) => cardAP(card) !== null);
-          const ap = allAPKnown ? members.reduce((sum, card) => sum + cardAP(card), 0) : null;
+          const complete =
+            ready && total > 0 && got === total && members.every(Boolean);
+          const allAPKnown =
+            missing.length === 0 &&
+            members.every((card) => cardAP(card) !== null);
+          const ap = allAPKnown
+            ? members.reduce((sum, card) => sum + cardAP(card), 0)
+            : null;
           const acquiredAP = ready
             ? members.reduce(
-                (sum, card) => sum + (card && ownership.has(card.id) ? cardAP(card) || 0 : 0),
+                (sum, card) =>
+                  sum +
+                  (card && ownership.has(card.id) ? cardAP(card) || 0 : 0),
                 0,
               )
             : null;
@@ -258,19 +282,23 @@
       const anchor = $("filter-panel");
       if (anchor) anchor.before(coordinatePanel);
       else collection.append(coordinatePanel);
-      coordinatePanel.querySelector("summary").addEventListener("click", (event) => {
-        event.preventDefault();
-        const body = coordinatePanel.querySelector(".coordinate-body");
-        const expanded = !(revealStates.get(body)?.expanded ?? coordinatePanel.open);
-        if (expanded) {
-          coordinatePanel.open = true;
-          renderCoordinates();
-        }
-        animateReveal(body, expanded, () => {
-          if (!expanded) coordinatePanel.open = false;
-          body.hidden = false;
+      coordinatePanel
+        .querySelector("summary")
+        .addEventListener("click", (event) => {
+          event.preventDefault();
+          const body = coordinatePanel.querySelector(".coordinate-body");
+          const expanded = !(
+            revealStates.get(body)?.expanded ?? coordinatePanel.open
+          );
+          if (expanded) {
+            coordinatePanel.open = true;
+            renderCoordinates();
+          }
+          animateReveal(body, expanded, () => {
+            if (!expanded) coordinatePanel.open = false;
+            body.hidden = false;
+          });
         });
-      });
       coordinatePanel.addEventListener("toggle", () => {
         if (coordinatePanel.open) renderCoordinates();
       });
@@ -303,11 +331,13 @@
         renderCoordinates();
       };
       $("coordinate-complete-only").onclick = () => {
-        coordinateCollectionFilter = coordinateCollectionFilter === "complete" ? "all" : "complete";
+        coordinateCollectionFilter =
+          coordinateCollectionFilter === "complete" ? "all" : "complete";
         renderCoordinates();
       };
       $("coordinate-one-away").onclick = () => {
-        coordinateCollectionFilter = coordinateCollectionFilter === "one-away" ? "all" : "one-away";
+        coordinateCollectionFilter =
+          coordinateCollectionFilter === "one-away" ? "all" : "one-away";
         renderCoordinates();
       };
       return coordinatePanel;
@@ -331,7 +361,9 @@
         ? `収集済 ${eligible.filter((group) => group.complete).length} ／ 未収集 ${eligible.filter((group) => !group.complete).length}`
         : "所持データを確認中";
       if (!panel.open) return;
-      const labels = [...new Set(all.flatMap((group) => values(group.series)))].sort((a, b) =>
+      const labels = [
+        ...new Set(all.flatMap((group) => values(group.series))),
+      ].sort((a, b) =>
         seriesRank(a) < 0
           ? seriesRank(b) < 0
             ? a.localeCompare(b, "ja")
@@ -347,12 +379,22 @@
       if (select.dataset.optionsKey !== optionsKey) {
         select.innerHTML =
           '<option value="all">すべて</option>' +
-          labels.map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("");
+          labels
+            .map(
+              (label) => `<option value="${esc(label)}">${esc(label)}</option>`,
+            )
+            .join("");
         select.dataset.optionsKey = optionsKey;
       }
       select.value = coordinateSeries;
-      $("coordinate-exclude-single").setAttribute("aria-pressed", String(coordinateExcludeSingle));
-      $("coordinate-ap-order").setAttribute("aria-pressed", String(coordinateAPOrder));
+      $("coordinate-exclude-single").setAttribute(
+        "aria-pressed",
+        String(coordinateExcludeSingle),
+      );
+      $("coordinate-ap-order").setAttribute(
+        "aria-pressed",
+        String(coordinateAPOrder),
+      );
       $("coordinate-complete-only").setAttribute(
         "aria-pressed",
         String(coordinateCollectionFilter === "complete"),
@@ -361,10 +403,13 @@
         "aria-pressed",
         String(coordinateCollectionFilter === "one-away"),
       );
-      $("coordinate-complete-only").disabled = $("coordinate-one-away").disabled = !ownershipReady;
+      $("coordinate-complete-only").disabled = $(
+        "coordinate-one-away",
+      ).disabled = !ownershipReady;
       const groups = eligible.filter(
         (group) =>
-          (coordinateSeries === "all" || values(group.series).includes(coordinateSeries)) &&
+          (coordinateSeries === "all" ||
+            values(group.series).includes(coordinateSeries)) &&
           (coordinateCollectionFilter === "all" ||
             (ownershipReady &&
               (coordinateCollectionFilter === "complete"
@@ -397,7 +442,14 @@
           group.missing,
           group.members.map((card) =>
             card
-              ? [card.id, card.name, card.front, card.frontTransform, card.ap, owned.has(card.id)]
+              ? [
+                  card.id,
+                  card.name,
+                  card.front,
+                  card.frontTransform,
+                  card.ap,
+                  owned.has(card.id),
+                ]
               : null,
           ),
         ]),
@@ -489,7 +541,10 @@
     $("sync-status").replaceWith(catalogRefreshButton);
     catalogRefreshButton.onclick = async () => {
       if (!session || !db || catalogLoading || maintenanceActive) return;
-      if (lastManualCatalogRefreshAt && Date.now() - lastManualCatalogRefreshAt < 10000) {
+      if (
+        lastManualCatalogRefreshAt &&
+        Date.now() - lastManualCatalogRefreshAt < 10000
+      ) {
         toast("少し待ってから更新してください");
         return;
       }
@@ -562,11 +617,15 @@
       const active = selected && favoritesReady && favorites.has(selected.id);
       button.hidden = !session || !selected || !$("auth").hidden;
       button.disabled = !favoritesReady;
-      button.setAttribute("aria-disabled", String(favoriteSaving.has(selected?.id)));
+      button.setAttribute(
+        "aria-disabled",
+        String(favoriteSaving.has(selected?.id)),
+      );
       button.classList.toggle("is-favorite", !!active);
       button.setAttribute("aria-pressed", String(!!active));
       button.innerHTML =
-        favoriteStar + `<span>${active ? "お気に入り登録済み" : "お気に入りに登録"}</span>`;
+        favoriteStar +
+        `<span>${active ? "お気に入り登録済み" : "お気に入りに登録"}</span>`;
     }
     function loadFavorites(force = false) {
       const uid = session?.user.id;
@@ -610,8 +669,11 @@
           favoritesLoadedUser = uid;
           favoritesCheckedAt = Date.now();
         } catch (error) {
-          if (generation !== favoritesGeneration || uid !== session?.user.id) return;
-          toast("お気に入りを読み込めません。お気に入り用SQLの導入・通信状態を確認してください。");
+          if (generation !== favoritesGeneration || uid !== session?.user.id)
+            return;
+          toast(
+            "お気に入りを読み込めません。お気に入り用SQLの導入・通信状態を確認してください。",
+          );
         } finally {
           if (favoritesRequest === request) favoritesRequest = null;
           if (generation === favoritesGeneration && uid === session?.user.id) {
@@ -633,7 +695,10 @@
         const card = catalog.cards.find((card) => card.id === id);
         button.classList.toggle("is-favorite", active);
         button.setAttribute("aria-pressed", String(active));
-        button.setAttribute("aria-label", (card ? name(card) + "：" : "") + label);
+        button.setAttribute(
+          "aria-label",
+          (card ? name(card) + "：" : "") + label,
+        );
         button.title = label;
         button.disabled = !session || !favoritesReady;
         button.setAttribute("aria-disabled", String(favoriteSaving.has(id)));
@@ -644,7 +709,13 @@
     }
     async function saveFavorite(id) {
       if (!requireEditingSession()) return;
-      if (!session || !favoritesReady || favoriteSaving.has(id) || maintenanceActive) return;
+      if (
+        !session ||
+        !favoritesReady ||
+        favoriteSaving.has(id) ||
+        maintenanceActive
+      )
+        return;
       const uid = session.user.id;
       const generation = favoritesGeneration;
       const wasEnabled = favorites.has(id);
@@ -664,7 +735,8 @@
           p_card_id: id,
           p_enabled: enabled,
         });
-        if (generation !== favoritesGeneration || uid !== session?.user.id) return;
+        if (generation !== favoritesGeneration || uid !== session?.user.id)
+          return;
         if (result.error) throw result.error;
         if (result.data !== enabled) throw Error("Unexpected favorite state");
         favoritesCheckedAt = Date.now();
@@ -680,7 +752,8 @@
           }),
         );
       } catch (caughtError) {
-        if (generation !== favoritesGeneration || uid !== session?.user.id) return;
+        if (generation !== favoritesGeneration || uid !== session?.user.id)
+          return;
         if (wasEnabled) favorites.add(id);
         else favorites.delete(id);
         refreshFavoriteUI(id);
@@ -693,7 +766,11 @@
             .eq("user_id", uid)
             .eq("card_id", id)
             .maybeSingle();
-          if (!check.error && generation === favoritesGeneration && uid === session?.user.id) {
+          if (
+            !check.error &&
+            generation === favoritesGeneration &&
+            uid === session?.user.id
+          ) {
             if (check.data) favorites.add(id);
             else favorites.delete(id);
           }
@@ -714,8 +791,14 @@
 
     let pendingSignupEmail = "";
     try {
-      const saved = JSON.parse(localStorage.getItem("card-album-pending-signup") || "null");
-      if (saved && Date.now() - saved.at < 86400000 && typeof saved.email === "string")
+      const saved = JSON.parse(
+        localStorage.getItem("card-album-pending-signup") || "null",
+      );
+      if (
+        saved &&
+        Date.now() - saved.at < 86400000 &&
+        typeof saved.email === "string"
+      )
         pendingSignupEmail = saved.email;
     } catch {}
     function clearPendingSignup() {
@@ -782,12 +865,15 @@
       callbackPending = false;
       authResultShowing = true;
       clearAuthURL();
-      $("auth-result-title").textContent = ok ? "登録できました" : "メールを確認できませんでした";
+      $("auth-result-title").textContent = ok
+        ? "登録できました"
+        : "メールを確認できませんでした";
       $("auth-result-text").textContent = message;
       $("auth-result-album-id").hidden = true;
       $("auth-result-retention").hidden = true;
       $("auth-result-icon").textContent = ok ? "✓" : "!";
-      $("auth-result-next").textContent = ok && session ? "アルバムを開く" : "ログイン画面へ";
+      $("auth-result-next").textContent =
+        ok && session ? "アルバムを開く" : "ログイン画面へ";
       $("auth-result-next").hidden = invitationPage && !session;
       screen("auth-result");
     }
@@ -862,7 +948,9 @@
     }
     function screen(id) {
       finishAuthCheck();
-      for (const dialog of document.querySelectorAll("dialog.album-tool-dialog[open]"))
+      for (const dialog of document.querySelectorAll(
+        "dialog.album-tool-dialog[open]",
+      ))
         dialog.close();
       if (maintenanceActive) id = "auth";
       if (id === "auth" && $("auth").hidden) randomizeAuthTheme();
@@ -893,7 +981,8 @@
     }
     let albumIdentity = "";
     // Invitation proof stays in memory only; reloading cannot resume a claim.
-    let invitationPage = new URLSearchParams(location.search).get("view") === "invite";
+    let invitationPage =
+      new URLSearchParams(location.search).get("view") === "invite";
     let invitationToken = invitationPage
       ? new URLSearchParams(location.hash.slice(1)).get("invite")
       : null;
@@ -903,7 +992,8 @@
       "こちらでの登録は1度のみ可能です。再読み込み・ページを閉じる・再アクセスすると登録手続きを再開できません。招待URLの再発行はいたしかねます。";
     if (invitationPage) {
       history.replaceState(null, "", location.pathname + location.search);
-      $("auth-normal-panel").querySelector("h2").textContent = "招待からアルバムを作成";
+      $("auth-normal-panel").querySelector("h2").textContent =
+        "招待からアルバムを作成";
       $("login-tab").parentElement.hidden = true;
       const note = document.createElement("p");
       note.id = "invitation-notice";
@@ -919,13 +1009,16 @@
     let signupIssueState = "unknown",
       signupIssueBusy = false,
       signupIssueFlight = null;
-    const signupIssueStorageKey = "card-album-reservation-attempt-v1";
+    const signupIssueStorageKey =
+      "card-album-reservation-attempt-v1" +
+      (window.CARD_DB.key === "main" ? "" : ":" + window.CARD_DB.key);
     async function signupIssueKey() {
       const readOrCreate = () => {
         const existing = localStorage.getItem(signupIssueStorageKey);
         if (/^[a-f0-9]{64}$/.test(existing || "")) return existing;
-        const key = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
-          b.toString(16).padStart(2, "0"),
+        const key = Array.from(
+          crypto.getRandomValues(new Uint8Array(32)),
+          (b) => b.toString(16).padStart(2, "0"),
         ).join("");
         // Do not issue if the recovery key cannot survive a reload.
         localStorage.setItem(signupIssueStorageKey, key);
@@ -952,7 +1045,8 @@
         if (
           error ||
           !["unissued", "issued", "completed"].includes(data?.state) ||
-          (data.state === "issued" && (!data.album_id || !data.reservation_token))
+          (data.state === "issued" &&
+            (!data.album_id || !data.reservation_token))
         )
           throw error || Error("発行状況を確認できませんでした。");
         return data;
@@ -992,6 +1086,10 @@
     $("signup-issue-recheck").onclick = () => void checkSignupIssue();
     let signupRegistrationAllowed = null;
     let signupInvitationAllowed = false;
+    let signupRegistrationMode = null;
+    let signupReservationLimited = false;
+    let signupShardFull = false;
+    let signupStatusUnavailable = false;
     let signupCapacityLimited = false,
       signupCapacityRetryAt = null,
       signupCapacityFetchFailed = false;
@@ -1008,13 +1106,21 @@
       await refreshSignupRegistrationStatus({ force: true });
     };
     function renderSignupCapacityNotice() {
-      const limited = !invitationPage && !signupReservation && signupCapacityLimited;
+      const limited =
+        !invitationPage && !signupReservation && signupCapacityLimited;
       signupCapacityNotice.hidden = !limited;
-      $("signup-flow").classList.toggle("capacity-paused", limited && !signupReservation);
+      $("signup-flow").classList.toggle(
+        "capacity-paused",
+        limited && !signupReservation,
+      );
       if (limited) {
         const raw = Date.parse(signupCapacityRetryAt || "");
-        const retry = Number.isFinite(raw) ? new Date(Math.ceil(raw / 60000) * 60000) : null;
-        const schedule = signupCapacityNotice.querySelector(".signup-capacity-retry");
+        const retry = Number.isFinite(raw)
+          ? new Date(Math.ceil(raw / 60000) * 60000)
+          : null;
+        const schedule = signupCapacityNotice.querySelector(
+          ".signup-capacity-retry",
+        );
         schedule.hidden = !retry;
         if (retry) {
           const time = signupCapacityNotice.querySelector("time");
@@ -1025,19 +1131,21 @@
             minute: "2-digit",
             hour12: false,
           }).format(retry);
-          signupCapacityNotice.querySelector(".signup-capacity-date").textContent =
-            new Intl.DateTimeFormat("ja-JP", {
-              timeZone: "Asia/Tokyo",
-              month: "long",
-              day: "numeric",
-            }).format(retry);
+          signupCapacityNotice.querySelector(
+            ".signup-capacity-date",
+          ).textContent = new Intl.DateTimeFormat("ja-JP", {
+            timeZone: "Asia/Tokyo",
+            month: "long",
+            day: "numeric",
+          }).format(retry);
         }
-        signupCapacityNotice.querySelector(".signup-capacity-help").textContent =
-          signupCapacityFetchFailed
-            ? "受付状況を確認できませんでした。通信環境を確認して、もう一度更新してください。"
-            : retry
-              ? "この時刻以降に、受付状況を更新してご確認ください。"
-              : "しばらく時間をおいて、受付状況を更新してください。";
+        signupCapacityNotice.querySelector(
+          ".signup-capacity-help",
+        ).textContent = signupCapacityFetchFailed
+          ? "受付状況を確認できませんでした。通信環境を確認して、もう一度更新してください。"
+          : retry
+            ? "この時刻以降に、受付状況を更新してご確認ください。"
+            : "しばらく時間をおいて、受付状況を更新してください。";
         const refresh = signupCapacityNotice.querySelector("button");
         refresh.disabled = signupBusy || !!signupRegistrationFlight;
         refresh.querySelector("span").textContent = signupRegistrationFlight
@@ -1050,25 +1158,89 @@
     let signupRegistrationFlight = null,
       signupRegistrationFreshUntil = 0,
       signupRegistrationTimer;
+    const signupPauseNotice = document.createElement("section");
+    signupPauseNotice.id = "signup-pause-notice";
+    signupPauseNotice.hidden = true;
+    signupPauseNotice.setAttribute("aria-labelledby", "signup-pause-title");
+    signupPauseNotice.innerHTML = `
+      <div class="signup-pause-symbol" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none"><rect x="12" y="12" width="35" height="43" rx="8" transform="rotate(-8 12 12)"/><path d="M24 23h13M24 30h9"/><circle cx="46" cy="43" r="14"/><path d="M42 38v10M49 38v10"/></svg>
+      </div>
+      <span class="signup-pause-label">新規登録について</span>
+      <h3 id="signup-pause-title"></h3>
+      <p class="signup-pause-description"></p>
+      <div class="signup-pause-info"><span class="signup-pause-dot" aria-hidden="true"></span><span class="signup-pause-help"></span></div>
+      <button type="button" class="signup-pause-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 8a8.5 8.5 0 1 0 .3 7M20 3v5h-5"/></svg><span>受付状況を更新</span></button>
+      <p class="signup-pause-login">登録済みの方は「ログイン」からご利用いただけます。</p>`;
+    $("signup-flow").prepend(signupPauseNotice);
+    signupPauseNotice.querySelector("button").onclick = async () => {
+      if (signupBusy || signupRegistrationFlight) return;
+      await refreshSignupRegistrationStatus({ force: true });
+    };
+    function renderSignupPauseNotice(inviteOnly) {
+      const show = !invitationPage && !session && !signupReservation &&
+        signupIssueState !== "completed" && !inviteOnly && !signupCapacityLimited &&
+        (signupRegistrationAllowed === false || signupStatusUnavailable);
+      signupPauseNotice.hidden = !show;
+      $("signup-flow").classList.toggle("registration-suspended", show);
+      if (!show) return false;
+
+      let title = "新規登録の受付を停止しています";
+      let description = signupRegistrationMessage || "現在、新しいアルバムの作成を受け付けていません。";
+      let help = "受付を再開した際は、この画面からお手続きいただけます。";
+      let kind = "closed";
+      if (signupStatusUnavailable) {
+        kind = "unavailable";
+        title = "受付状況を確認できませんでした";
+        description = "通信環境を確認し、もう一度お試しください。";
+        help = "現在の受付状況は、下のボタンから確認できます。";
+      } else if (signupReservationLimited) {
+        kind = "reservation";
+        title = "新規登録を一時停止しています";
+        description = "現在、登録手続き中の方がいるため、新しいアルバムの作成を一時的に停止しています。";
+        help = "受付状況を更新して、再開をお待ちください。";
+      } else if (signupShardFull) {
+        kind = "full";
+        title = "新規登録を一時停止しています";
+        description = "現在、登録可能な人数の上限に達しています。受付再開までお待ちください。";
+      }
+      signupPauseNotice.dataset.state = kind;
+      signupPauseNotice.querySelector("h3").textContent = title;
+      signupPauseNotice.querySelector(".signup-pause-description").textContent = description;
+      signupPauseNotice.querySelector(".signup-pause-help").textContent = help;
+      const button = signupPauseNotice.querySelector("button");
+      const checking = !!signupRegistrationFlight;
+      button.disabled = signupBusy || checking;
+      button.setAttribute("aria-busy", String(checking));
+      button.querySelector("span").textContent = checking ? "確認しています…" : "受付状況を更新";
+      return true;
+    }
     function renderSignupRegistrationAvailability() {
       renderSignupCapacityNotice();
       const inviteOnly =
         !invitationPage &&
         !signupReservation &&
         signupRegistrationAllowed === false &&
+        signupRegistrationMode === "invitation" &&
         signupInvitationAllowed &&
         !signupCapacityLimited;
+      const paused = renderSignupPauseNotice(inviteOnly);
       $("signup-invitation-notice").hidden = !inviteOnly;
       $("signup-flow").classList.toggle("invitation-only", inviteOnly);
       $("signup-flow").classList.toggle(
         "registration-paused",
-        !invitationPage && !signupReservation && signupRegistrationAllowed === false,
+        !invitationPage &&
+          !signupReservation &&
+          signupRegistrationAllowed === false,
       );
       const issue = $("issue-album-id"),
         notice = $("signup-issue-notice"),
         retry = $("signup-issue-recheck");
       const canIssue =
-        !invitationPage && !session && !signupReservation && signupRegistrationAllowed === true;
+        !invitationPage &&
+        !session &&
+        !signupReservation &&
+        signupRegistrationAllowed === true;
       const showIssue = canIssue && signupIssueState === "unissued";
       issue.hidden = !showIssue;
       notice.hidden = !showIssue;
@@ -1076,7 +1248,9 @@
       retry.disabled = !!signupIssueFlight;
       issue.disabled = signupBusy || !!signupIssueFlight;
       issue.setAttribute("aria-busy", String(signupIssueBusy));
-      issue.textContent = signupIssueBusy ? "発行しています…" : "アルバムIDを発行";
+      issue.textContent = signupIssueBusy
+        ? "発行しています…"
+        : "アルバムIDを発行";
       if (invitationPage) {
         const status = $("signup-registration-status");
         status.hidden = !!signupReservation;
@@ -1088,8 +1262,10 @@
       const status = $("signup-registration-status");
       status.hidden =
         !!signupReservation ||
-        (signupRegistrationAllowed === true && signupIssueState === "unissued") ||
+        (signupRegistrationAllowed === true &&
+          signupIssueState === "unissued") ||
         inviteOnly ||
+        paused ||
         signupCapacityLimited;
       status.textContent =
         signupIssueState === "completed"
@@ -1135,6 +1311,17 @@
         const controller = new AbortController(),
           timeout = setTimeout(() => controller.abort(), 10000);
         try {
+          if (mode === "signup" && !session && !signupReservation) {
+            const recovered = await signupIssueRPC(false);
+            applySignupIssueState(recovered);
+            if (recovered.state === "unissued") {
+              const target = await window.CARD_DB.registrationTarget();
+              if (target.key && target.key !== window.CARD_DB.key) {
+                window.CARD_DB.navigate(target.key, true);
+                return;
+              }
+            }
+          }
           let request = db.rpc("card_album_registration_status_v3");
           if (typeof request.abortSignal === "function")
             request = request.abortSignal(controller.signal);
@@ -1142,7 +1329,13 @@
           if (error || typeof data?.allowed !== "boolean")
             throw Error("registration status unavailable");
           signupRegistrationAllowed = data.allowed;
+          signupRegistrationMode = ["open", "invitation", "closed"].includes(data.mode)
+            ? data.mode
+            : null;
           signupInvitationAllowed = data.invitation_allowed === true;
+          signupReservationLimited = data.reservation_limited === true;
+          signupShardFull = data.shard_full === true;
+          signupStatusUnavailable = false;
           signupCapacityLimited = data.capacity_limited === true;
           signupCapacityRetryAt = data.retry_at || null;
           signupCapacityFetchFailed = false;
@@ -1152,7 +1345,11 @@
         } catch {
           signupRegistrationAllowed = null;
           signupInvitationAllowed = false;
+          signupRegistrationMode = null;
           signupCapacityFetchFailed = true;
+          signupReservationLimited = false;
+          signupShardFull = false;
+          signupStatusUnavailable = true;
           signupRegistrationMessage =
             "受付状況を確認できませんでした。時間をおいて再度お試しください。";
         } finally {
@@ -1214,7 +1411,9 @@
             "ログイン中は招待登録を開始できません。ログアウトしてから招待URLを開いてください。",
           );
         if (!token || !/^[0-9a-f]{64}$/.test(token) || invitationEnded)
-          throw Error("この招待URLは利用できません。使用済み、期限切れ、または無効なURLです。");
+          throw Error(
+            "この招待URLは利用できません。使用済み、期限切れ、または無効なURLです。",
+          );
         const controller = new AbortController(),
           timer = setTimeout(() => controller.abort(), 20000);
         let result;
@@ -1238,7 +1437,9 @@
           !/^[A-HJ-NP-Z0-9]{12}$/.test(result.data?.album_id || "") ||
           !/^[0-9a-f]{64}$/.test(result.data?.reservation_token || "")
         )
-          throw Error("招待URLを確認できませんでした。時間をおいてお試しください。");
+          throw Error(
+            "招待URLを確認できませんでした。時間をおいてお試しください。",
+          );
         signupReservation = result.data;
         renderSignupStep("id");
       } catch (error) {
@@ -1253,7 +1454,12 @@
       if (enteringSignup) {
         if (!invitationPage) {
           signupIssueState = "unknown";
+          signupReservationLimited = false;
+          signupShardFull = false;
+          signupStatusUnavailable = false;
           signupRegistrationAllowed = null;
+          signupInvitationAllowed = false;
+          signupRegistrationMode = null;
           signupCapacityLimited = false;
           signupCapacityRetryAt = null;
           signupCapacityFetchFailed = false;
@@ -1288,7 +1494,8 @@
       if (m === "signup") {
         renderSignupStep(signupStep);
         void refreshSignupRegistrationStatus({ force: enteringSignup });
-        if (enteringSignup || signupIssueState === "unknown") void checkSignupIssue();
+        if (enteringSignup || signupIssueState === "unknown")
+          void checkSignupIssue();
       } else clearTimeout(signupRegistrationTimer);
     }
     function translatedError(e) {
@@ -1346,12 +1553,16 @@
           offset += 1000;
         }
         if (generation !== loadGeneration || uid !== session?.user.id) return;
-        ownedCounts = new Map(all.map((r) => [r.card_id, Number(r.quantity) || 1]));
+        ownedCounts = new Map(
+          all.map((r) => [r.card_id, Number(r.quantity) || 1]),
+        );
         owned = new Set(ownedCounts.keys());
         ownershipReady = true;
       } catch (e) {
         if (generation === loadGeneration)
-          toast("所持データを読み込めません。Supabaseの設定・SQLを確認してください。");
+          toast(
+            "所持データを読み込めません。Supabaseの設定・SQLを確認してください。",
+          );
       }
       if (game) render();
     }
@@ -1375,7 +1586,11 @@
       accountPresencePending = accountPresencePending
         .catch(() => {})
         .then(async () => {
-          if (db !== client || session?.user.id !== uid || (!logout && accountPresenceLoggingOut))
+          if (
+            db !== client ||
+            session?.user.id !== uid ||
+            (!logout && accountPresenceLoggingOut)
+          )
             return;
           const controller = new AbortController(),
             timer = setTimeout(() => controller.abort(), 4000);
@@ -1405,7 +1620,9 @@
                 !maintenanceActive
               ) {
                 accountPresenceLoggingOut = true;
-                showLoginRequired("ログイン状態を確認できません。もう一度ログインしてください。");
+                showLoginRequired(
+                  "ログイン状態を確認できません。もう一度ログインしてください。",
+                );
                 void client.auth.signOut({ scope: "local" }).catch(() => {});
               }
             }
@@ -1423,7 +1640,10 @@
         timer = setTimeout(() => controller.abort(), 3000);
       try {
         await fetch(
-          new URL("/rest/v1/rpc/card_account_presence_touch", window.APP_CONFIG.supabaseUrl).href,
+          new URL(
+            "/rest/v1/rpc/card_account_presence_touch",
+            window.APP_CONFIG.supabaseUrl,
+          ).href,
           {
             method: "POST",
             headers: {
@@ -1448,7 +1668,13 @@
     window.addEventListener("online", () => recordAccountPresence());
     let lastActivityTouch = 0;
     async function recordAccountVisit() {
-      if (!session || !db || document.hidden || Date.now() - lastActivityTouch < 3600000) return;
+      if (
+        !session ||
+        !db ||
+        document.hidden ||
+        Date.now() - lastActivityTouch < 3600000
+      )
+        return;
       lastActivityTouch = Date.now();
       try {
         const { error } = await db.rpc("card_album_touch_activity");
@@ -1461,7 +1687,11 @@
       if (!document.hidden) {
         window.CARD_MAINTENANCE?.check().catch(() => {});
         recordAccountVisit();
-        if (db && Date.now() - catalogCheckedAt >= (window.APP_CONFIG.refreshMs || 86400000))
+        if (
+          db &&
+          Date.now() - catalogCheckedAt >=
+            (window.APP_CONFIG.refreshMs || 86400000)
+        )
           fetchCatalog();
       }
     });
@@ -1516,7 +1746,9 @@
         ocrAttempted.clear();
         recovering = false;
         const publicCards = window.PUBLIC_CATALOG_CACHE?.peek();
-        const fallback = publicCards?.cards.length ? publicCards : catalogFallback;
+        const fallback = publicCards?.cards.length
+          ? publicCards
+          : catalogFallback;
         if (fallback) {
           catalog = {
             ...fallback,
@@ -1535,7 +1767,11 @@
         $("account").textContent = "";
         loadAlbumIdentity().catch(() => {});
         if (!callbackPending && !authResultShowing) screen("selection");
-        await Promise.all([loadOwnership(), loadPersonalMetadata(), loadFavorites()]);
+        await Promise.all([
+          loadOwnership(),
+          loadPersonalMetadata(),
+          loadFavorites(),
+        ]);
         if (session?.user.id !== next.user.id) return;
         if (catalogFallback) await fetchCatalog();
       }
@@ -1612,9 +1848,14 @@
         if (patch) {
           if (patch.name) c.name = patch.name;
           if (patch.character) c.character = patch.character;
-          if (c.id !== "aipri:OP-072" && Array.isArray(patch.songs) && patch.songs.length)
+          if (
+            c.id !== "aipri:OP-072" &&
+            Array.isArray(patch.songs) &&
+            patch.songs.length
+          )
             c.songs = patch.songs;
-          c.metadataSource = patch.metadataSource || "画像文字読み取り（未確認）";
+          c.metadataSource =
+            patch.metadataSource || "画像文字読み取り（未確認）";
         }
         const forced = adminOverrides.get(c.id);
         if (forced) Object.assign(c, forced);
@@ -1629,7 +1870,8 @@
             .trim()
             .toUpperCase();
           if (serial.endsWith("P")) c.rarity = "パラレル";
-          else if (/^(?:AP(?:R)?\d+|OA\d+)M-\d+/.test(serial)) c.rarity = "ミラクル";
+          else if (/^(?:AP(?:R)?\d+|OA\d+)M-\d+/.test(serial))
+            c.rarity = "ミラクル";
         }
       }
     }
@@ -1646,7 +1888,12 @@
           .eq("user_id", uid)
           .order("card_id")
           .range(offset, offset + 499);
-        if (error || generation !== metadataGeneration || uid !== session?.user.id) return;
+        if (
+          error ||
+          generation !== metadataGeneration ||
+          uid !== session?.user.id
+        )
+          return;
         data.forEach((r) => personalMetadata.set(r.card_id, r.patch));
         if (data.length < 500) break;
         offset += 500;
@@ -1659,15 +1906,21 @@
     }
 
     function normalizeAlbumArt() {
-      for (const root of document.querySelectorAll("#selection .album-images")) {
+      for (const root of document.querySelectorAll(
+        "#selection .album-images",
+      )) {
         for (const image of root.querySelectorAll("img")) {
-          if (image.parentElement.classList.contains("album-card-frame")) continue;
+          if (image.parentElement.classList.contains("album-card-frame"))
+            continue;
           const frame = document.createElement("span");
           frame.className = "album-card-frame";
           image.before(frame);
           frame.append(image);
           const orient = () =>
-            frame.classList.toggle("is-landscape", image.naturalWidth > image.naturalHeight);
+            frame.classList.toggle(
+              "is-landscape",
+              image.naturalWidth > image.naturalHeight,
+            );
           image.addEventListener("load", orient);
           if (image.complete && image.naturalWidth) orient();
         }
@@ -1676,7 +1929,9 @@
     function art() {
       updateHeader();
       for (const g of ["aikatsu", "aipri"]) {
-        const available = catalog.cards.filter((c) => c.game === g && isOfficialMarqueeCard(c));
+        const available = catalog.cards.filter(
+          (c) => c.game === g && isOfficialMarqueeCard(c),
+        );
         let picks = available.slice(0, 2);
         if (g === "aikatsu") {
           const preferred = window.CARD_STARTUP_PREVIEW?.preferredAikatsu || [
@@ -1685,7 +1940,9 @@
           ];
           picks = ["いちご", "パリン"]
             .map((character, index) => {
-              const pool = available.filter((c) => (c.character || "").includes(character));
+              const pool = available.filter((c) =>
+                (c.character || "").includes(character),
+              );
               return pool.find((c) => c.id === preferred[index]) || pool[0];
             })
             .filter(Boolean);
@@ -1716,7 +1973,11 @@
         }
         if (!picks.length) continue;
         const root = $(g + "-art");
-        if (root.dataset.cards === picks.map((c) => c.id + "|" + c.front).join(",")) continue;
+        if (
+          root.dataset.cards ===
+          picks.map((c) => c.id + "|" + c.front).join(",")
+        )
+          continue;
         root.dataset.cards = picks.map((c) => c.id + "|" + c.front).join(",");
         root.innerHTML = picks
           .map(
@@ -1754,7 +2015,8 @@
       $("filter-panel").open = false;
       resetReveal($("series-progress"), true);
       $("progress-details").setAttribute("aria-expanded", "false");
-      $("progress-details").innerHTML = '<span class="progress-chevron" aria-hidden="true"></span>';
+      $("progress-details").innerHTML =
+        '<span class="progress-chevron" aria-hidden="true"></span>';
       $("progress-details").setAttribute("aria-label", "弾ごとの取得率を表示");
       fillFilters();
       render();
@@ -1762,16 +2024,21 @@
     }
     function albumCards() {
       return catalog.cards.filter(
-        (c) => c.game === game && (game !== "aipri" || c.family === aipriFamily),
+        (c) =>
+          c.game === game && (game !== "aipri" || c.family === aipriFamily),
       );
     }
     function seriesRank(label) {
       const text = String(label).normalize("NFKC");
       const number = text.match(/(\d+)\s*(?:だん|弾)/);
-      return number ? (text.includes("リング") ? 1000000 : 0) + Number(number[1]) : -1;
+      return number
+        ? (text.includes("リング") ? 1000000 : 0) + Number(number[1])
+        : -1;
     }
     function setLatestSeries() {
-      const series = [...new Set(albumCards().flatMap((c) => values(c.series)))];
+      const series = [
+        ...new Set(albumCards().flatMap((c) => values(c.series))),
+      ];
       const latest = series
         .filter((s) => seriesRank(s) >= 0)
         .sort((a, b) => seriesRank(b) - seriesRank(a))[0];
@@ -1784,8 +2051,9 @@
           (c) => c.game === "aipri" && c.family === family && c.front,
         );
         const preferred =
-          candidates.find((c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001")) ||
-          candidates[0];
+          candidates.find(
+            (c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001"),
+          ) || candidates[0];
         const imageURL = preferred?.front || "";
         const tabKey = family + "|" + imageURL;
         if (button.dataset.imageKey === tabKey) return;
@@ -1796,7 +2064,9 @@
     function renderSeriesProgress() {
       const all = albumCards();
       const series = [...new Set(all.flatMap((c) => values(c.series)))].sort(
-        (a, b) => seriesRank(b) - seriesRank(a) || a.localeCompare(b, "ja", { numeric: true }),
+        (a, b) =>
+          seriesRank(b) - seriesRank(a) ||
+          a.localeCompare(b, "ja", { numeric: true }),
       );
       $("series-progress").innerHTML = series
         .map((label) => {
@@ -1820,7 +2090,10 @@
             : "ひみつのアイプリ";
       document.querySelectorAll("[data-family]").forEach((b) => {
         b.classList.toggle("active", b.dataset.family === aipriFamily);
-        b.setAttribute("aria-pressed", String(b.dataset.family === aipriFamily));
+        b.setAttribute(
+          "aria-pressed",
+          String(b.dataset.family === aipriFamily),
+        );
       });
       renderFamilyTabs();
       $("filters").innerHTML =
@@ -1830,7 +2103,9 @@
             const opts = [
               ...new Set(
                 cards.flatMap((c) =>
-                  key === "songs" ? values(c.songs).map(songFilterValue) : values(c[key]),
+                  key === "songs"
+                    ? values(c.songs).map(songFilterValue)
+                    : values(c[key]),
                 ),
               ),
             ].sort((a, b) => {
@@ -1838,11 +2113,13 @@
                 const order = ["ER", "PR", "R", "N"];
                 return (
                   (order.includes(a) ? order.indexOf(a) : 99) -
-                    (order.includes(b) ? order.indexOf(b) : 99) || a.localeCompare(b, "ja")
+                    (order.includes(b) ? order.indexOf(b) : 99) ||
+                  a.localeCompare(b, "ja")
                 );
               }
               return key === "series"
-                ? seriesRank(b) - seriesRank(a) || a.localeCompare(b, "ja", { numeric: true })
+                ? seriesRank(b) - seriesRank(a) ||
+                    a.localeCompare(b, "ja", { numeric: true })
                 : a.localeCompare(b, "ja", { numeric: true });
             });
             filters[key] = window.CARD_MULTI_FILTER.retain(filters[key], opts);
@@ -1873,7 +2150,12 @@
         .toLowerCase()
         .replace(/[-‐‑‒–—―−\s]/g, "");
     }
-    function sortCatalogList(rows, order, quantity, character = (row) => row.character) {
+    function sortCatalogList(
+      rows,
+      order,
+      quantity,
+      character = (row) => row.character,
+    ) {
       if (!order || order === "official") return rows;
       const compare = (a, b) =>
         String(a || "").localeCompare(String(b || ""), "ja", { numeric: true });
@@ -1888,17 +2170,23 @@
               .trim();
           const first = key(a),
             second = key(b);
-          if (!first || !second) return Number(!first) - Number(!second) || compare(a.code, b.code);
+          if (!first || !second)
+            return Number(!first) - Number(!second) || compare(a.code, b.code);
           return compare(first, second) || compare(a.code, b.code);
         }
-        if (order === "quantity") return quantity(b) - quantity(a) || compare(a.code, b.code);
-        if (order === "name") return compare(a.name, b.name) || compare(a.code, b.code);
+        if (order === "quantity")
+          return quantity(b) - quantity(a) || compare(a.code, b.code);
+        if (order === "name")
+          return compare(a.name, b.name) || compare(a.code, b.code);
         return compare(a.code, b.code);
       });
     }
 
     function filtered(includeOwnership = true, local = null) {
-      const q = (local?.query ?? $("query").value).normalize("NFKC").toLowerCase().trim();
+      const q = (local?.query ?? $("query").value)
+        .normalize("NFKC")
+        .toLowerCase()
+        .trim();
       const selectedOwnership = local?.ownership ?? ownershipFilter;
       const compactQuery = normalizeCardCode(q);
       const selectedFields = local
@@ -1932,7 +2220,9 @@
               ))) &&
           selectedFields.every(([k, v]) =>
             window.CARD_MULTI_FILTER.matches(
-              k === "songs" ? values(c.songs).map(songFilterValue) : values(c[k]),
+              k === "songs"
+                ? values(c.songs).map(songFilterValue)
+                : values(c[k]),
               v,
             ),
           ) &&
@@ -1948,9 +2238,12 @@
       return c.name || "カード名未取得";
     }
     function imageQRMatches(kind, id, parts, selected) {
-      if (selected === undefined) return window.CARD_QR?.matches(kind, id, parts) ?? true;
+      if (selected === undefined)
+        return window.CARD_QR?.matches(kind, id, parts) ?? true;
       if (selected === "all") return true;
-      return Boolean(window.CARD_QR?.badge(kind, id, parts)) === (selected === "yes");
+      return (
+        Boolean(window.CARD_QR?.badge(kind, id, parts)) === (selected === "yes")
+      );
     }
     function ownershipImageControls(specs) {
       return specs.flatMap(([key, selector, label]) => {
@@ -2023,7 +2316,10 @@
               game === "aipri" && aipriFamily !== "ひみつ"
                 ? window.CARD_MULTI_FILTER.text(
                     local.series,
-                    (v) => v.match(/^【?おねがいアイプリ\s*([0-9０-９]+(?:だん|弾))】?$/)?.[1] || v,
+                    (v) =>
+                      v.match(
+                        /^【?おねがいアイプリ\s*([0-9０-９]+(?:だん|弾))】?$/,
+                      )?.[1] || v,
                   )
                 : window.CARD_MULTI_FILTER.text(local.series),
             filtered: rows,
@@ -2050,8 +2346,10 @@
           label: fields[game].find(([field]) => field === key)?.[1] || key,
           value: window.CARD_MULTI_FILTER.text(value),
         }));
-      if (favoriteFilter) active.push({ key: "favorites", label: "お気に入り", value: "のみ" });
-      if (duplicateFilter) active.push({ key: "duplicates", label: "重複", value: "あり" });
+      if (favoriteFilter)
+        active.push({ key: "favorites", label: "お気に入り", value: "のみ" });
+      if (duplicateFilter)
+        active.push({ key: "duplicates", label: "重複", value: "あり" });
       const qr = window.CARD_QR?.entry("card");
       if (qr) active.push(qr);
       const trade = window.CARD_TRADE?.entry("card");
@@ -2070,20 +2368,35 @@
       return pageSize === "all" ? Math.max(1, count) : pageSize;
     }
     function renderPageNumbers(total) {
-      const compact = window.matchMedia?.("(max-width: 760px)").matches || window.innerWidth <= 760;
+      const compact =
+        window.matchMedia?.("(max-width: 760px)").matches ||
+        window.innerWidth <= 760;
       const viewport =
-        $("page-numbers")?.parentElement?.clientWidth || Math.min(window.innerWidth - 32, 1100);
-      const maxSlots = compact ? Math.max(3, Math.min(9, Math.floor((viewport - 100) / 34))) : 9;
+        $("page-numbers")?.parentElement?.clientWidth ||
+        Math.min(window.innerWidth - 32, 1100);
+      const maxSlots = compact
+        ? Math.max(3, Math.min(9, Math.floor((viewport - 100) / 34)))
+        : 9;
       let candidates;
-      if (total <= maxSlots) candidates = Array.from({ length: total }, (_, i) => i + 1);
+      if (total <= maxSlots)
+        candidates = Array.from({ length: total }, (_, i) => i + 1);
       else {
         const count = Math.max(1, maxSlots - 4);
-        const start = Math.max(2, Math.min(page - Math.floor(count / 2), total - count));
+        const start = Math.max(
+          2,
+          Math.min(page - Math.floor(count / 2), total - count),
+        );
         candidates = [
-          ...new Set([1, ...Array.from({ length: count }, (_, i) => start + i), total]),
+          ...new Set([
+            1,
+            ...Array.from({ length: count }, (_, i) => start + i),
+            total,
+          ]),
         ].sort((a, b) => a - b);
         if (page <= 2 && maxSlots >= 6)
-          candidates = [...new Set([1, 2, ...candidates, total - 1, total])].sort((a, b) => a - b);
+          candidates = [
+            ...new Set([1, 2, ...candidates, total - 1, total]),
+          ].sort((a, b) => a - b);
       }
       let previous = 0;
       $("prev").textContent = compact ? "前へ" : "前のページ";
@@ -2133,16 +2446,23 @@
       $("progress-count").textContent = ownershipReady
         ? `取得済 ${window.CARD_UI.number(got)}枚 ／ 未取得 ${window.CARD_UI.number(all.length - got)}枚`
         : "所持データを読み込み中（設定が必要な場合は同梱の手順をご確認ください）";
-      $("result-count").textContent = `見つかったカード ${window.CARD_UI.number(list.length)}枚`;
+      $("result-count").textContent =
+        `見つかったカード ${window.CARD_UI.number(list.length)}枚`;
       $("filtered-rate").innerHTML = ownershipReady
         ? `<span class="rate-caption">絞り込み内の取得率</span><strong>${base.length ? ((baseGot / base.length) * 100).toFixed(1) : "0.0"}%</strong><span class="rate-fraction">取得済 ${window.CARD_UI.number(baseGot)}枚 ／ 未取得 ${window.CARD_UI.number(base.length - baseGot)}枚</span>`
         : "";
       document
         .querySelector(".owned-tabs")
-        .style.setProperty("--owned-index", String(["all", "yes", "no"].indexOf(ownershipFilter)));
+        .style.setProperty(
+          "--owned-index",
+          String(["all", "yes", "no"].indexOf(ownershipFilter)),
+        );
       document.querySelectorAll("[data-owned]").forEach((b) => {
         b.classList.toggle("active", b.dataset.owned === ownershipFilter);
-        b.setAttribute("aria-pressed", String(b.dataset.owned === ownershipFilter));
+        b.setAttribute(
+          "aria-pressed",
+          String(b.dataset.owned === ownershipFilter),
+        );
         b.disabled = !ownershipReady;
       });
       const size = getPageSize(list.length);
@@ -2150,12 +2470,15 @@
       page = Math.min(page, pageCount);
       $("page-size").value = String(pageSize);
       renderPageNumbers(pageCount);
-      const visibleIDs = list.slice((page - 1) * size, page * size).map((card) => card.id);
+      const visibleIDs = list
+        .slice((page - 1) * size, page * size)
+        .map((card) => card.id);
       const existingIDs = [...$("cards").querySelectorAll("[data-toggle]")].map(
         (button) => button.dataset.toggle,
       );
       const reuseCards =
-        keepCardNodes === true && JSON.stringify(visibleIDs) === JSON.stringify(existingIDs);
+        keepCardNodes === true &&
+        JSON.stringify(visibleIDs) === JSON.stringify(existingIDs);
       if (!reuseCards)
         $("cards").innerHTML = list
           .slice((page - 1) * size, page * size)
@@ -2178,7 +2501,9 @@
             : "カード情報の更新";
       const errors = catalog.errors?.length;
       $("data-warning").hidden = !errors;
-      $("data-warning").textContent = errors ? window.CARD_ERROR.message(catalog.errors[0]) : "";
+      $("data-warning").textContent = errors
+        ? window.CARD_ERROR.message(catalog.errors[0])
+        : "";
       renderCoordinates();
       if (selected) updateModalOwnership();
       if (!$("probabilities").hidden) renderProbabilities();
@@ -2216,7 +2541,10 @@
             frame.append(badge);
           }
           badge.textContent = quantityOf(id) + "枚";
-          badge.setAttribute("aria-label", "所持枚数：" + quantityOf(id) + "枚");
+          badge.setAttribute(
+            "aria-label",
+            "所持枚数：" + quantityOf(id) + "枚",
+          );
         } else badge?.remove();
         let repeated = frame.querySelector(".card-duplicate-tag");
         if (quantityOf(id) >= 2) {
@@ -2231,15 +2559,21 @@
     }
     async function saveQuantity(id, delta, clear = false) {
       if (!requireEditingSession()) return;
-      if (!session || !ownershipReady || saving.has(id) || maintenanceActive) return;
+      if (!session || !ownershipReady || saving.has(id) || maintenanceActive)
+        return;
       if (navigator.onLine === false) {
-        toast("通信に接続されていません。接続を確認して、もう一度お試しください。", "error");
+        toast(
+          "通信に接続されていません。接続を確認して、もう一度お試しください。",
+          "error",
+        );
         return;
       }
       const uid = session.user.id;
       const generation = loadGeneration;
       const before = quantityOf(id);
-      const predicted = clear ? 0 : Math.min(1000000, Math.max(0, before + delta));
+      const predicted = clear
+        ? 0
+        : Math.min(1000000, Math.max(0, before + delta));
       saving.add(id);
       setLocalQuantity(id, predicted);
       render(true);
@@ -2256,7 +2590,12 @@
         if (session?.user.id !== uid || generation !== loadGeneration) return;
         if (result.error) throw result.error;
         const count = Number(result.data);
-        if (result.data === null || !Number.isInteger(count) || count < 0 || count > 1000000)
+        if (
+          result.data === null ||
+          !Number.isInteger(count) ||
+          count < 0 ||
+          count > 1000000
+        )
           throw Error("Unexpected ownership quantity");
         setLocalQuantity(id, count);
         ownershipCheckedAt = Date.now();
@@ -2284,7 +2623,11 @@
             .eq("user_id", uid)
             .eq("card_id", id)
             .maybeSingle();
-          if (!check.error && session?.user.id === uid && generation === loadGeneration) {
+          if (
+            !check.error &&
+            session?.user.id === uid &&
+            generation === loadGeneration
+          ) {
             const count = check.data ? Number(check.data.quantity) : 0;
             if (Number.isInteger(count) && count >= 0 && count <= 1000000)
               setLocalQuantity(id, count);
@@ -2310,13 +2653,17 @@
     function openDetail(id, trigger, navigating = false) {
       if (!navigating) {
         const candidates = trigger?.closest("#coordinate-panel")
-          ? [...document.querySelectorAll("#coordinate-list [data-coordinate-card]")].map(
-              (button) => button.dataset.coordinateCard,
-            )
+          ? [
+              ...document.querySelectorAll(
+                "#coordinate-list [data-coordinate-card]",
+              ),
+            ].map((button) => button.dataset.coordinateCard)
           : trigger?.closest("#auth-art")
-            ? [...document.querySelectorAll(".marquee-group:first-child [data-detail]")].map(
-                (b) => b.dataset.detail,
-              )
+            ? [
+                ...document.querySelectorAll(
+                  ".marquee-group:first-child [data-detail]",
+                ),
+              ].map((b) => b.dataset.detail)
             : game
               ? filtered().map((c) => c.id)
               : catalog.cards.map((c) => c.id);
@@ -2325,9 +2672,9 @@
       }
       selected =
         catalog.cards.find((c) => c.id === id) ||
-        window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find(
-          (c) => c.id === id,
-        );
+        window.CARD_VISIBILITY.mask(
+          window.CARD_STARTUP_PREVIEW?.cards || [],
+        ).find((c) => c.id === id);
       if (!selected) return;
       if (!navigating) lastFocus = trigger;
       side = 0;
@@ -2370,14 +2717,16 @@
       window.CARD_MODAL_SCROLL?.refresh($("detail"));
     }
     function updateDetailNavigation() {
-      document.querySelector(".detail-navigation").hidden = !session || !$("auth").hidden;
+      document.querySelector(".detail-navigation").hidden =
+        !session || !$("auth").hidden;
       const index = detailCardIds.indexOf(selected?.id);
       $("card-prev").disabled = index <= 0;
       $("card-next").disabled = index < 0 || index >= detailCardIds.length - 1;
       syncModalSideControls();
     }
     function moveDetail(delta) {
-      if (!$("detail").open || !selected || !session || !$("auth").hidden) return;
+      if (!$("detail").open || !selected || !session || !$("auth").hidden)
+        return;
       const index = detailCardIds.indexOf(selected.id);
       if (index < 0 || (delta !== -1 && delta !== 1)) return;
       const id = detailCardIds[index + delta];
@@ -2395,7 +2744,10 @@
       $("image-failure").textContent = url
         ? "画像を読み込めませんでした。"
         : "裏面画像は未登録です。";
-      window.CARD_IMAGE_TRANSFORM.apply($("modal-image"), side ? null : c.frontTransform);
+      window.CARD_IMAGE_TRANSFORM.apply(
+        $("modal-image"),
+        side ? null : c.frontTransform,
+      );
       $("modal-image").src = url || "";
       $("modal-image").alt = `${name(c)} ${side ? "裏面" : "表面"}`;
       $("side-label").textContent = side ? "裏面" : "表面";
@@ -2418,14 +2770,29 @@
       $("quantity-controls").hidden = !session || !owned.has(selected.id);
       $("quantity-value").textContent = quantityOf(selected.id) + "枚";
       $("quantity-minus").disabled = !ownershipReady;
-      $("quantity-minus").setAttribute("aria-disabled", String(saving.has(selected.id)));
-      $("quantity-plus").disabled = !ownershipReady || quantityOf(selected.id) >= 1000000;
-      $("quantity-plus").setAttribute("aria-disabled", String(saving.has(selected.id)));
-      $("modal-owned").textContent = owned.has(selected.id) ? "✓ 持っている" : "＋ 持っていない";
+      $("quantity-minus").setAttribute(
+        "aria-disabled",
+        String(saving.has(selected.id)),
+      );
+      $("quantity-plus").disabled =
+        !ownershipReady || quantityOf(selected.id) >= 1000000;
+      $("quantity-plus").setAttribute(
+        "aria-disabled",
+        String(saving.has(selected.id)),
+      );
+      $("modal-owned").textContent = owned.has(selected.id)
+        ? "✓ 持っている"
+        : "＋ 持っていない";
       $("modal-owned").classList.toggle("is-owned", owned.has(selected.id));
-      $("modal-owned").setAttribute("aria-pressed", String(owned.has(selected.id)));
+      $("modal-owned").setAttribute(
+        "aria-pressed",
+        String(owned.has(selected.id)),
+      );
       $("modal-owned").disabled = !ownershipReady;
-      $("modal-owned").setAttribute("aria-disabled", String(saving.has(selected.id)));
+      $("modal-owned").setAttribute(
+        "aria-disabled",
+        String(saving.has(selected.id)),
+      );
     }
     let loginRequiredAt = 0;
     let accountRequestEpoch = 0;
@@ -2445,7 +2812,8 @@
       const now = Date.now();
       if (now - loginRequiredAt < 800) return;
       loginRequiredAt = now;
-      for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
+      for (const dialog of document.querySelectorAll("dialog[open]"))
+        dialog.close();
       authResultShowing = false;
       callbackPending = false;
       void authChanged("SIGNED_OUT", null);
@@ -2460,11 +2828,15 @@
         typeof input === "string" || input instanceof URL ? input : input.url,
         location.href,
       );
-      if (url.origin !== new URL(window.APP_CONFIG.supabaseUrl).origin) return false;
+      if (url.origin !== new URL(window.APP_CONFIG.supabaseUrl).origin)
+        return false;
       const method = String(
         options.method || (input instanceof Request ? input.method : "GET"),
       ).toUpperCase();
-      if (["GET", "HEAD", "OPTIONS"].includes(method) || !url.pathname.startsWith("/rest/v1/"))
+      if (
+        ["GET", "HEAD", "OPTIONS"].includes(method) ||
+        !url.pathname.startsWith("/rest/v1/")
+      )
         return false;
       if (!url.pathname.startsWith("/rest/v1/rpc/")) return true;
       const name = decodeURIComponent(url.pathname.split("/").pop());
@@ -2510,7 +2882,10 @@
       ]).has(name);
     }
     function accountLoginResponse() {
-      return Response.json({ code: "PGRST301", message: "ログインしてください" }, { status: 401 });
+      return Response.json(
+        { code: "PGRST301", message: "ログインしてください" },
+        { status: 401 },
+      );
     }
     async function accountGuardFetch(input, options = {}) {
       const editing = isAccountEditRequest(input, options);
@@ -2524,7 +2899,8 @@
         epoch = accountRequestEpoch,
         token = session.access_token;
       const controller = new AbortController();
-      const callerSignal = options.signal || (input instanceof Request ? input.signal : null);
+      const callerSignal =
+        options.signal || (input instanceof Request ? input.signal : null);
       const abort = () => controller.abort();
       if (callerSignal?.aborted) abort();
       else callerSignal?.addEventListener("abort", abort, { once: true });
@@ -2532,7 +2908,8 @@
       let response;
       try {
         await window.CARD_MAINTENANCE.check();
-        if (controller.signal.aborted) throw new DOMException("通信を中断しました", "AbortError");
+        if (controller.signal.aborted)
+          throw new DOMException("通信を中断しました", "AbortError");
         if (epoch !== accountRequestEpoch || session?.user?.id !== uid)
           return accountLoginResponse();
         response = await window.CARD_MAINTENANCE.fetch(input, {
@@ -2543,8 +2920,13 @@
         accountRequests.delete(controller);
         callerSignal?.removeEventListener("abort", abort);
       }
-      if (epoch !== accountRequestEpoch || session?.user?.id !== uid) return accountLoginResponse();
-      if (response.status === 401 && session?.access_token === token && !maintenanceActive) {
+      if (epoch !== accountRequestEpoch || session?.user?.id !== uid)
+        return accountLoginResponse();
+      if (
+        response.status === 401 &&
+        session?.access_token === token &&
+        !maintenanceActive
+      ) {
         const client = db;
         showLoginRequired();
         void client?.auth.signOut({ scope: "local" }).catch(() => {});
@@ -2581,24 +2963,30 @@
       db?.auth.stopAutoRefresh();
       albumRememberSession = remember;
       const c = window.APP_CONFIG;
-      const client = window.supabase.createClient(c.supabaseUrl, c.supabaseKey, {
-        auth: {
-          ...albumSessionStorage.options(remember),
-          detectSessionInUrl: true,
-          flowType: "implicit",
+      const client = window.supabase.createClient(
+        c.supabaseUrl,
+        c.supabaseKey,
+        {
+          auth: {
+            ...albumSessionStorage.options(remember),
+            detectSessionInUrl: true,
+            flowType: "implicit",
+          },
+          global: { fetch: accountGuardFetch },
         },
-        global: { fetch: accountGuardFetch },
-      });
+      );
       db = client;
       if (mode === "signup") {
         void refreshSignupRegistrationStatus();
         if (signupIssueState === "unknown") void checkSignupIssue();
       }
-      albumAuthSubscription = client.auth.onAuthStateChange((event, session) => {
-        setTimeout(() => {
-          if (db === client) authChanged(event, session);
-        }, 0);
-      }).data.subscription;
+      albumAuthSubscription = client.auth.onAuthStateChange(
+        (event, session) => {
+          setTimeout(() => {
+            if (db === client) authChanged(event, session);
+          }, 0);
+        },
+      ).data.subscription;
     }
     const rememberSessionLabel = document.createElement("label");
     rememberSessionLabel.className = "remember-session";
@@ -2615,7 +3003,9 @@
       const link = $("login-catalog-series"),
         auth = $("auth");
       if (!link || !auth) return;
-      const parent = loginSeriesLayout.matches ? auth : auth.querySelector(".intro");
+      const parent = loginSeriesLayout.matches
+        ? auth
+        : auth.querySelector(".intro");
       if (parent && link.parentElement !== parent) parent.append(link);
     }
     placeLoginSeriesList();
@@ -2665,7 +3055,8 @@
         if (!callbackError && confirmationCallback) {
           const checked = await db.auth.getUser();
           if (checked.error) throw checked.error;
-          if (!checked.data.user?.email_confirmed_at) throw Error("メールの確認が完了していません");
+          if (!checked.data.user?.email_confirmed_at)
+            throw Error("メールの確認が完了していません");
           authResult(
             true,
             "メールアドレスの確認が完了しました。カードアルバムを使い始められます。",
@@ -2674,9 +3065,13 @@
         await initialCards;
         await fetchCatalog();
         if (session && startupProbabilityRoute) {
-          chooseGame(startupProbabilityRoute === "aikatsu" ? "aikatsu" : "aipri");
+          chooseGame(
+            startupProbabilityRoute === "aikatsu" ? "aikatsu" : "aipri",
+          );
           if (startupProbabilityRoute !== "aikatsu")
-            chooseFamily(startupProbabilityRoute === "onegai" ? "おねがい" : "ひみつ");
+            chooseFamily(
+              startupProbabilityRoute === "onegai" ? "おねがい" : "ひみつ",
+            );
           openProbabilities();
         }
       } catch (e) {
@@ -2692,7 +3087,9 @@
               translatedError(e) +
               " ログインできない場合は確認メールを再送してください。",
           );
-        else $("auth-message").textContent = "初期化できませんでした。" + translatedError(e);
+        else
+          $("auth-message").textContent =
+            "初期化できませんでした。" + translatedError(e);
       } finally {
         finishAuthCheck();
       }
@@ -2711,7 +3108,8 @@
     $("resend").onclick = async () => {
       const email = pendingSignupEmail;
       if (!email) {
-        $("auth-message").textContent = "新規登録手続きをしてから再送してください。";
+        $("auth-message").textContent =
+          "新規登録手続きをしてから再送してください。";
         return;
       }
       if (!db) return;
@@ -2727,11 +3125,12 @@
     $("login-tab").onclick = () => authMode("login");
     $("signup-tab").onclick = () => authMode("signup");
     function validAlbumID(value) {
-      const id = value.normalize("NFKC").trim().toUpperCase();
-      return (
-        /^(?:[A-HJ-NP-Z0-9]{8}|[A-HJ-NP-Z0-9]{12})$/.test(id) &&
-        [...new Set(id)].every((c) => [...id].filter((x) => x === c).length <= 3)
-      );
+      try {
+        window.CARD_DB.parse(value);
+        return true;
+      } catch {
+        return false;
+      }
     }
     function validateAuthForm() {
       const identifier = $("email").value.trim();
@@ -2836,7 +3235,8 @@
     async function applyAlbumSession(result) {
       await authChanged("SIGNED_IN", result.session);
       albumIdentity = result.album_id;
-      $("account-album-id").textContent = "アルバムID：" + albumIdentity;
+      $("account-album-id").textContent =
+        "アルバムID：" + window.CARD_DB.display(albumIdentity);
     }
     $("auth-form").onsubmit = async (event) => {
       event.preventDefault();
@@ -2844,11 +3244,27 @@
       $("auth-submit").disabled = true;
       try {
         const remember = $("remember-session").checked;
+        const identifier = $("email").value.normalize("NFKC").trim();
+        const target = identifier.includes("@")
+          ? "main"
+          : window.CARD_DB.parse(identifier).database.key;
+        if (target !== window.CARD_DB.key) {
+          if ((await window.CARD_MAINTENANCE.check()).maintenance)
+            throw Error("ただ今メンテナンス中です。");
+          await window.CARD_DB.signIn(identifier, $("password").value, {
+            remember,
+          });
+          $("password").value = "";
+          window.CARD_DB.navigate(target);
+          return;
+        }
         albumSessionStorage.choose(remember);
         if (remember !== albumRememberSession) configureAlbumAuth(remember);
         const result = await albumAuth({
           action: $("email").value.includes("@") ? "legacy" : "login",
-          album_id: $("email").value.normalize("NFKC").trim().toUpperCase(),
+          album_id: identifier.includes("@")
+            ? ""
+            : window.CARD_DB.parse(identifier).id,
           email: $("email").value.trim(),
           password: $("password").value,
         });
@@ -2863,7 +3279,8 @@
     function updateLoginIdentifier() {
       const isEmail = $("email").value.includes("@");
       $("forgot").hidden = invitationPage || mode !== "login";
-      $("resend").hidden = invitationPage || mode !== "login" || !isEmail || !pendingSignupEmail;
+      $("resend").hidden =
+        invitationPage || mode !== "login" || !isEmail || !pendingSignupEmail;
     }
     $("email").addEventListener("input", updateLoginIdentifier);
     function renderSignupStep(step) {
@@ -2874,21 +3291,30 @@
       $("signup-nickname-form").hidden = step !== "nickname";
       document
         .querySelectorAll("[data-signup-marker]")
-        .forEach((el) => el.classList.toggle("active", el.dataset.signupMarker === step));
+        .forEach((el) =>
+          el.classList.toggle("active", el.dataset.signupMarker === step),
+        );
       renderSignupRegistrationAvailability();
       $("signup-password-start").hidden = !signupReservation;
       $("issued-id-panel").hidden = !signupReservation;
-      $("issued-album-id").textContent = signupReservation?.album_id || "";
+      $("issued-album-id").textContent = window.CARD_DB.display(
+        signupReservation?.album_id,
+      );
       $("signup-password-start").disabled = !signupReservation || signupBusy;
       document
         .querySelectorAll(".signup-id-reference")
-        .forEach((el) => (el.textContent = "アルバムID：" + (signupReservation?.album_id || "")));
+        .forEach(
+          (el) =>
+            (el.textContent =
+              "アルバムID：" +
+              window.CARD_DB.display(signupReservation?.album_id)),
+        );
       $("signup-message").textContent = "";
     }
     async function copyAlbumID(id) {
       if (!id) return;
       try {
-        await navigator.clipboard.writeText(id);
+        await navigator.clipboard.writeText(window.CARD_DB.display(id));
         toast("アルバムIDをコピーしました");
       } catch {
         toast("コピーできませんでした。表示されたIDを保存してください。");
@@ -2912,14 +3338,17 @@
         applySignupIssueState(before);
         if (before.state !== "unissued") return;
         await refreshSignupRegistrationStatus({ force: true });
-        if (signupRegistrationAllowed !== true) return;
+        if (signupRegistrationAllowed !== true || window.CARD_DB.isNavigating())
+          return;
         if ((await window.CARD_MAINTENANCE.check()).maintenance)
           throw Error("ただ今メンテナンス中です。");
         const result = await signupIssueRPC(true);
         applySignupIssueState(result);
         if (result.error) {
-          if (result.capacity_limited) await refreshSignupRegistrationStatus({ force: true });
-          if (signupRegistrationAllowed !== false) $("signup-message").textContent = result.error;
+          if (result.capacity_limited)
+            await refreshSignupRegistrationStatus({ force: true });
+          if (signupRegistrationAllowed !== false)
+            $("signup-message").textContent = result.error;
         }
       } catch (error) {
         // A timeout does not tell us whether the database committed. Read by the same key.
@@ -2961,7 +3390,8 @@
       const error =
         [...nick].length < 2 || [...nick].length > 8
           ? "ニックネームを2〜8文字で入力してください。"
-          : /@|https?:\/\/|(?:\d[\s-]*){7,}/i.test(nick) || !$("nickname-privacy-ack").checked
+          : /@|https?:\/\/|(?:\d[\s-]*){7,}/i.test(nick) ||
+              !$("nickname-privacy-ack").checked
             ? "個人情報を含まないことを確認してください。"
             : "";
       $("nickname-error").textContent = error;
@@ -2978,7 +3408,8 @@
             !(signupCapacityLimited && !signupCapacityFetchFailed)
           ) {
             authResultShowing = false;
-            if (!signupCapacityLimited) $("signup-message").textContent = signupRegistrationMessage;
+            if (!signupCapacityLimited)
+              $("signup-message").textContent = signupRegistrationMessage;
             return;
           }
         }
@@ -3012,11 +3443,14 @@
           document
             .querySelector(".wordmark")
             .setAttribute("aria-label", "カードアルバムのトップへ");
-          document.querySelector('[data-signup-marker="id"]').textContent = "ID発行";
-          $("guest-browse-link").hidden = !!session || window.CARD_GUEST_ACCESS?.enabled !== true;
+          document.querySelector('[data-signup-marker="id"]').textContent =
+            "ID発行";
+          $("guest-browse-link").hidden =
+            !!session || window.CARD_GUEST_ACCESS?.enabled !== true;
           document.querySelector(".id-expiry-note").textContent =
             "このままパスワード設定に進んでください。このページを離れると登録手続きを引き継げません。戻った際はIDを発行し直してください。";
-          $("auth-normal-panel").querySelector("h2").textContent = "カードアルバムへようこそ";
+          $("auth-normal-panel").querySelector("h2").textContent =
+            "カードアルバムへようこそ";
         }
         try {
           localStorage.removeItem("card-album-id-reservation");
@@ -3026,14 +3460,18 @@
           true,
           "アルバムIDを保存してください。\nこれからは、保存したIDとパスワードでログインできます。",
         );
-        $("auth-result-title").textContent = nick + "のアルバムを作成しました！";
-        $("auth-result-album-id").textContent = result.album_id;
+        $("auth-result-title").textContent =
+          nick + "のアルバムを作成しました！";
+        $("auth-result-album-id").textContent = window.CARD_DB.display(
+          result.album_id,
+        );
         $("auth-result-album-id").hidden = false;
         $("auth-result-retention").hidden = false;
         $("auth-result-next").textContent = "アルバムを開く";
       } catch (error) {
         authResultShowing = false;
-        if (!invitationPage) await refreshSignupRegistrationStatus({ force: true });
+        if (!invitationPage)
+          await refreshSignupRegistrationStatus({ force: true });
         $("signup-message").textContent = signupCapacityLimited
           ? ""
           : window.CARD_ERROR.message(error);
@@ -3047,7 +3485,8 @@
     function loadAlbumIdentity() {
       const uid = session?.user.id;
       if (!uid || albumIdentity) return Promise.resolve();
-      if (albumIdentityRequest?.uid === uid) return albumIdentityRequest.promise;
+      if (albumIdentityRequest?.uid === uid)
+        return albumIdentityRequest.promise;
       const request = { uid, promise: null };
       request.promise = readAlbumIdentity().finally(() => {
         if (albumIdentityRequest === request) albumIdentityRequest = null;
@@ -3072,8 +3511,9 @@
         return;
       }
       albumIdentity = data;
-      $("account-id-value").textContent = data;
-      $("account-album-id").textContent = "アルバムID：" + data;
+      $("account-id-value").textContent = window.CARD_DB.display(data);
+      $("account-album-id").textContent =
+        "アルバムID：" + window.CARD_DB.display(data);
     }
     $("account-id-copy").onclick = () => copyAlbumID(albumIdentity);
     $("forgot").onclick = () => $("id-password-help").showModal();
@@ -3099,15 +3539,19 @@
     let accountActionBusy = false;
     function setAccountBusy(busy) {
       accountActionBusy = busy;
-      for (const button of $("logout-dialog").querySelectorAll("button")) button.disabled = busy;
+      for (const button of $("logout-dialog").querySelectorAll("button"))
+        button.disabled = busy;
       $("account-delete-word").disabled = busy;
       if (!busy)
-        $("account-delete-confirm").disabled = $("account-delete-word").value.trim() !== "削除";
+        $("account-delete-confirm").disabled =
+          $("account-delete-word").value.trim() !== "削除";
     }
     function accountDeleteView(show) {
       $("logout-normal").hidden = show;
       $("account-delete-panel").hidden = !show;
-      $("logout-title").textContent = show ? "アカウント情報を削除" : "ログアウトしますか？";
+      $("logout-title").textContent = show
+        ? "アカウント情報を削除"
+        : "ログアウトしますか？";
       $("account-action-message").textContent = "";
       $("account-delete-word").value = "";
       $("account-delete-confirm").disabled = true;
@@ -3121,7 +3565,8 @@
       $("logout-account").textContent =
         session.user.user_metadata?.nickname || session.user.email || "";
       $("account-id-message").textContent = "";
-      $("account-id-value").textContent = albumIdentity || "確認中…";
+      $("account-id-value").textContent =
+        window.CARD_DB.display(albumIdentity) || "確認中…";
       $("account-id-copy").disabled = !albumIdentity;
       $("logout-dialog").showModal();
       if (!albumIdentity)
@@ -3174,14 +3619,20 @@
       }
     };
     $("account-delete-confirm").onclick = async () => {
-      if (accountActionBusy || !session || $("account-delete-word").value.trim() !== "削除") return;
+      if (
+        accountActionBusy ||
+        !session ||
+        $("account-delete-word").value.trim() !== "削除"
+      )
+        return;
       setAccountBusy(true);
       $("account-action-message").textContent = "アカウントを削除しています…";
       try {
         const { data, error } = await db.rpc("card_album_delete_self", {
           p_confirmation: "DELETE_MY_ACCOUNT",
         });
-        if (error || data !== true) throw error || Error("削除できませんでした。");
+        if (error || data !== true)
+          throw error || Error("削除できませんでした。");
         await db.auth.signOut({ scope: "local" }).catch(() => {});
         $("logout-dialog").close();
         await authChanged("SIGNED_OUT", null);
@@ -3258,10 +3709,12 @@
     };
     $("progress-details").onclick = () => {
       const expanded = !(
-        revealStates.get($("series-progress"))?.expanded ?? !$("series-progress").hidden
+        revealStates.get($("series-progress"))?.expanded ??
+        !$("series-progress").hidden
       );
       $("progress-details").setAttribute("aria-expanded", String(expanded));
-      $("progress-details").innerHTML = '<span class="progress-chevron" aria-hidden="true"></span>';
+      $("progress-details").innerHTML =
+        '<span class="progress-chevron" aria-hidden="true"></span>';
       $("progress-details").setAttribute(
         "aria-label",
         expanded ? "弾ごとの取得率を閉じる" : "弾ごとの取得率を表示",
@@ -3353,7 +3806,12 @@
     $("detail").onclick = (e) => {
       if (e.target === $("detail")) {
         const r = $("detail").getBoundingClientRect();
-        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
+        if (
+          e.clientX < r.left ||
+          e.clientX > r.right ||
+          e.clientY < r.top ||
+          e.clientY > r.bottom
+        )
           $("detail").close();
       }
     };
@@ -3370,10 +3828,15 @@
       modalSideSwitch.hidden = false;
       modalSideSwitch.dataset.side = String(side);
       $("side-label").hidden = true;
-      modalSideSwitch.querySelectorAll("[data-modal-side]").forEach((button) => {
-        button.setAttribute("aria-pressed", String(Number(button.dataset.modalSide) === side));
-        button.disabled = button.dataset.modalSide === "1" && !selected.back;
-      });
+      modalSideSwitch
+        .querySelectorAll("[data-modal-side]")
+        .forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(Number(button.dataset.modalSide) === side),
+          );
+          button.disabled = button.dataset.modalSide === "1" && !selected.back;
+        });
     }
     modalSideSwitch.addEventListener("click", (event) => {
       const button = event.target.closest("[data-modal-side]");
@@ -3409,7 +3872,9 @@
 
     function nickname() {
       const n = session?.user.user_metadata?.nickname;
-      return typeof n === "string" && n.trim() ? n.trim().slice(0, 20) : "あなた";
+      return typeof n === "string" && n.trim()
+        ? n.trim().slice(0, 20)
+        : "あなた";
     }
     function closeMenu() {
       if ($("header-other")) $("header-other").open = false;
@@ -3434,10 +3899,18 @@
         : "カードアルバム";
       const selectedGame = game || "aikatsu";
       $("game-switch").classList.toggle("is-aipri", selectedGame === "aipri");
-      $("game-switch").classList.toggle("is-primagi", selectedGame === "primagi");
+      $("game-switch").classList.toggle(
+        "is-primagi",
+        selectedGame === "primagi",
+      );
       document
         .querySelectorAll("#game-switch [data-game]")
-        .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.game === selectedGame)));
+        .forEach((b) =>
+          b.setAttribute(
+            "aria-pressed",
+            String(b.dataset.game === selectedGame),
+          ),
+        );
       $("header-card").hidden = true;
       $("header-card").removeAttribute("src");
       window.CARD_ALL?.syncNavigation();
@@ -3455,7 +3928,10 @@
     $("menu-toggle").onclick = () => {
       const open = $("nav").classList.toggle("open");
       $("menu-toggle").setAttribute("aria-expanded", String(open));
-      $("menu-toggle").setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+      $("menu-toggle").setAttribute(
+        "aria-label",
+        open ? "メニューを閉じる" : "メニューを開く",
+      );
     };
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeMenu();
@@ -3483,7 +3959,8 @@
         return;
       }
       if (/@|https?:\/\/|(?:\d[\s-]*){7,}/i.test(value)) {
-        $("nickname-message").textContent = "個人情報を含まないニックネームにしてください。";
+        $("nickname-message").textContent =
+          "個人情報を含まないニックネームにしてください。";
         return;
       }
       $("nickname-save").disabled = true;
@@ -3520,11 +3997,14 @@
     const marqueePools = {};
     const marqueePositions = {};
     function marqueeCards() {
-      const cards = new Map((window.CARD_STARTUP_PREVIEW?.cards || []).map((c) => [c.id, c]));
+      const cards = new Map(
+        (window.CARD_STARTUP_PREVIEW?.cards || []).map((c) => [c.id, c]),
+      );
       for (const c of catalog.cards) cards.set(c.id, c);
       return window.CARD_VISIBILITY.mask([...cards.values()]);
     }
-    const marqueeGroup = (card) => window.CARD_STARTUP_PREVIEW?.group(card) || "";
+    const marqueeGroup = (card) =>
+      window.CARD_STARTUP_PREVIEW?.group(card) || "";
     const marqueePending = new Map();
     let marqueeBootstrapped = false;
     let marqueeTimer;
@@ -3548,14 +4028,18 @@
       try {
         const front = new URL(card.front),
           source = new URL(card.source);
-        if (front.protocol !== "https:" || source.protocol !== "https:") return false;
+        if (front.protocol !== "https:" || source.protocol !== "https:")
+          return false;
         if (
           card.game === "aikatsu" &&
           /^aikatsu-all:(cardlist|stars|friends|onparade|planet|academy):[a-f0-9]{20}$/.test(
             card.id || "",
           )
         )
-          return front.hostname === "card.aikatsu.net" && source.hostname === "card.aikatsu.net";
+          return (
+            front.hostname === "card.aikatsu.net" &&
+            source.hostname === "card.aikatsu.net"
+          );
         if (card.game === "aikatsu")
           return (
             front.hostname === "dcd.aikatsu.com" &&
@@ -3610,7 +4094,9 @@
     function commitMarqueeCard(index, entry) {
       if (
         !entry.ready ||
-        !isOfficialMarqueeCard(catalog.cards.find((c) => c.id === entry.card.id) || entry.card) ||
+        !isOfficialMarqueeCard(
+          catalog.cards.find((c) => c.id === entry.card.id) || entry.card,
+        ) ||
         marqueePaused ||
         $("auth-art").classList.contains("is-dragging") ||
         $("detail").open ||
@@ -3630,7 +4116,10 @@
         button.dataset.preview = entry.card.id;
         button.dataset.game = entry.card.game;
         button.dataset.marqueeGroup = marqueeGroup(entry.card);
-        button.setAttribute("aria-label", (entry.card.name || entry.card.code) + "の詳細");
+        button.setAttribute(
+          "aria-label",
+          (entry.card.name || entry.card.code) + "の詳細",
+        );
         const oldImage = button.querySelector("img");
         const image = entry.images[pair.indexOf(button)];
         if (!oldImage || !image) return false;
@@ -3639,18 +4128,26 @@
         // Both incoming nodes are already loaded and decoded. Keep the old image
         // until this offscreen, synchronous swap; do not restart a visible img load.
         oldImage.replaceWith(image);
-        frame.querySelectorAll("canvas.low-resolution-image").forEach((canvas) => canvas.remove());
+        frame
+          .querySelectorAll("canvas.low-resolution-image")
+          .forEach((canvas) => canvas.remove());
         prepareMarqueeImage(image, entry.card);
         image
           .closest(".marquee-image-frame")
           .classList.toggle(
             "landscape",
-            entry.card.game === "aikatsu" && entry.image.naturalWidth > entry.image.naturalHeight,
+            entry.card.game === "aikatsu" &&
+              entry.image.naturalWidth > entry.image.naturalHeight,
           );
         const isLandscape =
-          entry.card.game === "aikatsu" && entry.image.naturalWidth > entry.image.naturalHeight;
-        const width = isLandscape ? entry.image.naturalHeight : entry.image.naturalWidth;
-        const height = isLandscape ? entry.image.naturalWidth : entry.image.naturalHeight;
+          entry.card.game === "aikatsu" &&
+          entry.image.naturalWidth > entry.image.naturalHeight;
+        const width = isLandscape
+          ? entry.image.naturalHeight
+          : entry.image.naturalWidth;
+        const height = isLandscape
+          ? entry.image.naturalWidth
+          : entry.image.naturalHeight;
         if (width && height) {
           frame.style.aspectRatio = width + " / " + height;
           frame.style.setProperty("--image-ratio", String(height / width));
@@ -3694,7 +4191,8 @@
         const primary = pair[0].dataset.marqueeGroup;
         let card = nextMarqueeCard(primary);
         if (!card) continue;
-        if (pair[0].dataset.preview === card.id) card = nextMarqueeCard(primary) || card;
+        if (pair[0].dataset.preview === card.id)
+          card = nextMarqueeCard(primary) || card;
         entry = { card, image: true, images: null, ready: false };
         marqueePending.set(index, entry);
         loading++;
@@ -3706,7 +4204,8 @@
             image.onload = async () => {
               try {
                 if (image.decode) await image.decode();
-                if (!image.naturalWidth || !image.naturalHeight) throw Error("empty image");
+                if (!image.naturalWidth || !image.naturalHeight)
+                  throw Error("empty image");
                 image.onload = image.onerror = null;
                 resolve(image);
               } catch (error) {
@@ -3726,7 +4225,8 @@
           })
           .catch(() => {
             // A failed or cancelled replacement leaves the current two images intact.
-            if (marqueePending.get(index) === entry) marqueePending.delete(index);
+            if (marqueePending.get(index) === entry)
+              marqueePending.delete(index);
           });
       }
     }
@@ -3738,7 +4238,8 @@
         image.replaceWith(frame);
         frame.append(image);
       }
-      const landscape = card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight;
+      const landscape =
+        card?.game === "aikatsu" && image.naturalWidth > image.naturalHeight;
       frame.classList.toggle("landscape", landscape);
       if (image.naturalWidth && image.naturalHeight) {
         const width = landscape ? image.naturalHeight : image.naturalWidth;
@@ -3753,8 +4254,12 @@
         const image = event.target;
         if (!image.matches?.(".marquee-card img")) return;
         const card =
-          catalog.cards.find((c) => c.id === image.closest(".marquee-card").dataset.preview) ||
-          window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find(
+          catalog.cards.find(
+            (c) => c.id === image.closest(".marquee-card").dataset.preview,
+          ) ||
+          window.CARD_VISIBILITY.mask(
+            window.CARD_STARTUP_PREVIEW?.cards || [],
+          ).find(
             (c) => c.id === image.closest(".marquee-card").dataset.preview,
           );
         prepareMarqueeImage(image, card);
@@ -3768,14 +4273,20 @@
       const signature = catalog.cards
         .map((c) => c.id + "|" + c.front + "|" + !!c._visibility?.image)
         .join(";");
-      if (marqueeBootstrapped && $("auth-art").dataset.catalogSignature !== signature) {
+      if (
+        marqueeBootstrapped &&
+        $("auth-art").dataset.catalogSignature !== signature
+      ) {
         // Refresh candidate pools without removing the running track or its cards.
         // Rebuilding both groups here briefly empties the entire strip and changes
         // its animation width on every catalog update.
         marqueePending.clear();
         for (const key of Object.keys(marqueePools)) delete marqueePools[key];
-        for (const key of Object.keys(marqueePositions)) delete marqueePositions[key];
-        const currentCards = new Map(marqueeCards().map((card) => [card.id, card]));
+        for (const key of Object.keys(marqueePositions))
+          delete marqueePositions[key];
+        const currentCards = new Map(
+          marqueeCards().map((card) => [card.id, card]),
+        );
         for (const button of $("auth-art").querySelectorAll(".marquee-card")) {
           const card = currentCards.get(button.dataset.preview);
           if (!card?._visibility?.image) continue;
@@ -3785,15 +4296,20 @@
           frame
             ?.querySelectorAll("canvas.low-resolution-image")
             .forEach((canvas) => canvas.remove());
-          if (image && image.getAttribute("src") !== card.front) image.src = card.front || "";
+          if (image && image.getAttribute("src") !== card.front)
+            image.src = card.front || "";
         }
       }
       $("auth-art").dataset.catalogSignature = signature;
       if (!marqueeBootstrapped) {
         const displayCards = marqueeCards().filter(isOfficialMarqueeCard);
-        const initial = window.CARD_STARTUP_PREVIEW?.sequence(displayCards) || [];
+        const initial =
+          window.CARD_STARTUP_PREVIEW?.sequence(displayCards) || [];
         if (!initial.length) return;
-        if (!groups[0].childElementCount || !groups[0].querySelector("[data-marquee-group]"))
+        if (
+          !groups[0].childElementCount ||
+          !groups[0].querySelector("[data-marquee-group]")
+        )
           groups[0].innerHTML = shuffleCards(initial)
             .map(
               (c) =>
@@ -3807,7 +4323,8 @@
           groups[1].children.length !== cards.length ||
           cards.some(
             (button, index) =>
-              groups[1].children[index]?.dataset.preview !== button.dataset.preview,
+              groups[1].children[index]?.dataset.preview !==
+              button.dataset.preview,
           )
         ) {
           groups[1].replaceChildren(
@@ -3825,8 +4342,12 @@
         .querySelectorAll(".marquee-card img")
         .forEach((image) => {
           const card =
-            catalog.cards.find((c) => c.id === image.closest(".marquee-card").dataset.preview) ||
-            window.CARD_VISIBILITY.mask(window.CARD_STARTUP_PREVIEW?.cards || []).find(
+            catalog.cards.find(
+              (c) => c.id === image.closest(".marquee-card").dataset.preview,
+            ) ||
+            window.CARD_VISIBILITY.mask(
+              window.CARD_STARTUP_PREVIEW?.cards || [],
+            ).find(
               (c) => c.id === image.closest(".marquee-card").dataset.preview,
             );
           prepareMarqueeImage(image, card);
@@ -3842,7 +4363,9 @@
     (() => {
       const rail = $("auth-art");
       const track = rail.querySelector(".marquee-track");
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      );
       let gesture,
         frame = 0,
         suppressUntil = 0;
@@ -3854,10 +4377,16 @@
       }
       function setPhase(state, pixels) {
         const raw = state.phase - (pixels * state.duration) / state.width;
-        state.animation.currentTime = ((raw % state.duration) + state.duration) % state.duration;
+        state.animation.currentTime =
+          ((raw % state.duration) + state.duration) % state.duration;
       }
       rail.addEventListener("pointerdown", (e) => {
-        if (e.pointerType !== "touch" || reducedMotion.matches || $("detail").open) return;
+        if (
+          e.pointerType !== "touch" ||
+          reducedMotion.matches ||
+          $("detail").open
+        )
+          return;
         if (!e.isPrimary) {
           if (gesture?.dragging) suppressUntil = performance.now() + 400;
           gesture = null;
@@ -3885,7 +4414,9 @@
             return;
           }
           if (Math.abs(dx) < 9 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
-          const animation = track.getAnimations?.().find((a) => a.animationName === "card-ticker");
+          const animation = track
+            .getAnimations?.()
+            .find((a) => a.animationName === "card-ticker");
           const duration = animation?.effect?.getComputedTiming().duration;
           const width = track.getBoundingClientRect().width / 2;
           const phase = animation?.currentTime;
@@ -3910,10 +4441,15 @@
         }
         const now = performance.now();
         const elapsed = now - state.time;
-        const speed = Math.max(-3.2, Math.min(3.2, (dx - state.dx) / Math.max(elapsed, 8)));
+        const speed = Math.max(
+          -3.2,
+          Math.min(3.2, (dx - state.dx) / Math.max(elapsed, 8)),
+        );
         const previous = state.velocity;
         state.velocity =
-          previous == null || elapsed > 95 || Math.sign(previous) !== Math.sign(speed)
+          previous == null ||
+          elapsed > 95 ||
+          Math.sign(previous) !== Math.sign(speed)
             ? speed
             : previous * 0.3 + speed * 0.7;
         state.time = now;
@@ -3938,7 +4474,8 @@
         }
         const duration = Math.min(820, 300 + strength * 165);
         // Match the initial velocity of the cubic ease-out, with a travel cap.
-        const distance = Math.sign(releaseSpeed) * Math.min(760, (strength * duration) / 3);
+        const distance =
+          Math.sign(releaseSpeed) * Math.min(760, (strength * duration) / 3);
         const tick = (now) => {
           const t = Math.min(1, (now - start) / duration);
           setPhase(state, state.dx + distance * (1 - (1 - t) ** 3));
@@ -3980,10 +4517,15 @@
         (button.onclick = () => {
           const info = window.SITE_INFO[button.dataset.info];
           closeMenu();
-          $("info-dialog").classList.toggle("help-dialog", button.dataset.info === "help");
+          $("info-dialog").classList.toggle(
+            "help-dialog",
+            button.dataset.info === "help",
+          );
           $("info-title").textContent = info.title;
           $("info-body").innerHTML = info.body;
-          for (const contact of $("info-body").querySelectorAll("[data-contact]")) {
+          for (const contact of $("info-body").querySelectorAll(
+            "[data-contact]",
+          )) {
             const link = document.createElement("a");
             link.href = new URL("contact/", siteBase).href;
             link.textContent = "お問い合わせフォームへ";
@@ -4002,7 +4544,9 @@
       return values(card.series).filter(
         (label) =>
           seriesRank(label) >= 0 &&
-          !/special|スペシャル|プロモ|promo|グミ|ミルフィ|メモリアル/i.test(label),
+          !/special|スペシャル|プロモ|promo|グミ|ミルフィ|メモリアル/i.test(
+            label,
+          ),
       );
     }
     function rarityOrder(rare) {
@@ -4033,7 +4577,8 @@
           card.parallel === true ||
           card.variant === "パラレル" ||
           card.rarity === "パラレル" ||
-          (card.game === "aipri" && /^[A-Z0-9]+-\d+P$/i.test(card.code || "")) ||
+          (card.game === "aipri" &&
+            /^[A-Z0-9]+-\d+P$/i.test(card.code || "")) ||
           /(^|:)parallel:/.test(card.id || "");
         const rarity = parallel
           ? "パラレル"
@@ -4046,7 +4591,10 @@
       return {
         total,
         rows: [...counts]
-          .sort(([a], [b]) => rarityOrder(a) - rarityOrder(b) || a.localeCompare(b, "ja"))
+          .sort(
+            ([a], [b]) =>
+              rarityOrder(a) - rarityOrder(b) || a.localeCompare(b, "ja"),
+          )
           .map(([rarity, count]) => ({
             rarity,
             count,
@@ -4073,7 +4621,9 @@
     }
     function probabilityMarkup(summary) {
       const label = summary.total
-        ? summary.rows.map((row) => `${row.rarity} ${row.rate.toFixed(1)}%`).join("、")
+        ? summary.rows
+            .map((row) => `${row.rarity} ${row.rate.toFixed(1)}%`)
+            .join("、")
         : "所持枚数が未登録です";
       return `<div class="distribution-bar" role="img" aria-label="${esc(label)}">${summary.rows.map((row) => `<span class="distribution-segment" style="width:${row.rate}%;background:${rarityColor(row.rarity)}" title="${esc(row.rarity)} ${row.rate.toFixed(1)}%"><span class="segment-label">${row.count ? esc(row.rarity === "パラレル" ? "☆" : row.rarity === "ミラクル" ? "M" : row.rarity) : ""}</span></span>`).join("")}</div><table class="probability-table"><thead><tr><th scope="col">レアリティ</th><th scope="col">所持数</th><th scope="col">割合</th></tr></thead><tbody>${summary.rows.map((row) => `<tr><th scope="row"><span class="rarity-dot" style="background:${rarityColor(row.rarity)}" aria-hidden="true"></span>${esc(row.rarity)}</th><td>${row.count.toLocaleString("ja-JP")}枚</td><td>${summary.total ? row.rate.toFixed(1) + "%" : "—"}</td></tr>`).join("")}</tbody></table>`;
     }
@@ -4081,7 +4631,9 @@
       if (!session || !game) return;
       const cards = albumCards().filter((card) => regularSeries(card).length);
       const series = [...new Set(cards.flatMap(regularSeries))].sort(
-        (a, b) => seriesRank(b) - seriesRank(a) || a.localeCompare(b, "ja", { numeric: true }),
+        (a, b) =>
+          seriesRank(b) - seriesRank(a) ||
+          a.localeCompare(b, "ja", { numeric: true }),
       );
       const current = $("probability-series").value;
       $("probability-series").innerHTML = series
@@ -4108,7 +4660,9 @@
         ? `${label || "対象の弾数なし"} · 所持数 ${detail.total.toLocaleString("ja-JP")}枚`
         : "所持データを読み込み中";
       const showCost = $("show-cost").checked && ownershipReady;
-      $("probability-overall-cost").hidden = $("probability-detail-cost").hidden = !showCost;
+      $("probability-overall-cost").hidden = $(
+        "probability-detail-cost",
+      ).hidden = !showCost;
       $("probability-overall-cost").textContent =
         `シリーズ総合の利用金額目安 ${(overall.total * 100).toLocaleString("ja-JP")}円`;
       $("probability-detail-cost").textContent =
@@ -4127,20 +4681,29 @@
         null,
         "",
         "#probabilities-" +
-          (game === "aikatsu" ? "aikatsu" : aipriFamily === "おねがい" ? "onegai" : "himitsu"),
+          (game === "aikatsu"
+            ? "aikatsu"
+            : aipriFamily === "おねがい"
+              ? "onegai"
+              : "himitsu"),
       );
     }
     $("probability-open").onclick = openProbabilities;
-    const probabilityModal = window.CARD_TRADE_TOOLS.modal($("probabilities"), "確率確認", () => {
-      if (location.hash.startsWith("#probabilities-"))
-        history.replaceState(null, "", "#" + (game || ""));
-      updateHeader();
-    });
+    const probabilityModal = window.CARD_TRADE_TOOLS.modal(
+      $("probabilities"),
+      "確率確認",
+      () => {
+        if (location.hash.startsWith("#probabilities-"))
+          history.replaceState(null, "", "#" + (game || ""));
+        updateHeader();
+      },
+    );
     $("probability-back").onclick = () => probabilityModal.close();
     $("probability-series").onchange = renderProbabilities;
     $("show-cost").onchange = renderProbabilities;
     $("quantity-plus").onclick = () => selected && saveQuantity(selected.id, 1);
-    $("quantity-minus").onclick = () => selected && saveQuantity(selected.id, -1);
+    $("quantity-minus").onclick = () =>
+      selected && saveQuantity(selected.id, -1);
     document.addEventListener("click", (event) => {
       const button = event.target.closest("dialog button");
       if (!button || button.disabled) return;
@@ -4149,9 +4712,11 @@
       button.classList.add("tap-feedback");
       setTimeout(() => button.classList.remove("tap-feedback"), 220);
     });
-    window.matchMedia?.("(max-width: 760px)").addEventListener?.("change", () => {
-      if (game) render();
-    });
+    window
+      .matchMedia?.("(max-width: 760px)")
+      .addEventListener?.("change", () => {
+        if (game) render();
+      });
     function passwordEyeIcon(visible) {
       const slash = visible ? '<path d="m3 3 18 18" />' : "";
       return (
@@ -4190,13 +4755,18 @@
         input.type = reveal ? "text" : "password";
         button.innerHTML = passwordEyeIcon(reveal);
         button.setAttribute("aria-pressed", String(reveal));
-        button.setAttribute("aria-label", reveal ? "パスワードを隠す" : "パスワードを表示");
+        button.setAttribute(
+          "aria-label",
+          reveal ? "パスワードを隠す" : "パスワードを表示",
+        );
         input.focus({ preventScroll: true });
         if (start !== null && end !== null) input.setSelectionRange(start, end);
       });
       wrapper.append(button);
     }
-    authMode(invitationPage || location.hash === "#signup" ? "signup" : "login");
+    authMode(
+      invitationPage || location.hash === "#signup" ? "signup" : "login",
+    );
     let maintenanceActive = false;
     let maintenanceSigningOut = false;
     async function applyMaintenance(status) {
@@ -4205,7 +4775,8 @@
       $("maintenance-panel").hidden = !maintenanceActive;
       $("auth-normal-panel").hidden = maintenanceActive;
       $("maintenance-message").textContent =
-        status.message || "ただ今システムのメンテナンスをしていますので、アルバムを開けません。";
+        status.message ||
+        "ただ今システムのメンテナンスをしていますので、アルバムを開けません。";
       const end = status.ends_at ? new Date(status.ends_at) : null;
       $("maintenance-end").textContent =
         end && !Number.isNaN(end.getTime())
@@ -4219,12 +4790,14 @@
           : "未定";
       if (!maintenanceActive) return;
       screen("auth");
-      for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
+      for (const dialog of document.querySelectorAll("dialog[open]"))
+        dialog.close();
       signupReservation = null;
       $("password").value = "";
       $("signup-password").value = "";
       $("signup-password-confirm").value = "";
-      const shouldSignOut = db && !maintenanceSigningOut && (!wasActive || session);
+      const shouldSignOut =
+        db && !maintenanceSigningOut && (!wasActive || session);
       await authChanged("SIGNED_OUT", null);
       if (shouldSignOut) {
         maintenanceSigningOut = true;
@@ -4247,7 +4820,8 @@
           ? "現在もメンテナンス中です。"
           : "メンテナンスが終了しました。";
       } catch (error) {
-        $("maintenance-check-message").textContent = window.CARD_ERROR.message(error);
+        $("maintenance-check-message").textContent =
+          window.CARD_ERROR.message(error);
       } finally {
         $("maintenance-refresh").disabled = false;
       }
@@ -4337,7 +4911,8 @@
           setExpanded(true);
         } catch {
           if (button.isConnected) {
-            status.textContent = "過去の情報を読み込めませんでした。もう一度お試しください。";
+            status.textContent =
+              "過去の情報を読み込めませんでした。もう一度お試しください。";
             status.hidden = false;
           }
         } finally {
@@ -4357,7 +4932,8 @@
     async function loadAlbumNews() {
       if (!db || !session || maintenanceActive || $("selection").hidden) return;
       void loadContactReplyNews();
-      if (albumNewsFetchedAt && Date.now() - albumNewsFetchedAt < 300000) return;
+      if (albumNewsFetchedAt && Date.now() - albumNewsFetchedAt < 300000)
+        return;
       if (albumNewsFlight) return albumNewsFlight;
       const flight = (async () => {
         for (const id of ["album-notices", "album-updates"])
@@ -4375,15 +4951,18 @@
                 .limit(6),
             ),
           );
-          if (results.some((r) => r.error)) throw results.find((r) => r.error).error;
+          if (results.some((r) => r.error))
+            throw results.find((r) => r.error).error;
           renderAlbumNews(results[0].data || [], "album-notices");
           renderAlbumNews(results[1].data || [], "album-updates");
           albumNewsFetchedAt = Date.now();
         } catch {
           for (const id of ["album-notices", "album-updates"])
-            if (!$(id).children.length) $(id).textContent = "現在、掲載情報を読み込めません。";
+            if (!$(id).children.length)
+              $(id).textContent = "現在、掲載情報を読み込めません。";
         } finally {
-          for (const id of ["album-notices", "album-updates"]) $(id).removeAttribute("aria-busy");
+          for (const id of ["album-notices", "album-updates"])
+            $(id).removeAttribute("aria-busy");
         }
       })();
       albumNewsFlight = flight;
@@ -4472,7 +5051,8 @@
           status.textContent = "";
         } catch {
           if (current()) {
-            status.textContent = "返信を読み込めませんでした。再度お試しください。";
+            status.textContent =
+              "返信を読み込めませんでした。再度お試しください。";
             more.textContent = "返信を再読み込み";
             more.hidden = false;
           }
@@ -4504,14 +5084,20 @@
       '<summary>メニュー<span class="header-other-chevron" aria-hidden="true"></span></summary><div class="header-other-options"></div>';
     headerOther
       .querySelector("div")
-      .append($("ownership-export-open"), $("probability-open"), $("display-settings-open"));
+      .append(
+        $("ownership-export-open"),
+        $("probability-open"),
+        $("display-settings-open"),
+      );
     $("nav").append($("game-switch"), headerOther);
     let headerOtherMobile = null;
     function placeHeaderOther(force = false) {
       const mobile = window.innerWidth <= 760;
       if (!force && headerOtherMobile === mobile) return;
       headerOtherMobile = mobile;
-      const target = mobile ? $("nav") : headerOther.querySelector(".header-other-options");
+      const target = mobile
+        ? $("nav")
+        : headerOther.querySelector(".header-other-options");
       for (const id of [
         "ownership-export-open",
         "probability-open",
@@ -4530,7 +5116,9 @@
     });
     placeHeaderOther();
 
-    const totalProgressCard = document.querySelector("#collection > .progress-card");
+    const totalProgressCard = document.querySelector(
+      "#collection > .progress-card",
+    );
     if (totalProgressCard) {
       totalProgressCard.querySelector("div > span").textContent = "総取得率";
       totalProgressCard.insertBefore($("series-progress"), $("filtered-rate"));
@@ -4539,7 +5127,13 @@
     const albumHomeLink = $("header-title").closest("a");
     if (albumHomeLink)
       albumHomeLink.addEventListener("click", (event) => {
-        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+        if (
+          event.button !== 0 ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey ||
+          event.altKey
+        )
           return;
         event.preventDefault();
         closeMenu();
@@ -4549,16 +5143,20 @@
         } else screen("auth");
       });
     const animatedFilterPanel = $("filter-panel");
-    animatedFilterPanel.querySelector("summary").addEventListener("click", (event) => {
-      event.preventDefault();
-      const content = animatedFilterPanel.querySelector(".filter-content");
-      const expanded = !(revealStates.get(content)?.expanded ?? animatedFilterPanel.open);
-      if (expanded) animatedFilterPanel.open = true;
-      animateReveal(content, expanded, () => {
-        if (!expanded) animatedFilterPanel.open = false;
-        content.hidden = false;
+    animatedFilterPanel
+      .querySelector("summary")
+      .addEventListener("click", (event) => {
+        event.preventDefault();
+        const content = animatedFilterPanel.querySelector(".filter-content");
+        const expanded = !(
+          revealStates.get(content)?.expanded ?? animatedFilterPanel.open
+        );
+        if (expanded) animatedFilterPanel.open = true;
+        animateReveal(content, expanded, () => {
+          if (!expanded) animatedFilterPanel.open = false;
+          content.hidden = false;
+        });
       });
-    });
 
     normalizeAlbumArt();
     randomizeAuthTheme();
@@ -4567,8 +5165,11 @@
       .forEach((note) => {
         note.hidden = true;
       });
-    const confirmPasswordButton = $("signup-password-form").querySelector('button[type="submit"]');
-    if (confirmPasswordButton) confirmPasswordButton.textContent = "パスワードを確定する";
+    const confirmPasswordButton = $("signup-password-form").querySelector(
+      'button[type="submit"]',
+    );
+    if (confirmPasswordButton)
+      confirmPasswordButton.textContent = "パスワードを確定する";
     window.CARD_ALL_HOST = {
       client: () => db,
       session: () => session,
@@ -4594,18 +5195,23 @@
         if (card.game === "aikatsu" && !card.id.startsWith("aikatsu-all:"))
           info.push([
             "AP",
-            cardAP(card) === null ? "未確認" : cardAP(card).toLocaleString("ja-JP") + " AP",
+            cardAP(card) === null
+              ? "未確認"
+              : cardAP(card).toLocaleString("ja-JP") + " AP",
           ]);
         return {
           name: name(card),
           fields: info,
           rarity: card.id.startsWith("aikatsu-all:")
-            ? values(card.details?.["レアリティ"]).join(" ／ ") || "レアリティ未取得"
+            ? values(card.details?.["レアリティ"]).join(" ／ ") ||
+              "レアリティ未取得"
             : displayRarity(card),
         };
       },
       cardCharacter: (id) =>
-        window.CARD_ALL?.character(id) || catalog.cards.find((c) => c.id === id)?.character || "",
+        window.CARD_ALL?.character(id) ||
+        catalog.cards.find((c) => c.id === id)?.character ||
+        "",
       client: () => db,
       session: () => session,
       family: () => aipriFamily,
@@ -4621,8 +5227,10 @@
         );
         return (
           (
-            candidates.find((c) => c.code === (family === "おねがい" ? "OA4-001" : "APR6-001")) ||
-            candidates[0]
+            candidates.find(
+              (c) =>
+                c.code === (family === "おねがい" ? "OA4-001" : "APR6-001"),
+            ) || candidates[0]
           )?.front || ""
         );
       },
@@ -4657,7 +5265,9 @@
         isVerse ? window.CARD_VERSE?.ownershipImage() : cardOwnershipImage(),
       verse: () => window.CARD_VERSE?.tradeData(),
       quantity: (kind, id) =>
-        kind === "card" ? quantityOf(id) : (window.CARD_VERSE?.tradeQuantity(kind, id) ?? 0),
+        kind === "card"
+          ? quantityOf(id)
+          : (window.CARD_VERSE?.tradeQuantity(kind, id) ?? 0),
       isVerse: () => !!$("verse") && !$("verse").hidden,
       screen,
       toast,
@@ -4695,7 +5305,11 @@
             verseScript.removeEventListener("error", finish);
             if (window.CARD_VERSE) resolve(window.CARD_VERSE);
             else
-              reject(Error("コーデ機能を読み込めませんでした。ページを再読み込みしてください。"));
+              reject(
+                Error(
+                  "コーデ機能を読み込めませんでした。ページを再読み込みしてください。",
+                ),
+              );
           };
           const timer = setTimeout(finish, 15000);
           verseScript.addEventListener("load", finish);
@@ -4717,14 +5331,17 @@
     });
     window.CARD_SHARE_HOST = {
       async scopeItems(scope) {
-        if (Object.hasOwn(allShareLabels, scope)) return window.CARD_ALL.shareCatalog(scope);
+        if (Object.hasOwn(allShareLabels, scope))
+          return window.CARD_ALL.shareCatalog(scope);
         if (scope.startsWith("verse-"))
           return (await requireShareVerse()).shareCatalog(scope.slice(6));
         return catalog.cards.filter((c) =>
           scope === "aikatsu"
             ? c.game === "aikatsu"
             : c.game === "aipri" &&
-              [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family),
+              [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(
+                c.family,
+              ),
         );
       },
       async rates(scopes, seriesFilters = {}) {
@@ -4732,7 +5349,9 @@
         if (!uid) throw Error("再ログインしてください。");
         const result = {};
         const cardScopes = scopes.filter(
-          (scope) => !scope.startsWith("verse-") && !Object.hasOwn(allShareLabels, scope),
+          (scope) =>
+            !scope.startsWith("verse-") &&
+            !Object.hasOwn(allShareLabels, scope),
         );
         if (cardScopes.length) {
           if (!ownershipReady) await loadOwnership();
@@ -4743,17 +5362,24 @@
               scope === "aikatsu"
                 ? c.game === "aikatsu"
                 : c.game === "aipri" &&
-                  [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(c.family),
+                  [scope, scope === "onegai" ? "おねがい" : "ひみつ"].includes(
+                    c.family,
+                  ),
             );
-            if (!cards.length) throw Error("カード情報の読み込み後にもう一度開いてください。");
+            if (!cards.length)
+              throw Error("カード情報の読み込み後にもう一度開いてください。");
             const visible = Array.isArray(seriesFilters[scope])
               ? cards.filter((c) =>
-                  values(c.series).some((label) => seriesFilters[scope].includes(label)),
+                  values(c.series).some((label) =>
+                    seriesFilters[scope].includes(label),
+                  ),
                 )
               : cards;
             result[scope] = (
               visible.length
-                ? (visible.filter((c) => owned.has(c.id)).length / visible.length) * 100
+                ? (visible.filter((c) => owned.has(c.id)).length /
+                    visible.length) *
+                  100
                 : 0
             ).toFixed(1);
           }
@@ -4762,9 +5388,14 @@
           const verse = await requireShareVerse();
           Object.assign(result, await verse.shareRates(scopes, seriesFilters));
         }
-        const allScopes = scopes.filter((scope) => Object.hasOwn(allShareLabels, scope));
+        const allScopes = scopes.filter((scope) =>
+          Object.hasOwn(allShareLabels, scope),
+        );
         if (allScopes.length)
-          Object.assign(result, await window.CARD_ALL.shareRates(allScopes, seriesFilters));
+          Object.assign(
+            result,
+            await window.CARD_ALL.shareRates(allScopes, seriesFilters),
+          );
         if (uid !== session?.user.id) throw Error("再ログインしてください。");
         return result;
       },
@@ -4796,7 +5427,10 @@
         columns = value === "3" ? "3" : "2";
         grid.dataset.mobileColumns = columns;
         control.querySelectorAll("[data-card-columns]").forEach((button) => {
-          button.setAttribute("aria-pressed", String(button.dataset.cardColumns === columns));
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.cardColumns === columns),
+          );
         });
       }
       control.addEventListener("click", (event) => {
@@ -4817,7 +5451,11 @@
       const key = "card-display-preferences-v1";
       const options = [
         ["grayscale", "非所持カードを白黒にする", "一覧の画像に適用します"],
-        ["hideText", "一覧の文字情報を非表示にする", "画像と所持ボタンを中心に表示します"],
+        [
+          "hideText",
+          "一覧の文字情報を非表示にする",
+          "画像と所持ボタンを中心に表示します",
+        ],
         ["hideRates", "取得率を非表示にする", "取得率と、その内訳を隠します"],
         [
           "versePartsAsOwned",
@@ -4844,7 +5482,10 @@
       textSettings.className = "display-text-settings";
       textSettings.hidden = true;
       textSettings.innerHTML = `<legend>非表示にする文字情報</legend><p>チェックした項目を一覧から隠します。</p><div>${textOptions.map(([id, label]) => `<label><input type="checkbox" data-text-setting="${id}"><span>${label}</span></label>`).join("")}</div>`;
-      dialog.querySelector('[data-display-setting="hideText"]').closest("div").after(textSettings);
+      dialog
+        .querySelector('[data-display-setting="hideText"]')
+        .closest("div")
+        .after(textSettings);
       dialog
         .querySelector('[data-display-setting="hideText"]')
         .setAttribute("aria-controls", "display-text-options");
@@ -4867,7 +5508,8 @@
         saving = false,
         saveTimer = null;
       let pending = {};
-      const currentUser = () => window.CARD_SHARE_HOST?.session()?.user.id || null;
+      const currentUser = () =>
+        window.CARD_SHARE_HOST?.session()?.user.id || null;
       const client = () => window.CARD_SHARE_HOST.client();
       const localKey = (user) => key + ":" + user;
       function storeLocal() {
@@ -4889,7 +5531,13 @@
       async function flushSettings() {
         clearTimeout(saveTimer);
         saveTimer = null;
-        if (saving || !ready || !owner || owner !== currentUser() || !Object.keys(pending).length)
+        if (
+          saving ||
+          !ready ||
+          !owner ||
+          owner !== currentUser() ||
+          !Object.keys(pending).length
+        )
           return;
         const user = owner,
           g = generation,
@@ -4909,7 +5557,10 @@
               : Promise.resolve({ data: prefs, error: null }),
             client()
               .from("card_album_list_text_preferences")
-              .upsert({ user_id: user, settings: textPatch }, { onConflict: "user_id" }),
+              .upsert(
+                { user_id: user, settings: textPatch },
+                { onConflict: "user_id" },
+              ),
           ]);
           const { data, error } = results[0];
           if (results[1].error) throw results[1].error;
@@ -4924,7 +5575,10 @@
             pending = { ...patch, ...pending };
             $("display-settings-status").textContent =
               "設定をDBに保存できませんでした。この端末には保持しています。詳細設定を開き直すと再試行します。";
-            window.CARD_SHARE_HOST.toast?.("表示設定をDBに保存できませんでした。", "error");
+            window.CARD_SHARE_HOST.toast?.(
+              "表示設定をDBに保存できませんでした。",
+              "error",
+            );
             return;
           }
         } finally {
@@ -4941,7 +5595,9 @@
             const initial = initialFor(user);
             const results = await Promise.all([
               client().rpc("card_album_display_load", {
-                p_initial: Object.fromEntries(options.map(([id]) => [id, initial[id]])),
+                p_initial: Object.fromEntries(
+                  options.map(([id]) => [id, initial[id]]),
+                ),
               }),
               client()
                 .from("card_album_list_text_preferences")
@@ -4956,7 +5612,9 @@
             prefs = normalize({
               ...data,
               ...(results[1].data?.settings ||
-                Object.fromEntries(textOptions.map(([id]) => [id, initial[id]]))),
+                Object.fromEntries(
+                  textOptions.map(([id]) => [id, initial[id]]),
+                )),
             });
             ready = true;
             storeLocal();
@@ -4987,30 +5645,45 @@
           [".card-song", "hideSong"],
           [".parallel-tag", "hideVariant"],
         ];
-        for (const card of document.querySelectorAll("#cards .card, #all-cards .card")) {
+        for (const card of document.querySelectorAll(
+          "#cards .card, #all-cards .card",
+        )) {
           const text = card.querySelector(".card-text-trigger");
           const visible = fields.some(([selector, setting]) => {
             const node = text?.querySelector(selector);
-            return node?.textContent.trim() && (!active || prefs[setting] === false);
+            return (
+              node?.textContent.trim() && (!active || prefs[setting] === false)
+            );
           });
           text?.classList.toggle("is-text-empty", active && !visible);
           const row = card.querySelector(".card-code-row");
           const code = row?.querySelector(".card-code-link");
           const rarity = row?.querySelector(".card-rarity");
-          const hasCode = code?.textContent.trim() && (!active || prefs.hideCode === false);
-          const hasRarity = rarity?.textContent.trim() && (!active || prefs.hideRarity === false);
-          row?.classList.toggle("is-code-empty", active && !hasCode && !hasRarity);
+          const hasCode =
+            code?.textContent.trim() && (!active || prefs.hideCode === false);
+          const hasRarity =
+            rarity?.textContent.trim() &&
+            (!active || prefs.hideRarity === false);
+          row?.classList.toggle(
+            "is-code-empty",
+            active && !hasCode && !hasRarity,
+          );
         }
       }
       const listTextObserver = new MutationObserver((records) => {
         if (
           records.some(
-            (record) => record.target.nodeType === 1 && record.target.closest("#cards, #all-cards"),
+            (record) =>
+              record.target.nodeType === 1 &&
+              record.target.closest("#cards, #all-cards"),
           )
         )
           compactListText();
       });
-      listTextObserver.observe(document.body, { childList: true, subtree: true });
+      listTextObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
       function apply() {
         textSettings.hidden = prefs.hideText !== true;
         dialog
@@ -5021,7 +5694,9 @@
             "display-" + id,
             prefs.hideText === true && prefs[id] !== false,
           );
-          const input = textSettings.querySelector(`[data-text-setting="${id}"]`);
+          const input = textSettings.querySelector(
+            `[data-text-setting="${id}"]`,
+          );
           input.checked = prefs[id] !== false;
           input.disabled = !ready;
         }
@@ -5035,7 +5710,8 @@
           dialog
             .querySelector(`[data-display-setting="${id}"]`)
             .setAttribute("aria-checked", String(prefs[id] === true));
-          dialog.querySelector(`[data-display-setting="${id}"]`).disabled = !ready;
+          dialog.querySelector(`[data-display-setting="${id}"]`).disabled =
+            !ready;
         }
         compactListText();
       }
@@ -5062,7 +5738,11 @@
         saveTimer = setTimeout(flushSettings, 250);
       });
       $("display-settings-open").onclick = () => {
-        if (!window.CARD_SHARE_HOST?.session() || window.CARD_SHARE_HOST.maintenance()) return;
+        if (
+          !window.CARD_SHARE_HOST?.session() ||
+          window.CARD_SHARE_HOST.maintenance()
+        )
+          return;
         if (!ready) loadSettings();
         else if (Object.keys(pending).length) flushSettings();
         window.CARD_SHARE_HOST.closeMenu();
@@ -5079,7 +5759,9 @@
         });
       window.CARD_UI_SETTINGS = {
         get(id) {
-          return id === "versePartsAsOwned" ? prefs[id] !== false : prefs[id] === true;
+          return id === "versePartsAsOwned"
+            ? prefs[id] !== false
+            : prefs[id] === true;
         },
         sync() {
           const user = currentUser();
@@ -5122,7 +5804,10 @@
         const link = event.target.closest("a[href]");
         if (!link) return;
         const url = new URL(link.href, location.href);
-        if (url.origin === location.origin && /\/contact\/?$/.test(url.pathname)) {
+        if (
+          url.origin === location.origin &&
+          /\/contact\/?$/.test(url.pathname)
+        ) {
           url.searchParams.set(
             "theme",
             document.body.classList.contains("game-primagi")
@@ -5228,26 +5913,38 @@
       const current = () => host.session()?.user.id || null;
       function shareURL() {
         if (!hasLink || !/^[0-9a-f]{64}$/.test(token || "")) return null;
-        const url = new URL("share/", host.base());
+        const url = new URL("shared/", host.base());
         url.hash = token;
-        return url.href;
+        return window.CARD_DB.shareURL(url);
       }
       async function publicPageURL(requiredScope) {
         await settingsCheck;
-        if (!settingsLoaded || !owner || owner !== current() || host.maintenance()) return null;
+        if (
+          !settingsLoaded ||
+          !owner ||
+          owner !== current() ||
+          host.maintenance()
+        )
+          return null;
         return confirmedScopes.some(
           (scope) =>
             (!requiredScope || scope === requiredScope) &&
-            (!Array.isArray(confirmedFilters[scope]) || confirmedFilters[scope].length),
+            (!Array.isArray(confirmedFilters[scope]) ||
+              confirmedFilters[scope].length),
         )
           ? shareURL()
           : null;
       }
       function update() {
         dialog.querySelectorAll("[data-share-scope]").forEach((b) => {
-          b.setAttribute("aria-checked", String(scopes.includes(b.dataset.shareScope)));
+          b.setAttribute(
+            "aria-checked",
+            String(scopes.includes(b.dataset.shareScope)),
+          );
           b.disabled = !settingsLoaded || busy;
-          const state = dialog.querySelector(`[data-share-state="${b.dataset.shareScope}"]`);
+          const state = dialog.querySelector(
+            `[data-share-state="${b.dataset.shareScope}"]`,
+          );
           const selected = seriesFilters[b.dataset.shareScope];
           if (state)
             state.textContent = !settingsLoaded
@@ -5260,17 +5957,25 @@
                     : "選択なし（表示なし）"
                   : "公開中 · すべて";
         });
-        dialog.querySelectorAll("[data-share-details], [data-share-series-all]").forEach((b) => {
-          b.disabled = !settingsLoaded || busy;
-        });
+        dialog
+          .querySelectorAll("[data-share-details], [data-share-series-all]")
+          .forEach((b) => {
+            b.disabled = !settingsLoaded || busy;
+          });
         $("share-issue").hidden = hasLink;
-        $("share-issue").disabled = busy || mutations.length > 0 || !scopes.length;
+        $("share-issue").disabled =
+          busy || mutations.length > 0 || !scopes.length;
         $("share-restore-area").hidden = !hasLink || !!token;
         $("share-restore").disabled = busy;
         $("share-delete").hidden = !hasLink;
         $("share-delete").disabled = busy || mutations.length > 0;
         $("share-send").disabled =
-          busy || mutations.length > 0 || sharing || !rates || !token || !scopes.length;
+          busy ||
+          mutations.length > 0 ||
+          sharing ||
+          !rates ||
+          !token ||
+          !scopes.length;
         $("share-delete-yes").disabled = busy || mutations.length > 0;
         $("share-delete-cancel").disabled = busy;
         deleteClose.disabled = busy;
@@ -5294,13 +5999,23 @@
         if (!uid || !scopes.length || mutations.length) return;
         try {
           const result = await host.rates([...scopes], seriesFilters);
-          if (revision !== rateGeneration || g !== generation || uid !== current()) return;
+          if (
+            revision !== rateGeneration ||
+            g !== generation ||
+            uid !== current()
+          )
+            return;
           if (scopes.some((scope) => !Number.isFinite(Number(result[scope]))))
             throw Error("所持率を確認できませんでした。");
           rates = result;
         } catch (error) {
-          if (revision === rateGeneration && g === generation && uid === current())
-            $("share-settings-status").textContent = window.CARD_ERROR.message(error);
+          if (
+            revision === rateGeneration &&
+            g === generation &&
+            uid === current()
+          )
+            $("share-settings-status").textContent =
+              window.CARD_ERROR.message(error);
         } finally {
           if (revision === rateGeneration && g === generation) update();
         }
@@ -5333,7 +6048,13 @@
           "",
           ...Object.keys(labels)
             .filter((scope) => scopes.includes(scope))
-            .map((scope) => shortLabels[scope] + "：" + Number(rates[scope]).toFixed(1) + "%"),
+            .map(
+              (scope) =>
+                shortLabels[scope] +
+                "：" +
+                Number(rates[scope]).toFixed(1) +
+                "%",
+            ),
           "",
           "詳しくはこちらから（登録不要）↓",
           $("share-link-value").value,
@@ -5344,10 +6065,15 @@
           if (navigator.share) await navigator.share({ text });
           else {
             await navigator.clipboard.writeText(text);
-            if (g === generation && uid === current()) host.toast("共有用文章をコピーしました");
+            if (g === generation && uid === current())
+              host.toast("共有用文章をコピーしました");
           }
         } catch (error) {
-          if (error.name !== "AbortError" && g === generation && uid === current())
+          if (
+            error.name !== "AbortError" &&
+            g === generation &&
+            uid === current()
+          )
             $("share-settings-status").textContent =
               "共有できませんでした。通信やブラウザーの設定を確認してください。";
         } finally {
@@ -5360,7 +6086,9 @@
       function apply(data) {
         confirmedScopes = data.scopes.filter((s) => s in labels);
         confirmedFilters =
-          data.series_filters && typeof data.series_filters === "object" ? data.series_filters : {};
+          data.series_filters && typeof data.series_filters === "object"
+            ? data.series_filters
+            : {};
         optimisticState();
         hasLink = data.has_link === true;
         token = data.token || null;
@@ -5401,7 +6129,8 @@
         if (owner && owner !== current()) reset();
       }
       async function run(name, args, onSuccess) {
-        if (busy || mutations.length || !current() || host.maintenance()) return;
+        if (busy || mutations.length || !current() || host.maintenance())
+          return;
         const g = generation,
           user = current();
         busy = true;
@@ -5413,8 +6142,10 @@
           onSuccess(r.data);
         } catch (error) {
           if (g === generation && user === current()) {
-            $("share-settings-status").textContent = window.CARD_ERROR.message(error);
-            if (deleteDialog.open) deleteStatus.textContent = window.CARD_ERROR.message(error);
+            $("share-settings-status").textContent =
+              window.CARD_ERROR.message(error);
+            if (deleteDialog.open)
+              deleteStatus.textContent = window.CARD_ERROR.message(error);
           }
         } finally {
           if (g === generation && user === current()) {
@@ -5426,7 +6157,10 @@
       async function open() {
         if (!current() || host.maintenance()) return;
         host.closeMenu();
-        if (owner === current() && (busy || savingSettings || mutations.length)) {
+        if (
+          owner === current() &&
+          (busy || savingSettings || mutations.length)
+        ) {
           if (!dialog.open) dialog.showModal();
           return;
         }
@@ -5437,7 +6171,8 @@
         dialog.focus({ preventScroll: true });
         $("share-settings-status").textContent = "公開設定を確認中…";
         settingsCheck = run("card_album_share_settings", {}, (data) => {
-          if (!Array.isArray(data?.scopes)) throw Error("公開設定用SQLをご確認ください。");
+          if (!Array.isArray(data?.scopes))
+            throw Error("公開設定用SQLをご確認ください。");
           settingsLoaded = true;
           apply(data);
           $("share-settings-status").textContent =
@@ -5468,7 +6203,13 @@
         });
       }
       function queueChange(change) {
-        if (!settingsLoaded || busy || !current() || current() !== owner || host.maintenance()) {
+        if (
+          !settingsLoaded ||
+          busy ||
+          !current() ||
+          current() !== owner ||
+          host.maintenance()
+        ) {
           update();
           return;
         }
@@ -5511,7 +6252,9 @@
               change.kind === "series" &&
               !Object.prototype.hasOwnProperty.call(data, "series_filters")
             ) {
-              const check = await host.client().rpc("card_album_share_settings", {});
+              const check = await host
+                .client()
+                .rpc("card_album_share_settings", {});
               if (g !== generation || uid !== current()) return;
               if (check.error) throw check.error;
               if (!Array.isArray(check.data?.scopes)) throw Error();
@@ -5523,7 +6266,8 @@
                 change.value === null
                   ? Array.isArray(stored)
                   : !Array.isArray(stored) ||
-                    JSON.stringify([...stored].sort()) !== JSON.stringify([...change.value].sort())
+                    JSON.stringify([...stored].sort()) !==
+                      JSON.stringify([...change.value].sort())
               )
                 throw Error("公開するだん数を確認できませんでした。");
             }
@@ -5532,7 +6276,8 @@
               confirmedFilters = data.series_filters;
           } catch (error) {
             if (g !== generation || uid !== current()) return;
-            $("share-settings-status").textContent = window.CARD_ERROR.message(error);
+            $("share-settings-status").textContent =
+              window.CARD_ERROR.message(error);
             host.toast(error, "error");
           }
           mutations.shift();
@@ -5575,7 +6320,8 @@
             .filter(Boolean)
             .sort((a, b) =>
               scope === "verse-primagi"
-                ? window.CARD_PRIMAGI.chapterRank(b) - window.CARD_PRIMAGI.chapterRank(a) ||
+                ? window.CARD_PRIMAGI.chapterRank(b) -
+                    window.CARD_PRIMAGI.chapterRank(a) ||
                   b.localeCompare(a, "ja", { numeric: true })
                 : b.localeCompare(a, "ja", { numeric: true }),
             );
@@ -5610,7 +6356,8 @@
             host.toast("弾数を読み込めませんでした", "error");
           }
         } finally {
-          if (g === generation && uid === current()) panel.removeAttribute("aria-busy");
+          if (g === generation && uid === current())
+            panel.removeAttribute("aria-busy");
         }
       }
       dialog.addEventListener("click", (event) => {
@@ -5647,7 +6394,8 @@
       $("share-issue").onclick = () => {
         if (hasLink || !scopes.length) return;
         run("card_album_share_issue", {}, (data) => {
-          if (!/^[0-9a-f]{64}$/.test(data?.token || "")) throw Error("URLを発行できませんでした。");
+          if (!/^[0-9a-f]{64}$/.test(data?.token || ""))
+            throw Error("URLを発行できませんでした。");
           token = data.token;
           hasLink = true;
           prepareRates();
@@ -5660,16 +6408,24 @@
         try {
           const url = new URL($("share-restore-input").value.trim());
           const base = new URL("share/", host.base());
-          if (url.origin !== base.origin || url.pathname !== base.pathname) throw Error();
+          const modern = new URL("shared/", host.base());
+          if (
+            url.origin !== base.origin ||
+            ![base.pathname, modern.pathname].includes(url.pathname) ||
+            (url.searchParams.get("db") || "main") !== window.CARD_DB.key
+          )
+            throw Error();
           previous = url.hash.slice(1);
           if (!/^[0-9a-f]{64}$/.test(previous)) throw Error();
         } catch {
-          $("share-settings-status").textContent = "以前の共有URLを貼り付けてください。";
+          $("share-settings-status").textContent =
+            "以前の共有URLを貼り付けてください。";
           return;
         }
         run("card_album_share_restore", { p_token: previous }, (data) => {
           apply(data);
-          $("share-settings-status").textContent = "同じ共有URLを引き継ぎました。";
+          $("share-settings-status").textContent =
+            "同じ共有URLを引き継ぎました。";
           $("share-restore-input").value = "";
         });
       };
@@ -5689,7 +6445,8 @@
         if (busy) event.preventDefault();
       });
       deleteDialog.addEventListener("close", () => {
-        if (dialog.open && hasLink && current() === owner) dialog.focus({ preventScroll: true });
+        if (dialog.open && hasLink && current() === owner)
+          dialog.focus({ preventScroll: true });
       });
       dialog.addEventListener("close", () => {
         if (deleteDialog.open) deleteDialog.close();
@@ -5710,7 +6467,8 @@
         } catch {
           $("share-link-value").focus();
           $("share-link-value").select();
-          $("share-settings-status").textContent = "URLを選択してコピーしてください。";
+          $("share-settings-status").textContent =
+            "URLを選択してコピーしてください。";
         }
       };
       $("share-ownership-image").onclick = async () => {
@@ -5728,7 +6486,9 @@
           return;
         }
         const inVerse = Boolean($("verse") && !$("verse").hidden);
-        const snapshot = inVerse ? window.CARD_VERSE?.ownershipImage() : cardOwnershipImage();
+        const snapshot = inVerse
+          ? window.CARD_VERSE?.ownershipImage()
+          : cardOwnershipImage();
         if (!snapshot) {
           host.toast("所持状況を読み込み中です。", "error");
           return;
@@ -5752,7 +6512,8 @@
       let installPrompt = null;
       let installing = false;
       const standalone = () =>
-        window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+        window.matchMedia?.("(display-mode: standalone)").matches ||
+        navigator.standalone === true;
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         installPrompt = event;
@@ -5843,11 +6604,15 @@
       // Keep native images in the touch-driven Verse view. Creating and removing
       // canvas overlays at the viewport edge must not compete with a slow pan.
       const touchImages = matchMedia("(pointer: coarse)").matches;
-      const nativeVerseImage = (image) => touchImages && !!image.closest("#verse");
+      const nativeVerseImage = (image) =>
+        touchImages && !!image.closest("#verse");
       const normalizedFrames =
         ".family-card-image,.coordinate-card-image,.card-image-frame,.marquee-image-frame,.album-card-frame,.verse-full-image,.verse-family-image,.verse-nav-image,.verse-part-image-frame,.verse-collage-item,.public-image,.public-banner-image,.public-modal-image";
       function orientedFrame(image) {
-        return image.parentElement?.matches(normalizedFrames) && !image.closest("dialog");
+        return (
+          image.parentElement?.matches(normalizedFrames) &&
+          !image.closest("dialog")
+        );
       }
       const entries = new WeakMap();
       const canvasOwners = new WeakMap();
@@ -5882,7 +6647,8 @@
       function official(image) {
         if (image.closest(".trade-shot-image")) return false;
         try {
-          const host = new URL(image.getAttribute("src") || "", location.href).hostname;
+          const host = new URL(image.getAttribute("src") || "", location.href)
+            .hostname;
           return (
             host === "aipri.jp" ||
             host === "dcd.aikatsu.com" ||
@@ -5907,24 +6673,37 @@
           clear(image);
           return;
         }
-        if (!image.isConnected || !image.complete || !image.naturalWidth || !image.naturalHeight) {
+        if (
+          !image.isConnected ||
+          !image.complete ||
+          !image.naturalWidth ||
+          !image.naturalHeight
+        ) {
           clear(image);
           return;
         }
         const maxEdge =
-          image.closest("#cards, #verse-cards, #public-cards") && !image.closest("dialog")
+          image.closest("#cards, #verse-cards, #public-cards") &&
+          !image.closest("dialog")
             ? LIST_MAX_EDGE
             : MAX_EDGE;
         const parent = image.parentElement;
         const normalizedFrame = !!parent?.matches(normalizedFrames);
-        const rotated = !!orientedFrame(image) && image.naturalWidth > image.naturalHeight;
-        if (orientedFrame(image) && parent.classList.contains("landscape") !== rotated)
+        const rotated =
+          !!orientedFrame(image) && image.naturalWidth > image.naturalHeight;
+        if (
+          orientedFrame(image) &&
+          parent.classList.contains("landscape") !== rotated
+        )
           parent.classList.toggle("landscape", rotated);
         if (!official(image) && !rotated) {
           clear(image);
           return;
         }
-        if (!rotated && Math.max(image.naturalWidth, image.naturalHeight) <= maxEdge) {
+        if (
+          !rotated &&
+          Math.max(image.naturalWidth, image.naturalHeight) <= maxEdge
+        ) {
           clear(image);
           return;
         }
@@ -5934,7 +6713,8 @@
         }
 
         const savedTransition = image.style.getPropertyValue("transition");
-        const savedTransitionPriority = image.style.getPropertyPriority("transition");
+        const savedTransitionPriority =
+          image.style.getPropertyPriority("transition");
         image.style.setProperty("transition", "none", "important");
         image.removeAttribute("data-low-resolution");
         const style = getComputedStyle(image);
@@ -5956,7 +6736,11 @@
           zIndex: style.zIndex,
         };
         if (savedTransition)
-          image.style.setProperty("transition", savedTransition, savedTransitionPriority);
+          image.style.setProperty(
+            "transition",
+            savedTransition,
+            savedTransitionPriority,
+          );
         else image.style.removeProperty("transition");
         if (
           !image.getClientRects().length ||
@@ -5967,7 +6751,8 @@
           clear(image);
           return;
         }
-        if (getComputedStyle(parent).position === "static") parent.style.position = "relative";
+        if (getComputedStyle(parent).position === "static")
+          parent.style.position = "relative";
         let entry = entries.get(image);
         if (!entry || entry.parent !== parent || !entry.canvas.isConnected) {
           clear(image);
@@ -5984,9 +6769,15 @@
             if (entries.get(image)?.canvas === canvas) clear(image);
           });
         }
-        const ratio = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+        const ratio = Math.min(
+          1,
+          maxEdge / Math.max(image.naturalWidth, image.naturalHeight),
+        );
         const scaledWidth = Math.max(1, Math.round(image.naturalWidth * ratio));
-        const scaledHeight = Math.max(1, Math.round(image.naturalHeight * ratio));
+        const scaledHeight = Math.max(
+          1,
+          Math.round(image.naturalHeight * ratio),
+        );
         const width = rotated ? scaledHeight : scaledWidth;
         const height = rotated ? scaledWidth : scaledHeight;
         if (
@@ -6095,7 +6886,8 @@
 
           for (const image of pending) {
             pending.delete(image);
-            if (!image.isConnected || (visibility && !inView.has(image))) continue;
+            if (!image.isConnected || (visibility && !inView.has(image)))
+              continue;
             draw(image);
             if (++count >= 2 || performance.now() - started >= 4) break;
           }
@@ -6111,7 +6903,9 @@
       const watched = new WeakSet();
       function scan(root) {
         const images =
-          root instanceof HTMLImageElement ? [root] : root.querySelectorAll?.("img") || [];
+          root instanceof HTMLImageElement
+            ? [root]
+            : root.querySelectorAll?.("img") || [];
         for (const image of images) {
           removeOrphans(image);
           if (nativeVerseImage(image)) {
@@ -6123,7 +6917,10 @@
             resize?.observe(image);
             visibility?.observe(image);
           }
-          if (official(image) || (orientedFrame(image) && image.naturalWidth > image.naturalHeight))
+          if (
+            official(image) ||
+            (orientedFrame(image) && image.naturalWidth > image.naturalHeight)
+          )
             schedule(image);
           else clear(image);
         }
@@ -6144,7 +6941,9 @@
       );
       window.addEventListener("resize", () => scan(document));
       function restoreVisibleImages() {
-        document.querySelectorAll('img[data-low-resolution="true"]').forEach(clear);
+        document
+          .querySelectorAll('img[data-low-resolution="true"]')
+          .forEach(clear);
         scan(document);
       }
       window.addEventListener("pageshow", restoreVisibleImages);
@@ -6160,10 +6959,17 @@
               if (node.nodeType !== 1) continue;
               if (node.matches?.("canvas.low-resolution-image")) {
                 const owner = canvasOwners.get(node);
-                if (owner && entries.get(owner)?.canvas === node && !node.isConnected) clear(owner);
+                if (
+                  owner &&
+                  entries.get(owner)?.canvas === node &&
+                  !node.isConnected
+                )
+                  clear(owner);
               }
               const images =
-                node instanceof HTMLImageElement ? [node] : node.querySelectorAll?.("img") || [];
+                node instanceof HTMLImageElement
+                  ? [node]
+                  : node.querySelectorAll?.("img") || [];
               for (const image of images) {
                 resize?.unobserve(image);
                 visibility?.unobserve(image);
@@ -6174,9 +6980,15 @@
               }
             }
             for (const node of record.addedNodes)
-              if (node.nodeType === 1 && !node.matches?.("canvas.low-resolution-image"))
+              if (
+                node.nodeType === 1 &&
+                !node.matches?.("canvas.low-resolution-image")
+              )
                 roots.add(node);
-          } else if (record.target instanceof HTMLImageElement && record.attributeName === "src") {
+          } else if (
+            record.target instanceof HTMLImageElement &&
+            record.attributeName === "src"
+          ) {
             clear(record.target);
             removeOrphans(record.target);
             schedule(record.target);
@@ -6184,7 +6996,10 @@
         }
         for (const root of roots) {
           if (!root.isConnected) continue;
-          if ([...roots].some((other) => other !== root && other.contains(root))) continue;
+          if (
+            [...roots].some((other) => other !== root && other.contains(root))
+          )
+            continue;
           scan(root);
         }
       });
@@ -6215,15 +7030,28 @@
             })[c],
         );
       const familyName = (value) =>
-        value === "primagi" ? "ワッチャプリマジ！" : value === "onegai" ? "おねがい" : "ひみつの";
+        value === "primagi"
+          ? "ワッチャプリマジ！"
+          : value === "onegai"
+            ? "おねがい"
+            : "ひみつの";
       const seriesName = (value) =>
-        value === "primagi" ? "ワッチャプリマジ！" : familyName(value) + "アイプリ";
-      const displayLabel = (value) => String(value || "").replaceAll("弾", "だん");
+        value === "primagi"
+          ? "ワッチャプリマジ！"
+          : familyName(value) + "アイプリ";
+      const displayLabel = (value) =>
+        String(value || "").replaceAll("弾", "だん");
       const chapterDisplayLabel = (selection) =>
         window.CARD_MULTI_FILTER.text(selection, (value) =>
-          displayLabel(family === "primagi" ? window.CARD_PRIMAGI.chapterLabel(value) : value),
+          displayLabel(
+            family === "primagi"
+              ? window.CARD_PRIMAGI.chapterLabel(value)
+              : value,
+          ),
         );
-      const cacheKey = "card-verse-public:" + new URL(window.APP_CONFIG.supabaseUrl).hostname;
+      const cacheKey =
+        "card-verse-public:" +
+        new URL(window.CARD_DB.primaryConfig.supabaseUrl).hostname;
       let catalog = null,
         parts = new Map(),
         owned = new Set(),
@@ -6236,7 +7064,12 @@
       function markInventoryChange(key) {
         inventoryChanges.set(key, ++inventoryRevision);
       }
-      function preserveInventoryChanges(nextParts, nextFull, nextFavorites, revision) {
+      function preserveInventoryChanges(
+        nextParts,
+        nextFull,
+        nextFavorites,
+        revision,
+      ) {
         for (const [key, changedAt] of inventoryChanges) {
           if (
             changedAt <= revision &&
@@ -6304,8 +7137,10 @@
         const mobile = window.innerWidth <= 760;
         const anchor = $(mobile ? "menu-toggle" : "game-switch");
         if (mobile) {
-          if (anchor.previousElementSibling !== mobileRoute) anchor.before(mobileRoute);
-        } else if (anchor.nextElementSibling !== mobileRoute) anchor.after(mobileRoute);
+          if (anchor.previousElementSibling !== mobileRoute)
+            anchor.before(mobileRoute);
+        } else if (anchor.nextElementSibling !== mobileRoute)
+          anchor.after(mobileRoute);
       }
       placeRoute();
       const panel = document.createElement("section");
@@ -6351,16 +7186,27 @@
               : "";
       }
       function quantity(c, part = null) {
-        return (part === null ? fullQuantities.get(c.id) : partQuantities.get(part)) || 0;
+        return (
+          (part === null
+            ? fullQuantities.get(c.id)
+            : partQuantities.get(part)) || 0
+        );
       }
       function duplicate(c) {
-        return quantity(c) >= 2 || c.part_ids.some((id) => (partQuantities.get(id) || 0) >= 2);
+        return (
+          quantity(c) >= 2 ||
+          c.part_ids.some((id) => (partQuantities.get(id) || 0) >= 2)
+        );
       }
       function refreshEffectiveOwnership() {
-        owned = new Set([...partQuantities].filter(([, q]) => q > 0).map(([id]) => id));
+        owned = new Set(
+          [...partQuantities].filter(([, q]) => q > 0).map(([id]) => id),
+        );
       }
       function duplicateBadge(c) {
-        return duplicate(c) ? '<span class="verse-duplicate-tag">重複あり</span>' : "";
+        return duplicate(c)
+          ? '<span class="verse-duplicate-tag">重複あり</span>'
+          : "";
       }
       function quantityControls(c, part = null) {
         const q = quantity(c, part),
@@ -6381,7 +7227,8 @@
       }
       function state(c) {
         return full(c) ||
-          (window.CARD_UI_SETTINGS?.get("versePartsAsOwned") !== false && partsComplete(c))
+          (window.CARD_UI_SETTINGS?.get("versePartsAsOwned") !== false &&
+            partsComplete(c))
           ? "full"
           : got(c)
             ? "partial"
@@ -6400,7 +7247,9 @@
             [
               c.name,
               c.code,
-              ...(c.part_ids || []).map((id) => parts.get(id)?.metadata?.name || ""),
+              ...(c.part_ids || []).map(
+                (id) => parts.get(id)?.metadata?.name || "",
+              ),
               ...appearances(c).map((a) => a.group),
             ].join(" "),
           ).includes(needle)
@@ -6439,7 +7288,10 @@
             return;
           hint.hidden = !count;
           if (!count) return;
-          const label = target === "himitsu" ? "ひみつのアイプリバース" : "おねがいアイプリバース";
+          const label =
+            target === "himitsu"
+              ? "ひみつのアイプリバース"
+              : "おねがいアイプリバース";
           hint.querySelector("[data-related-message]").textContent =
             `同じフリーワードに該当するコーデが、${label}で見つかりました。`;
           const link = hint.querySelector("[data-verse-related-family]");
@@ -6459,7 +7311,8 @@
               p_family: target,
               p_query: query,
             });
-            if (typeof call.abortSignal === "function") call = call.abortSignal(controller.signal);
+            if (typeof call.abortSignal === "function")
+              call = call.abortSignal(controller.signal);
             const { data, error } = await call;
             if (
               error ||
@@ -6487,15 +7340,23 @@
           (c) =>
             (family !== "primagi" ||
               !selectedRarity ||
-              window.CARD_MULTI_FILTER.matches(c.rarity.split(" ／ "), selectedRarity)) &&
+              window.CARD_MULTI_FILTER.matches(
+                c.rarity.split(" ／ "),
+                selectedRarity,
+              )) &&
             (family !== "primagi" ||
-              !window.CARD_MULTI_FILTER.values(local?.compatibility ?? primagiVerseCompatibility)
-                .length ||
+              !window.CARD_MULTI_FILTER.values(
+                local?.compatibility ?? primagiVerseCompatibility,
+              ).length ||
               window.CARD_MULTI_FILTER.values(
                 local?.compatibility ?? primagiVerseCompatibility,
-              ).some((value) => window.CARD_PRIMAGI_VERSE_COMPAT.matches(c, parts, value))) &&
-            (!(local ? local.favorite === "only" : favoriteOnly) || favorites.has(c.id)) &&
-            (!(local ? local.duplicate === "only" : duplicateOnly) || duplicate(c)) &&
+              ).some((value) =>
+                window.CARD_PRIMAGI_VERSE_COMPAT.matches(c, parts, value),
+              )) &&
+            (!(local ? local.favorite === "only" : favoriteOnly) ||
+              favorites.has(c.id)) &&
+            (!(local ? local.duplicate === "only" : duplicateOnly) ||
+              duplicate(c)) &&
             (trade()?.matches("coordinate", c.id, local?.trade) ?? true) &&
             imageQRMatches("coordinate", c.id, c.part_ids, local?.qr) &&
             appearances(c).some(
@@ -6504,17 +7365,24 @@
                 window.CARD_MULTI_FILTER.matches(a.group, selectedGroup),
             ) &&
             matchesQuery(c, needle) &&
-            (!includeOwnership || selectedOwnership === "all" || state(c) === selectedOwnership),
+            (!includeOwnership ||
+              selectedOwnership === "all" ||
+              state(c) === selectedOwnership),
         );
         return sortCatalogList(rows, $("verse-sort").value, (coordinate) =>
           ready ? quantity(coordinate) : 0,
         );
       }
       function representative(value) {
-        const all = catalog?.coordinates.filter((c) => c.family === value && c.image) || [];
+        const all =
+          catalog?.coordinates.filter((c) => c.family === value && c.image) ||
+          [];
         return (
-          (all.find((c) => c.code === (value === "onegai" ? "OA4-001" : "APR6-001")) || all[0])
-            ?.image ||
+          (
+            all.find(
+              (c) => c.code === (value === "onegai" ? "OA4-001" : "APR6-001"),
+            ) || all[0]
+          )?.image ||
           (value === "onegai"
             ? "https://aipri.jp/verse/item/img/oa4/OA4-001.webp"
             : "https://aipri.jp/verse/item/img/ring6/APR6-001.webp")
@@ -6528,9 +7396,13 @@
           (family === "primagi" ? "章" : "弾") + "ごとの取得率を表示",
         );
         panel.querySelector(".verse-families").hidden = family === "primagi";
-        panel.querySelector('[data-verse-clear="series"]').parentElement.firstChild.textContent =
+        panel.querySelector(
+          '[data-verse-clear="series"]',
+        ).parentElement.firstChild.textContent =
           family === "primagi" ? "章" : "弾数";
-        panel.querySelector('[data-verse-clear="group"]').parentElement.firstChild.textContent =
+        panel.querySelector(
+          '[data-verse-clear="group"]',
+        ).parentElement.firstChild.textContent =
           family === "primagi" ? "入手方法" : "ガチャ・キャンペーン";
         panel.querySelector(".verse-collection-select").firstChild.textContent =
           family === "primagi" ? "章" : "弾数";
@@ -6544,8 +7416,9 @@
             b.innerHTML = `<span class="verse-family-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.verseImage(url))}" alt="" loading="eager" decoding="async"></span><span class="verse-family-label"><strong>${familyName(b.dataset.verseFamily)}アイプリ</strong></span>`;
           });
         const backImage =
-          host.representativeCard?.(family === "onegai" ? "おねがい" : "ひみつ") ||
-          "https://aipri.jp/card/img/oa4/OA4-001_O.webp";
+          host.representativeCard?.(
+            family === "onegai" ? "おねがい" : "ひみつ",
+          ) || "https://aipri.jp/card/img/oa4/OA4-001_O.webp";
         const links = [];
         if (!button.hidden)
           links.push([
@@ -6560,14 +7433,18 @@
             mobileRoute,
             showPanel
               ? backImage
-              : representative(host.family() === "ひみつ" ? "himitsu" : "onegai"),
+              : representative(
+                  host.family() === "ひみつ" ? "himitsu" : "onegai",
+                ),
             showPanel ? "カードへ" : "バースへ",
           ]);
         for (const [node, url, label] of links) {
           if (node.dataset.imageKey === url + "|" + label) continue;
           node.dataset.imageKey = url + "|" + label;
           node.className =
-            node === mobileRoute ? "verse-nav-link verse-mobile-route" : "verse-nav-link";
+            node === mobileRoute
+              ? "verse-nav-link verse-mobile-route"
+              : "verse-nav-link";
           node.innerHTML = `<span class="verse-nav-image" aria-hidden="true"><img src="${esc(window.CARD_PRIMAGI.verseImage(url))}" alt="" loading="eager" decoding="async"></span><span>${label}</span><span class="verse-nav-chevron" aria-hidden="true">›</span>`;
         }
       }
@@ -6580,7 +7457,11 @@
                 `<option value="${esc(v)}">${esc(id === "verse-series" || id === "verse-collection-series" ? chapterDisplayLabel(v) : displayLabel(v))}</option>`,
             )
             .join("");
-        if ($(id).matches("#verse-series, #verse-group, #primagi-rarity, #verse-collection-series"))
+        if (
+          $(id).matches(
+            "#verse-series, #verse-group, #primagi-rarity, #verse-collection-series",
+          )
+        )
           window.CARD_MULTI_FILTER.enhance($(id));
         $(id).value = value;
       }
@@ -6596,41 +7477,48 @@
           primagiRarity,
           "すべて",
         );
-        const labels = [...new Set(all.flatMap((c) => appearances(c).map((a) => a.series)))].sort(
-          (a, b) => {
-            const rank = (label) =>
-              family === "primagi"
-                ? window.CARD_PRIMAGI.chapterRank(label)
-                : label.includes("オールスター")
-                  ? 300 + Number(label.match(/\d+/)?.[0] || 0)
-                  : label.startsWith("スタジオ")
-                    ? 200 + Number(label.match(/\d+/)?.[0] || 0)
-                    : /^第\d+章/.test(label)
-                      ? Number(label.match(/\d+/)?.[0] || 0)
-                      : label.startsWith("おねがい")
-                        ? 100 + Number(label.match(/\d+/)?.[0] || 0)
-                        : label.startsWith("リング")
-                          ? 50 + Number(label.match(/\d+/)?.[0] || 0)
-                          : label.startsWith("ひみつ")
-                            ? Number(label.match(/\d+/)?.[0] || 0)
-                            : -1;
-            return rank(b) - rank(a) || a.localeCompare(b, "ja");
-          },
-        );
+        const labels = [
+          ...new Set(all.flatMap((c) => appearances(c).map((a) => a.series))),
+        ].sort((a, b) => {
+          const rank = (label) =>
+            family === "primagi"
+              ? window.CARD_PRIMAGI.chapterRank(label)
+              : label.includes("オールスター")
+                ? 300 + Number(label.match(/\d+/)?.[0] || 0)
+                : label.startsWith("スタジオ")
+                  ? 200 + Number(label.match(/\d+/)?.[0] || 0)
+                  : /^第\d+章/.test(label)
+                    ? Number(label.match(/\d+/)?.[0] || 0)
+                    : label.startsWith("おねがい")
+                      ? 100 + Number(label.match(/\d+/)?.[0] || 0)
+                      : label.startsWith("リング")
+                        ? 50 + Number(label.match(/\d+/)?.[0] || 0)
+                        : label.startsWith("ひみつ")
+                          ? Number(label.match(/\d+/)?.[0] || 0)
+                          : -1;
+          return rank(b) - rank(a) || a.localeCompare(b, "ja");
+        });
         if (latest) series = labels[0] || "";
         series = window.CARD_MULTI_FILTER.retain(series, labels);
         options("verse-series", labels, series, "すべて");
         options("verse-collection-series", labels, collectionSeries, "すべて");
         const matching = all.filter((c) =>
-          appearances(c).some((a) => window.CARD_MULTI_FILTER.matches(a.series, series)),
+          appearances(c).some((a) =>
+            window.CARD_MULTI_FILTER.matches(a.series, series),
+          ),
         );
         const starRank = (label) =>
-          Math.max(0, ...(String(label).match(/[★☆]+/g) || []).map((v) => v.length));
+          Math.max(
+            0,
+            ...(String(label).match(/[★☆]+/g) || []).map((v) => v.length),
+          );
         const groups = [
           ...new Set(
             matching.flatMap((c) =>
               appearances(c)
-                .filter((a) => window.CARD_MULTI_FILTER.matches(a.series, series))
+                .filter((a) =>
+                  window.CARD_MULTI_FILTER.matches(a.series, series),
+                )
                 .map((a) => a.group),
             ),
           ),
@@ -6641,8 +7529,10 @@
 
       function image(c, large = false, eager = false) {
         const fullImage = large
-          ? window.CARD_PRIMAGI.verseImage(c.image) || window.CARD_PRIMAGI.verseImage(c.thumbnail)
-          : window.CARD_PRIMAGI.verseImage(c.thumbnail) || window.CARD_PRIMAGI.verseImage(c.image);
+          ? window.CARD_PRIMAGI.verseImage(c.image) ||
+            window.CARD_PRIMAGI.verseImage(c.thumbnail)
+          : window.CARD_PRIMAGI.verseImage(c.thumbnail) ||
+            window.CARD_PRIMAGI.verseImage(c.image);
         if (fullImage)
           return `<span class="verse-full-image"><img src="${esc(fullImage)}" alt="${esc(c.name)}" loading="${large || eager ? "eager" : "lazy"}" decoding="async"></span>`;
 
@@ -6688,7 +7578,11 @@
           family,
           collectionSeries,
           collectionFilter,
-          all.map((c) => [c.id, full(c), c.part_ids.map((id) => owned.has(id))]),
+          all.map((c) => [
+            c.id,
+            full(c),
+            c.part_ids.map((id) => owned.has(id)),
+          ]),
         ]);
         if (key === collectionKey) return;
         collectionKey = key;
@@ -6703,11 +7597,17 @@
       function activeVerseFilters() {
         const entries = [
           ["query", "検索", query],
-          ["series", family === "primagi" ? "章" : "弾数", chapterDisplayLabel(series)],
+          [
+            "series",
+            family === "primagi" ? "章" : "弾数",
+            chapterDisplayLabel(series),
+          ],
           [
             "primagi-rarity",
             "レアリティ",
-            family === "primagi" ? window.CARD_MULTI_FILTER.text(primagiRarity) : "",
+            family === "primagi"
+              ? window.CARD_MULTI_FILTER.text(primagiRarity)
+              : "",
           ],
           [
             "primagi-verse-compat",
@@ -6719,7 +7619,11 @@
                 )
               : "",
           ],
-          ["group", "ガチャ・キャンペーン", window.CARD_MULTI_FILTER.text(group)],
+          [
+            "group",
+            "ガチャ・キャンペーン",
+            window.CARD_MULTI_FILTER.text(group),
+          ],
           ["favorite", "お気に入り", favoriteOnly ? "登録済み" : ""],
           ["duplicate", "重複", duplicateOnly ? "重複あり" : ""],
         ].filter((x) => x[2]);
@@ -6731,7 +7635,9 @@
       }
       function renderActiveFilters() {
         const entries = activeVerseFilters();
-        $("verse-filter-summary").textContent = entries.length ? `適用中 ${entries.length}件` : "";
+        $("verse-filter-summary").textContent = entries.length
+          ? `適用中 ${entries.length}件`
+          : "";
         $("verse-active-filters").innerHTML = entries.length
           ? '<span class="active-filters-label">適用中</span>' +
             entries
@@ -6743,14 +7649,21 @@
           : '<span class="no-active-filters">絞り込みなし</span>';
         panel
           .querySelectorAll(".filter-clear[data-verse-clear]")
-          .forEach((b) => (b.disabled = !entries.some((x) => x[0] === b.dataset.verseClear)));
+          .forEach(
+            (b) =>
+              (b.disabled = !entries.some(
+                (x) => x[0] === b.dataset.verseClear,
+              )),
+          );
       }
       function renderProgress() {
         const all = pool(),
           complete = all.filter(collected).length;
-        $("verse-total").textContent = `全${window.CARD_UI.number(all.length)}コーデ`;
+        $("verse-total").textContent =
+          `全${window.CARD_UI.number(all.length)}コーデ`;
         $("verse-percent").textContent = ready
-          ? (all.length ? ((complete / all.length) * 100).toFixed(1) : "0.0") + "%"
+          ? (all.length ? ((complete / all.length) * 100).toFixed(1) : "0.0") +
+            "%"
           : "—";
         $("verse-progress-bar").style.width =
           ready && all.length ? (complete / all.length) * 100 + "%" : "0%";
@@ -6765,10 +7678,14 @@
         if (!$("verse-series-progress").hidden) renderSeriesProgress();
       }
       function renderSeriesProgress() {
-        const labels = [...$("verse-series").options].map((o) => o.value).filter(Boolean);
+        const labels = [...$("verse-series").options]
+          .map((o) => o.value)
+          .filter(Boolean);
         $("verse-series-progress").innerHTML = labels
           .map((label) => {
-            const rows = pool().filter((c) => appearances(c).some((a) => a.series === label)),
+            const rows = pool().filter((c) =>
+                appearances(c).some((a) => a.series === label),
+              ),
               n = rows.filter(collected).length,
               rate = rows.length ? (n / rows.length) * 100 : 0;
             return `<div class="progress-card progress-card-small"><div><span>${esc(chapterDisplayLabel(label))}</span><strong>${rate.toFixed(1)}%</strong></div><div class="progress-track"><span style="width:${rate}%"></span></div><p>収集済 ${window.CARD_UI.number(n)}コーデ ／ 未収集 ${rows.length - n}コーデ</p></div>`;
@@ -6789,12 +7706,15 @@
         const date = catalog?.updated_at ? new Date(catalog.updated_at) : null;
         $("verse-sync").textContent =
           "コーデ情報の更新" +
-          (date && !Number.isNaN(date.getTime()) ? "：" + date.toLocaleString("ja-JP") : "");
+          (date && !Number.isNaN(date.getTime())
+            ? "：" + date.toLocaleString("ja-JP")
+            : "");
       }
       let paginationMarkup = "";
       function renderPages(count) {
         maxPage = count;
-        const width = $("verse-pages").clientWidth || Math.max(200, window.innerWidth - 48);
+        const width =
+          $("verse-pages").clientWidth || Math.max(200, window.innerWidth - 48);
         const budget = width < 310 ? 1 : width < 420 ? 3 : width < 560 ? 5 : 7;
         const selected = new Set([page]);
         if (budget >= 3) {
@@ -6804,9 +7724,14 @@
         if (count <= budget) {
           for (let i = 1; i <= count; i++) selected.add(i);
         } else
-          for (let distance = 1; selected.size < budget && distance < count; distance++) {
+          for (
+            let distance = 1;
+            selected.size < budget && distance < count;
+            distance++
+          ) {
             for (const n of [page - distance, page + distance])
-              if (n >= 1 && n <= count && selected.size < budget) selected.add(n);
+              if (n >= 1 && n <= count && selected.size < budget)
+                selected.add(n);
           }
         let previous = 0;
         const markup =
@@ -6815,7 +7740,10 @@
             .filter((n) => n >= 1 && n <= count)
             .sort((a, b) => a - b)
             .map((n) => {
-              const gap = previous && n > previous + 1 ? '<span aria-hidden="true">…</span>' : "";
+              const gap =
+                previous && n > previous + 1
+                  ? '<span aria-hidden="true">…</span>'
+                  : "";
               previous = n;
               return (
                 gap +
@@ -6839,7 +7767,10 @@
         panel
           .querySelectorAll("[data-verse-columns]")
           .forEach((b) =>
-            b.setAttribute("aria-pressed", String(b.dataset.verseColumns === columns)),
+            b.setAttribute(
+              "aria-pressed",
+              String(b.dataset.verseColumns === columns),
+            ),
           );
       }
       function render() {
@@ -6853,7 +7784,8 @@
         $("verse-title").textContent =
           family === "primagi"
             ? "ワッチャプリマジ！"
-            : (family === "himitsu" ? "ひみつの" : "おねがい") + "アイプリバース";
+            : (family === "himitsu" ? "ひみつの" : "おねがい") +
+              "アイプリバース";
         panel.querySelectorAll("[data-verse-family]").forEach((b) => {
           const active = b.dataset.verseFamily === family;
           b.classList.toggle("active", active);
@@ -6864,23 +7796,34 @@
         renderProgress();
         renderActiveFilters();
         const index = ["all", "full", "partial", "none"].indexOf(ownershipView);
-        panel.querySelector(".verse-owned-tabs").style.setProperty("--verse-owned-index", index);
+        panel
+          .querySelector(".verse-owned-tabs")
+          .style.setProperty("--verse-owned-index", index);
         panel.querySelectorAll("[data-verse-view]").forEach((b) => {
           const active = b.dataset.verseView === ownershipView;
           b.classList.toggle("active", active);
           b.setAttribute("aria-pressed", String(active));
         });
         const rows = filtered();
-        const perPage = size === "all" ? Math.max(1, rows.length) : Number(size);
+        const perPage =
+          size === "all" ? Math.max(1, rows.length) : Number(size);
         const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
         page = Math.min(page, pageCount);
-        $("verse-found").textContent = `見つかったコーデ ${window.CARD_UI.number(rows.length)}件`;
+        $("verse-found").textContent =
+          `見つかったコーデ ${window.CARD_UI.number(rows.length)}件`;
         const visible = rows.slice((page - 1) * perPage, page * perPage);
         const listKey = JSON.stringify([
           catalog?.version,
           ready,
           family,
-          visible.map((c) => [c.id, full(c), got(c), state(c), duplicate(c), favorites.has(c.id)]),
+          visible.map((c) => [
+            c.id,
+            full(c),
+            got(c),
+            state(c),
+            duplicate(c),
+            favorites.has(c.id),
+          ]),
         ]);
         if (listKey !== cardListKey) {
           cardListKey = listKey;
@@ -6963,11 +7906,16 @@
           return;
         }
         panel.querySelectorAll("[data-verse-card]").forEach((a) => {
-          const c = catalog.coordinates.find((c) => c.id === a.dataset.verseCard);
+          const c = catalog.coordinates.find(
+            (c) => c.id === a.dataset.verseCard,
+          );
           if (!c) return;
           a.classList.toggle("is-owned", full(c));
           a.classList.toggle("is-parts-complete", !full(c) && partsComplete(c));
-          a.classList.toggle("is-partial", !full(c) && !partsComplete(c) && got(c) > 0);
+          a.classList.toggle(
+            "is-partial",
+            !full(c) && !partsComplete(c) && got(c) > 0,
+          );
           const badge = a.querySelector(".verse-partial");
           const markup = partialBadge(c);
           if (badge) {
@@ -6983,42 +7931,54 @@
               );
           } else old?.remove();
         });
-        document.querySelectorAll("button.verse-owned[data-verse-own]").forEach((b) => {
-          const c = catalog.coordinates.find((c) => c.id === b.dataset.verseOwn);
-          if (!c) return;
-          const isPart = !!b.dataset.versePart,
-            active = isPart ? owned.has(Number(b.dataset.versePart)) : full(c);
-          b.classList.toggle("is-owned", active);
-          b.setAttribute("aria-pressed", String(active));
-          b.title =
-            quantity(c, isPart ? Number(b.dataset.versePart) : null) > 0
-              ? "この項目の所持数を0枚にします"
-              : active
-                ? "他の登録で取得済みです。この項目の所持数を1枚にします"
-                : "この項目を1枚登録します";
-          const repeated =
-            !!b.closest("#verse-detail") &&
-            quantity(c, isPart ? Number(b.dataset.versePart) : null) >= 2;
-          b.classList.toggle("is-duplicate", repeated);
-          b.textContent = repeated
-            ? "重複して所有"
-            : isPart
-              ? active
-                ? "✓ 持っている"
-                : "＋ 持っていない"
-              : active
-                ? "✓ フルコーデ持ってる"
-                : "フルコーデ未獲得";
-        });
+        document
+          .querySelectorAll("button.verse-owned[data-verse-own]")
+          .forEach((b) => {
+            const c = catalog.coordinates.find(
+              (c) => c.id === b.dataset.verseOwn,
+            );
+            if (!c) return;
+            const isPart = !!b.dataset.versePart,
+              active = isPart
+                ? owned.has(Number(b.dataset.versePart))
+                : full(c);
+            b.classList.toggle("is-owned", active);
+            b.setAttribute("aria-pressed", String(active));
+            b.title =
+              quantity(c, isPart ? Number(b.dataset.versePart) : null) > 0
+                ? "この項目の所持数を0枚にします"
+                : active
+                  ? "他の登録で取得済みです。この項目の所持数を1枚にします"
+                  : "この項目を1枚登録します";
+            const repeated =
+              !!b.closest("#verse-detail") &&
+              quantity(c, isPart ? Number(b.dataset.versePart) : null) >= 2;
+            b.classList.toggle("is-duplicate", repeated);
+            b.textContent = repeated
+              ? "重複して所有"
+              : isPart
+                ? active
+                  ? "✓ 持っている"
+                  : "＋ 持っていない"
+                : active
+                  ? "✓ フルコーデ持ってる"
+                  : "フルコーデ未獲得";
+          });
         document.querySelectorAll("[data-verse-quantity]").forEach((value) => {
-          const c = catalog.coordinates.find((c) => c.id === value.dataset.verseQuantity);
+          const c = catalog.coordinates.find(
+            (c) => c.id === value.dataset.verseQuantity,
+          );
           if (!c) return;
-          const part = value.dataset.versePart ? Number(value.dataset.versePart) : null,
+          const part = value.dataset.versePart
+              ? Number(value.dataset.versePart)
+              : null,
             q = quantity(c, part);
           value.textContent = q + "枚";
           const group = value.parentElement;
-          group.querySelector('[data-verse-adjust="-1"]').disabled = !ready || q === 0;
-          group.querySelector('[data-verse-adjust="1"]').disabled = !ready || q >= 9999;
+          group.querySelector('[data-verse-adjust="-1"]').disabled =
+            !ready || q === 0;
+          group.querySelector('[data-verse-adjust="1"]').disabled =
+            !ready || q >= 9999;
         });
         renderProgress();
         const base = pool().filter(
@@ -7029,18 +7989,24 @@
               ),
           ),
           n = base.filter(collected).length;
-        $("verse-collection-count").textContent = `収集済 ${n} ／ 未収集 ${base.length - n}`;
+        $("verse-collection-count").textContent =
+          `収集済 ${n} ／ 未収集 ${base.length - n}`;
         if (collectionFilter !== "all") {
           renderCollection();
           return;
         }
         panel.querySelectorAll(".verse-coordinate").forEach((a) => {
           const b = a.querySelector("[data-verse-detail]"),
-            c = catalog.coordinates.find((c) => c.id === b?.dataset.verseDetail);
+            c = catalog.coordinates.find(
+              (c) => c.id === b?.dataset.verseDetail,
+            );
           if (!c) return;
           a.classList.toggle("is-complete", collected(c));
           a.classList.toggle("is-parts-complete", !full(c) && partsComplete(c));
-          a.querySelector(".verse-character").classList.toggle("is-owned", full(c));
+          a.querySelector(".verse-character").classList.toggle(
+            "is-owned",
+            full(c),
+          );
           a.querySelectorAll(".verse-part-image").forEach((b, i) =>
             b.classList.toggle("is-owned", owned.has(c.part_ids[i])),
           );
@@ -7052,14 +8018,26 @@
           const active = favorites.has(id);
           b.classList.toggle("is-favorite", active);
           b.setAttribute("aria-pressed", String(active));
-          b.setAttribute("aria-label", active ? "お気に入りを解除" : "お気に入りに登録");
+          b.setAttribute(
+            "aria-label",
+            active ? "お気に入りを解除" : "お気に入りに登録",
+          );
           const label = b.querySelector("span");
-          if (label) label.textContent = active ? "お気に入り登録済み" : "お気に入りに登録";
+          if (label)
+            label.textContent = active
+              ? "お気に入り登録済み"
+              : "お気に入りに登録";
         });
         if (favoriteOnly) render();
       }
       async function saveFavorite(id) {
-        if (!ready || !currentUser() || host.maintenance() || favoriteBusy.has(id)) return;
+        if (
+          !ready ||
+          !currentUser() ||
+          host.maintenance() ||
+          favoriteBusy.has(id)
+        )
+          return;
         const uid = currentUser(),
           g = generation,
           before = favorites.has(id),
@@ -7113,7 +8091,9 @@
         if (delta === null && busy.has(key)) return;
         const q = quantity(c, partID),
           operation =
-            delta === null ? { clear: q > 0, delta: q > 0 ? null : 1 } : { clear: false, delta };
+            delta === null
+              ? { clear: q > 0, delta: q > 0 ? null : 1 }
+              : { clear: false, delta };
         if (
           !operation.clear &&
           ((operation.delta !== 1 && operation.delta !== -1) ||
@@ -7162,12 +8142,14 @@
           while (queue.operations.length && current()) {
             const operation = queue.operations[0];
             try {
-              const result = await host.client().rpc("card_verse_change_quantity", {
-                p_coordinate_id: queue.coordinateID,
-                p_part_id: queue.partID,
-                p_delta: operation.delta,
-                p_clear: operation.clear,
-              });
+              const result = await host
+                .client()
+                .rpc("card_verse_change_quantity", {
+                  p_coordinate_id: queue.coordinateID,
+                  p_part_id: queue.partID,
+                  p_delta: operation.delta,
+                  p_clear: operation.clear,
+                });
               if (!current()) return;
               if (result.error) throw result.error;
               if (
@@ -7188,7 +8170,8 @@
                       ? "card_verse_coordinate_ownership"
                       : "card_verse_ownership",
                   column = queue.partID === null ? "coordinate_id" : "part_id",
-                  id = queue.partID === null ? queue.coordinateID : queue.partID;
+                  id =
+                    queue.partID === null ? queue.coordinateID : queue.partID;
                 const result = await host
                   .client()
                   .from(table)
@@ -7199,7 +8182,8 @@
                 if (!current()) return;
                 if (!result.error) {
                   const value = result.data?.quantity || 0;
-                  if (Number.isInteger(value) && value >= 0 && value <= 9999) queue.base = value;
+                  if (Number.isInteger(value) && value >= 0 && value <= 9999)
+                    queue.base = value;
                 }
               } catch {}
             }
@@ -7243,7 +8227,9 @@
         if (
           owner === uid &&
           ready &&
-          (busy.size || favoriteBusy.size || Date.now() - ownedCheckedAt < 300000)
+          (busy.size ||
+            favoriteBusy.size ||
+            Date.now() - ownedCheckedAt < 300000)
         )
           return Promise.resolve();
         if (inventoryLoading?.uid === uid && inventoryLoading.g === g)
@@ -7259,13 +8245,20 @@
             !Array.isArray(result.data?.favorites)
           )
             throw Error("所持数用SQLと通信状態を確認してください。");
-          const nextParts = new Map(result.data.parts.map((r) => [r.part_id, r.quantity]));
+          const nextParts = new Map(
+            result.data.parts.map((r) => [r.part_id, r.quantity]),
+          );
           const nextFull = new Map(
             result.data.coordinates.map((r) => [r.coordinate_id, r.quantity]),
           );
           const nextFavorites = new Set(result.data.favorites);
           // 読み込み開始後に編集した項目は、古い応答で巻き戻さない。
-          preserveInventoryChanges(nextParts, nextFull, nextFavorites, task.revision);
+          preserveInventoryChanges(
+            nextParts,
+            nextFull,
+            nextFavorites,
+            task.revision,
+          );
           partQuantities = nextParts;
           fullQuantities = nextFull;
           favorites = nextFavorites;
@@ -7294,14 +8287,23 @@
         hydrateCatalog();
         Promise.all([ensureInventory()])
           .then(() => {
-            if (currentUser() && ["aipri", "primagi"].includes(host.game()) && !host.maintenance())
+            if (
+              currentUser() &&
+              ["aipri", "primagi"].includes(host.game()) &&
+              !host.maintenance()
+            )
               syncImages();
           })
           .catch(() => {});
       }
       async function open(value, options = {}) {
         if (!currentUser() || host.maintenance()) return;
-        family = value === "primagi" ? "primagi" : value === "himitsu" ? "himitsu" : "onegai";
+        family =
+          value === "primagi"
+            ? "primagi"
+            : value === "himitsu"
+              ? "himitsu"
+              : "onegai";
         primagiRarity = "";
         primagiVerseCompatibility = "";
         series = group = collectionSeries = "";
@@ -7352,7 +8354,8 @@
           $("verse-message").textContent = "";
           render();
         } catch (error) {
-          if (current()) $("verse-message").textContent = window.CARD_ERROR.message(error);
+          if (current())
+            $("verse-message").textContent = window.CARD_ERROR.message(error);
         }
       }
       function reset() {
@@ -7385,14 +8388,25 @@
         $("verse-count").textContent = "";
         $("verse-progress-bar").style.width = "0%";
       }
-      button.onclick = () => open(host.family() === "ひみつ" ? "himitsu" : "onegai");
+      button.onclick = () =>
+        open(host.family() === "ひみつ" ? "himitsu" : "onegai");
       $("verse-back").onclick = () =>
-        host.cards(family === "primagi" ? "primagi" : family === "himitsu" ? "ひみつ" : "おねがい");
+        host.cards(
+          family === "primagi"
+            ? "primagi"
+            : family === "himitsu"
+              ? "ひみつ"
+              : "おねがい",
+        );
       mobileRoute.onclick = () =>
         panel.hidden
           ? open(host.family() === "ひみつ" ? "himitsu" : "onegai")
           : host.cards(
-              family === "primagi" ? "primagi" : family === "himitsu" ? "ひみつ" : "おねがい",
+              family === "primagi"
+                ? "primagi"
+                : family === "himitsu"
+                  ? "ひみつ"
+                  : "おねがい",
             );
       $("verse-close").onclick = () => dialog.close();
       dialog.addEventListener("click", (e) => {
@@ -7419,7 +8433,10 @@
           document
             .querySelectorAll(".mobile-column-control [data-card-columns]")
             .forEach((b) =>
-              b.setAttribute("aria-pressed", String(b.dataset.cardColumns === columns)),
+              b.setAttribute(
+                "aria-pressed",
+                String(b.dataset.cardColumns === columns),
+              ),
             );
           return;
         }
@@ -7460,7 +8477,9 @@
         const related = e.target.closest("[data-verse-related-family]");
         const f = e.target.closest("[data-verse-family]");
         if (f || related) {
-          const target = related ? related.dataset.verseRelatedFamily : f.dataset.verseFamily;
+          const target = related
+            ? related.dataset.verseRelatedFamily
+            : f.dataset.verseFamily;
           const inheritedQuery = related ? query : "";
           if (related) window.CARD_QR?.clear("coordinate");
           void open(target, { query: inheritedQuery, latest: !related });
@@ -7473,13 +8492,22 @@
         }
         const o = e.target.closest("[data-verse-own]");
         if (o) {
-          save(o.dataset.verseOwn, o.dataset.versePart ? Number(o.dataset.versePart) : null);
+          save(
+            o.dataset.verseOwn,
+            o.dataset.versePart ? Number(o.dataset.versePart) : null,
+          );
           return;
         }
         const p = e.target.closest("[data-verse-page]");
         if (p) {
           const next = Number(p.dataset.versePage);
-          if (p.disabled || !Number.isInteger(next) || next < 1 || next > maxPage || next === page)
+          if (
+            p.disabled ||
+            !Number.isInteger(next) ||
+            next < 1 ||
+            next > maxPage ||
+            next === page
+          )
             return;
           const kind = p.classList.contains("verse-page-next")
             ? "verse-page-next"
@@ -7504,7 +8532,9 @@
           if (!adjust.disabled)
             save(
               adjust.dataset.verseOwn,
-              adjust.dataset.versePart ? Number(adjust.dataset.versePart) : null,
+              adjust.dataset.versePart
+                ? Number(adjust.dataset.versePart)
+                : null,
               Number(adjust.dataset.verseAdjust),
             );
           return;
@@ -7515,7 +8545,11 @@
           return;
         }
         const b = e.target.closest("[data-verse-own]");
-        if (b) save(b.dataset.verseOwn, b.dataset.versePart ? Number(b.dataset.versePart) : null);
+        if (b)
+          save(
+            b.dataset.verseOwn,
+            b.dataset.versePart ? Number(b.dataset.versePart) : null,
+          );
       });
       $("verse-series").onchange = () => {
         series = $("verse-series").value;
@@ -7635,13 +8669,21 @@
       $("verse-progress-details").onclick = () => {
         progressExpanded = !progressExpanded;
         if (progressExpanded) renderSeriesProgress();
-        $("verse-progress-details").setAttribute("aria-expanded", String(progressExpanded));
+        $("verse-progress-details").setAttribute(
+          "aria-expanded",
+          String(progressExpanded),
+        );
         host.reveal($("verse-series-progress"), progressExpanded);
       };
       let refreshing = false,
         lastRefresh = 0;
       $("verse-sync").onclick = async () => {
-        if (refreshing || !currentUser() || host.maintenance() || Date.now() - lastRefresh < 10000)
+        if (
+          refreshing ||
+          !currentUser() ||
+          host.maintenance() ||
+          Date.now() - lastRefresh < 10000
+        )
           return;
         refreshing = true;
         lastRefresh = Date.now();
@@ -7664,7 +8706,12 @@
       document.addEventListener("card-visibility-updated", () => {
         relatedCounts.clear();
         checkedAt = 0;
-        if ((panel.hidden && !dialog.open) || visibilityPictureFlight || !host.client()) return;
+        if (
+          (panel.hidden && !dialog.open) ||
+          visibilityPictureFlight ||
+          !host.client()
+        )
+          return;
         visibilityPictureFlight = (async () => {
           await readCatalog(true);
           if (panel.hidden && !dialog.open) return;
@@ -7699,31 +8746,54 @@
           const uid = currentUser();
           const wantedFamilies = [
             ...new Set(
-              scopes.filter((value) => value.startsWith("verse-")).map((value) => value.slice(6)),
+              scopes
+                .filter((value) => value.startsWith("verse-"))
+                .map((value) => value.slice(6)),
             ),
           ];
           if (!wantedFamilies.length) return {};
           const snapshots = new Map();
           for (let attempt = 0; attempt < 3; attempt++) {
             snapshots.clear();
-            for (const value of wantedFamilies) snapshots.set(value, await ensureCatalog(value));
-            if (new Set([...snapshots.values()].map((data) => data.version)).size <= 1) break;
+            for (const value of wantedFamilies)
+              snapshots.set(value, await ensureCatalog(value));
+            if (
+              new Set([...snapshots.values()].map((data) => data.version))
+                .size <= 1
+            )
+              break;
             if (attempt === 2)
-              throw Error("コーデ情報が更新されています。もう一度お試しください。");
+              throw Error(
+                "コーデ情報が更新されています。もう一度お試しください。",
+              );
           }
           await ensureInventory();
-          if (!uid || uid !== currentUser() || owner !== uid || !ready || !catalog)
+          if (
+            !uid ||
+            uid !== currentUser() ||
+            owner !== uid ||
+            !ready ||
+            !catalog
+          )
             throw Error("コーデの所持状況を確認できませんでした。");
           const rates = {};
-          for (const scope of scopes.filter((value) => value.startsWith("verse-"))) {
-            const rows = (snapshots.get(scope.slice(6))?.coordinates || []).filter(
+          for (const scope of scopes.filter((value) =>
+            value.startsWith("verse-"),
+          )) {
+            const rows = (
+              snapshots.get(scope.slice(6))?.coordinates || []
+            ).filter(
               (c) =>
                 !Array.isArray(seriesFilters[scope]) ||
-                appearances(c).some((a) => seriesFilters[scope].includes(a.series)),
+                appearances(c).some((a) =>
+                  seriesFilters[scope].includes(a.series),
+                ),
             );
 
             rates[scope] = (
-              rows.length ? (rows.filter(collected).length / rows.length) * 100 : 0
+              rows.length
+                ? (rows.filter(collected).length / rows.length) * 100
+                : 0
             ).toFixed(1);
           }
           return rates;
@@ -7769,7 +8839,11 @@
             ["series", "#verse-series", editionLabel],
             ["rarity", "#primagi-rarity", "レアリティ"],
             ["compatibility", "#primagi-verse-compat", "アイプリバース対応"],
-            ["group", "#verse-group", family === "primagi" ? "入手方法" : "ガチャ・キャンペーン"],
+            [
+              "group",
+              "#verse-group",
+              family === "primagi" ? "入手方法" : "ガチャ・キャンペーン",
+            ],
             ["favorite", "#verse-favorite-filter", "お気に入り"],
             ["duplicate", "#verse-duplicate-filter", "重複"],
             ["trade", '#verse [data-trade-filter="coordinate"]', "譲渡関係"],
@@ -7799,7 +8873,11 @@
         tradeData: () => catalog,
         tradeQuantity(kind, id) {
           if (!ready || owner !== currentUser()) return 0;
-          return (kind === "part" ? partQuantities.get(Number(id)) : fullQuantities.get(id)) || 0;
+          return (
+            (kind === "part"
+              ? partQuantities.get(Number(id))
+              : fullQuantities.get(id)) || 0
+          );
         },
         refreshTrade(resetPage = false) {
           if (resetPage) page = 1;
@@ -7810,7 +8888,9 @@
         },
         syncNavigation() {
           const visible =
-            !!currentUser() && ["aipri", "primagi"].includes(host.game()) && !host.maintenance();
+            !!currentUser() &&
+            ["aipri", "primagi"].includes(host.game()) &&
+            !host.maintenance();
           button.hidden = !visible || host.game() === "primagi";
           mobileRoute.hidden = !visible || host.game() === "primagi";
           syncImages();
@@ -7885,7 +8965,9 @@
       button.className = "text-button";
       button.textContent = "交換希望";
       button.hidden = true;
-      document.querySelector("#header-other .header-other-options").prepend(button);
+      document
+        .querySelector("#header-other .header-other-options")
+        .prepend(button);
       window.CARD_HEADER_LAYOUT?.();
       const panel = document.createElement("section");
       panel.id = "trade-page";
@@ -7895,15 +8977,25 @@
  <section class="trade-step trade-preview-step"><div class="trade-step-heading"><span class="trade-step-number">1</span><div><h2 id="trade-review-title">譲・求の画像プレビュー</h2><p id="trade-review-description">画像をタップすると拡大できます。画像下の番号でページを切り替えられます。</p></div></div><dl class="ownership-image-metrics" id="trade-output-count"></dl><p id="trade-overflow" class="trade-error" role="status"></p><div id="trade-sheets"></div><div id="trade-export-buttons" hidden></div>${window.CARD_TRADE_TOOLS.progressMarkup()}<p id="trade-export-status" role="status" aria-live="polite"></p>${window.CARD_TRADE_TOOLS.settingsMarkup()}</section>
  <section class="trade-step trade-message-step"><div class="trade-step-heading"><span class="trade-step-number">2</span><div><h2>交換希望を文章と画像で共有</h2><p>出力した画像と一緒に使える文章です。画像番号は自動で入ります。</p></div></div><label class="trade-method">交換方法（任意）<input id="trade-method" maxlength="200" placeholder="手渡し・郵送など、記載してください"></label><textarea id="trade-post" readonly aria-label="交換希望の文章"></textarea><div class="trade-actions"><button type="button" id="trade-copy-post">交換希望文をコピー</button><button type="button" id="trade-show-text" aria-expanded="false" aria-controls="trade-text-panel">文字情報を出力</button></div><div id="trade-text-panel" hidden><p class="trade-text-note">カード情報を文字で確認・コピーできます。</p><textarea id="trade-text" readonly aria-label="譲・求のカード情報"></textarea><button id="trade-copy-text" type="button">カード情報をコピー</button></div><div class="trade-share-area"><button id="trade-share" type="button" disabled>画像と文章を共有</button></div></section><p class="trade-disclaimer">※ 当サイトはこの機能の利用により生じたトラブルについて一切の責任を負いません。</p>`;
       $("collection").after(panel);
-      const tradeModal = window.CARD_TRADE_TOOLS.modal(panel, "交換希望", () => {
-        outputVersion++;
-        clearTradePreviews();
-        window.CARD_TRADE_IMAGE?.close();
-      });
+      const tradeModal = window.CARD_TRADE_TOOLS.modal(
+        panel,
+        "交換希望",
+        () => {
+          outputVersion++;
+          clearTradePreviews();
+          window.CARD_TRADE_IMAGE?.close();
+        },
+      );
       const previewStep = panel.querySelector(".trade-preview-step");
       const previewTotals = panel.querySelector("#trade-output-count");
-      previewStep.insertBefore(panel.querySelector("#trade-filter-panel"), previewTotals);
-      previewStep.insertBefore(panel.querySelector("#trade-active-filters"), previewTotals);
+      previewStep.insertBefore(
+        panel.querySelector("#trade-filter-panel"),
+        previewTotals,
+      );
+      previewStep.insertBefore(
+        panel.querySelector("#trade-active-filters"),
+        previewTotals,
+      );
       previewStep.insertBefore(
         panel.querySelector("#trade-generation-progress"),
         panel.querySelector("#trade-sheets"),
@@ -7914,19 +9006,24 @@
       );
       window.CARD_TRADE_TOOLS.stage(panel);
       let tradeDisplay = { ...window.CARD_TRADE_TOOLS.defaults };
-      panel.querySelector("#trade-image-settings").addEventListener("change", () => {
-        const anchor = panel.querySelector("#trade-image-settings").getBoundingClientRect().top;
-        tradeDisplay = window.CARD_TRADE_TOOLS.readSettings(panel);
-        try {
-          localStorage.setItem(
-            "card-album:trade-image-options:" + uid(),
-            JSON.stringify(tradeDisplay),
-          );
-        } catch {}
-        renderOutput();
-        tradeModal.dialog.scrollTop +=
-          panel.querySelector("#trade-image-settings").getBoundingClientRect().top - anchor;
-      });
+      panel
+        .querySelector("#trade-image-settings")
+        .addEventListener("change", () => {
+          const anchor = panel
+            .querySelector("#trade-image-settings")
+            .getBoundingClientRect().top;
+          tradeDisplay = window.CARD_TRADE_TOOLS.readSettings(panel);
+          try {
+            localStorage.setItem(
+              "card-album:trade-image-options:" + uid(),
+              JSON.stringify(tradeDisplay),
+            );
+          } catch {}
+          renderOutput();
+          tradeModal.dialog.scrollTop +=
+            panel.querySelector("#trade-image-settings").getBoundingClientRect()
+              .top - anchor;
+        });
       function reset() {
         generation++;
         outputVersion++;
@@ -7946,7 +9043,8 @@
         tradeControls = [];
         tradeModal.close();
         panel.hidden = true;
-        for (const id of ["trade-post", "trade-text", "trade-method"]) $(id).value = "";
+        for (const id of ["trade-post", "trade-text", "trade-method"])
+          $(id).value = "";
         $("trade-sheets").replaceChildren();
         $("trade-export-buttons").replaceChildren();
         $("trade-export-status").textContent = "";
@@ -7977,14 +9075,18 @@
               .order("side")
               .range(offset, offset + 999);
             if (r.error) throw r.error;
-            if (!Array.isArray(r.data)) throw Error("交換希望を取得できませんでした。");
+            if (!Array.isArray(r.data))
+              throw Error("交換希望を取得できませんでした。");
             rows.push(...r.data);
             if (r.data.length < 1000) break;
           }
           if (user !== uid() || g !== generation) return;
           records = new Set(rows.map((r) => key(r.kind, r.target_id, r.side)));
           priorities = new Map(
-            rows.map((r) => [key(r.kind, r.target_id, r.side), r.priority === 2 ? 2 : 1]),
+            rows.map((r) => [
+              key(r.kind, r.target_id, r.side),
+              r.priority === 2 ? 2 : 1,
+            ]),
           );
           ready = true;
           host.changed();
@@ -8006,7 +9108,8 @@
           return;
         }
         if (owner && owner !== uid()) reset();
-        button.hidden = !host.game() || host.maintenance() || !!window.CARD_ALL?.active();
+        button.hidden =
+          !host.game() || host.maintenance() || !!window.CARD_ALL?.active();
         if (!button.hidden) load().catch(() => {});
       }
       function markup(kind, id) {
@@ -8019,13 +9122,24 @@
           for (const b of node.querySelectorAll("[data-trade-side]")) {
             b.setAttribute(
               "aria-pressed",
-              String(has(node.dataset.tradeKind, node.dataset.tradeId, b.dataset.tradeSide)),
+              String(
+                has(
+                  node.dataset.tradeKind,
+                  node.dataset.tradeId,
+                  b.dataset.tradeSide,
+                ),
+              ),
             );
             const priority =
-              level(node.dataset.tradeKind, node.dataset.tradeId, b.dataset.tradeSide) === 2;
+              level(
+                node.dataset.tradeKind,
+                node.dataset.tradeId,
+                b.dataset.tradeSide,
+              ) === 2;
             b.dataset.priority = String(priority);
             b.querySelector("strong").textContent =
-              (priority ? "優先" : "") + (b.dataset.tradeSide === "offer" ? "譲" : "求");
+              (priority ? "優先" : "") +
+              (b.dataset.tradeSide === "offer" ? "譲" : "求");
             b.disabled =
               !ready ||
               host.maintenance() ||
@@ -8035,15 +9149,21 @@
       }
       function patchBadges() {
         document
-          .querySelectorAll("#cards article.card,#verse-cards [data-verse-card]")
+          .querySelectorAll(
+            "#cards article.card,#verse-cards [data-verse-card]",
+          )
           .forEach((card) => {
-            const kind = card.hasAttribute("data-verse-card") ? "coordinate" : "card";
+            const kind = card.hasAttribute("data-verse-card")
+              ? "coordinate"
+              : "card";
             const id =
               kind === "coordinate"
                 ? card.dataset.verseCard
                 : card.querySelector("[data-detail]")?.dataset.detail;
             const frame = card.querySelector(
-              kind === "coordinate" ? ".verse-card-picture" : ".card-image-frame",
+              kind === "coordinate"
+                ? ".verse-card-picture"
+                : ".card-image-frame",
             );
             if (!id || !frame) return;
             let tag = frame.querySelector(".card-trade-tag");
@@ -8122,7 +9242,13 @@
                 targetId: id,
                 targetType: kind,
                 before: {
-                  side: before ? side : beforeOther ? (side === "offer" ? "want" : "offer") : null,
+                  side: before
+                    ? side
+                    : beforeOther
+                      ? side === "offer"
+                        ? "want"
+                        : "offer"
+                      : null,
                   priority: before || beforeOther || 0,
                 },
                 after: { side: next ? side : null, priority: next },
@@ -8184,9 +9310,9 @@
         return (
           has(kind, id, side) ||
           (kind === "coordinate" &&
-            (host.verse()?.coordinates.find((c) => c.id === id)?.part_ids || []).some((p) =>
-              has("part", p, side),
-            ))
+            (
+              host.verse()?.coordinates.find((c) => c.id === id)?.part_ids || []
+            ).some((p) => has("part", p, side)))
         );
       }
       function entry(kind) {
@@ -8203,7 +9329,9 @@
           return host
             .cards()
             .filter(
-              (c) => c.game === origin.game && (c.game !== "aipri" || c.family === origin.family),
+              (c) =>
+                c.game === origin.game &&
+                (c.game !== "aipri" || c.family === origin.family),
             )
             .map((c) => ({
               kind: "card",
@@ -8232,7 +9360,9 @@
         const partMap = new Map(data.parts.map((p) => [p.id, p])),
           parts = new Map();
         const full = coords.map((c) => {
-          const series = [...new Set((c.appearances || []).map((a) => a.series))],
+          const series = [
+              ...new Set((c.appearances || []).map((a) => a.series)),
+            ],
             groups = [...new Set((c.appearances || []).map((a) => a.group))];
           for (const id of c.part_ids) {
             const p = partMap.get(id);
@@ -8242,7 +9372,9 @@
               kind: "part",
               id,
               code:
-                c.family === "primagi" ? (p.codes || []).join(" / ") : prev?.code || c.code || "",
+                c.family === "primagi"
+                  ? (p.codes || []).join(" / ")
+                  : prev?.code || c.code || "",
               name: p.metadata?.name || p.name || c.name,
               image: window.CARD_PRIMAGI.verseImage(p.image),
               series: [...new Set([...(prev?.series || []), ...series])],
@@ -8261,7 +9393,9 @@
               window.CARD_PRIMAGI.verseImage(c.image) ||
               window.CARD_PRIMAGI.verseImage(c.thumbnail),
             collage: c.part_ids
-              .map((id) => window.CARD_PRIMAGI.verseImage(partMap.get(id)?.image))
+              .map((id) =>
+                window.CARD_PRIMAGI.verseImage(partMap.get(id)?.image),
+              )
               .filter(Boolean),
             series,
             groups,
@@ -8273,7 +9407,10 @@
       const values = (v) => (Array.isArray(v) ? v : v ? [v] : []);
       function tradeSelection() {
         return Object.fromEntries(
-          tradeControls.map((control) => [control.key, $("trade-" + control.key).value]),
+          tradeControls.map((control) => [
+            control.key,
+            $("trade-" + control.key).value,
+          ]),
         );
       }
       function filtered() {
@@ -8297,12 +9434,16 @@
           heading.className = "ownership-image-filter-heading";
           const label = document.createElement("label");
           label.htmlFor = id;
-          label.textContent = control.key === "query" ? "フリーワード検索" : control.label;
-          const input = document.createElement(control.options ? "select" : "input");
+          label.textContent =
+            control.key === "query" ? "フリーワード検索" : control.label;
+          const input = document.createElement(
+            control.options ? "select" : "input",
+          );
           input.id = id;
           input.dataset.tradeLocalFilter = control.key;
           input.dataset.tradeDefault = control.options?.[0]?.value || "";
-          input.disabled = control.key === "trade" ? !ready : Boolean(control.disabled);
+          input.disabled =
+            control.key === "trade" ? !ready : Boolean(control.disabled);
           if (control.options) {
             input.replaceChildren(
               ...control.options.map(({ text, value, disabled }) =>
@@ -8320,12 +9461,17 @@
           clearButton.className = "filter-clear";
           clearButton.dataset.tradeClear = id;
           clearButton.textContent = "解除";
-          clearButton.setAttribute("aria-label", label.textContent + "の絞り込みを解除");
+          clearButton.setAttribute(
+            "aria-label",
+            label.textContent + "の絞り込みを解除",
+          );
           clearButton.disabled = true;
           heading.append(label);
           if (control.key !== "series") heading.append(clearButton);
           field.append(heading, input);
-          $(control.options ? "trade-filter-fields" : "trade-filter-search").append(field);
+          $(
+            control.options ? "trade-filter-fields" : "trade-filter-search",
+          ).append(field);
           if (control.multiple) {
             input.dataset.tradeMultiple = "";
             window.CARD_MULTI_FILTER.enhance(input);
@@ -8337,17 +9483,30 @@
         if (origin?.game === "primagi") return "ワッチャプリマジ！";
         return origin.game === "aikatsu"
           ? "アイカツアンコール"
-          : (origin.family === "ひみつ" ? "ひみつのアイプリ" : "おねがいアイプリ") +
+          : (origin.family === "ひみつ"
+              ? "ひみつのアイプリ"
+              : "おねがいアイプリ") +
               (origin.kind === "coordinate" ? "バース" : "");
       }
       const imageQueue = new Set();
       let imageFrame = null;
       function drawShotImage(img) {
-        if (!img.isConnected || !img.complete || !img.naturalWidth || !img.naturalHeight) return;
+        if (
+          !img.isConnected ||
+          !img.complete ||
+          !img.naturalWidth ||
+          !img.naturalHeight
+        )
+          return;
         const frame = img.closest(".trade-shot-image");
         if (!frame) return;
-        const rotate = frame.dataset.rotate === "true" && img.naturalWidth > img.naturalHeight;
-        const ratio = Math.min(1, 240 / Math.max(img.naturalWidth, img.naturalHeight));
+        const rotate =
+          frame.dataset.rotate === "true" &&
+          img.naturalWidth > img.naturalHeight;
+        const ratio = Math.min(
+          1,
+          240 / Math.max(img.naturalWidth, img.naturalHeight),
+        );
         const sw = Math.max(1, Math.round(img.naturalWidth * ratio)),
           sh = Math.max(1, Math.round(img.naturalHeight * ratio));
         let canvas = frame.querySelector("canvas");
@@ -8391,7 +9550,8 @@
       panel.addEventListener(
         "load",
         (event) => {
-          if (event.target.matches?.(".trade-shot-image>img")) queueShotImage(event.target);
+          if (event.target.matches?.(".trade-shot-image>img"))
+            queueShotImage(event.target);
         },
         true,
       );
@@ -8451,9 +9611,14 @@
           selectedPages.add(0);
           selectedPages.add(sheets.length - 1);
         }
-        for (let distance = 1; selectedPages.size < Math.min(budget, sheets.length); distance++) {
+        for (
+          let distance = 1;
+          selectedPages.size < Math.min(budget, sheets.length);
+          distance++
+        ) {
           for (const n of [selectedPage - distance, selectedPage + distance]) {
-            if (n >= 0 && n < sheets.length && selectedPages.size < budget) selectedPages.add(n);
+            if (n >= 0 && n < sheets.length && selectedPages.size < budget)
+              selectedPages.add(n);
           }
         }
         const controls = [];
@@ -8466,9 +9631,12 @@
           number.dataset.tradePreviewSide = side;
           number.setAttribute(
             "aria-label",
-            (side === "offer" ? "譲" : "求") + " " + (direction || page + 1 + "枚目"),
+            (side === "offer" ? "譲" : "求") +
+              " " +
+              (direction || page + 1 + "枚目"),
           );
-          if (!direction && page === selectedPage) number.setAttribute("aria-current", "page");
+          if (!direction && page === selectedPage)
+            number.setAttribute("aria-current", "page");
           return number;
         };
         controls.push(
@@ -8528,7 +9696,8 @@
                 if (current())
                   window.CARD_TRADE_TOOLS.progress(
                     panel,
-                    (index + (maximum ? value / maximum : 1) * 0.95) / sheets.length,
+                    (index + (maximum ? value / maximum : 1) * 0.95) /
+                      sheets.length,
                     index + 1,
                     sheets.length,
                   );
@@ -8537,7 +9706,10 @@
             );
             if (!current()) return;
             previewImages.set(index, blob);
-            const previewURL = await window.CARD_TRADE_TOOLS.makePreview(blob, current);
+            const previewURL = await window.CARD_TRADE_TOOLS.makePreview(
+              blob,
+              current,
+            );
             if (!current()) {
               if (previewURL) URL.revokeObjectURL(previewURL);
               return;
@@ -8563,8 +9735,12 @@
         } catch (error) {
           if (current()) {
             $("trade-generation-progress").hidden = true;
-            $("trade-export-status").textContent = window.CARD_ERROR.message(error);
-            host.toast("画像を作成できませんでした。絞り込みを選び直してお試しください。", "error");
+            $("trade-export-status").textContent =
+              window.CARD_ERROR.message(error);
+            host.toast(
+              "画像を作成できませんでした。絞り込みを選び直してお試しください。",
+              "error",
+            );
           }
         }
       }
@@ -8591,19 +9767,29 @@
           .flatMap((control) => {
             const id = "trade-" + control.key;
             const input = $(id);
-            if (!input || input.value === input.dataset.tradeDefault || !input.value) return [];
+            if (
+              !input ||
+              input.value === input.dataset.tradeDefault ||
+              !input.value
+            )
+              return [];
             return [
               [
                 id,
                 control.label,
                 control.options
-                  ? window.CARD_MULTI_FILTER.optionsText([...input.options], input.value)
+                  ? window.CARD_MULTI_FILTER.optionsText(
+                      [...input.options],
+                      input.value,
+                    )
                   : input.value.trim(),
               ],
             ];
           })
           .filter(([, , value]) => value);
-        $("trade-filter-count").textContent = active.length ? `適用中 ${active.length}件` : "";
+        $("trade-filter-count").textContent = active.length
+          ? `適用中 ${active.length}件`
+          : "";
         $("trade-active-filters").innerHTML = active.length
           ? '<span class="active-filters-label">適用中</span>' +
             active
@@ -8613,10 +9799,13 @@
               )
               .join("")
           : "";
-        panel.querySelectorAll(".filter-clear[data-trade-clear]").forEach((button) => {
-          const input = $(button.dataset.tradeClear);
-          button.disabled = input.value === input.dataset.tradeDefault || input.disabled;
-        });
+        panel
+          .querySelectorAll(".filter-clear[data-trade-clear]")
+          .forEach((button) => {
+            const input = $(button.dataset.tradeClear);
+            button.disabled =
+              input.value === input.dataset.tradeDefault || input.disabled;
+          });
         outputVersion++;
         clearTradePreviews();
         $("trade-share").disabled = true;
@@ -8628,19 +9817,27 @@
           tradeSource?.theme,
         );
         const edition =
-          imageFilters?.edition || (tradeSource?.editionLabel === "章" ? "全章" : "全弾");
+          imageFilters?.edition ||
+          (tradeSource?.editionLabel === "章" ? "全章" : "全弾");
         const conditions = imageFilters?.conditions || [];
         const all = filtered(),
-          rank = (side) => (a, b) => level(b.kind, b.id, side) - level(a.kind, a.id, side),
-          offer = all.filter((c) => has(c.kind, c.id, "offer")).sort(rank("offer")),
-          want = all.filter((c) => has(c.kind, c.id, "want")).sort(rank("want")),
+          rank = (side) => (a, b) =>
+            level(b.kind, b.id, side) - level(a.kind, a.id, side),
+          offer = all
+            .filter((c) => has(c.kind, c.id, "offer"))
+            .sort(rank("offer")),
+          want = all
+            .filter((c) => has(c.kind, c.id, "want"))
+            .sort(rank("want")),
           capacity = window.CARD_OWNERSHIP_IMAGE.capacity;
         const priorityNote =
           [...offer].some((c) => level(c.kind, c.id, "offer") === 2) ||
           want.some((c) => level(c.kind, c.id, "want") === 2)
             ? "※ 赤枠は優先して交換したいものです。"
             : "";
-        const metadata = new Map((imageFilters?.filtered || []).map((row) => [row.id, row]));
+        const metadata = new Map(
+          (imageFilters?.filtered || []).map((row) => [row.id, row]),
+        );
         const groups = [
           { side: "譲", rows: offer },
           { side: "求", rows: want },
@@ -8650,14 +9847,21 @@
             ...metadata.get(card.id),
             ...card,
             editions: card.series || metadata.get(card.id)?.editions || [],
-            rotate: card.kind === "card" ? origin.game === "aikatsu" : card.kind === "part",
-            quantity: Math.max(0, Number(host.quantity(card.kind, card.id)) || 0),
+            rotate:
+              card.kind === "card"
+                ? origin.game === "aikatsu"
+                : card.kind === "part",
+            quantity: Math.max(
+              0,
+              Number(host.quantity(card.kind, card.id)) || 0,
+            ),
             priority: level(card.kind, card.id, side) === 2,
           }));
           const sections = window.CARD_OWNERSHIP_IMAGE.tradePages(rows, {
             display: tradeDisplay,
             editionOptions:
-              tradeControls.find((control) => control.key === "series")?.options || [],
+              tradeControls.find((control) => control.key === "series")
+                ?.options || [],
             selectedEdition: chosen.series,
             editionLabel: tradeSource.editionLabel,
           });
@@ -8726,11 +9930,18 @@
           previewUser = uid(),
           previewGeneration = generation;
         previewTimer = setTimeout(
-          () => prepareTradePreviews(previewVersion, previewUser, previewGeneration),
+          () =>
+            prepareTradePreviews(
+              previewVersion,
+              previewUser,
+              previewGeneration,
+            ),
           150,
         );
         const refs = (side) =>
-          numbers[side].length ? "画像" + numbers[side].join("、") + "枚目" : "登録なし";
+          numbers[side].length
+            ? "画像" + numbers[side].join("、") + "枚目"
+            : "登録なし";
         $("trade-post").value =
           `${title()}　交換希望\n\n譲　${refs("譲")}\n求　${refs("求")}\n\n交換方法　${$("trade-method").value.trim() || "（記載してください）"}${priorityNote ? "\n\n" + priorityNote : ""}`;
         $("trade-copy-post").disabled = count === 0;
@@ -8746,7 +9957,11 @@
                 (g.rows
                   .map((c) =>
                     [
-                      level(c.kind, c.id, g.side === "譲" ? "offer" : "want") === 2
+                      level(
+                        c.kind,
+                        c.id,
+                        g.side === "譲" ? "offer" : "want",
+                      ) === 2
                         ? "【優先】"
                         : "",
                       c.code,
@@ -8767,13 +9982,16 @@
           (priorityNote ? "\n\n" + priorityNote : "");
       }
       function ensureExporter() {
-        return loadModule("trade-image-export.js").then(() => window.CARD_TRADE_IMAGE);
+        return loadModule("trade-image-export.js").then(
+          () => window.CARD_TRADE_IMAGE,
+        );
       }
       async function outputImage(button) {
         const index = Number(button.dataset.tradePreview);
         const sheet = exportSheets[index],
           blob = previewImages.get(index);
-        if (!sheet || !blob || button.disabled || !uid() || host.maintenance()) return;
+        if (!sheet || !blob || button.disabled || !uid() || host.maintenance())
+          return;
         const user = uid(),
           version = outputVersion;
         const exporter = await ensureExporter();
@@ -8826,12 +10044,16 @@
         try {
           Object.assign(
             tradeDisplay,
-            JSON.parse(localStorage.getItem("card-album:trade-image-options:" + uid()) || "{}"),
+            JSON.parse(
+              localStorage.getItem("card-album:trade-image-options:" + uid()) ||
+                "{}",
+            ),
           );
         } catch {}
         window.CARD_TRADE_TOOLS.applySettings(panel, tradeDisplay);
         tradeDisplay = window.CARD_TRADE_TOOLS.readSettings(panel);
-        panel.querySelector("[data-trade-part-setting]").hidden = origin.kind === "card";
+        panel.querySelector("[data-trade-part-setting]").hidden =
+          origin.kind === "card";
         $("trade-title").textContent = title() + "の交換希望";
         $("trade-load-status").textContent = "読み込み中…";
         $("trade-text-panel").hidden = true;
@@ -8849,25 +10071,31 @@
           await load();
           if (user !== uid() || g !== generation || panel.hidden) return;
           tradeSource = host.ownershipImage(origin.kind === "coordinate");
-          if (!tradeSource) throw Error("カードや所持状況を読み込んでからお試しください。");
+          if (!tradeSource)
+            throw Error("カードや所持状況を読み込んでからお試しください。");
           tradeControls = tradeSource.controls;
           mountTradeFilters();
           $("trade-load-status").textContent = "";
           renderOutput();
         } catch (error) {
           if (user === uid() && g === generation)
-            $("trade-load-status").textContent = window.CARD_ERROR.message(error);
+            $("trade-load-status").textContent =
+              window.CARD_ERROR.message(error);
         }
       }
       function exportText(id) {
-        return $(id).value.trimEnd() + "\n\nhttps://iprimaker.github.io/card-management";
+        return (
+          $(id).value.trimEnd() +
+          "\n\nhttps://iprimaker.github.io/card-management"
+        );
       }
       async function copy(id) {
         let temporary;
         const previous = document.activeElement;
         try {
           const text = exportText(id);
-          if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+          if (navigator.clipboard?.writeText)
+            await navigator.clipboard.writeText(text);
           else {
             temporary = document.createElement("textarea");
             temporary.value = text;
@@ -8896,16 +10124,20 @@
         renderOutput();
       });
       panel.addEventListener("input", (event) => {
-        if (event.target.matches("input[data-trade-local-filter]")) renderOutput();
+        if (event.target.matches("input[data-trade-local-filter]"))
+          renderOutput();
       });
       panel.addEventListener("change", (event) => {
-        if (event.target.matches("select[data-trade-local-filter]")) renderOutput();
+        if (event.target.matches("select[data-trade-local-filter]"))
+          renderOutput();
       });
       $("trade-method").oninput = () => {
         for (const id of ["trade-post", "trade-text"]) {
           $(id).value = $(id).value.replace(
             /交換方法　[^\n]*/,
-            () => "交換方法　" + ($("trade-method").value.trim() || "（記載してください）"),
+            () =>
+              "交換方法　" +
+              ($("trade-method").value.trim() || "（記載してください）"),
           );
         }
       };
@@ -8921,7 +10153,10 @@
         const user = uid(),
           version = outputVersion;
         const current = () =>
-          user === uid() && version === outputVersion && !panel.hidden && !host.maintenance();
+          user === uid() &&
+          version === outputVersion &&
+          !panel.hidden &&
+          !host.maintenance();
         try {
           if (navigator.share && navigator.canShare?.(data)) {
             await navigator.share(data);
@@ -8931,7 +10166,10 @@
             const text = new File([data.text], "交換希望文.txt", {
               type: "text/plain;charset=utf-8",
             });
-            const zip = await window.CARD_OWNERSHIP_IMAGE.zipImages([...files, text], current);
+            const zip = await window.CARD_OWNERSHIP_IMAGE.zipImages(
+              [...files, text],
+              current,
+            );
             if (!current() || !zip) return;
             const url = URL.createObjectURL(zip);
             const link = document.createElement("a");
@@ -8945,7 +10183,10 @@
           }
         } catch (error) {
           if (current() && error?.name !== "AbortError")
-            host.toast("共有できませんでした。時間をおいて、もう一度お試しください。", "error");
+            host.toast(
+              "共有できませんでした。時間をおいて、もう一度お試しください。",
+              "error",
+            );
         } finally {
           if (current()) $("trade-share").disabled = false;
         }
@@ -8975,10 +10216,17 @@
         const side = e.target.closest("[data-trade-side]");
         if (side) {
           const c = side.closest("[data-trade-control]");
-          toggle(c.dataset.tradeKind, c.dataset.tradeId, side.dataset.tradeSide);
+          toggle(
+            c.dataset.tradeKind,
+            c.dataset.tradeId,
+            side.dataset.tradeSide,
+          );
         }
         const clearButton = e.target.closest("[data-trade-clear]");
-        if (clearButton && ["card", "coordinate"].includes(clearButton.dataset.tradeClear)) {
+        if (
+          clearButton &&
+          ["card", "coordinate"].includes(clearButton.dataset.tradeClear)
+        ) {
           clear(clearButton.dataset.tradeClear);
           host.changed(true);
         }
@@ -9008,7 +10256,8 @@
           records.some((record) =>
             [...record.addedNodes].some(
               (node) =>
-                node.nodeType === 1 && (node.matches("article") || node.querySelector("article")),
+                node.nodeType === 1 &&
+                (node.matches("article") || node.querySelector("article")),
             ),
           )
         )
@@ -9059,7 +10308,8 @@
         if (body) body.scrollTop = bodyScroll;
       }
       if (!$("auth").hidden) art();
-      if ($("trade-page") && !$("trade-page").hidden) window.CARD_TRADE?.renderOutput();
+      if ($("trade-page") && !$("trade-page").hidden)
+        window.CARD_TRADE?.renderOutput();
       window.scrollTo(position.x, position.y);
     });
 
@@ -9139,11 +10389,15 @@
         "</div></details>";
       function syncSettings(root) {
         const shown = root.querySelector('[data-trade-option="showQuantity"]');
-        const subtract = root.querySelector('[data-trade-option="subtractOne"]');
+        const subtract = root.querySelector(
+          '[data-trade-option="subtractOne"]',
+        );
         if (!subtract || !shown) return;
         subtract.disabled = !shown.checked;
         if (subtract.disabled) subtract.checked = false;
-        subtract.closest("label").classList.toggle("is-disabled", subtract.disabled);
+        subtract
+          .closest("label")
+          .classList.toggle("is-disabled", subtract.disabled);
       }
       function readSettings(root) {
         syncSettings(root);
@@ -9168,13 +10422,15 @@
       function progress(root, ratio, index, total) {
         const region = root.querySelector("#trade-generation-progress");
         region.hidden = false;
-        region.querySelector("progress").value = Math.max(0, Math.min(1, ratio)) * 100;
+        region.querySelector("progress").value =
+          Math.max(0, Math.min(1, ratio)) * 100;
         region.querySelector("[data-trade-progress-pages]").textContent =
           total > 1 ? index + " / " + total : "";
       }
       function stage(root) {
         const sheets = root.querySelector("#trade-sheets");
-        if (sheets.parentElement.classList.contains("trade-preview-stage")) return;
+        if (sheets.parentElement.classList.contains("trade-preview-stage"))
+          return;
         const details = document.createElement("div");
         details.className = "ownership-image-details";
         details.dataset.tradeImageDetails = "";
@@ -9202,7 +10458,8 @@
       async function makePreview(blob, current = () => true) {
         let bitmap, source, canvas;
         try {
-          if (typeof createImageBitmap === "function") bitmap = await createImageBitmap(blob);
+          if (typeof createImageBitmap === "function")
+            bitmap = await createImageBitmap(blob);
           else {
             source = URL.createObjectURL(blob);
             bitmap = await new Promise((resolve, reject) => {
@@ -9231,8 +10488,12 @@
           canvas = document.createElement("canvas");
           canvas.width = Math.max(1, Math.round(w * scale));
           canvas.height = Math.max(1, Math.round(h * scale));
-          canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          const preview = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          canvas
+            .getContext("2d")
+            .drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          const preview = await new Promise((resolve) =>
+            canvas.toBlob(resolve, "image/png"),
+          );
           return current() ? URL.createObjectURL(preview || blob) : null;
         } catch {
           return current() ? URL.createObjectURL(blob) : null;
@@ -9251,7 +10512,11 @@
           image.removeAttribute("src");
           return;
         }
-        if (image.getAttribute("src") === url && image.complete && image.naturalWidth > 0) {
+        if (
+          image.getAttribute("src") === url &&
+          image.complete &&
+          image.naturalWidth > 0
+        ) {
           image.hidden = false;
           state("ready");
           return;

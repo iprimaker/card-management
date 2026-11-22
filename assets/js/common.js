@@ -1,6 +1,7 @@
 /* Card Album: common.js. Original vendor notices: assets/licenses. */
 (() => {
-  const { modules, loadModule, ensureQRBundle, ensureQREncoder } = window.CARD_RUNTIME;
+  const { modules, loadModule, ensureQRBundle, ensureQREncoder } =
+    window.CARD_RUNTIME;
   modules["card-visibility.js"] = function (sourceURL) {
     (() => {
       let snapshot = null,
@@ -16,7 +17,8 @@
         scheduledData = null;
       const MIN_FRESH = 15000,
         POLL_MS = 120000;
-      const offline = () => typeof navigator !== "undefined" && navigator.onLine === false;
+      const offline = () =>
+        typeof navigator !== "undefined" && navigator.onLine === false;
       const client = window.supabase.createClient(
         window.APP_CONFIG.supabaseUrl,
         window.APP_CONFIG.supabaseKey,
@@ -60,7 +62,11 @@
           }[v.reason] || "公開準備中のカード";
         const lines = date
           ? [reason + "のため", date + "まで", "画像を非公開にしています"]
-          : [reason + "のため", "画像を非公開にしています", "公開日時は決まり次第ご案内します"];
+          : [
+              reason + "のため",
+              "画像を非公開にしています",
+              "公開日時は決まり次第ご案内します",
+            ];
         const svg =
           '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="600" viewBox="0 0 420 600"><rect width="420" height="600" rx="24" fill="#f3effb"/><rect x="18" y="18" width="384" height="564" rx="18" fill="white" stroke="#ddd1ef"/><g text-anchor="middle" fill="#625371" font-family="sans-serif">' +
           lines
@@ -103,16 +109,20 @@
         clearTimeout(timer);
         if (data && !failed) scheduledData = data;
         if (document.hidden || offline()) return;
-        const transition = Date.parse(data?.next_transition) - Date.parse(data?.server_time);
+        const transition =
+          Date.parse(data?.next_transition) - Date.parse(data?.server_time);
         const poll = POLL_MS * (1 + Math.random() * 0.2);
         const boundary = Number.isFinite(transition)
           ? transition > 0
             ? Math.max(250, transition + 150)
             : 10000
           : Infinity;
-        const delay = failed ? Math.max(1000, retryAt - Date.now()) : Math.min(poll, boundary);
+        const delay = failed
+          ? Math.max(1000, retryAt - Date.now())
+          : Math.min(poll, boundary);
         timer = setTimeout(() => {
-          if (!document.hidden && !offline()) refresh({ force: true }).catch(() => {});
+          if (!document.hidden && !offline())
+            refresh({ force: true }).catch(() => {});
         }, delay);
       }
       async function rpc(name) {
@@ -130,13 +140,17 @@
       async function refresh({ force = false } = {}) {
         if (flight) return flight;
         if (Date.now() < retryAt) throw lastError;
-        if (snapshot && !force && Date.now() - lastSuccess < MIN_FRESH) return snapshot;
+        if (snapshot && !force && Date.now() - lastSuccess < MIN_FRESH)
+          return snapshot;
         flight = (async () => {
-          if (offline()) throw Error("通信状態を確認して再読み込みしてください。");
+          if (offline())
+            throw Error("通信状態を確認して再読み込みしてください。");
           const statusResult = await rpc("card_visibility_public_status");
           // Never turn an unavailable status check into an expensive full-catalog read.
           if (statusResult.error || !statusResult.data?.fingerprint)
-            throw Error("公開設定を確認できませんでした。時間をおいて再度お試しください。");
+            throw Error(
+              "公開設定を確認できませんでした。時間をおいて再度お試しください。",
+            );
           const status = statusResult.data;
           if (snapshot && status.fingerprint === fingerprint) {
             lastSuccess = Date.now();
@@ -161,9 +175,12 @@
           failures = 0;
           retryAt = 0;
           const next = mark();
-          const changed = stamp !== undefined && (next !== stamp || oldFingerprint !== fingerprint);
+          const changed =
+            stamp !== undefined &&
+            (next !== stamp || oldFingerprint !== fingerprint);
           stamp = next;
-          if (changed) document.dispatchEvent(new CustomEvent("card-visibility-updated"));
+          if (changed)
+            document.dispatchEvent(new CustomEvent("card-visibility-updated"));
           schedule(data);
           return data;
         })()
@@ -172,7 +189,8 @@
             failures = Math.min(failures + 1, 6);
             retryAt =
               Date.now() +
-              Math.min(300000, 15000 * 2 ** (failures - 1)) * (1 + Math.random() * 0.2);
+              Math.min(300000, 15000 * 2 ** (failures - 1)) *
+                (1 + Math.random() * 0.2);
             schedule(null, true);
             throw error;
           })
@@ -232,14 +250,17 @@
     /* Guest browsing switch. Album sessions and shared links keep their existing flow. */
     (() => {
       "use strict";
-      const browse = new URLSearchParams(location.search).get("view") === "browse";
+      const browse =
+        new URLSearchParams(location.search).get("view") === "browse";
       const nativeFetch = window.fetch.bind(window);
       let enabled = false,
         flight = null,
         checkedAt = 0;
       const link = document.getElementById("guest-browse-link");
       function updateLink() {
-        if (link) link.hidden = !enabled || document.body.classList.contains("invitation-route");
+        if (link)
+          link.hidden =
+            !enabled || document.body.classList.contains("invitation-route");
       }
       async function refresh() {
         if (flight) return flight;
@@ -247,7 +268,7 @@
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 8000);
           try {
-            const config = window.APP_CONFIG;
+            const config = window.CARD_DB.primaryConfig;
             const response = await nativeFetch(
               config.supabaseUrl + "/rest/v1/rpc/card_guest_browse_status",
               {
@@ -263,7 +284,8 @@
             );
             if (!response.ok) throw Error("閲覧設定を確認できませんでした。");
             const data = await response.json();
-            if (typeof data?.enabled !== "boolean") throw Error("閲覧設定を確認できませんでした。");
+            if (typeof data?.enabled !== "boolean")
+              throw Error("閲覧設定を確認できませんでした。");
             enabled = data.enabled;
             checkedAt = Date.now();
             updateLink();
@@ -283,7 +305,9 @@
         return flight;
       }
       function showStopped(unavailable = false) {
-        document.querySelectorAll("dialog[open]").forEach((dialog) => dialog.close?.());
+        document
+          .querySelectorAll("dialog[open]")
+          .forEach((dialog) => dialog.close?.());
         document.body.classList.remove("auth-checking");
         document.getElementById("auth-checking-status")?.remove();
         document.body.style.visibility = "visible";
@@ -471,7 +495,7 @@
       const nativeFetch = window.fetch?.bind(window);
       async function refresh() {
         if (document.hidden || request || !nativeFetch) return;
-        const config = window.APP_CONFIG;
+        const config = window.CARD_DB.primaryConfig;
         if (!config?.supabaseUrl || !config?.supabaseKey) return;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
@@ -529,7 +553,9 @@
       const mobile = window.matchMedia(
         "(max-width: 760px), (max-height: 500px) and (pointer: coarse)",
       );
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      );
       return (dialog, surface, move) => {
         let start;
         dialog.addEventListener("pointerdown", (event) => {
@@ -669,9 +695,12 @@
       for (const area of ["localStorage", "sessionStorage"]) {
         try {
           const storage = window[area];
-          const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));
+          const keys = Array.from({ length: storage.length }, (_, index) =>
+            storage.key(index),
+          );
           for (const key of keys)
-            if (/^card-album-tutorial-v\d+:/.test(key || "")) storage.removeItem(key);
+            if (/^card-album-tutorial-v\d+:/.test(key || ""))
+              storage.removeItem(key);
         } catch {}
       }
     })();
@@ -3507,10 +3536,16 @@
         if (!part || part.family !== "primagi") return "unknown";
         const ids = codes(part.codes);
         if (!ids.length) return "unknown";
-        return ids.some((id) => supportedCodes.has(id)) ? "supported" : "unlisted";
+        return ids.some((id) => supportedCodes.has(id))
+          ? "supported"
+          : "unlisted";
       }
       function getPart(parts, id) {
-        return parts?.get?.(id) || parts?.get?.(String(id)) || parts?.get?.(Number(id));
+        return (
+          parts?.get?.(id) ||
+          parts?.get?.(String(id)) ||
+          parts?.get?.(Number(id))
+        );
       }
       function coordinateStatus(coordinate, parts) {
         if (coordinate?.family !== "primagi") return "unknown";
@@ -3525,15 +3560,25 @@
       function matches(coordinate, parts, value) {
         if (!value || coordinate?.family !== "primagi") return true;
         const state = coordinateStatus(coordinate, parts);
-        return value === "unlisted" ? state === "unlisted" || state === "unknown" : state === value;
+        return value === "unlisted"
+          ? state === "unlisted" || state === "unknown"
+          : state === value;
       }
       function targetStatus(target) {
-        if (target?.family !== "primagi" || !["coordinate", "part"].includes(target.kind))
+        if (
+          target?.family !== "primagi" ||
+          !["coordinate", "part"].includes(target.kind)
+        )
           return null;
         const catalog = window.CARD_VERSE?.tradeData?.();
-        const parts = new Map((catalog?.parts || []).map((part) => [part.id, part]));
-        if (target.kind === "part") return partStatus(getPart(parts, target.id));
-        const coordinate = catalog?.coordinates?.find((c) => c.id === String(target.id));
+        const parts = new Map(
+          (catalog?.parts || []).map((part) => [part.id, part]),
+        );
+        if (target.kind === "part")
+          return partStatus(getPart(parts, target.id));
+        const coordinate = catalog?.coordinates?.find(
+          (c) => c.id === String(target.id),
+        );
         return coordinateStatus(coordinate, parts);
       }
       function warning(target) {
@@ -3563,14 +3608,22 @@
     (() => {
       "use strict";
       function chapterLabel(value) {
-        return String(value ?? "").replace(/(?:プリティー)?オールスター第?([1１2２])章/g, (_, n) =>
-          n === "1" || n === "１" ? "スタジオ第9章" : "スタジオ第10章",
+        return String(value ?? "").replace(
+          /(?:プリティー)?オールスター第?([1１2２])章/g,
+          (_, n) =>
+            n === "1" || n === "１" ? "スタジオ第9章" : "スタジオ第10章",
         );
       }
       function chapterRank(value) {
         const label = chapterLabel(value).normalize("NFKC"),
           n = Number(label.match(/(?:第)?(\d+)章/)?.[1] || 0);
-        return (label.includes("オールスター") ? 300 : label.startsWith("スタジオ") ? 200 : 0) + n;
+        return (
+          (label.includes("オールスター")
+            ? 300
+            : label.startsWith("スタジオ")
+              ? 200
+              : 0) + n
+        );
       }
       const unavailablePhotos = new Set([
         "https://makeshop-multi-images.akamaized.net/fullidol01/itemimages/0000000359562_cu0byqt.jpg",
@@ -3584,7 +3637,9 @@
         "https://img.fril.jp/img/833541759/l/2870918479.jpg",
       ]);
       function verseImage(value) {
-        return unavailablePhotos.has(String(value || "").split("?")[0]) ? "" : value || "";
+        return unavailablePhotos.has(String(value || "").split("?")[0])
+          ? ""
+          : value || "";
       }
       window.CARD_PRIMAGI = Object.freeze({
         image(value) {
@@ -3600,9 +3655,11 @@
       "use strict";
       const families = ["onegai", "himitsu", "primagi"];
       const prefix =
-        "card-verse-public:v3:" + new URL(window.APP_CONFIG.supabaseUrl).hostname + ":";
+        "card-verse-public:v3:" +
+        new URL(window.CARD_DB.primaryConfig.supabaseUrl).hostname +
+        ":";
       try {
-        const host = new URL(window.APP_CONFIG.supabaseUrl).hostname;
+        const host = new URL(window.CARD_DB.primaryConfig.supabaseUrl).hostname;
         localStorage.removeItem("card-verse-public:v2:" + host);
         localStorage.removeItem("card-verse-public:" + host);
       } catch {}
@@ -3616,11 +3673,14 @@
         Array.isArray(data.parts) &&
         data.coordinates.every((c) => c.family === family);
       function slot(family) {
-        if (!families.includes(family)) throw Error("コーデのシリーズを確認してください。");
+        if (!families.includes(family))
+          throw Error("コーデのシリーズを確認してください。");
         if (!slots.has(family)) {
           let snapshot = null;
           try {
-            const saved = JSON.parse(localStorage.getItem(prefix + family) || "null");
+            const saved = JSON.parse(
+              localStorage.getItem(prefix + family) || "null",
+            );
             if (valid(saved, family)) snapshot = saved;
           } catch {}
           slots.set(family, {
@@ -3651,7 +3711,9 @@
           for (const part of entry.snapshot.parts) parts.set(part.id, part);
         return {
           version: currentVersion,
-          coordinates: loaded.flatMap(([, entry]) => entry.snapshot.coordinates),
+          coordinates: loaded.flatMap(
+            ([, entry]) => entry.snapshot.coordinates,
+          ),
           parts: [...parts.values()],
           loaded_families: loaded.map(([name]) => name),
         };
@@ -3664,11 +3726,14 @@
             p_family: family,
             p_version: version,
           });
-          if (typeof call.abortSignal === "function") call = call.abortSignal(controller.signal);
+          if (typeof call.abortSignal === "function")
+            call = call.abortSignal(controller.signal);
           const { data, error } = await call;
           if (error) throw error;
           if (!data)
-            throw Error("コーデ情報を取得できませんでした。時間をおいて再度お試しください。");
+            throw Error(
+              "コーデ情報を取得できませんでした。時間をおいて再度お試しください。",
+            );
           return data;
         } finally {
           clearTimeout(timer);
@@ -3681,19 +3746,32 @@
         if (!force && fresh(entry)) return entry.snapshot;
         const epoch = entry.epoch;
         const task = (async () => {
-          if (navigator.onLine === false) throw Error("通信状態を確認して再度お試しください。");
+          if (navigator.onLine === false)
+            throw Error("通信状態を確認して再度お試しください。");
           const requestedAt = Date.now();
-          let data = await request(client, family, entry.snapshot?.version || null);
+          let data = await request(
+            client,
+            family,
+            entry.snapshot?.version || null,
+          );
           if (data.omitted) {
             if (!entry.snapshot || entry.snapshot.version !== data.version)
               data = await request(client, family, null);
             else data = { ...entry.snapshot, ...data, omitted: false };
           }
           if (!valid(data, family))
-            throw Error("コーデ情報を確認できませんでした。時間をおいて再度お試しください。");
+            throw Error(
+              "コーデ情報を確認できませんでした。時間をおいて再度お試しください。",
+            );
           const serverTime = Date.parse(data.server_time) || Date.now();
-          if (currentVersion && currentVersion !== data.version && serverTime < latestTime)
-            throw Error("コーデ情報が更新されています。もう一度お試しください。");
+          if (
+            currentVersion &&
+            currentVersion !== data.version &&
+            serverTime < latestTime
+          )
+            throw Error(
+              "コーデ情報が更新されています。もう一度お試しください。",
+            );
           if (currentVersion && currentVersion !== data.version) {
             for (const [name, other] of slots)
               if (name !== family) {
@@ -3711,19 +3789,28 @@
           entry.expires =
             epoch === entry.epoch
               ? requestedAt +
-                Math.min(300000, Number.isFinite(until) ? Math.max(0, until - serverTime) : 300000)
+                Math.min(
+                  300000,
+                  Number.isFinite(until)
+                    ? Math.max(0, until - serverTime)
+                    : 300000,
+                )
               : 0;
           entry.retryAt = 0;
           entry.failures = 0;
           try {
-            localStorage.setItem(prefix + family, JSON.stringify(entry.snapshot));
+            localStorage.setItem(
+              prefix + family,
+              JSON.stringify(entry.snapshot),
+            );
           } catch {}
           return entry.snapshot;
         })()
           .catch((error) => {
             entry.lastError = error;
             entry.failures = Math.min(entry.failures + 1, 6);
-            entry.retryAt = Date.now() + Math.min(300000, 15000 * 2 ** (entry.failures - 1));
+            entry.retryAt =
+              Date.now() + Math.min(300000, 15000 * 2 ** (entry.failures - 1));
             throw error;
           })
           .finally(() => {
@@ -3804,9 +3891,10 @@
                   const controller = new AbortController();
                   const timeout = setTimeout(() => controller.abort(), 10000);
                   try {
-                    const config = window.APP_CONFIG;
+                    const config = window.CARD_DB.primaryConfig;
                     const response = await nativeFetch(
-                      config.supabaseUrl + "/rest/v1/rpc/card_album_site_status",
+                      config.supabaseUrl +
+                        "/rest/v1/rpc/card_album_site_status",
                       {
                         method: "POST",
                         headers: {
@@ -3819,7 +3907,9 @@
                       },
                     );
                     if (!response.ok)
-                      throw Error("接続が混み合っています。時間をおいて再度お試しください。");
+                      throw Error(
+                        "接続が混み合っています。時間をおいて再度お試しください。",
+                      );
                     const data = await response.json();
                     if (!data || typeof data.maintenance !== "boolean")
                       throw Error("メンテナンス設定を確認できません。");
@@ -3838,7 +3928,8 @@
                     failures = Math.min(failures + 1, 6);
                     retryAt =
                       Date.now() +
-                      Math.min(300000, 15000 * 2 ** (failures - 1)) * (1 + Math.random() * 0.2);
+                      Math.min(300000, 15000 * 2 ** (failures - 1)) *
+                        (1 + Math.random() * 0.2);
                     throw error;
                   })
                   .finally(() => {
@@ -3847,7 +3938,10 @@
                 return pending;
               }
               async function guardedFetch(input, options) {
-                const url = typeof input === "string" ? input : input.url || String(input);
+                const url =
+                  typeof input === "string"
+                    ? input
+                    : input.url || String(input);
                 if (!url.startsWith(window.APP_CONFIG.supabaseUrl + "/"))
                   return nativeFetch(input, options);
                 const status = await check();
@@ -3871,7 +3965,10 @@
                 const response = await nativeFetch(input, options);
                 if (!response.ok) {
                   const text = await response.clone().text();
-                  if (text.includes("CARD_ALBUM_MAINTENANCE") || text.includes("user_banned"))
+                  if (
+                    text.includes("CARD_ALBUM_MAINTENANCE") ||
+                    text.includes("user_banned")
+                  )
                     await check({ force: true });
                 }
                 return response;
@@ -3919,16 +4016,22 @@
               function sync(select) {
                 const state = enhanced.get(select);
                 if (!state) return;
-                const value = select.selectedOptions[0]?.textContent || "選択してください";
-                if (state.text.textContent !== value) state.text.textContent = value;
+                const value =
+                  select.selectedOptions[0]?.textContent || "選択してください";
+                if (state.text.textContent !== value)
+                  state.text.textContent = value;
                 if (state.button.disabled !== select.disabled)
                   state.button.disabled = select.disabled;
-                const labelCopy = (select.labels?.[0] || select.closest("label"))?.cloneNode(true);
+                const labelCopy = (
+                  select.labels?.[0] || select.closest("label")
+                )?.cloneNode(true);
                 labelCopy
                   ?.querySelectorAll("button, select, input, .album-select")
                   .forEach((node) => node.remove());
                 const label =
-                  select.getAttribute("aria-label") || labelCopy?.textContent.trim() || "選択項目";
+                  select.getAttribute("aria-label") ||
+                  labelCopy?.textContent.trim() ||
+                  "選択項目";
                 state.button.setAttribute(
                   "aria-label",
                   `${label.trim()}：${state.text.textContent}`,
@@ -3938,7 +4041,9 @@
               function highlight(index) {
                 if (!active) return;
                 active.index = index;
-                active.items.forEach((item, i) => item.classList.toggle("is-current", i === index));
+                active.items.forEach((item, i) =>
+                  item.classList.toggle("is-current", i === index),
+                );
                 const item = active.items[index];
                 if (item) {
                   active.button.setAttribute("aria-activedescendant", item.id);
@@ -3955,7 +4060,8 @@
                 if (!active) return;
                 const { select, options } = active;
                 const option = options[index];
-                if (!option || option.disabled || option.parentElement.disabled) return;
+                if (!option || option.disabled || option.parentElement.disabled)
+                  return;
                 const changed = select.selectedIndex !== option.index;
                 select.selectedIndex = option.index;
                 close(true);
@@ -3976,9 +4082,17 @@
                 menu.className = "album-select-menu";
                 menu.id = button.getAttribute("aria-controls");
                 menu.setAttribute("role", "listbox");
-                menu.setAttribute("aria-label", button.getAttribute("aria-label"));
+                menu.setAttribute(
+                  "aria-label",
+                  button.getAttribute("aria-label"),
+                );
                 const theme = getComputedStyle(select);
-                for (const name of ["--accent", "--soft", "--line", "--muted"]) {
+                for (const name of [
+                  "--accent",
+                  "--soft",
+                  "--line",
+                  "--muted",
+                ]) {
                   menu.style.setProperty(name, theme.getPropertyValue(name));
                 }
                 let group = null;
@@ -4021,13 +4135,19 @@
                 const topEdge = viewport?.offsetTop || 0;
                 const width = viewport?.width || innerWidth;
                 const height = viewport?.height || innerHeight;
-                const menuWidth = Math.min(Math.max(rect.width, 180), width - 24);
+                const menuWidth = Math.min(
+                  Math.max(rect.width, 180),
+                  width - 24,
+                );
                 menu.style.width = `${menuWidth}px`;
                 menu.style.left = `${Math.max(leftEdge + 12, Math.min(rect.left, leftEdge + width - menuWidth - 12))}px`;
                 const below = topEdge + height - rect.bottom - 18;
                 const above = rect.top - topEdge - 18;
                 const upwards = below < 180 && above > below;
-                const maxHeight = Math.max(80, Math.min(320, upwards ? above : below));
+                const maxHeight = Math.max(
+                  80,
+                  Math.min(320, upwards ? above : below),
+                );
                 menu.style.maxHeight = `${maxHeight}px`;
                 menu.style.top = `${upwards ? Math.max(topEdge + 12, rect.top - Math.min(menu.scrollHeight, maxHeight) - 6) : rect.bottom + 6}px`;
                 active = {
@@ -4044,7 +4164,16 @@
 
               function keydown(event, select) {
                 const key = event.key;
-                if (["ArrowDown", "ArrowUp", "Home", "End", "Enter", " "].includes(key)) {
+                if (
+                  [
+                    "ArrowDown",
+                    "ArrowUp",
+                    "Home",
+                    "End",
+                    "Enter",
+                    " ",
+                  ].includes(key)
+                ) {
                   event.preventDefault();
                   if (!active || active.select !== select) {
                     open(select);
@@ -4055,7 +4184,9 @@
                     return;
                   }
                   const allowed = active.options
-                    .map((option, i) => (option.disabled || option.parentElement.disabled ? -1 : i))
+                    .map((option, i) =>
+                      option.disabled || option.parentElement.disabled ? -1 : i,
+                    )
                     .filter((i) => i >= 0);
                   if (!allowed.length) return;
                   const current = allowed.indexOf(active.index);
@@ -4078,7 +4209,12 @@
                   event.preventDefault();
                   close(true);
                 } else if (key === "Tab") close();
-                else if (key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                else if (
+                  key.length === 1 &&
+                  !event.ctrlKey &&
+                  !event.metaKey &&
+                  !event.altKey
+                ) {
                   if (!active) open(select);
                   if (!active) return;
                   query += key.toLocaleLowerCase();
@@ -4090,14 +4226,18 @@
                     (option) =>
                       !option.disabled &&
                       !option.parentElement.disabled &&
-                      option.textContent.trim().toLocaleLowerCase().startsWith(query),
+                      option.textContent
+                        .trim()
+                        .toLocaleLowerCase()
+                        .startsWith(query),
                   );
                   if (index >= 0) highlight(index);
                 }
               }
 
               function enhance(select) {
-                if (enhanced.has(select) || select.multiple || select.size > 1) return;
+                if (enhanced.has(select) || select.multiple || select.size > 1)
+                  return;
                 const wrapper = document.createElement("span");
                 wrapper.className = "album-select";
                 select.before(wrapper);
@@ -4108,9 +4248,15 @@
                 button.setAttribute("role", "combobox");
                 button.setAttribute("aria-haspopup", "listbox");
                 button.setAttribute("aria-expanded", "false");
-                button.setAttribute("aria-controls", `album-select-menu-${++serial}`);
+                button.setAttribute(
+                  "aria-controls",
+                  `album-select-menu-${++serial}`,
+                );
                 if (select.getAttribute("aria-labelledby"))
-                  button.setAttribute("aria-labelledby", select.getAttribute("aria-labelledby"));
+                  button.setAttribute(
+                    "aria-labelledby",
+                    select.getAttribute("aria-labelledby"),
+                  );
                 const text = document.createElement("span");
                 text.className = "album-select-value";
                 const arrow = document.createElement("span");
@@ -4125,7 +4271,9 @@
                 button.addEventListener("click", () =>
                   active?.select === select ? close() : open(select),
                 );
-                button.addEventListener("keydown", (event) => keydown(event, select));
+                button.addEventListener("keydown", (event) =>
+                  keydown(event, select),
+                );
                 select.addEventListener("change", () => sync(select));
                 select.addEventListener("focus", () => button.focus());
                 select.addEventListener("invalid", () => {
@@ -4144,7 +4292,9 @@
                   active &&
                   (!active.select.isConnected ||
                     active.select.disabled ||
-                    records.some((record) => active.select.contains(record.target)))
+                    records.some((record) =>
+                      active.select.contains(record.target),
+                    ))
                 )
                   close();
                 for (const record of records) {
@@ -4156,7 +4306,9 @@
                   const select = record.target.closest?.("select");
                   if (select) sync(select);
                 }
-                document.querySelectorAll(".album-select > select").forEach(sync);
+                document
+                  .querySelectorAll(".album-select > select")
+                  .forEach(sync);
               }).observe(document.body, {
                 childList: true,
                 subtree: true,
@@ -4213,7 +4365,10 @@
               window.addEventListener("resize", () => close());
               window.visualViewport?.addEventListener("resize", () => close());
               document.addEventListener("reset", (event) =>
-                setTimeout(() => event.target.querySelectorAll("select").forEach(sync), 0),
+                setTimeout(
+                  () => event.target.querySelectorAll("select").forEach(sync),
+                  0,
+                ),
               );
             })();
           }
@@ -4265,7 +4420,8 @@
                     rail.hidePopover();
                   } catch (_) {}
                 }
-                if (drag && rail.hasPointerCapture(drag.id)) rail.releasePointerCapture(drag.id);
+                if (drag && rail.hasPointerCapture(drag.id))
+                  rail.releasePointerCapture(drag.id);
                 drag = null;
               }
               function clear() {
@@ -4279,13 +4435,15 @@
               }
               function update() {
                 frame = 0;
-                const dialogs = [...document.querySelectorAll("dialog[open]")].filter((d) =>
-                  d.matches(":modal"),
-                );
+                const dialogs = [
+                  ...document.querySelectorAll("dialog[open]"),
+                ].filter((d) => d.matches(":modal"));
                 dialogs.forEach((d) => {
                   if (!order.has(d)) order.set(d, ++sequence);
                 });
-                const active = dialogs.sort((a, b) => order.get(a) - order.get(b)).at(-1);
+                const active = dialogs
+                  .sort((a, b) => order.get(a) - order.get(b))
+                  .at(-1);
                 root.classList.toggle("album-modal-open", Boolean(active));
                 if (!active) {
                   clear();
@@ -4309,9 +4467,14 @@
                   target = null;
                   return;
                 }
-                const candidates = [active, ...active.querySelectorAll("*")].filter(scrollable);
+                const candidates = [
+                  active,
+                  ...active.querySelectorAll("*"),
+                ].filter(scrollable);
                 const cardBody =
-                  active.id === "detail" ? active.querySelector(".modal-body") : null;
+                  active.id === "detail"
+                    ? active.querySelector(".modal-body")
+                    : null;
                 const scroller = cardBody
                   ? scrollable(cardBody)
                     ? cardBody
@@ -4321,7 +4484,9 @@
                     : candidates.includes(active)
                       ? active
                       : candidates.sort(
-                          (a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight,
+                          (a, b) =>
+                            b.clientWidth * b.clientHeight -
+                            a.clientWidth * a.clientHeight,
                         )[0];
                 if (!scroller) {
                   hideRail();
@@ -4334,7 +4499,8 @@
                   target = scroller;
                   resize.observe(active);
                   if (target !== active) resize.observe(target);
-                  if (target.firstElementChild) resize.observe(target.firstElementChild);
+                  if (target.firstElementChild)
+                    resize.observe(target.firstElementChild);
                 }
                 // 内部のスクロール領域に追従し、画面内に収めます。
                 const rect = target.getBoundingClientRect();
@@ -4347,14 +4513,21 @@
                 const y = Math.max(top + 8, box.top + 8);
                 const bottom = Math.min(top + height - 8, box.bottom - 8);
                 trackHeight = Math.max(0, bottom - y);
-                const max = Math.max(0, target.scrollHeight - target.clientHeight);
+                const max = Math.max(
+                  0,
+                  target.scrollHeight - target.clientHeight,
+                );
                 if (!max || trackHeight < 40) {
                   hideRail();
                   return;
                 }
-                if (!rail.isConnected || rail.parentElement !== active) active.append(rail);
+                if (!rail.isConnected || rail.parentElement !== active)
+                  active.append(rail);
                 rail.style.left =
-                  Math.max(left + 2, Math.min(left + width - 10, box.right + 8)) + "px";
+                  Math.max(
+                    left + 2,
+                    Math.min(left + width - 10, box.right + 8),
+                  ) + "px";
                 rail.style.top = y + "px";
                 rail.style.height = trackHeight + "px";
                 try {
@@ -4369,13 +4542,20 @@
                 rail.setAttribute("aria-controls", target.id);
                 rail.setAttribute("aria-valuemin", "0");
                 rail.setAttribute("aria-valuemax", String(Math.round(max)));
-                rail.setAttribute("aria-valuenow", String(Math.round(target.scrollTop)));
+                rail.setAttribute(
+                  "aria-valuenow",
+                  String(Math.round(target.scrollTop)),
+                );
                 thumbHeight = Math.min(
                   trackHeight,
-                  Math.max(28, (trackHeight * target.clientHeight) / target.scrollHeight),
+                  Math.max(
+                    28,
+                    (trackHeight * target.clientHeight) / target.scrollHeight,
+                  ),
                 );
                 thumbTop =
-                  (trackHeight - thumbHeight) * Math.min(1, Math.max(0, target.scrollTop / max));
+                  (trackHeight - thumbHeight) *
+                  Math.min(1, Math.max(0, target.scrollTop / max));
                 thumb.style.height = thumbHeight + "px";
                 thumb.style.transform = "translateY(" + thumbTop + "px)";
               }
@@ -4397,7 +4577,9 @@
                 drag = {
                   id: e.pointerId,
                   offset:
-                    y >= thumbTop && y <= thumbTop + thumbHeight ? y - thumbTop : thumbHeight / 2,
+                    y >= thumbTop && y <= thumbTop + thumbHeight
+                      ? y - thumbTop
+                      : thumbHeight / 2,
                 };
                 rail.setPointerCapture(e.pointerId);
                 move(e.clientY, drag.offset);
@@ -4405,7 +4587,11 @@
               rail.addEventListener("pointermove", (e) => {
                 if (drag?.id === e.pointerId) move(e.clientY, drag.offset);
               });
-              for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+              for (const type of [
+                "pointerup",
+                "pointercancel",
+                "lostpointercapture",
+              ])
                 rail.addEventListener(type, () => {
                   drag = null;
                 });
@@ -4416,7 +4602,11 @@
                   e.preventDefault();
                   target.scrollTop +=
                     e.deltaY *
-                    (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? target.clientHeight : 1);
+                    (e.deltaMode === 1
+                      ? 16
+                      : e.deltaMode === 2
+                        ? target.clientHeight
+                        : 1);
                   schedule();
                 },
                 { passive: false },
@@ -4424,28 +4614,40 @@
               rail.addEventListener("keydown", (e) => {
                 if (
                   !target ||
-                  !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)
+                  ![
+                    "ArrowUp",
+                    "ArrowDown",
+                    "PageUp",
+                    "PageDown",
+                    "Home",
+                    "End",
+                  ].includes(e.key)
                 )
                   return;
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.key === "Home") target.scrollTop = 0;
-                else if (e.key === "End") target.scrollTop = target.scrollHeight;
+                else if (e.key === "End")
+                  target.scrollTop = target.scrollHeight;
                 else
                   target.scrollTop +=
                     (e.key.endsWith("Up") ? -1 : 1) *
-                    (e.key.startsWith("Page") ? target.clientHeight * 0.85 : 40);
+                    (e.key.startsWith("Page")
+                      ? target.clientHeight * 0.85
+                      : 40);
                 schedule();
               });
               new MutationObserver((records) => {
                 let changed = false;
                 for (const record of records) {
-                  if (record.target === rail || rail.contains(record.target)) continue;
+                  if (record.target === rail || rail.contains(record.target))
+                    continue;
                   if (
                     record.attributeName === "open" &&
                     record.target instanceof HTMLDialogElement
                   ) {
-                    if (record.target.open) order.set(record.target, ++sequence);
+                    if (record.target.open)
+                      order.set(record.target, ++sequence);
                     else order.delete(record.target);
                   }
                   changed = true;
@@ -4462,7 +4664,11 @@
                 "scroll",
                 (e) => {
                   if (!modal) return;
-                  if (modal.contains(e.target) && scrollable(e.target) && e.target !== target) {
+                  if (
+                    modal.contains(e.target) &&
+                    scrollable(e.target) &&
+                    e.target !== target
+                  ) {
                     hideRail();
                     target = e.target;
                     resize.observe(target);
@@ -4490,7 +4696,8 @@
               schedule();
             })();
           }
-          if (page === "card-registration") window.REGISTRATION_SITE_INFO = window.SITE_INFO;
+          if (page === "card-registration")
+            window.REGISTRATION_SITE_INFO = window.SITE_INFO;
         },
       };
     })();

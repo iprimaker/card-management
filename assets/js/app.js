@@ -9,10 +9,10 @@ window.APP_CONFIG = Object.freeze({
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
     "account-tools.js": "3fd2e643b170",
-    "album.js": "106b709f284b",
+    "album.js": "87022bf4e765",
     "archive.js": "6abd5f528291",
-    "common.js": "9a761a6b85a9",
-    "contact.js": "96d1849ab898",
+    "common.js": "7179c44d0141",
+    "contact.js": "cb0ed8317c10",
     "image-export.js": "34ee6f668ccf",
     "image-share.js": "e78854777e28",
     "list.js": "b37850959b23",
@@ -22,9 +22,10 @@ window.APP_CONFIG = Object.freeze({
     "qr-tools.js": "602bb6f3182c",
     "qr.js": "6c663015921d",
     "supabase.js": "546c8475d523",
-    "album.css": "dd8c24664c56",
+    "album.css": "16595753c5e5",
     "contact.css": "10b020e3c4d3",
     "shared.css": "eb5794622c5d",
+    "db-shards.js": "dcfd94ead267",
   };
   const moduleFiles = {
     "maintenance-warning.js": "common.js",
@@ -58,7 +59,11 @@ window.APP_CONFIG = Object.freeze({
         node.onload = resolve;
         node.onerror = () => {
           node.remove();
-          reject(Error("機能を読み込めませんでした。通信状態を確認して、もう一度お試しください。"));
+          reject(
+            Error(
+              "機能を読み込めませんでした。通信状態を確認して、もう一度お試しください。",
+            ),
+          );
         };
         document.head.append(node);
       }).catch((error) => {
@@ -77,11 +82,16 @@ window.APP_CONFIG = Object.freeze({
         });
   }
   function ensureQRBundle() {
-    return Promise.all([ensureQREncoder(), window.jsQR ? Promise.resolve() : loadFile("qr.js")]);
+    return Promise.all([
+      ensureQREncoder(),
+      window.jsQR ? Promise.resolve() : loadFile("qr.js"),
+    ]);
   }
   function loadModule(name) {
     if (!moduleFiles[name])
-      return Promise.reject(Error("機能が見つかりません。再読み込みしてください。"));
+      return Promise.reject(
+        Error("機能が見つかりません。再読み込みしてください。"),
+      );
     if (!loaded.has(name)) {
       const ready = Promise.all([vendorReady, loadFile(moduleFiles[name])])
         .then(() => {
@@ -97,7 +107,12 @@ window.APP_CONFIG = Object.freeze({
     }
     return loaded.get(name);
   }
-  window.CARD_RUNTIME = Object.freeze({ modules, loadModule, ensureQREncoder, ensureQRBundle });
+  window.CARD_RUNTIME = Object.freeze({
+    modules,
+    loadModule,
+    ensureQREncoder,
+    ensureQRBundle,
+  });
   const requestedPage = new URLSearchParams(location.search).get("view");
   const route =
     requestedPage === "contact"
@@ -115,10 +130,15 @@ window.APP_CONFIG = Object.freeze({
     ).href;
     link.onload = resolve;
     link.onerror = () =>
-      reject(Error("表示ファイルを読み込めませんでした。再読み込みしてください。"));
+      reject(
+        Error("表示ファイルを読み込めませんでした。再読み込みしてください。"),
+      );
     document.head.append(link);
   });
-  const vendorReady = loadFile("supabase.js");
+  const vendorReady = Promise.all([
+    loadFile("supabase.js"),
+    loadFile("db-shards.js"),
+  ]).then(() => window.CARD_DB.install());
   // Start independent downloads together; execution still follows the original dependency order.
   const initialFiles =
     route === "contact"
@@ -150,7 +170,9 @@ window.APP_CONFIG = Object.freeze({
     function raise(node) {
       if (!node || node.hidden) return;
       const dialogs = [...document.querySelectorAll("dialog[open]")];
-      const host = latestDialog?.open ? latestDialog : dialogs.at(-1) || document.body;
+      const host = latestDialog?.open
+        ? latestDialog
+        : dialogs.at(-1) || document.body;
       // Place the notification inside the active modal's non-inert subtree first.
       if (node.parentElement !== host) host.append(node);
       Object.assign(node.style, {
@@ -170,12 +192,15 @@ window.APP_CONFIG = Object.freeze({
       }
       // A failed popover must not retain the browser's default display:none.
       node.removeAttribute("popover");
-      node.style.display = node.classList.contains("card-notice") ? "grid" : "block";
+      node.style.display = node.classList.contains("card-notice")
+        ? "grid"
+        : "block";
     }
     window.CARD_TOAST_LAYER = Object.freeze({ raise, hide });
     new MutationObserver((records) => {
       for (const record of records) {
-        if (record.target.tagName === "DIALOG" && record.target.open) latestDialog = record.target;
+        if (record.target.tagName === "DIALOG" && record.target.open)
+          latestDialog = record.target;
       }
       const node = document.getElementById("toast");
       if (node && !node.hidden) {
@@ -260,20 +285,51 @@ window.APP_CONFIG = Object.freeze({
       "過去の情報を読み込めませんでした。もう一度お試しください。",
     ]);
     const notices = Object.freeze({
-      network: ["通信エラーが発生しました。", "接続を確認して、もう一度お試しください。"],
-      offline: ["インターネットに接続されていません。", "接続後にもう一度お試しください。"],
-      timeout: ["応答に時間がかかっています。", "時間をおいて、もう一度お試しください。"],
-      busy: ["操作が集中しています。", "しばらく時間をおいてからお試しください。"],
-      server: ["サービスに接続できませんでした。", "時間をおいて、もう一度お試しください。"],
-      session: ["ログインの有効期限が切れました。", "もう一度ログインしてください。"],
-      credentials: ["IDまたはパスワードが異なります。", "入力内容を確認してください。"],
-      permission: ["この操作を行う権限がありません。", "ログイン状態を確認してください。"],
-      generic: ["操作を完了できませんでした。", "時間をおいて、もう一度お試しください。"],
+      network: [
+        "通信エラーが発生しました。",
+        "接続を確認して、もう一度お試しください。",
+      ],
+      offline: [
+        "インターネットに接続されていません。",
+        "接続後にもう一度お試しください。",
+      ],
+      timeout: [
+        "応答に時間がかかっています。",
+        "時間をおいて、もう一度お試しください。",
+      ],
+      busy: [
+        "操作が集中しています。",
+        "しばらく時間をおいてからお試しください。",
+      ],
+      server: [
+        "サービスに接続できませんでした。",
+        "時間をおいて、もう一度お試しください。",
+      ],
+      session: [
+        "ログインの有効期限が切れました。",
+        "もう一度ログインしてください。",
+      ],
+      credentials: [
+        "IDまたはパスワードが異なります。",
+        "入力内容を確認してください。",
+      ],
+      permission: [
+        "この操作を行う権限がありません。",
+        "ログイン状態を確認してください。",
+      ],
+      generic: [
+        "操作を完了できませんでした。",
+        "時間をおいて、もう一度お試しください。",
+      ],
     });
     function fields(error) {
       const chain = [];
       const seen = new Set();
-      for (let item = error; item && chain.length < 4 && !seen.has(item); item = item.cause) {
+      for (
+        let item = error;
+        item && chain.length < 4 && !seen.has(item);
+        item = item.cause
+      ) {
         seen.add(item);
         chain.push(item);
       }
@@ -307,14 +363,20 @@ window.APP_CONFIG = Object.freeze({
         return "confirmation";
       if (
         status === 429 ||
-        /^(429|over_request_rate_limit|over_email_send_rate_limit)$/.test(code) ||
-        /rate.?limit|too many|送信回数|操作回数.*多|操作が集中|リクエスト.*多/i.test(text)
+        /^(429|over_request_rate_limit|over_email_send_rate_limit)$/.test(
+          code,
+        ) ||
+        /rate.?limit|too many|送信回数|操作回数.*多|操作が集中|リクエスト.*多/i.test(
+          text,
+        )
       )
         return "busy";
       if (
         code === "57014" ||
         /AbortError|TimeoutError/.test(names) ||
-        /timeout|timed.?out|タイムアウト|通信に時間|応答に時間|statement.*cancel/i.test(text)
+        /timeout|timed.?out|タイムアウト|通信に時間|応答に時間|statement.*cancel/i.test(
+          text,
+        )
       )
         return "timeout";
       if (
@@ -333,7 +395,11 @@ window.APP_CONFIG = Object.freeze({
         )
       )
         return "server";
-      if (/インターネットに接続されていません|通信に接続されていません|offline/i.test(text))
+      if (
+        /インターネットに接続されていません|通信に接続されていません|offline/i.test(
+          text,
+        )
+      )
         return "offline";
       if (
         /load[\s_-]*fail(?:ed)?|lode[\s_-]*fail(?:ed|ede)?|lode.?falede|failed[\s_-]*to[\s_-]*(?:fetch|load)|network(?:error| request| connection)?|ERR_(?:NETWORK|INTERNET|CONNECTION)|通信エラー|接続できません|通信できません|通信状態を確認して再度/i.test(
@@ -344,7 +410,11 @@ window.APP_CONFIG = Object.freeze({
       )
         return navigator.onLine === false ? "offline" : "network";
       if (safe.has(text)) return "known";
-      if (status === 403 || code === "42501" || /permission denied|row.level security/i.test(text))
+      if (
+        status === 403 ||
+        code === "42501" ||
+        /permission denied|row.level security/i.test(text)
+      )
         return "permission";
       if (navigator.onLine === false) return "offline";
       return "generic";
@@ -360,7 +430,8 @@ window.APP_CONFIG = Object.freeze({
         };
       if (kind === "known") {
         const text = fields(error).text;
-        if (/^(失敗しました[。]?|初期化できませんでした[。]?)$/.test(text)) return describe(null);
+        if (/^(失敗しました[。]?|初期化できませんでした[。]?)$/.test(text))
+          return describe(null);
         return {
           kind: "generic",
           title: "操作をご確認ください",
@@ -449,14 +520,19 @@ window.APP_CONFIG = Object.freeze({
       let queued = false;
       const observer = new MutationObserver((records) => {
         for (const record of records) {
-          const el = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+          const el =
+            record.target.nodeType === 1
+              ? record.target
+              : record.target.parentElement;
           if (!el || el.closest("#toast")) continue;
           const own = el.closest(selector);
           if (own) pending.add(own);
           for (const added of record.addedNodes)
             if (added.nodeType === 1) {
               if (added.matches(selector)) pending.add(added);
-              added.querySelectorAll(selector).forEach((node) => pending.add(node));
+              added
+                .querySelectorAll(selector)
+                .forEach((node) => pending.add(node));
             }
         }
         if (!queued && pending.size) {
@@ -488,11 +564,18 @@ window.APP_CONFIG = Object.freeze({
     const version = "20261122-rarity-fit-v126";
     const requested = new URLSearchParams(location.search).get("view");
     const invitationRoute = requested === "invite";
-    const page = ["shared", "browse", "contact", "card-registration"].includes(requested)
+    const page = ["shared", "browse", "contact", "card-registration"].includes(
+      requested,
+    )
       ? requested
       : "album";
     const template = document.getElementById(
-      "page-" + (page === "card-registration" ? "album" : page === "browse" ? "shared" : page),
+      "page-" +
+        (page === "card-registration"
+          ? "album"
+          : page === "browse"
+            ? "shared"
+            : page),
     );
     const rootURL = new URL("./", location.href);
     document.title =
@@ -536,7 +619,10 @@ window.APP_CONFIG = Object.freeze({
             return "";
           }
         })();
-      document.documentElement.classList.toggle("contact-primagi", theme === "primagi");
+      document.documentElement.classList.toggle(
+        "contact-primagi",
+        theme === "primagi",
+      );
     }
     const initialVisibility = document.body.style.visibility;
     document.body.style.visibility = "hidden";
@@ -555,7 +641,8 @@ window.APP_CONFIG = Object.freeze({
       document.querySelector("main").prepend(status);
     }
     if (page === "browse") {
-      document.getElementById("public-status").textContent = "カード情報を読み込み中…";
+      document.getElementById("public-status").textContent =
+        "カード情報を読み込み中…";
       document.querySelector("footer p").textContent =
         "非公式のカード検索画面 · 画像・カード情報は各権利者に帰属します。";
     }
@@ -563,8 +650,9 @@ window.APP_CONFIG = Object.freeze({
     if (invitationRoute) {
       document.body.classList.add("invitation-route");
       document.title = "招待からアルバムを作成｜カードアルバム";
-      document.getElementById("auth-normal-panel").querySelector("h2").textContent =
-        "招待からアルバムを作成";
+      document
+        .getElementById("auth-normal-panel")
+        .querySelector("h2").textContent = "招待からアルバムを作成";
       document.getElementById("login-tab").parentElement.hidden = true;
       document.getElementById("auth-form").hidden = true;
       document.getElementById("signup-flow").hidden = false;
@@ -572,7 +660,8 @@ window.APP_CONFIG = Object.freeze({
         "招待登録画面を準備しています…";
       document.getElementById("issue-album-id").hidden = true;
       document.getElementById("guest-browse-link").hidden = true;
-      document.querySelector('[data-signup-marker="id"]').textContent = "ID確認";
+      document.querySelector('[data-signup-marker="id"]').textContent =
+        "ID確認";
       const brand = document.querySelector(".wordmark");
       brand.removeAttribute("href");
       brand.setAttribute("aria-label", "カードアルバム");
@@ -594,7 +683,8 @@ window.APP_CONFIG = Object.freeze({
     const styles = stylesReady;
     styles.then(
       () => {
-        if (page !== "card-registration") document.body.style.visibility = initialVisibility;
+        if (page !== "card-registration")
+          document.body.style.visibility = initialVisibility;
       },
       () => {},
     );
@@ -607,14 +697,17 @@ window.APP_CONFIG = Object.freeze({
       .then(() => window.CARD_VISIBILITY.ready)
       .then(() => {
         if (["shared", "browse"].includes(page))
-          for (const file of ["list.js", "public.js"]) void loadFile(file).catch(() => {});
+          for (const file of ["list.js", "public.js"])
+            void loadFile(file).catch(() => {});
       });
     const preview =
       page === "album" && !invitationRoute
         ? visibilityModule
             .then(() => script("startup.js"))
             .then(() => {
-              window.CARD_STARTUP_PREVIEW.paint(document.getElementById("auth-art"));
+              window.CARD_STARTUP_PREVIEW.paint(
+                document.getElementById("auth-art"),
+              );
             })
         : Promise.resolve();
     Promise.all([styles, dependencies, preview])
@@ -624,7 +717,9 @@ window.APP_CONFIG = Object.freeze({
           : undefined,
       )
       .then(() =>
-        ["album", "browse", "shared"].includes(page) ? script("multi-filter.js") : undefined,
+        ["album", "browse", "shared"].includes(page)
+          ? script("multi-filter.js")
+          : undefined,
       )
       .then(() => script("site-common.js"))
       .then(() => {
@@ -632,9 +727,13 @@ window.APP_CONFIG = Object.freeze({
         window.CARD_SHARED_PAGE_READY = page;
       })
       .then(() =>
-        ["album", "browse", "shared"].includes(page) ? script("coordinate-assets.js") : undefined,
+        ["album", "browse", "shared"].includes(page)
+          ? script("coordinate-assets.js")
+          : undefined,
       )
-      .then(() => (page === "album" ? script("trade-image-controls.js") : undefined))
+      .then(() =>
+        page === "album" ? script("trade-image-controls.js") : undefined,
+      )
       .then(() => (page === "album" ? script("private-qr.js") : undefined))
       .then(() =>
         page === "card-registration"
@@ -642,15 +741,24 @@ window.APP_CONFIG = Object.freeze({
           : script((page === "browse" ? "shared" : page) + ".js"),
       )
       .then(() => (page === "album" ? script("aikatsu-all.js") : undefined))
-      .then(() => (page === "album" ? script("settings-commands.js") : undefined))
+      .then(() =>
+        page === "album" ? script("settings-commands.js") : undefined,
+      )
       .then(() => (page === "album" ? script("save-codes.js") : undefined))
-      .then(() => (page === "album" ? script("card-registration.js") : undefined))
+      .then(() =>
+        page === "album" ? script("card-registration.js") : undefined,
+      )
       .then(() => {
         document.body.style.visibility = initialVisibility;
       })
       .catch((error) => {
-        if (error?.code === "GUEST_BROWSE_PAUSED" || error?.code === "GUEST_BROWSE_UNAVAILABLE") {
-          window.CARD_GUEST_ACCESS.showStopped(error.code === "GUEST_BROWSE_UNAVAILABLE");
+        if (
+          error?.code === "GUEST_BROWSE_PAUSED" ||
+          error?.code === "GUEST_BROWSE_UNAVAILABLE"
+        ) {
+          window.CARD_GUEST_ACCESS.showStopped(
+            error.code === "GUEST_BROWSE_UNAVAILABLE",
+          );
           return;
         }
         document.body.classList.remove("auth-checking");
@@ -678,12 +786,20 @@ window.APP_CONFIG = Object.freeze({
     function update() {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        if (auth.hidden || getComputedStyle(auth).display === "none" || innerWidth <= 760) return;
+        if (
+          auth.hidden ||
+          getComputedStyle(auth).display === "none" ||
+          innerWidth <= 760
+        )
+          return;
         const h = intro.getBoundingClientRect().height,
           authTop = auth.getBoundingClientRect().top + scrollY,
           viewport = document.documentElement.clientHeight;
         const header = document.querySelector("body>header"),
-          safe = Math.max(16, (header?.getBoundingClientRect().height || 0) + 16);
+          safe = Math.max(
+            16,
+            (header?.getBoundingClientRect().height || 0) + 16,
+          );
         const top = Math.max(safe, (viewport - h) / 2),
           margin = Math.max(0, top - authTop);
         auth.style.setProperty("--intro-top", top + "px");

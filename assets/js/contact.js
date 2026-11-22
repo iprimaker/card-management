@@ -1,10 +1,13 @@
 /* Card Album: contact.js. Original vendor notices: assets/licenses. */
 (() => {
-  const { modules, loadModule, ensureQRBundle, ensureQREncoder } = window.CARD_RUNTIME;
+  const { modules, loadModule, ensureQRBundle, ensureQREncoder } =
+    window.CARD_RUNTIME;
   modules["contact.js"] = function (sourceURL) {
     /* contact.js */
     const albumSessionStorage = (() => {
-      const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(".")[0];
+      const project = new URL(window.APP_CONFIG.supabaseUrl).hostname.split(
+        ".",
+      )[0];
       const baseKey = `sb-${project}-auth-token`;
       const preferenceKey = `${baseKey}-remember`;
       const memory = new Map();
@@ -41,7 +44,9 @@
       function options(remember = remembered()) {
         const area = remember ? "localStorage" : "sessionStorage";
 
-        const storageKey = remember ? baseKey : `${baseKey}-private-${crypto.randomUUID()}`;
+        const storageKey = remember
+          ? baseKey
+          : `${baseKey}-private-${crypto.randomUUID()}`;
         const savedKey = remember ? baseKey : `${baseKey}-session`;
         const mapKey = (key) => savedKey + key.slice(storageKey.length);
         return {
@@ -74,13 +79,16 @@
       if (sessionError) throw sessionError;
       contactSession = data.session;
       const uid = contactSession?.user.id || null;
-      const needsIdentity = uid && (uid !== resolvedContactUser || !contactAlbumID);
+      const needsIdentity =
+        uid && (uid !== resolvedContactUser || !contactAlbumID);
       if (uid !== resolvedContactUser) contactAlbumID = "";
       const email = document.getElementById("contact-email");
       email.closest("label").hidden = !!contactSession;
       email.required = !contactSession;
       document.getElementById("contact-album-field").hidden = !contactSession;
-      document.getElementById("contact-album-id").textContent = contactSession ? "確認中…" : "";
+      document.getElementById("contact-album-id").textContent = contactSession
+        ? "確認中…"
+        : "";
       if (needsIdentity) {
         const { data: id, error } = await contactDB.rpc("card_album_my_id");
         if (generation !== contactIdentityGeneration) return;
@@ -89,11 +97,11 @@
           resolvedContactUser = uid;
         }
         document.getElementById("contact-album-id").textContent =
-          contactAlbumID || "IDを確認できませんでした";
+          window.CARD_DB.display(contactAlbumID) || "IDを確認できませんでした";
       }
       if (!needsIdentity)
         document.getElementById("contact-album-id").textContent = contactSession
-          ? contactAlbumID
+          ? window.CARD_DB.display(contactAlbumID)
           : "";
       if (!contactSession) resolvedContactUser = null;
     }
@@ -120,11 +128,18 @@
           consent: $("contact-consent").checked,
           website: $("contact-website").value,
         };
-        if (!body.consent || body.message.length < 10 || body.message.length > 3000)
+        if (
+          !body.consent ||
+          body.message.length < 10 ||
+          body.message.length > 3000
+        )
           throw Error("内容と同意欄を確認してください。");
-        const { data: result, error } = await contactDB.rpc("card_contact_submit", {
-          p_payload: body,
-        });
+        const { data: result, error } = await contactDB.rpc(
+          "card_contact_submit",
+          {
+            p_payload: body,
+          },
+        );
         if (error) throw error;
         if (!result.id) throw Error("受付を確認できませんでした。");
         $("contact-reference").textContent = result.id;
@@ -145,7 +160,9 @@
           const info = window.SITE_INFO[button.dataset.info];
           $("info-title").textContent = info.title;
           $("info-body").innerHTML = info.body;
-          for (const placeholder of $("info-body").querySelectorAll("[data-contact]")) {
+          for (const placeholder of $("info-body").querySelectorAll(
+            "[data-contact]",
+          )) {
             const a = document.createElement("a");
             a.href = location.href;
             a.textContent = "お問い合わせフォームへ";
