@@ -7,6 +7,10 @@
   "use strict";
   const config = Object.freeze({
     primary: "main",
+    catalog: {
+      url: "https://dwhlljqfredkiijrimwe.supabase.co",
+      publicKey: "sb_publishable_DI0p9r9UnHDZXryphpWCxg_ZhO8Bc8u",
+    },
     databases: [
       {
         key: "main",
@@ -38,7 +42,6 @@
     "card_verse_catalog_related_count",
     "card_primagi_catalog_counts",
     "card_album_registration_feed",
-    "card_album_site_status",
     "card_guest_browse_status",
     "card_album_maintenance_warning_schedule",
   ]);
@@ -98,6 +101,15 @@
     if (!registry.has(settings.primary))
       throw Error("本体DBの設定がありません。");
     const primary = registry.get(settings.primary);
+    const catalogSource = settings.catalog || primary;
+    const catalogURL = new URL(catalogSource.url);
+    if (catalogURL.protocol !== "https:" || !/^[a-z0-9-]+\.supabase\.co$/.test(catalogURL.hostname)
+      || catalogURL.port || catalogURL.username || catalogURL.password || catalogURL.pathname !== "/"
+      || catalogURL.search || catalogURL.hash || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(catalogSource.publicKey)) {
+      throw Error("共通情報DBの公開接続先を確認してください。");
+    }
+    const catalog = Object.freeze({ ...catalogSource, url: catalogURL.origin,
+      project: catalogURL.hostname.split(".")[0] });
     const entries = [
       primary,
       ...[...registry.values()].filter((item) => item !== primary),
@@ -188,6 +200,14 @@
         );
       return anonymous.get(key);
     }
+    let catalogAnonymous = null;
+    function catalogClient() {
+      if (!catalogAnonymous) catalogAnonymous = createClient(catalog.url, catalog.publicKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false,
+          storageKey: "card-catalog-anon:" + catalog.project },
+      });
+      return catalogAnonymous;
+    }
     function personalClient(key, remember = true) {
       const database = entry(key);
       if (!database.enabled) throw Error(database.label + "は準備中です。");
@@ -218,13 +238,13 @@
           if (property === "rpc")
             return (name, ...args) =>
               (catalogRPCs.has(name)
-                ? publicClient(settings.primary)
+                ? catalogClient()
                 : target
               ).rpc(name, ...args);
           if (property === "from")
             return (table, ...args) => {
               if (!catalogTables.has(table)) return target.from(table, ...args);
-              const source = publicClient(settings.primary).from(
+              const source = catalogClient().from(
                 table,
                 ...args,
               );
@@ -385,6 +405,7 @@
       display,
       route,
       publicClient,
+      catalogClient,
       personalClient,
       wrap,
       signIn,
@@ -428,6 +449,11 @@ if (typeof window !== "undefined")
       ...initial,
       supabaseUrl: new URL(primary.url).origin,
       supabaseKey: primary.publicKey,
+    });
+    const catalogConfig = Object.freeze({
+      ...initial,
+      supabaseUrl: settings.catalog.url,
+      supabaseKey: settings.catalog.publicKey,
     });
     window.APP_CONFIG = Object.freeze({
       ...initial,
@@ -491,6 +517,7 @@ if (typeof window !== "undefined")
     window.CARD_DB = Object.freeze({
       key: current.key,
       primaryConfig,
+      catalogConfig,
       install,
       display,
       navigate,

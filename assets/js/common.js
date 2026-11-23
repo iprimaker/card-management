@@ -268,7 +268,7 @@
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 8000);
           try {
-            const config = window.CARD_DB.primaryConfig;
+            const config = (window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig);
             const response = await nativeFetch(
               config.supabaseUrl + "/rest/v1/rpc/card_guest_browse_status",
               {
@@ -495,7 +495,7 @@
       const nativeFetch = window.fetch?.bind(window);
       async function refresh() {
         if (document.hidden || request || !nativeFetch) return;
-        const config = window.CARD_DB.primaryConfig;
+        const config = (window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig);
         if (!config?.supabaseUrl || !config?.supabaseKey) return;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
@@ -3656,10 +3656,10 @@
       const families = ["onegai", "himitsu", "primagi"];
       const prefix =
         "card-verse-public:v3:" +
-        new URL(window.CARD_DB.primaryConfig.supabaseUrl).hostname +
+        new URL((window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig).supabaseUrl).hostname +
         ":";
       try {
-        const host = new URL(window.CARD_DB.primaryConfig.supabaseUrl).hostname;
+        const host = new URL((window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig).supabaseUrl).hostname;
         localStorage.removeItem("card-verse-public:v2:" + host);
         localStorage.removeItem("card-verse-public:" + host);
       } catch {}
@@ -3891,7 +3891,7 @@
                   const controller = new AbortController();
                   const timeout = setTimeout(() => controller.abort(), 10000);
                   try {
-                    const config = window.CARD_DB.primaryConfig;
+                    const config = window.APP_CONFIG;
                     const response = await nativeFetch(
                       config.supabaseUrl +
                         "/rest/v1/rpc/card_album_site_status",

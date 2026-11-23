@@ -7055,7 +7055,7 @@
         );
       const cacheKey =
         "card-verse-public:" +
-        new URL(window.CARD_DB.primaryConfig.supabaseUrl).hostname;
+        new URL((window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig).supabaseUrl).hostname;
       let catalog = null,
         parts = new Map(),
         owned = new Set(),
