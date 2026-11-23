@@ -9,7 +9,7 @@ window.APP_CONFIG = Object.freeze({
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
     "account-tools.js": "3fd2e643b170",
-    "album.js": "87022bf4e765",
+    "album.js": "c1b011a8fd94",
     "archive.js": "6abd5f528291",
     "common.js": "7179c44d0141",
     "contact.js": "cb0ed8317c10",

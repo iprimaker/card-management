@@ -3599,14 +3599,14 @@
         const logoutSession = session;
         accountPresenceLoggingOut = true;
         await accountPresencePending.catch(() => {});
-        const { error } = await db.auth.signOut();
+        const { error } = await db.auth.signOut({ scope: "local" });
         if (error) {
           accountPresenceLoggingOut = false;
           accountPresenceSent = 0;
           recordAccountPresence();
         }
         if (error) throw error;
-        await recordConfirmedLogout(logoutSession, true);
+        await recordConfirmedLogout(logoutSession, false);
         $("logout-dialog").close();
         await authChanged("SIGNED_OUT", null);
       } catch (error) {
@@ -5913,7 +5913,7 @@
       const current = () => host.session()?.user.id || null;
       function shareURL() {
         if (!hasLink || !/^[0-9a-f]{64}$/.test(token || "")) return null;
-        const url = new URL("shared/", host.base());
+        const url = new URL("./?view=shared", host.base());
         url.hash = token;
         return window.CARD_DB.shareURL(url);
       }
@@ -6407,11 +6407,15 @@
         let previous;
         try {
           const url = new URL($("share-restore-input").value.trim());
-          const base = new URL("share/", host.base());
-          const modern = new URL("shared/", host.base());
+          const base = new URL("./", host.base());
+          const aliases = ["share/", "shared/", "share/index.html", "shared/index.html"]
+            .map((path) => new URL(path, base).pathname);
+          const rootPaths = [base.pathname, new URL("index.html", base).pathname];
+          const validPath = aliases.includes(url.pathname)
+            || (rootPaths.includes(url.pathname) && url.searchParams.get("view") === "shared");
           if (
             url.origin !== base.origin ||
-            ![base.pathname, modern.pathname].includes(url.pathname) ||
+            !validPath ||
             (url.searchParams.get("db") || "main") !== window.CARD_DB.key
           )
             throw Error();
