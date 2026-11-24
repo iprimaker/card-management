@@ -9,7 +9,16 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="カードアルバム" />
     <meta name="theme-color" content="#f6b5ce" />
-    <script defer src="./assets/js/app.js?v=20261123-operations-catalog-v155"></script>
+    <link
+      rel="stylesheet"
+      href="./assets/css/developer-info.css?v=20261124-v179"
+    />
+    <script defer src="./assets/js/diagnostics.js?v=20261125-v180-news-fix"></script>
+    <script
+      defer
+      src="./assets/js/app.js?v=20261125-v180-r14"
+    ></script>
+    <link rel="stylesheet" href="./assets/css/card-list-quantity.css?v=180-r14">
   </head>
   <body>
     <template id="page-album" data-body-class="">
@@ -18,7 +27,11 @@
           <img alt="" class="header-card" hidden="" id="header-card" />
           <span id="header-title">カードアルバム</span>
         </a>
-        <a id="guest-browse-link" hidden class="guest-browse-link" href="./?view=browse"
+        <a
+          id="guest-browse-link"
+          hidden
+          class="guest-browse-link"
+          href="./?view=browse"
           >ログインせずに利用</a
         >
         <button
@@ -32,13 +45,22 @@
           <span></span><span></span><span></span>
         </button>
         <nav aria-label="アルバムの操作" hidden="" id="nav">
-          <div aria-label="作品を切り替える" class="game-switch" id="game-switch" role="group">
+          <div
+            aria-label="作品を切り替える"
+            class="game-switch"
+            id="game-switch"
+            role="group"
+          >
             <span aria-hidden="true" class="game-switch-slider"></span>
             <button aria-pressed="false" data-game="aikatsu">アイカツ！</button>
             <button aria-pressed="false" data-game="aipri">アイプリ</button
-            ><button type="button" data-game="primagi" aria-pressed="false">プリマジ</button>
+            ><button type="button" data-game="primagi" aria-pressed="false">
+              プリマジ
+            </button>
           </div>
-          <button hidden="" id="ownership-export-open" type="button">所持状況を共有</button>
+          <button hidden="" id="ownership-export-open" type="button">
+            所持状況を共有
+          </button>
           <button hidden="" id="probability-open">確率確認</button>
           <button id="edit-nickname">ニックネームを変更</button>
           <button id="logout">ログアウト</button>
@@ -48,7 +70,11 @@
         <section class="auth" id="auth">
           <div class="intro">
             <h1>あなたのカードを<br />まとめて管理。</h1>
-            <div aria-label="カードのスライド一覧" class="card-marquee" id="auth-art">
+            <div
+              aria-label="カードのスライド一覧"
+              class="card-marquee"
+              id="auth-art"
+            >
               <div class="marquee-track">
                 <div class="marquee-group"></div>
                 <div aria-hidden="true" class="marquee-group"></div>
@@ -86,7 +112,12 @@
           </div>
 
           <div class="auth-panel">
-            <section id="maintenance-panel" class="maintenance-panel" hidden="" aria-live="polite">
+            <section
+              id="maintenance-panel"
+              class="maintenance-panel"
+              hidden=""
+              aria-live="polite"
+            >
               <span class="maintenance-symbol" aria-hidden="true">✦</span>
               <p class="maintenance-kicker">CARD ALBUM</p>
               <h2>メンテナンス中</h2>
@@ -94,12 +125,17 @@
                 ただ今システムのメンテナンスをしていますので、アルバムを開けません。
               </p>
               <div class="maintenance-schedule">
-                <span>メンテナンス終了予定</span><strong id="maintenance-end">未定</strong>
+                <span>メンテナンス終了予定</span
+                ><strong id="maintenance-end">未定</strong>
               </div>
               <p class="maintenance-wait">
                 流れてくるカードを眺めて、<br />今しばらくお待ちください。
               </p>
-              <button class="text-button" id="maintenance-refresh" type="button">
+              <button
+                class="text-button"
+                id="maintenance-refresh"
+                type="button"
+              >
                 状況を確認する
               </button>
               <p id="maintenance-check-message" role="status"></p>
@@ -144,7 +180,9 @@
                     role="alert"
                   ></span
                 ></label>
-                <button class="primary" id="auth-submit" type="submit">ログイン</button>
+                <button class="primary" id="auth-submit" type="submit">
+                  ログイン
+                </button>
                 <p class="account-retention-note">
                   1か月間ログイン・利用がないアカウントは所持記録とともに自動削除します。削除されたIDは再利用できません。
                 </p>
@@ -157,7 +195,12 @@
                 </ol>
                 <section id="signup-id-step">
                   <h3>あなたのアルバムID</h3>
-                  <p class="muted" id="signup-registration-status" role="status" aria-live="polite">
+                  <p
+                    class="muted"
+                    id="signup-registration-status"
+                    role="status"
+                    aria-live="polite"
+                  >
                     受付状況を確認しています…
                   </p>
                   <section
@@ -166,18 +209,29 @@
                     aria-labelledby="invitation-notice-title"
                     hidden
                   >
-                    <span class="registration-invitation-badge">招待受付中</span>
+                    <span class="registration-invitation-badge"
+                      >招待受付中</span
+                    >
                     <h3 id="invitation-notice-title">新規登録は招待制です</h3>
                     <p class="registration-invitation-intro">
                       システムへの負荷を抑えるため、現在は招待による新規登録のみ受け付けています。
                     </p>
-                    <ol class="registration-invitation-steps" aria-label="招待のお申し込み方法">
+                    <ol
+                      class="registration-invitation-steps"
+                      aria-label="招待のお申し込み方法"
+                    >
                       <li>
-                        <span class="registration-invitation-number" aria-hidden="true">1</span
+                        <span
+                          class="registration-invitation-number"
+                          aria-hidden="true"
+                          >1</span
                         ><span>制作者のXアカウントをフォロー</span>
                       </li>
                       <li>
-                        <span class="registration-invitation-number" aria-hidden="true">2</span
+                        <span
+                          class="registration-invitation-number"
+                          aria-hidden="true"
+                          >2</span
                         ><span>DMで新規登録を希望する旨をご連絡ください</span>
                       </li>
                     </ol>
@@ -187,7 +241,12 @@
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="19"
+                        height="19"
+                        aria-hidden="true"
+                      >
                         <path
                           fill="currentColor"
                           d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.5 22H2.3l8.2-9.4L.8 2h6.5l4.5 6.7L18.9 2Zm-1.1 18h1.7L6.4 3.9H4.6L17.8 20Z"
@@ -213,7 +272,12 @@
                       招待URLをお持ちの方は、そのURLから登録へお進みください。
                     </p>
                   </section>
-                  <button class="primary" id="issue-album-id" type="button" hidden>
+                  <button
+                    class="primary"
+                    id="issue-album-id"
+                    type="button"
+                    hidden
+                  >
                     アルバムIDを発行
                   </button>
                   <aside
@@ -228,8 +292,12 @@
                       >アルバムID発行時の注意事項
                     </h4>
                     <ul>
-                      <li>アルバムIDは自動発行され、指定や発行後の変更はできません。</li>
-                      <li>発行前にインターネットの接続状況をご確認ください。</li>
+                      <li>
+                        アルバムIDは自動発行され、指定や発行後の変更はできません。
+                      </li>
+                      <li>
+                        発行前にインターネットの接続状況をご確認ください。
+                      </li>
                       <li>
                         発行処理中は、ボタンの連続操作やページの再読み込み、ブラウザを閉じる操作をお控えください。
                       </li>
@@ -238,7 +306,9 @@
                       </li>
                     </ul>
                   </aside>
-                  <button id="signup-issue-recheck" type="button" hidden>発行状況を再確認</button>
+                  <button id="signup-issue-recheck" type="button" hidden>
+                    発行状況を再確認
+                  </button>
                   <div hidden="" id="issued-id-panel">
                     <div class="album-id-card">
                       <output id="issued-album-id"></output
@@ -282,10 +352,17 @@
                       type="password"
                   /></label>
                   <p class="muted">8〜128文字で設定してください。</p>
-                  <p class="field-error" hidden="" id="signup-password-error" role="alert"></p>
+                  <p
+                    class="field-error"
+                    hidden=""
+                    id="signup-password-error"
+                    role="alert"
+                  ></p>
                   <div class="signup-actions">
                     <button id="signup-back-id" type="button">戻る</button
-                    ><button class="primary" type="submit">ニックネームを登録</button>
+                    ><button class="primary" type="submit">
+                      ニックネームを登録
+                    </button>
                   </div>
                 </form>
                 <form hidden="" id="signup-nickname-form" novalidate="">
@@ -322,8 +399,11 @@
                 </form>
                 <p class="field-error" id="signup-message" role="status"></p>
               </div>
-              <button class="text-button" hidden="" id="forgot">パスワードを忘れた方</button
-              ><button class="text-button" hidden="" id="resend">確認メールを再送する</button>
+              <button class="text-button" hidden="" id="forgot">
+                パスワードを忘れた方</button
+              ><button class="text-button" hidden="" id="resend">
+                確認メールを再送する
+              </button>
               <p id="auth-message" role="status"></p>
               <form hidden="" id="password-form">
                 <label
@@ -340,16 +420,33 @@
         </section>
         <section class="auth-result" hidden="" id="auth-result">
           <div class="auth-panel">
-            <span aria-hidden="true" class="confirmation-icon" id="auth-result-icon">✓</span>
+            <span
+              aria-hidden="true"
+              class="confirmation-icon"
+              id="auth-result-icon"
+              >✓</span
+            >
             <h1 id="auth-result-title">登録できました</h1>
-            <output class="created-album-id" hidden="" id="auth-result-album-id"></output>
+            <output
+              class="created-album-id"
+              hidden=""
+              id="auth-result-album-id"
+            ></output>
             <p id="auth-result-text" role="status"></p>
-            <p class="account-retention-note" hidden="" id="auth-result-retention">
-              <strong>パスワードを忘れた場合、再設定やアカウントの復旧はできません。</strong><br />
+            <p
+              class="account-retention-note"
+              hidden=""
+              id="auth-result-retention"
+            >
+              <strong
+                >パスワードを忘れた場合、再設定やアカウントの復旧はできません。</strong
+              ><br />
               アルバムIDとパスワードを、安全な場所に保存してください。<br /><br />
               1か月間ログイン・利用がないと、アカウントと所持記録を自動削除します。削除されたIDは再利用できません。
             </p>
-            <button class="primary" id="auth-result-next">アルバムを選ぶ</button>
+            <button class="primary" id="auth-result-next">
+              アルバムを選ぶ
+            </button>
           </div>
         </section>
         <section hidden="" id="selection">
@@ -410,10 +507,14 @@
           >
             <button aria-pressed="true" class="active" data-family="おねがい">
               おねがいアイプリ</button
-            ><button aria-pressed="false" data-family="ひみつ">ひみつのアイプリ</button>
+            ><button aria-pressed="false" data-family="ひみつ">
+              ひみつのアイプリ
+            </button>
           </div>
           <div class="progress-card">
-            <div><span>カードの取得率</span><strong id="percent">0%</strong></div>
+            <div>
+              <span>カードの取得率</span><strong id="percent">0%</strong>
+            </div>
             <div class="progress-track"><span id="progress-bar"></span></div>
             <div class="progress-bottom">
               <p id="progress-count"></p>
@@ -431,7 +532,9 @@
           </div>
           <div class="series-progress" hidden="" id="series-progress"></div>
           <details class="filter-panel" id="filter-panel">
-            <summary>カードを絞り込む <span id="filter-summary"></span></summary>
+            <summary>
+              カードを絞り込む <span id="filter-summary"></span>
+            </summary>
             <div class="filter-content">
               <label class="search-label"
                 >フリーワード検索<input
@@ -449,7 +552,9 @@
               >
               <div class="filter-grid" id="filters"></div>
               <div class="filter-footer">
-                <button class="text-button" id="reset">すべての絞り込みを解除</button>
+                <button class="text-button" id="reset">
+                  すべての絞り込みを解除
+                </button>
               </div>
             </div>
           </details>
@@ -489,17 +594,35 @@
                   <option value="all">すべて</option>
                 </select>
               </label>
-              <div aria-label="カード一覧の列数" class="mobile-column-control" role="group">
+              <div
+                aria-label="カード一覧の列数"
+                class="mobile-column-control"
+                role="group"
+              >
                 <span class="mobile-column-label">カードの並び</span>
                 <div class="mobile-column-buttons">
-                  <button aria-pressed="false" data-card-columns="2" type="button">2列</button>
-                  <button aria-pressed="true" data-card-columns="3" type="button">3列</button>
+                  <button
+                    aria-pressed="false"
+                    data-card-columns="2"
+                    type="button"
+                  >
+                    2列
+                  </button>
+                  <button
+                    aria-pressed="true"
+                    data-card-columns="3"
+                    type="button"
+                  >
+                    3列
+                  </button>
                 </div>
               </div>
             </div>
           </div>
           <div class="card-grid" data-mobile-columns="3" id="cards"></div>
-          <p hidden="" id="empty">見つかりませんでした。条件を変えて探してみてください。</p>
+          <p hidden="" id="empty">
+            見つかりませんでした。条件を変えて探してみてください。
+          </p>
           <div class="pagination">
             <button id="prev">前のページ</button>
             <nav aria-label="カード一覧のページ" id="page-numbers"></nav>
@@ -528,7 +651,9 @@
               ×
             </button>
           </div>
-          <p class="muted">登録した所持枚数から計算した割合です。公式の排出確率ではありません。</p>
+          <p class="muted">
+            登録した所持枚数から計算した割合です。公式の排出確率ではありません。
+          </p>
           <section class="probability-summary">
             <h2>シリーズ総合</h2>
             <p class="muted" id="probability-total"></p>
@@ -558,12 +683,21 @@
       </main>
       <footer>
         <p class="footer-note">
-          非公式の個人用カード管理サイト · 画像・カード情報は各公式サイトに帰属します。
+          非公式の個人用カード管理サイト ·
+          画像・カード情報は各公式サイトに帰属します。
         </p>
         <div>
-          <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
+          <a
+            href="https://dcd.aikatsu.com/encore/cardlist/"
+            rel="noopener"
+            target="_blank"
             >アイカツ！公式</a
-          ><a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
+          ><a
+            href="https://aipri.jp/card/oa4.html"
+            rel="noopener"
+            target="_blank"
+            >アイプリ公式</a
+          >
           <a
             href="https://www.takaratomy-arts.co.jp/specials/primagi/"
             target="_blank"
@@ -589,7 +723,9 @@
         <form id="nickname-form">
           <div class="nickname-heading-row">
             <span class="eyebrow">MY ALBUM</span
-            ><button aria-label="閉じる" id="nickname-top-close" type="button">×</button>
+            ><button aria-label="閉じる" id="nickname-top-close" type="button">
+              ×
+            </button>
           </div>
           <h2 id="nickname-heading">アルバムの名前</h2>
           <label
@@ -604,13 +740,16 @@
           <p id="nickname-message" role="status"></p>
           <div class="nickname-actions">
             <button id="nickname-cancel" type="button">閉じる</button
-            ><button class="primary" id="nickname-save" type="submit">保存する</button>
+            ><button class="primary" id="nickname-save" type="submit">
+              保存する
+            </button>
           </div>
         </form>
       </dialog>
       <dialog id="detail">
         <div class="modal-top">
-          <span id="modal-code"></span><button aria-label="閉じる" id="close">×</button>
+          <span id="modal-code"></span
+          ><button aria-label="閉じる" id="close">×</button>
         </div>
         <div class="modal-body">
           <div class="viewer">
@@ -625,16 +764,33 @@
             <h2 id="modal-name"></h2>
             <dl id="modal-fields"></dl>
             <p class="muted" hidden="" id="metadata-note"></p>
-            <button class="ownership-button" hidden="" id="modal-owned"></button>
+            <button
+              class="ownership-button"
+              hidden=""
+              id="modal-owned"
+            ></button>
             <div class="quantity-controls" hidden="" id="quantity-controls">
               <span>所持数</span>
               <div>
-                <button aria-label="所持数を1枚減らす" id="quantity-minus" type="button">−</button
+                <button
+                  aria-label="所持数を1枚減らす"
+                  id="quantity-minus"
+                  type="button"
+                >
+                  −</button
                 ><output aria-live="polite" id="quantity-value">1枚</output
-                ><button aria-label="所持数を1枚増やす" id="quantity-plus" type="button">＋</button>
+                ><button
+                  aria-label="所持数を1枚増やす"
+                  id="quantity-plus"
+                  type="button"
+                >
+                  ＋
+                </button>
               </div>
             </div>
-            <a id="modal-source" rel="noopener" target="_blank">公式カードリスト</a>
+            <a id="modal-source" rel="noopener" target="_blank"
+              >公式カードリスト</a
+            >
           </div>
         </div>
         <nav aria-label="カードの移動" class="detail-navigation">
@@ -652,8 +808,15 @@
           <section aria-label="アルバムID" class="logout-identity">
             <span class="logout-identity-label">ALBUM ID</span>
             <div class="logout-id-row">
-              <output aria-label="あなたのアルバムID" id="account-id-value"></output>
-              <button aria-label="アルバムIDをコピー" id="account-id-copy" type="button">
+              <output
+                aria-label="あなたのアルバムID"
+                id="account-id-value"
+              ></output>
+              <button
+                aria-label="アルバムIDをコピー"
+                id="account-id-copy"
+                type="button"
+              >
                 コピー
               </button>
             </div>
@@ -666,7 +829,9 @@
           <div class="account-actions">
             <button class="primary" id="logout-confirm">ログアウト</button>
           </div>
-          <button class="account-delete-link" id="account-delete-open">アカウント情報を削除</button>
+          <button class="account-delete-link" id="account-delete-open">
+            アカウント情報を削除
+          </button>
         </div>
         <div hidden="" id="account-delete-panel">
           <p>
@@ -680,7 +845,11 @@
           /></label>
           <div class="account-actions">
             <button id="account-delete-back">戻る</button
-            ><button class="danger-button" disabled="" id="account-delete-confirm">
+            ><button
+              class="danger-button"
+              disabled=""
+              id="account-delete-confirm"
+            >
               アカウントを削除
             </button>
           </div>
@@ -691,10 +860,16 @@
       <dialog aria-labelledby="id-password-help-title" id="id-password-help">
         <div class="modal-top">
           <h2 id="id-password-help-title">パスワードを忘れた方へ</h2>
-          <button aria-label="閉じる" id="id-password-help-close" type="button">×</button>
+          <button aria-label="閉じる" id="id-password-help-close" type="button">
+            ×
+          </button>
         </div>
-        <p>パスワードを忘れた場合、パスワードの再設定やアカウントの復旧はできません。</p>
-        <p>ブラウザや端末のパスワード管理に、保存したパスワードがないかご確認ください。</p>
+        <p>
+          パスワードを忘れた場合、パスワードの再設定やアカウントの復旧はできません。
+        </p>
+        <p>
+          ブラウザや端末のパスワード管理に、保存したパスワードがないかご確認ください。
+        </p>
         <p>
           パスワードが見つからない場合は、新しいアルバムの登録をご検討ください。以前のアカウントの記録は引き継げません。
         </p>
@@ -709,7 +884,9 @@
         <section class="contact-panel" id="contact-panel">
           <span class="eyebrow">CONTACT</span>
           <h1>お問い合わせ</h1>
-          <p class="muted">カード情報の修正やサイトに関するご相談をお送りください。</p>
+          <p class="muted">
+            カード情報の修正やサイトに関するご相談をお送りください。
+          </p>
           <form id="contact-form">
             <div hidden="" id="contact-album-field">
               <label>アルバムID</label
@@ -723,10 +900,16 @@
                 maxlength="254"
                 required=""
                 type="email"
-              /><small>連絡を受け取れるアドレスを入力してください。</small></label
+              /><small
+                >連絡を受け取れるアドレスを入力してください。</small
+              ></label
             ><label
               >お名前・ニックネーム <small>任意</small
-              ><input autocomplete="name" id="contact-name" maxlength="40" type="text" /></label
+              ><input
+                autocomplete="name"
+                id="contact-name"
+                maxlength="40"
+                type="text" /></label
             ><label
               >お問い合わせの種類<select id="contact-category">
                 <option value="question">使い方についての質問</option>
@@ -749,7 +932,10 @@
                 >10〜3,000文字。パスワードや確認メールのURLは記載しないでください。</small
               ></label
             ><label aria-hidden="true" class="contact-honeypot"
-              >Website<input autocomplete="off" id="contact-website" tabindex="-1" /></label
+              >Website<input
+                autocomplete="off"
+                id="contact-website"
+                tabindex="-1" /></label
             ><label class="consent"
               ><input id="contact-consent" required="" type="checkbox" /><span
                 >プライバシーポリシーを確認し、入力内容の取り扱いに同意します。<button
@@ -762,7 +948,9 @@
               ></label
             >
             <p id="contact-error" role="status"></p>
-            <button class="primary" id="contact-submit" type="submit">送信する</button>
+            <button class="primary" id="contact-submit" type="submit">
+              送信する
+            </button>
           </form>
         </section>
         <section class="contact-panel" hidden="" id="contact-complete">
@@ -776,10 +964,18 @@
       </main>
       <footer>
         <div>
-          <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
+          <a
+            href="https://dcd.aikatsu.com/encore/cardlist/"
+            rel="noopener"
+            target="_blank"
             >アイカツ！公式</a
           >
-          <a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
+          <a
+            href="https://aipri.jp/card/oa4.html"
+            rel="noopener"
+            target="_blank"
+            >アイプリ公式</a
+          >
           <a
             href="https://www.takaratomy-arts.co.jp/specials/primagi/"
             target="_blank"
@@ -820,14 +1016,22 @@
         <section id="public-album" hidden="">
           <div class="public-heading">
             <h1 id="public-title">公開アルバム</h1>
-            <button type="button" id="public-refresh" aria-label="所持状況を再読み込み">
+            <button
+              type="button"
+              id="public-refresh"
+              aria-label="所持状況を再読み込み"
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M20 8a8.5 8.5 0 1 0 .3 7M20 3v5h-5"></path></svg
               ><span>再読み込み</span>
             </button>
           </div>
           <nav id="public-scopes" aria-label="公開中のアルバム"></nav>
-          <aside id="public-scope-note" aria-label="表示中の公開範囲" hidden=""></aside>
+          <aside
+            id="public-scope-note"
+            aria-label="表示中の公開範囲"
+            hidden=""
+          ></aside>
           <div class="public-progress">
             <span>総取得率</span><strong id="public-rate"></strong>
             <div class="public-progress-track">
@@ -858,12 +1062,23 @@
                   autocomplete="off"
               /></label>
               <div id="public-fields"></div>
-              <button id="public-reset" type="button">すべての絞り込みを解除</button>
+              <button id="public-reset" type="button">
+                すべての絞り込みを解除
+              </button>
             </div>
           </details>
-          <div id="public-tags" class="active-filters" aria-label="適用中の絞り込み"></div>
+          <div
+            id="public-tags"
+            class="active-filters"
+            aria-label="適用中の絞り込み"
+          ></div>
           <div class="public-owned-wrap">
-            <div id="public-owned" class="owned-tabs" role="group" aria-label="所持状況"></div>
+            <div
+              id="public-owned"
+              class="owned-tabs"
+              role="group"
+              aria-label="所持状況"
+            ></div>
           </div>
           <div class="public-toolbar results-heading">
             <h2 id="public-found"></h2>
@@ -877,28 +1092,56 @@
                   <option value="all">すべて</option>
                 </select></label
               >
-              <div class="public-layout mobile-column-control" role="group" aria-label="一覧の並び">
-                <span id="public-layout-label" class="mobile-column-label">カードの並び</span>
+              <div
+                class="public-layout mobile-column-control"
+                role="group"
+                aria-label="一覧の並び"
+              >
+                <span id="public-layout-label" class="mobile-column-label"
+                  >カードの並び</span
+                >
                 <div class="mobile-column-buttons">
-                  <button type="button" data-public-columns="2" aria-pressed="false">2列</button
-                  ><button type="button" data-public-columns="3" aria-pressed="true">3列</button>
+                  <button
+                    type="button"
+                    data-public-columns="2"
+                    aria-pressed="false"
+                  >
+                    2列</button
+                  ><button
+                    type="button"
+                    data-public-columns="3"
+                    aria-pressed="true"
+                  >
+                    3列
+                  </button>
                 </div>
               </div>
             </div>
           </div>
           <div id="public-cards"></div>
-          <p id="public-empty" hidden="">見つかりませんでした。条件を変えて探してみてください。</p>
+          <p id="public-empty" hidden="">
+            見つかりませんでした。条件を変えて探してみてください。
+          </p>
           <nav id="public-pages" aria-label="ページ切り替え"></nav>
         </section>
       </main>
       <footer id="public-site-footer">
         <p class="footer-note">
-          非公式のカードアルバム共有画面 · 画像・カード情報は各権利者に帰属します。
+          非公式のカードアルバム共有画面 ·
+          画像・カード情報は各権利者に帰属します。
         </p>
         <div>
-          <a href="https://dcd.aikatsu.com/encore/cardlist/" rel="noopener" target="_blank"
+          <a
+            href="https://dcd.aikatsu.com/encore/cardlist/"
+            rel="noopener"
+            target="_blank"
             >アイカツ！公式</a
-          ><a href="https://aipri.jp/card/oa4.html" rel="noopener" target="_blank">アイプリ公式</a>
+          ><a
+            href="https://aipri.jp/card/oa4.html"
+            rel="noopener"
+            target="_blank"
+            >アイプリ公式</a
+          >
           <a
             href="https://www.takaratomy-arts.co.jp/specials/primagi/"
             target="_blank"
@@ -908,16 +1151,28 @@
         </div>
         <div class="footer-links">
           <button data-share-info="terms" type="button">利用規約</button
-          ><button data-share-info="privacy" type="button">プライバシーポリシー</button
-          ><button data-share-info="about" type="button">このサイトについて</button>
+          ><button data-share-info="privacy" type="button">
+            プライバシーポリシー</button
+          ><button data-share-info="about" type="button">
+            このサイトについて
+          </button>
         </div>
       </footer>
-      <aside id="public-banner" class="public-signup-banner" aria-label="新規登録のご案内">
-        <button type="button" id="public-banner-close" aria-label="新規登録の案内を閉じる">
+      <aside
+        id="public-banner"
+        class="public-signup-banner"
+        aria-label="新規登録のご案内"
+      >
+        <button
+          type="button"
+          id="public-banner-close"
+          aria-label="新規登録の案内を閉じる"
+        >
           ×
         </button>
         <div class="public-banner-copy">
-          <span>MY CARD ALBUM</span><strong>あなたのカードも、ひとつのアルバムに。</strong>
+          <span>MY CARD ALBUM</span
+          ><strong>あなたのカードも、ひとつのアルバムに。</strong>
           <p>集めたカードを記録して、コレクションを共有。</p>
         </div>
         <div class="public-banner-marquee" aria-hidden="true">
@@ -926,14 +1181,23 @@
         <a href="./#signup">アルバムを作成する</a>
       </aside>
       <dialog id="public-detail">
-        <button type="button" id="public-close" aria-label="閉じる" tabindex="-1">×</button>
+        <button
+          type="button"
+          id="public-close"
+          aria-label="閉じる"
+          tabindex="-1"
+        >
+          ×
+        </button>
         <div id="public-detail-content"></div>
       </dialog>
 
       <dialog id="public-info-dialog" aria-labelledby="public-info-title">
         <div class="modal-top">
           <h2 id="public-info-title" tabindex="-1"></h2>
-          <button type="button" id="public-info-close" aria-label="閉じる">×</button>
+          <button type="button" id="public-info-close" aria-label="閉じる">
+            ×
+          </button>
         </div>
         <div class="legal-body" id="public-info-body"></div>
       </dialog>
