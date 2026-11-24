@@ -19,7 +19,7 @@
         POLL_MS = 120000;
       const offline = () =>
         typeof navigator !== "undefined" && navigator.onLine === false;
-      const client = window.supabase.createClient(
+      const client = window.CARD_DB.createClient(
         window.APP_CONFIG.supabaseUrl,
         window.APP_CONFIG.supabaseKey,
         {

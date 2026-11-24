@@ -1134,7 +1134,7 @@
         return;
       }
       try {
-        client = window.supabase.createClient(
+        client = window.CARD_DB.createClient(
           window.APP_CONFIG.supabaseUrl,
           window.APP_CONFIG.supabaseKey,
           {

@@ -103,13 +103,24 @@
     const primary = registry.get(settings.primary);
     const catalogSource = settings.catalog || primary;
     const catalogURL = new URL(catalogSource.url);
-    if (catalogURL.protocol !== "https:" || !/^[a-z0-9-]+\.supabase\.co$/.test(catalogURL.hostname)
-      || catalogURL.port || catalogURL.username || catalogURL.password || catalogURL.pathname !== "/"
-      || catalogURL.search || catalogURL.hash || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(catalogSource.publicKey)) {
+    if (
+      catalogURL.protocol !== "https:" ||
+      !/^[a-z0-9-]+\.supabase\.co$/.test(catalogURL.hostname) ||
+      catalogURL.port ||
+      catalogURL.username ||
+      catalogURL.password ||
+      catalogURL.pathname !== "/" ||
+      catalogURL.search ||
+      catalogURL.hash ||
+      !/^sb_publishable_[A-Za-z0-9_-]+$/.test(catalogSource.publicKey)
+    ) {
       throw Error("共通情報DBの公開接続先を確認してください。");
     }
-    const catalog = Object.freeze({ ...catalogSource, url: catalogURL.origin,
-      project: catalogURL.hostname.split(".")[0] });
+    const catalog = Object.freeze({
+      ...catalogSource,
+      url: catalogURL.origin,
+      project: catalogURL.hostname.split(".")[0],
+    });
     const entries = [
       primary,
       ...[...registry.values()].filter((item) => item !== primary),
@@ -202,10 +213,15 @@
     }
     let catalogAnonymous = null;
     function catalogClient() {
-      if (!catalogAnonymous) catalogAnonymous = createClient(catalog.url, catalog.publicKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false,
-          storageKey: "card-catalog-anon:" + catalog.project },
-      });
+      if (!catalogAnonymous)
+        catalogAnonymous = createClient(catalog.url, catalog.publicKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+            storageKey: "card-catalog-anon:" + catalog.project,
+          },
+        });
       return catalogAnonymous;
     }
     function personalClient(key, remember = true) {
@@ -232,22 +248,21 @@
         },
       });
     }
+    const routedClients = new WeakMap();
     function wrap(personal) {
-      return new Proxy(personal, {
+      if (routedClients.has(personal)) return routedClients.get(personal);
+      const routed = new Proxy(personal, {
         get(target, property) {
           if (property === "rpc")
             return (name, ...args) =>
-              (catalogRPCs.has(name)
-                ? catalogClient()
-                : target
-              ).rpc(name, ...args);
+              (catalogRPCs.has(name) ? catalogClient() : target).rpc(
+                name,
+                ...args,
+              );
           if (property === "from")
             return (table, ...args) => {
               if (!catalogTables.has(table)) return target.from(table, ...args);
-              const source = catalogClient().from(
-                table,
-                ...args,
-              );
+              const source = catalogClient().from(table, ...args);
               return Object.freeze({
                 select: (...selection) => source.select(...selection),
               });
@@ -256,6 +271,16 @@
           return typeof value === "function" ? value.bind(target) : value;
         },
       });
+      routedClients.set(personal, routed);
+      routedClients.set(routed, routed);
+      return routed;
+    }
+    function routedClient(url, publicKey, options) {
+      const personal = createClient(url, publicKey, options);
+      const origin = new URL(url).origin;
+      return entries.some((database) => database.url === origin)
+        ? wrap(personal)
+        : personal;
     }
     async function signIn(identifier, password, options = {}) {
       const legacy = String(identifier || "").includes("@");
@@ -388,8 +413,10 @@
         const current = await status(database.key);
         if (current.routing_blocked)
           return { key: null, reason: current.state || "closed" };
-        const reservationWait = current.quota_configured === true &&
-          current.allowed === false && current.state === "reservation_wait";
+        const reservationWait =
+          current.quota_configured === true &&
+          current.allowed === false &&
+          current.state === "reservation_wait";
         if (current.full || reservationWait) continue;
         // A cooldown, closed registration, missing quota or network error stops routing.
         if (!current.quota_configured || !current.allowed)
@@ -408,6 +435,7 @@
       catalogClient,
       personalClient,
       wrap,
+      createClient: routedClient,
       signIn,
       status,
       registrationTarget,
@@ -490,6 +518,7 @@ if (typeof window !== "undefined")
     }
     function install() {
       if (routeError) throw routeError;
+      if (core) return;
       const sdk = window.supabase;
       const native = sdk.createClient.bind(sdk);
       const storage = (name) => ({
@@ -506,10 +535,7 @@ if (typeof window !== "undefined")
       window.supabase = {
         ...sdk,
         createClient(url, publicKey, options) {
-          const client = native(url, publicKey, options);
-          return new URL(url).origin === new URL(current.url).origin
-            ? core.wrap(client)
-            : client;
+          return core.createClient(url, publicKey, options);
         },
       };
       if (!publicPage) persist(current.key);
@@ -519,6 +545,11 @@ if (typeof window !== "undefined")
       primaryConfig,
       catalogConfig,
       install,
+      createClient(url, publicKey, options) {
+        install();
+        const client = core.createClient(url, publicKey, options);
+        return window.CARD_DIAGNOSTICS?.wrapClient(client, url) || client;
+      },
       display,
       navigate,
       isNavigating: () => navigating,

@@ -1,3 +1,8 @@
+window.CARD_LIST_QUANTITY = (n, busy) => {
+  const disabled = busy ? ' disabled' : '';
+  if (!n) return `<button type="button" class="ownership-button" data-list-delta="1" aria-pressed="false"${disabled}>持ってない ＋</button>`;
+  return `<div class="ownership-button list-quantity-controls" role="group" aria-label="所持数"><span class="list-quantity-size-reference" aria-hidden="true">＋ 持っていない</span><div class="list-quantity-inner"><button type="button" data-list-delta="-1" aria-label="1枚減らす"${disabled}>−</button><output aria-label="所持数 ${Math.min(n,99)}${n>99?'（表示上限）':''}">${Math.min(n,99)}</output><button type="button" data-list-delta="1" aria-label="1枚増やす"${busy || n>=1000000?' disabled':''}>＋</button></div></div>`;
+};
 window.APP_CONFIG = Object.freeze({
   supabaseUrl: "https://lwbzwxoilpwouwnjgsed.supabase.co",
   supabaseKey: "sb_publishable_jlUX1NvdSld0LhweVMuUBg_nKQZ_xPG",
@@ -8,16 +13,16 @@ window.APP_CONFIG = Object.freeze({
   "use strict";
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
-    "account-tools.js": "3fd2e643b170",
-    "album.js": "2d832d8b69fe",
-    "archive.js": "6abd5f528291",
-    "common.js": "f4d656d947a7",
-    "contact.js": "cb0ed8317c10",
+    "account-tools.js": "e7c3a105e4cd",
+    "album.js": "c17374903814",
+    "archive.js": "1289f018016a",
+    "common.js": "36a6c4d7e443",
+    "contact.js": "9136d5256fda",
     "image-export.js": "34ee6f668ccf",
     "image-share.js": "e78854777e28",
     "list.js": "b37850959b23",
     "login.js": "d66508302aa8",
-    "public.js": "8fc2bb9c071f",
+    "public.js": "ca821069d6d2",
     "qr-encoder.js": "081f298a0ce2",
     "qr-tools.js": "602bb6f3182c",
     "qr.js": "6c663015921d",
@@ -25,7 +30,7 @@ window.APP_CONFIG = Object.freeze({
     "album.css": "16595753c5e5",
     "contact.css": "10b020e3c4d3",
     "shared.css": "eb5794622c5d",
-    "db-shards.js": "974b69ec703b",
+    "db-shards.js": "f3838dab5a0e",
   };
   const moduleFiles = {
     "maintenance-warning.js": "common.js",
@@ -421,6 +426,19 @@ window.APP_CONFIG = Object.freeze({
     }
     function describe(error) {
       const kind = classify(error);
+      const receipt =
+        kind !== "credentials"
+          ? window.CARD_DIAGNOSTICS?.feedback(error)
+          : null;
+      if (receipt)
+        return {
+          kind: "generic",
+          title: "操作を完了できませんでした。",
+          detail:
+            "改善しない場合は、エラーコードをお問い合わせよりお知らせください。 エラーコード：" +
+            receipt,
+          message: "操作を完了できませんでした。 エラーコード：" + receipt,
+        };
       if (kind === "confirmation")
         return {
           kind: "session",
@@ -512,6 +530,12 @@ window.APP_CONFIG = Object.freeze({
           /できません|できなかった|失敗|エラー|異なります|有効期限|接続されていません|時間がかか|操作が集中|確認してください|入力してください|上限に達/.test(
             text,
           );
+        if (failure && !/E-[A-F0-9]{24}/.test(text)) {
+          const receipt = window.CARD_DIAGNOSTICS?.feedback(text);
+          if (receipt)
+            node.textContent =
+              "操作を完了できませんでした。 エラーコード：" + receipt;
+        }
         node.classList.toggle("card-feedback", Boolean(failure));
         if (failure) node.dataset.feedbackKind = classify(text);
         else delete node.dataset.feedbackKind;
@@ -556,7 +580,22 @@ window.APP_CONFIG = Object.freeze({
       document.addEventListener("DOMContentLoaded", enhanceStatuses, {
         once: true,
       });
-    window.CARD_ERROR = Object.freeze({ message, describe, renderToast });
+    function isExpected(error) {
+      const text = fields(error).text;
+      return (
+        classify(error) === "credentials" ||
+        (safe.has(text) &&
+          /入力してください|確認してください|同意|上限|メンテナンス中は|ログインしてください|確認メールのリンク|有効期限|組み合わせ/.test(
+            text,
+          ))
+      );
+    }
+    window.CARD_ERROR = Object.freeze({
+      message,
+      describe,
+      renderToast,
+      isExpected,
+    });
   })();
 
   (() => {

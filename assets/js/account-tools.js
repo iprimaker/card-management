@@ -302,9 +302,9 @@
         status.hidden = false;
         status.textContent = "登録情報を読み込んでいます…";
         try {
-          if (!config?.supabaseUrl || !config?.supabaseKey || !window.supabase?.createClient)
+          if (!config?.supabaseUrl || !config?.supabaseKey || !window.CARD_DB?.createClient)
             throw new Error("configuration");
-          db ||= window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
+          db ||= window.CARD_DB.createClient(config.supabaseUrl, config.supabaseKey, {
             auth: {
               storageKey: "card-registration-anonymous",
               persistSession: false,

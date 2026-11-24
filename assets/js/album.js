@@ -1178,15 +1178,22 @@
       await refreshSignupRegistrationStatus({ force: true });
     };
     function renderSignupPauseNotice(inviteOnly) {
-      const show = !invitationPage && !session && !signupReservation &&
-        signupIssueState !== "completed" && !inviteOnly && !signupCapacityLimited &&
+      const show =
+        !invitationPage &&
+        !session &&
+        !signupReservation &&
+        signupIssueState !== "completed" &&
+        !inviteOnly &&
+        !signupCapacityLimited &&
         (signupRegistrationAllowed === false || signupStatusUnavailable);
       signupPauseNotice.hidden = !show;
       $("signup-flow").classList.toggle("registration-suspended", show);
       if (!show) return false;
 
       let title = "新規登録の受付を停止しています";
-      let description = signupRegistrationMessage || "現在、新しいアルバムの作成を受け付けていません。";
+      let description =
+        signupRegistrationMessage ||
+        "現在、新しいアルバムの作成を受け付けていません。";
       let help = "受付を再開した際は、この画面からお手続きいただけます。";
       let kind = "closed";
       if (signupStatusUnavailable) {
@@ -1197,22 +1204,27 @@
       } else if (signupReservationLimited) {
         kind = "reservation";
         title = "新規登録を一時停止しています";
-        description = "現在、登録手続き中の方がいるため、新しいアルバムの作成を一時的に停止しています。";
+        description =
+          "現在、登録手続き中の方がいるため、新しいアルバムの作成を一時的に停止しています。";
         help = "受付状況を更新して、再開をお待ちください。";
       } else if (signupShardFull) {
         kind = "full";
         title = "新規登録を一時停止しています";
-        description = "現在、登録可能な人数の上限に達しています。受付再開までお待ちください。";
+        description =
+          "現在、登録可能な人数の上限に達しています。受付再開までお待ちください。";
       }
       signupPauseNotice.dataset.state = kind;
       signupPauseNotice.querySelector("h3").textContent = title;
-      signupPauseNotice.querySelector(".signup-pause-description").textContent = description;
+      signupPauseNotice.querySelector(".signup-pause-description").textContent =
+        description;
       signupPauseNotice.querySelector(".signup-pause-help").textContent = help;
       const button = signupPauseNotice.querySelector("button");
       const checking = !!signupRegistrationFlight;
       button.disabled = signupBusy || checking;
       button.setAttribute("aria-busy", String(checking));
-      button.querySelector("span").textContent = checking ? "確認しています…" : "受付状況を更新";
+      button.querySelector("span").textContent = checking
+        ? "確認しています…"
+        : "受付状況を更新";
       return true;
     }
     function renderSignupRegistrationAvailability() {
@@ -1329,7 +1341,9 @@
           if (error || typeof data?.allowed !== "boolean")
             throw Error("registration status unavailable");
           signupRegistrationAllowed = data.allowed;
-          signupRegistrationMode = ["open", "invitation", "closed"].includes(data.mode)
+          signupRegistrationMode = ["open", "invitation", "closed"].includes(
+            data.mode,
+          )
             ? data.mode
             : null;
           signupInvitationAllowed = data.invitation_allowed === true;
@@ -2484,7 +2498,7 @@
           .slice((page - 1) * size, page * size)
           .map(
             (c) =>
-              `<article data-card-layout="rows" class="card ${owned.has(c.id) ? "owned" : ""}">${favoriteButton(c)}${window.CARD_QR?.badge("card", c.id) || ""}<button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame">${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">`, c.frontTransform)}${owned.has(c.id) ? `<span class="owned-badge" aria-label="所持枚数：${quantityOf(c.id)}枚">${quantityOf(c.id)}枚</span>` : ""}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${window.CARD_RARITY_LABEL(displayRarity(c))}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? window.CARD_RARITY_LABEL("パラレル", "parallel-tag") : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button><button class="ownership-button" data-toggle="${esc(c.id)}" aria-pressed="${owned.has(c.id)}" ${!ownershipReady ? "disabled" : ""}>${owned.has(c.id) ? "✓ 持っている" : "＋ 持っていない"}</button></article>`,
+              `<article data-card-layout="rows" class="card card-list-quantity ${owned.has(c.id) ? "owned" : ""}">${favoriteButton(c)}<button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame">${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">`, c.frontTransform)}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}${window.CARD_QR?.badge("card", c.id) || ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${window.CARD_RARITY_LABEL(displayRarity(c))}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? window.CARD_RARITY_LABEL("パラレル", "parallel-tag") : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button>${listQuantityMarkup(c.id)}</article>`,
           )
           .join("");
       else syncOwnershipCardNodes();
@@ -2510,6 +2524,10 @@
       scheduleOCR();
       window.CARD_TRADE?.patchBadges?.();
     }
+    function listQuantityMarkup(id) {
+      const n = quantityOf(id), disabled = !ownershipReady || saving.has(id);
+      return `<div class="list-quantity-slot" data-toggle="${esc(id)}">${window.CARD_LIST_QUANTITY(n, disabled)}</div>`;
+    }
     function quantityOf(id) {
       return owned.has(id) ? ownedCounts.get(id) || 1 : 0;
     }
@@ -2528,24 +2546,10 @@
         const active = owned.has(id);
         const article = button.closest(".card");
         article.classList.toggle("owned", active);
-        button.textContent = active ? "✓ 持っている" : "＋ 持っていない";
-        button.disabled = !ownershipReady;
-        button.setAttribute("aria-pressed", String(active));
-        button.setAttribute("aria-disabled", String(saving.has(id)));
+        const markup = window.CARD_LIST_QUANTITY(quantityOf(id), !ownershipReady || saving.has(id));
+        if (button.innerHTML !== markup) button.innerHTML = markup;
         const frame = article.querySelector(".card-image-frame");
-        let badge = frame.querySelector(".owned-badge");
-        if (active) {
-          if (!badge) {
-            badge = document.createElement("span");
-            badge.className = "owned-badge";
-            frame.append(badge);
-          }
-          badge.textContent = quantityOf(id) + "枚";
-          badge.setAttribute(
-            "aria-label",
-            "所持枚数：" + quantityOf(id) + "枚",
-          );
-        } else badge?.remove();
+        frame.querySelector(".owned-badge")?.remove();
         let repeated = frame.querySelector(".card-duplicate-tag");
         if (quantityOf(id) >= 2) {
           if (!repeated) {
@@ -2963,18 +2967,19 @@
       db?.auth.stopAutoRefresh();
       albumRememberSession = remember;
       const c = window.APP_CONFIG;
-      const client = window.supabase.createClient(
-        c.supabaseUrl,
-        c.supabaseKey,
-        {
-          auth: {
-            ...albumSessionStorage.options(remember),
-            detectSessionInUrl: true,
-            flowType: "implicit",
-          },
-          global: { fetch: accountGuardFetch },
+      if (typeof window.CARD_DB?.createClient !== "function") {
+        throw Error(
+          "表示ファイルを更新してください。ページを再読み込みして、もう一度お試しください。",
+        );
+      }
+      const client = window.CARD_DB.createClient(c.supabaseUrl, c.supabaseKey, {
+        auth: {
+          ...albumSessionStorage.options(remember),
+          detectSessionInUrl: true,
+          flowType: "implicit",
         },
-      );
+        global: { fetch: accountGuardFetch },
+      });
       db = client;
       if (mode === "signup") {
         void refreshSignupRegistrationStatus();
@@ -3193,19 +3198,41 @@
             throw Error("IDまたはパスワードが異なります。");
           email = data;
         }
-        const { data, error } = await db.auth.signInWithPassword({
+        const loginClient = db;
+        const { data, error } = await loginClient.auth.signInWithPassword({
           email,
           password: body.password,
         });
         if (error) throw error;
-        const identity = await db
-          .from("card_album_ids")
-          .select("album_id")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
+        if (
+          !data.session?.access_token ||
+          !data.user?.id ||
+          data.session.user?.id !== data.user.id ||
+          db !== loginClient
+        )
+          throw Error(
+            "ログイン状態を確認できませんでした。もう一度お試しください。",
+          );
+        // Auth has already verified the session, while the deferred UI callback
+        // may not have run yet. Resolve only this authenticated user's ID via RPC.
+        const identity = await loginClient.rpc("card_album_my_id");
         if (identity.error) throw identity.error;
-        if (!identity.data) throw Error("アルバムIDを確認できませんでした。");
-        return { album_id: identity.data.album_id, session: data.session };
+        if (
+          typeof identity.data !== "string" ||
+          !identity.data ||
+          (body.action === "login" && identity.data !== body.album_id)
+        )
+          throw Error("アルバムIDを確認できませんでした。");
+        const current = await loginClient.auth.getSession();
+        if (
+          current.error ||
+          db !== loginClient ||
+          current.data.session?.user?.id !== data.user.id
+        )
+          throw Error(
+            "ログイン状態を確認できませんでした。もう一度お試しください。",
+          );
+        return { album_id: identity.data, session: current.data.session };
       }
       const bytes = await crypto.subtle.digest(
         "SHA-256",
@@ -3242,6 +3269,7 @@
       event.preventDefault();
       if (!db || !validateAuthForm()) return;
       $("auth-submit").disabled = true;
+      $("auth-message").textContent = "";
       try {
         const remember = $("remember-session").checked;
         const identifier = $("email").value.normalize("NFKC").trim();
@@ -3767,7 +3795,10 @@
       const detail = e.target.closest("[data-detail]"),
         toggleButton = e.target.closest("[data-toggle]");
       if (detail) openDetail(detail.dataset.detail, detail);
-      if (toggleButton) toggle(toggleButton.dataset.toggle);
+      if (toggleButton) {
+        const control = e.target.closest("[data-list-delta]");
+        if (control && !control.disabled) saveQuantity(toggleButton.dataset.toggle, Number(control.dataset.listDelta));
+      }
     };
     $("card-sort").onchange = () => {
       page = 1;
@@ -6408,11 +6439,20 @@
         try {
           const url = new URL($("share-restore-input").value.trim());
           const base = new URL("./", host.base());
-          const aliases = ["share/", "shared/", "share/index.html", "shared/index.html"]
-            .map((path) => new URL(path, base).pathname);
-          const rootPaths = [base.pathname, new URL("index.html", base).pathname];
-          const validPath = aliases.includes(url.pathname)
-            || (rootPaths.includes(url.pathname) && url.searchParams.get("view") === "shared");
+          const aliases = [
+            "share/",
+            "shared/",
+            "share/index.html",
+            "shared/index.html",
+          ].map((path) => new URL(path, base).pathname);
+          const rootPaths = [
+            base.pathname,
+            new URL("index.html", base).pathname,
+          ];
+          const validPath =
+            aliases.includes(url.pathname) ||
+            (rootPaths.includes(url.pathname) &&
+              url.searchParams.get("view") === "shared");
           if (
             url.origin !== base.origin ||
             !validPath ||
@@ -7055,7 +7095,10 @@
         );
       const cacheKey =
         "card-verse-public:" +
-        new URL((window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig).supabaseUrl).hostname;
+        new URL(
+          (window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig)
+            .supabaseUrl,
+        ).hostname;
       let catalog = null,
         parts = new Map(),
         owned = new Set(),
@@ -10623,4 +10666,195 @@
       });
     })();
   };
+})();
+
+/* Hidden diagnostics, available only on the album selection screen. No user credentials are collected. */
+(() => {
+  "use strict";
+  const title = document.getElementById("header-title"),
+    selection = document.getElementById("selection");
+  if (!title || !selection) return;
+  let taps = 0,
+    lastTap = 0,
+    sequence = 0,
+    controller = null,
+    dialog = null;
+  function reset() {
+    taps = 0;
+    lastTap = 0;
+  }
+  new MutationObserver(() => {
+    if (selection.hidden) {
+      reset();
+      if (dialog?.open) dialog.close();
+    }
+  }).observe(selection, { attributes: true, attributeFilter: ["hidden"] });
+  title.addEventListener("click", (event) => {
+    if (selection.hidden || title.textContent.trim() !== "カードアルバム") {
+      reset();
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const now = Date.now();
+    taps = now - lastTap > 4000 ? 1 : taps + 1;
+    lastTap = now;
+    if (taps === 10) {
+      reset();
+      open();
+    }
+  });
+  function row(list, label, value) {
+    const dt = document.createElement("dt"),
+      dd = document.createElement("dd");
+    dt.textContent = label;
+    dd.textContent = value;
+    list.append(dt, dd);
+    return dd;
+  }
+  function open() {
+    if (dialog) {
+      if (!dialog.open) dialog.showModal();
+      refresh();
+      return;
+    }
+    dialog = document.createElement("dialog");
+    dialog.className = "developer-info-dialog";
+    dialog.setAttribute("aria-labelledby", "developer-info-heading");
+    const header = document.createElement("div");
+    header.className = "developer-info-header";
+    const heading = document.createElement("h2");
+    heading.id = "developer-info-heading";
+    heading.textContent = "接続情報";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "×";
+    close.setAttribute("aria-label", "接続情報を閉じる");
+    close.onclick = () => dialog.close();
+    header.append(heading, close);
+    const intro = document.createElement("p");
+    intro.textContent =
+      "開発・お問い合わせ時の確認用です。通信結果は公開APIへの接続確認で、ログイン認証の成否とは別です。";
+    const list = document.createElement("dl");
+    list.id = "developer-info-values";
+    const footer = document.createElement("div");
+    footer.className = "developer-info-actions";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "状態を更新";
+    button.onclick = refresh;
+    footer.append(button);
+    dialog.append(header, intro, list, footer);
+    document.body.append(dialog);
+    dialog.addEventListener("close", () => {
+      sequence++;
+      controller?.abort();
+    });
+    dialog.showModal();
+    refresh();
+  }
+  async function refresh() {
+    const ticket = ++sequence;
+    controller?.abort();
+    controller = new AbortController();
+    const localController = controller;
+    const signal = localController.signal,
+      list = dialog.querySelector("dl");
+    list.replaceChildren();
+    const config = window.APP_CONFIG || {},
+      routes = window.CARD_DB;
+    row(list, "アプリ更新版", "v179");
+    row(list, "画面", location.origin + location.pathname);
+    row(
+      list,
+      "ネットワーク",
+      navigator.onLine ? "オンライン（端末判定）" : "オフライン（端末判定）",
+    );
+    row(
+      list,
+      "登録者DB",
+      routes?.key === "main" ? "元" : routes?.key || "未確認",
+    );
+    const probes = [
+      {
+        label: "登録者DB",
+        url: config.supabaseUrl,
+        key: config.supabaseKey,
+        rpc: "card_album_registration_status_v3",
+      },
+      {
+        label: "運営DB",
+        url: routes?.catalogConfig?.supabaseUrl,
+        key: routes?.catalogConfig?.supabaseKey,
+        rpc: "card_visibility_public_status",
+      },
+    ];
+    const timer = setTimeout(() => localController.abort(), 8000);
+    try {
+      await Promise.all(
+        probes.map(async (probe) => {
+          let url;
+          try {
+            url = new URL(probe.url);
+          } catch {
+            row(list, probe.label + " 接続先", "未確認");
+            return;
+          }
+          if (
+            url.protocol !== "https:" ||
+            !/^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)
+          ) {
+            row(
+              list,
+              probe.label + " 接続先",
+              "接続先の形式を確認してください",
+            );
+            return;
+          }
+          row(list, probe.label + " URL", url.origin);
+          row(list, probe.label + " プロジェクト", url.hostname.split(".")[0]);
+          const status = row(list, probe.label + " 通信", "確認中…"),
+            started = performance.now();
+          try {
+            const response = await fetch(
+              url.origin + "/rest/v1/rpc/" + probe.rpc,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  apikey: probe.key,
+                },
+                body: "{}",
+                signal,
+                cache: "no-store",
+                credentials: "omit",
+                redirect: "error",
+              },
+            );
+            // Do not display response bodies, auth tokens, IDs, or session storage.
+            if (ticket === sequence && dialog.open)
+              status.textContent = `HTTP ${response.status} · ${Math.round(performance.now() - started)} ms`;
+            response.body?.cancel().catch(() => {});
+          } catch {
+            if (ticket === sequence && dialog.open)
+              status.textContent = signal.aborted
+                ? "8秒以内に応答を確認できませんでした"
+                : "通信を確認できませんでした";
+          }
+        }),
+      );
+      if (ticket === sequence && dialog.open)
+        row(
+          list,
+          "確認日時",
+          new Intl.DateTimeFormat("ja-JP", {
+            dateStyle: "medium",
+            timeStyle: "medium",
+            timeZone: "Asia/Tokyo",
+          }).format(new Date()) + "（日本時間）",
+        );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 })();

@@ -65,7 +65,7 @@
 
     let contactSession = null;
     let contactAlbumID = "";
-    const contactDB = window.supabase.createClient(
+    const contactDB = window.CARD_DB.createClient(
       window.APP_CONFIG.supabaseUrl,
       window.APP_CONFIG.supabaseKey,
       { auth: albumSessionStorage.options() },

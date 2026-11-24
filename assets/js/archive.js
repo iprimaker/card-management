@@ -661,7 +661,7 @@
           .map((c, i) => {
             const n = quantity(c.id),
               r = values(c, "レアリティ").join(" ／ ") || values(c, "カード種別").join(" ／ ");
-            return `<article data-card-layout="rows" class="card ${n ? "owned" : ""}">${favoriteButton(c)}${window.CARD_QR?.badge("card", c.id) || ""}<button type="button" class="card-trigger card-image-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-image-frame">${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" alt="${esc(c.name)}" loading="${i < 4 ? "eager" : "lazy"}" decoding="async">`, c.frontTransform)}${n ? `<span class="owned-badge" aria-label="所持枚数：${n}枚">${n}枚</span>` : ""}${n >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="code">${esc(c.code)}</span></button>${window.CARD_RARITY_LABEL(r || "レアリティ未取得")}</div><button type="button" class="card-trigger card-text-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-meta"><span>${esc(values(c, "キャラ名").join(" ／ "))}</span></span><span class="card-name">${esc(c.name)}</span></button><button type="button" class="ownership-button ${n ? "is-owned" : ""}" data-all-own="${c.id}" aria-pressed="${n > 0}" ${!inventoryReady || saving.has(c.id) ? "disabled" : ""}>${n ? "✓ 持っている" : "＋ 持っていない"}</button></article>`;
+            return `<article data-card-layout="rows" class="card card-list-quantity ${n ? "owned" : ""}">${favoriteButton(c)}<button type="button" class="card-trigger card-image-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-image-frame">${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" alt="${esc(c.name)}" loading="${i < 4 ? "eager" : "lazy"}" decoding="async">`, c.frontTransform)}${n >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}${window.CARD_QR?.badge("card", c.id) || ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="code">${esc(c.code)}</span></button>${window.CARD_RARITY_LABEL(r || "レアリティ未取得")}</div><button type="button" class="card-trigger card-text-trigger" data-all-detail="${c.id}" aria-label="${esc(c.name)}の詳細"><span class="card-meta"><span>${esc(values(c, "キャラ名").join(" ／ "))}</span></span><span class="card-name">${esc(c.name)}</span></button><div class="list-quantity-slot" data-all-own="${c.id}">${window.CARD_LIST_QUANTITY(n, !inventoryReady || saving.has(c.id))}</div></article>`;
           })
           .join("");
         byId("all-empty").hidden = cards.length > 0;
@@ -902,7 +902,8 @@
         }
         const own = event.target.closest("[data-all-own]");
         if (own) {
-          changeQuantity(own.dataset.allOwn, 1, quantity(own.dataset.allOwn) > 0);
+          const control = event.target.closest("[data-list-delta]");
+          if (control && !control.disabled) changeQuantity(own.dataset.allOwn, Number(control.dataset.listDelta));
           return;
         }
         const tab = event.target.closest("[data-all-owned]");
