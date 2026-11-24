@@ -10712,6 +10712,12 @@
     list.append(dt, dd);
     return dd;
   }
+  function section(list, label) {
+    const heading = document.createElement("div");
+    heading.className = "developer-info-section";
+    heading.textContent = label;
+    list.append(heading);
+  }
   function open() {
     if (dialog) {
       if (!dialog.open) dialog.showModal();
@@ -10725,7 +10731,7 @@
     header.className = "developer-info-header";
     const heading = document.createElement("h2");
     heading.id = "developer-info-heading";
-    heading.textContent = "接続情報";
+    heading.textContent = "接続・動作環境情報";
     const close = document.createElement("button");
     close.type = "button";
     close.textContent = "×";
@@ -10743,7 +10749,20 @@
     button.type = "button";
     button.textContent = "状態を更新";
     button.onclick = refresh;
-    footer.append(button);
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.textContent = "情報をコピー";
+    copy.onclick = async () => {
+      const lines = [...list.querySelectorAll("dt")].map(dt =>
+        dt.textContent + "：" + (dt.nextElementSibling?.textContent || ""));
+      try {
+        await navigator.clipboard.writeText(lines.join("\n"));
+        copy.textContent = "コピーしました";
+      } catch {
+        copy.textContent = "コピーできませんでした";
+      }
+    };
+    footer.append(button, copy);
     dialog.append(header, intro, list, footer);
     document.body.append(dialog);
     dialog.addEventListener("close", () => {
@@ -10761,29 +10780,55 @@
     const signal = localController.signal,
       list = dialog.querySelector("dl");
     list.replaceChildren();
+    const copyButton = dialog.querySelector(".developer-info-actions button:last-child");
+    copyButton.disabled = true;
+    copyButton.textContent = "情報をコピー";
     const config = window.APP_CONFIG || {},
       routes = window.CARD_DB;
-    row(list, "アプリ更新版", "v179");
-    row(list, "画面", location.origin + location.pathname);
+    section(list, "アプリ情報");
+    row(list, "アプリ更新版", "v180");
+    row(list, "ビルド識別子", "v180-r17");
+    section(list, "利用環境");
+    const ua = navigator.userAgent || "";
+    const os = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iOS / iPadOS" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "未確認";
+    const browsers = [["Edge", /(?:Edg|EdgiOS|EdgA)\/(\d+)/], ["Opera", /OPR\/(\d+)/], ["Chrome", /(?:Chrome|CriOS)\/(\d+)/], ["Firefox", /(?:Firefox|FxiOS)\/(\d+)/], ["Safari", /Version\/(\d+).*Safari/]];
+    const browser = browsers.find(([, pattern]) => pattern.test(ua));
+    row(list, "OS", os + "（推定）");
+    row(list, "ブラウザ", browser ? browser[0] + " " + ua.match(browser[1])[1] + "（推定）" : "未確認");
+    row(list, "表示領域", `${innerWidth} × ${innerHeight} CSS px`);
+    let storage = "利用不可";
+    try {
+      const key = "__card_diag_" + Math.random().toString(36).slice(2);
+      localStorage.setItem(key, "1");
+      storage = localStorage.getItem(key) === "1" ? "利用可能" : "利用不可";
+      localStorage.removeItem(key);
+    } catch {}
+    row(list, "ローカルストレージ", storage);
+    row(list, "カメラAPI", typeof navigator.mediaDevices?.getUserMedia === "function" ? "対応（権限未確認）" : "利用不可（現在の環境）");
+    row(list, "セキュアコンテキスト", window.isSecureContext ? "有効" : "無効");
+    section(list, "通信状況");
     row(
       list,
       "ネットワーク",
       navigator.onLine ? "オンライン（端末判定）" : "オフライン（端末判定）",
     );
-    row(
-      list,
-      "登録者DB",
-      routes?.key === "main" ? "元" : routes?.key || "未確認",
-    );
+    const shardKey = routes?.key;
+    const dbNumber = shardKey === "main" ? "001" :
+      typeof shardKey === "string" && /^[A-Z]$/.test(shardKey)
+        ? String(shardKey.charCodeAt(0) - 63).padStart(3, "0")
+        : "未確認";
+    row(list, "登録者DB", dbNumber);
     const probes = [
       {
         label: "登録者DB",
+        communicationLabel: dbNumber + " 通信",
         url: config.supabaseUrl,
         key: config.supabaseKey,
         rpc: "card_album_registration_status_v3",
       },
       {
         label: "運営DB",
+        communicationLabel: "000 通信",
         url: routes?.catalogConfig?.supabaseUrl,
         key: routes?.catalogConfig?.supabaseKey,
         rpc: "card_visibility_public_status",
@@ -10793,28 +10838,22 @@
     try {
       await Promise.all(
         probes.map(async (probe) => {
+          const status = row(list, probe.communicationLabel, "確認中…");
           let url;
           try {
             url = new URL(probe.url);
           } catch {
-            row(list, probe.label + " 接続先", "未確認");
+            status.textContent = "接続先未確認";
             return;
           }
           if (
             url.protocol !== "https:" ||
             !/^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)
           ) {
-            row(
-              list,
-              probe.label + " 接続先",
-              "接続先の形式を確認してください",
-            );
+            status.textContent = "接続先の形式を確認してください";
             return;
           }
-          row(list, probe.label + " URL", url.origin);
-          row(list, probe.label + " プロジェクト", url.hostname.split(".")[0]);
-          const status = row(list, probe.label + " 通信", "確認中…"),
-            started = performance.now();
+          const started = performance.now();
           try {
             const response = await fetch(
               url.origin + "/rest/v1/rpc/" + probe.rpc,
@@ -10855,6 +10894,7 @@
         );
     } finally {
       clearTimeout(timer);
+      if (ticket === sequence && dialog.open) copyButton.disabled = false;
     }
   }
 })();
