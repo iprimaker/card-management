@@ -4921,7 +4921,7 @@
         status.hidden = false;
         status.textContent = "読み込み中…";
         try {
-          const result = await db
+          const result = await window.CARD_DB.catalogClient()
             .from("card_announcements")
             .select("id,title,body,posted_at,important")
             .eq("published", true)
@@ -4972,7 +4972,7 @@
         try {
           const results = await Promise.all(
             ["notice", "update"].map((kind) =>
-              db
+              window.CARD_DB.catalogClient()
                 .from("card_announcements")
                 .select("id,title,body,posted_at,important")
                 .eq("published", true)
@@ -7354,7 +7354,7 @@
           relatedController = controller;
           const timeout = setTimeout(() => controller.abort(), 10000);
           try {
-            let call = host.client().rpc("card_verse_catalog_related_count", {
+            let call = window.CARD_DB.catalogClient().rpc("card_verse_catalog_related_count", {
               p_family: target,
               p_query: query,
             });

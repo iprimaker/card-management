@@ -14,9 +14,9 @@ window.APP_CONFIG = Object.freeze({
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
     "account-tools.js": "e7c3a105e4cd",
-    "album.js": "905d060cbc03",
+    "album.js": "c51a932fccee",
     "archive.js": "1289f018016a",
-    "common.js": "36a6c4d7e443",
+    "common.js": "3949acff8fd9",
     "contact.js": "9136d5256fda",
     "image-export.js": "34ee6f668ccf",
     "image-share.js": "e78854777e28",
@@ -30,7 +30,7 @@ window.APP_CONFIG = Object.freeze({
     "album.css": "16595753c5e5",
     "contact.css": "10b020e3c4d3",
     "shared.css": "eb5794622c5d",
-    "db-shards.js": "f3838dab5a0e",
+    "db-shards.js": "dc4641ec1491",
   };
   const moduleFiles = {
     "maintenance-warning.js": "common.js",

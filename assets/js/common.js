@@ -3722,7 +3722,7 @@
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 10000);
         try {
-          let call = client.rpc("card_verse_catalog_family_cached", {
+          let call = window.CARD_DB.catalogClient().rpc("card_verse_catalog_family_cached", {
             p_family: family,
             p_version: version,
           });

@@ -544,6 +544,11 @@ if (typeof window !== "undefined")
       key: current.key,
       primaryConfig,
       catalogConfig,
+      catalogClient() {
+        install();
+        const client = core.catalogClient();
+        return window.CARD_DIAGNOSTICS?.wrapClient(client, catalogConfig.supabaseUrl) || client;
+      },
       install,
       createClient(url, publicKey, options) {
         install();
