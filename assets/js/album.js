@@ -10788,7 +10788,7 @@
       routes = window.CARD_DB;
     section(list, "アプリ情報");
     row(list, "アプリ更新版", "v180");
-    row(list, "ビルド識別子", "v180-r17");
+    row(list, "ビルド識別子", "v180-r25");
     section(list, "利用環境");
     const ua = navigator.userAgent || "";
     const os = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iOS / iPadOS" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "未確認";
