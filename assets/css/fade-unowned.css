@@ -1,0 +1,16 @@
+/* Apply to the visual layer only; keep badges and controls opaque. */
+body.display-fadeUnowned :is(#cards, #all-cards) .card:not(.owned) .card-image-frame > :is(img, canvas) {
+  opacity: 0.45 !important;
+}
+/* Cropped cards may contain both a native image and a canvas. Fade the group once. */
+body.display-fadeUnowned :is(#cards, #all-cards) .card:not(.owned) .card-image-frame > .card-crop-frame {
+  opacity: 0.45 !important;
+}
+/* When a canvas replaces a direct native image, do not show both layers. */
+body.display-fadeUnowned :is(#cards, #all-cards) .card:not(.owned) .card-image-frame > img[data-low-resolution="true"]:has(+ canvas.low-resolution-image) {
+  opacity: 0 !important;
+}
+/* Fade full-coordinate images and collages as a single visual layer. */
+body.display-fadeUnowned #verse-cards .verse-card:not(.is-owned):not(.is-parts-complete) .verse-card-picture > :is(.verse-full-image, .verse-image-collage, img, canvas) {
+  opacity: 0.45 !important;
+}
