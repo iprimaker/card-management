@@ -1,7 +1,7 @@
 window.CARD_LIST_QUANTITY = (n, busy) => {
   const disabled = busy ? ' disabled' : '';
   if (!n) return `<button type="button" class="ownership-button" data-list-delta="1" aria-pressed="false"${disabled}>持ってない ＋</button>`;
-  return `<div class="ownership-button list-quantity-controls" role="group" aria-label="所持数"><span class="list-quantity-size-reference" aria-hidden="true">＋ 持っていない</span><div class="list-quantity-inner"><button type="button" data-list-delta="-1" aria-label="1枚減らす"${disabled}>−</button><output aria-label="所持数 ${Math.min(n,99)}${n>99?'（表示上限）':''}">${Math.min(n,99)}</output><button type="button" data-list-delta="1" aria-label="1枚増やす"${busy || n>=1000000?' disabled':''}>＋</button></div></div>`;
+  return `<div class="ownership-button list-quantity-controls" role="group" aria-label="所持数"><span class="list-quantity-size-reference" aria-hidden="true">＋ 持っていない</span><div class="list-quantity-inner"><button type="button" data-list-delta="-1" aria-label="1枚減らす"${disabled}>−</button><output data-digits="${String(Math.min(n,9999)).length}" aria-label="所持数 ${Math.min(n,9999)}${n>9999?'（表示上限）':''}">${Math.min(n,9999)}</output><button type="button" data-list-delta="1" aria-label="1枚増やす"${busy || n>=1000000?' disabled':''}>＋</button></div></div>`;
 };
 window.APP_CONFIG = Object.freeze({
   supabaseUrl: "https://lwbzwxoilpwouwnjgsed.supabase.co",
@@ -14,7 +14,7 @@ window.APP_CONFIG = Object.freeze({
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
     "account-tools.js": "e7c3a105e4cd",
-    "album.js": "c51a932fccee",
+    "album.js": "3846b2508607",
     "archive.js": "1289f018016a",
     "common.js": "3949acff8fd9",
     "contact.js": "9136d5256fda",

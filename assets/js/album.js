@@ -5482,6 +5482,7 @@
       const key = "card-display-preferences-v1";
       const options = [
         ["grayscale", "非所持カードを白黒にする", "一覧の画像に適用します"],
+        ["fadeUnowned", "非所持カードを薄くする", "一覧の画像を半透明で表示します"],
         [
           "hideText",
           "一覧の文字情報を非表示にする",
