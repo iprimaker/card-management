@@ -6769,3 +6769,30 @@ body
   padding-bottom: 0;
   margin-bottom: -3px;
 }
+
+/* FAQ r28: scoped to contact page */
+.contact-faq{margin:16px 0;line-height:1.65;overflow-wrap:anywhere}
+.contact-faq details{border:1px solid #d1d5db;border-radius:10px;margin:8px 0;padding:10px 12px}
+.contact-faq summary{cursor:pointer;font-weight:600;padding:6px 0}
+.contact-faq #faq-root>summary{font-size:1.05rem}
+.contact-faq .faq-question p{margin:8px 0 2px;font-size:.95rem}
+.contact-faq input{width:100%;box-sizing:border-box;margin:6px 0}
+.contact-faq [hidden]{display:none!important}
+.contact-faq button{max-width:100%;white-space:normal}
+
+/* r31 independent FAQ */
+.contact-faq .faq-category>summary{display:flex;align-items:center;gap:12px;list-style:none;min-height:44px;padding:4px 0;box-sizing:border-box}.contact-faq .faq-category>summary::-webkit-details-marker{display:none}.contact-faq .faq-category>summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 6px 4px auto;flex-shrink:0}.contact-faq .faq-category[open]>summary::after{transform:rotate(225deg);margin-bottom:0}.faq-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:9px;background:#f1f3f5;color:#475569}.faq-icon svg{width:21px;height:21px}.contact-faq .faq-question{border:0;border-top:1px solid #d1d5db;border-radius:0;margin:0;padding:8px 4px}.contact-faq .faq-help{margin-top:24px;text-align:center}.contact-faq-link{margin:12px 0 20px}.contact-faq-link a{text-decoration:underline}.contact-faq summary:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+/* r32: independent support navigation links */
+.contact-panel .support-nav { margin: 18px 0 24px; text-align: left; }
+.contact-panel .support-nav > p { margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: #59616d; }
+.contact-panel .support-nav .support-nav-link { display: flex; align-items: center; gap: 12px; box-sizing: border-box; width: 100%; min-height: 68px; padding: 13px 15px; border: 1px solid #d6dce3; border-radius: 12px; background: #f7f8fa; color: #344054; text-decoration: none; text-align: left; line-height: 1.5; transition: background-color .15s, border-color .15s; }
+.contact-panel .support-nav .support-nav-link:hover { background: #edf1f5; border-color: #aab5c2; text-decoration: none; }
+.contact-panel .support-nav .support-nav-link:active { background: #e5eaf0; }
+.contact-panel .support-nav .support-nav-link:focus-visible { outline: 2px solid #475569; outline-offset: 3px; }
+.support-nav-link .support-nav-icon { width: 25px; height: 25px; flex: 0 0 25px; }
+.support-nav-link .support-nav-copy { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 3px; }
+.support-nav-link .support-nav-copy strong { font-size: 15px; font-weight: 700; }
+.support-nav-link .support-nav-copy > span { font-size: 12px; color: #59616d; overflow-wrap: anywhere; }
+.support-nav-link .support-nav-arrow { width: 18px; height: 18px; flex: 0 0 18px; color: #667085; }
+@media (max-width: 480px) { .contact-panel .support-nav .support-nav-link { gap: 9px; padding: 12px 10px; } }
