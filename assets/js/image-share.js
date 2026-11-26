@@ -171,7 +171,13 @@
       }
 
       async function sharedQR(url) {
-        if (!url) return null;
+        if (typeof url !== "string" || !url) return null;
+        try {
+          const target = new URL(url);
+          if (!/^https?:$/.test(target.protocol) || target.origin !== location.origin ||
+              target.searchParams.get("view") !== "shared" ||
+              !/^#[0-9a-f]{64}$/.test(target.hash)) return null;
+        } catch { return null; }
         const makeQR = await loadQREncoder();
         const qr = makeQR(0, "M");
         qr.addData(url, "Byte");
@@ -717,7 +723,7 @@
           box(theme.wash, panelX, footer + 12, width - left - panelX - 10, 185, 18);
           box("#fff", panelX + 1, footer + 13, width - left - panelX - 12, 183, 17);
           box(theme.border, qrX - 13, footer + 30, 1, 142);
-          const [title, line1, line2, note] = pageQR
+          const [title, line1, line2, note] = qr
             ? [
                 "公開中のアルバムを見る",
                 "公開設定で選ばれたカードやコーデの",
@@ -1470,7 +1476,7 @@
           const imageForPage = async (index, progress) => {
             const cached = generatedPages.get(index);
             if (cached) return cached;
-            if (!hideSharedPage) pageQR ??= sharedPage.then(sharedQR);
+            if (!hideSharedPage) pageQR ??= sharedPage.then(sharedQR).catch(() => null);
             const output = await create(
               pageSections[index],
               {

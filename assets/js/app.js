@@ -1,7 +1,8 @@
+window.CARD_BUILD = "v180-r29";
 window.CARD_LIST_QUANTITY = (n, busy) => {
   const disabled = busy ? ' disabled' : '';
   if (!n) return `<button type="button" class="ownership-button" data-list-delta="1" aria-pressed="false"${disabled}>持ってない ＋</button>`;
-  return `<div class="ownership-button list-quantity-controls" role="group" aria-label="所持数"><span class="list-quantity-size-reference" aria-hidden="true">＋ 持っていない</span><div class="list-quantity-inner"><button type="button" data-list-delta="-1" aria-label="1枚減らす"${disabled}>−</button><output data-digits="${String(Math.min(n,9999)).length}" aria-label="所持数 ${Math.min(n,9999)}${n>9999?'（表示上限）':''}">${Math.min(n,9999)}</output><button type="button" data-list-delta="1" aria-label="1枚増やす"${busy || n>=1000000?' disabled':''}>＋</button></div></div>`;
+  return `<div class="ownership-button list-quantity-controls" role="group" aria-label="所持数"><span class="list-quantity-size-reference" aria-hidden="true">持ってない ＋</span><div class="list-quantity-inner"><button type="button" data-list-delta="-1" aria-label="1枚減らす"${disabled}>−</button><output data-digits="${String(Math.min(n,9999)).length}" aria-label="所持数 ${Math.min(n,9999)}${n>9999?'（表示上限）':''}">${Math.min(n,9999)}</output><button type="button" data-list-delta="1" aria-label="1枚増やす"${busy || n>=1000000?' disabled':''}>＋</button></div></div>`;
 };
 window.APP_CONFIG = Object.freeze({
   supabaseUrl: "https://lwbzwxoilpwouwnjgsed.supabase.co",
@@ -14,12 +15,12 @@ window.APP_CONFIG = Object.freeze({
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
     "account-tools.js": "e7c3a105e4cd",
-    "album.js": "3846b2508607",
+    "album.js": "1626c7ab0822",
     "archive.js": "1289f018016a",
-    "common.js": "3949acff8fd9",
+    "common.js": "348c5c7aa1ce",
     "contact.js": "9136d5256fda",
     "image-export.js": "34ee6f668ccf",
-    "image-share.js": "e78854777e28",
+    "image-share.js": "1e101e155b66",
     "list.js": "b37850959b23",
     "login.js": "d66508302aa8",
     "public.js": "ca821069d6d2",
@@ -28,7 +29,7 @@ window.APP_CONFIG = Object.freeze({
     "qr.js": "6c663015921d",
     "supabase.js": "546c8475d523",
     "album.css": "16595753c5e5",
-    "contact.css": "10b020e3c4d3",
+    "contact.css": "1c973b01391f",
     "shared.css": "eb5794622c5d",
     "db-shards.js": "dc4641ec1491",
   };
@@ -118,9 +119,10 @@ window.APP_CONFIG = Object.freeze({
     ensureQREncoder,
     ensureQRBundle,
   });
-  const requestedPage = new URLSearchParams(location.search).get("view");
+  const params = new URLSearchParams(location.search);
+  const requestedPage = params.get("view") === "contact" && params.get("faq") === "1" ? "faq" : params.get("view");
   const route =
-    requestedPage === "contact"
+    ["contact", "faq"].includes(requestedPage)
       ? "contact"
       : ["browse", "shared"].includes(requestedPage)
         ? "shared"
@@ -601,9 +603,9 @@ window.APP_CONFIG = Object.freeze({
   (() => {
     "use strict";
     const version = "20261122-rarity-fit-v126";
-    const requested = new URLSearchParams(location.search).get("view");
+    const requested = requestedPage;
     const invitationRoute = requested === "invite";
-    const page = ["shared", "browse", "contact", "card-registration"].includes(
+    const page = ["shared", "browse", "contact", "faq", "card-registration"].includes(
       requested,
     )
       ? requested
@@ -622,7 +624,7 @@ window.APP_CONFIG = Object.freeze({
         ? "カード検索｜カードアルバム"
         : page === "shared"
           ? "共有アルバム｜カードアルバム"
-          : page === "contact"
+          : page === "faq" ? "よくある質問｜カードアルバム" : page === "contact"
             ? "お問い合わせ｜カードアルバム"
             : page === "card-registration"
               ? "カード登録情報｜カードアルバム"
@@ -638,7 +640,7 @@ window.APP_CONFIG = Object.freeze({
         document.head.append(meta);
       }
     }
-    if (page === "contact") {
+    if (["contact", "faq"].includes(page)) {
       try {
         document.documentElement.classList.toggle(
           "contact-aipri",
@@ -648,7 +650,7 @@ window.APP_CONFIG = Object.freeze({
         );
       } catch {}
     }
-    if (page === "contact") {
+    if (["contact", "faq"].includes(page)) {
       const theme =
         new URLSearchParams(location.search).get("theme") ||
         (() => {
@@ -713,7 +715,7 @@ window.APP_CONFIG = Object.freeze({
     document.documentElement.classList.add(
       page === "album" || page === "card-registration"
         ? "style-album"
-        : page === "contact"
+        : ["contact", "faq"].includes(page)
           ? "style-contact"
           : "style-shared",
       ...(["album", "shared", "browse"].includes(page) ? ["style-list"] : []),
@@ -727,6 +729,29 @@ window.APP_CONFIG = Object.freeze({
       },
       () => {},
     );
+    if (page === "faq") {
+      const faq = document.getElementById("contact-faq");
+      const search = faq.querySelector("#faq-search");
+      const categories = [...faq.querySelectorAll(".faq-category")];
+      search.addEventListener("input", () => {
+        const terms = search.value.normalize("NFKC").toLowerCase().trim().split(/\s+/).filter(Boolean);
+        let count = 0;
+        for (const category of categories) {
+          let matches = 0;
+          for (const question of category.querySelectorAll(".faq-question")) {
+            const text = (category.firstElementChild.textContent + " " + question.textContent).normalize("NFKC").toLowerCase();
+            question.hidden = !terms.every(term => text.includes(term));
+            if (!question.hidden) matches++;
+            question.open = false;
+          }
+          category.hidden = !matches;
+          category.open = !!terms.length && !!matches;
+          count += matches;
+        }
+        faq.querySelector("#faq-count").textContent = terms.length ? `${count}件の質問` : "";
+      });
+      return;
+    }
     const visibilityModule = Promise.all([Promise.resolve(), Promise.resolve()])
       .then(() => script("maintenance-warning.js"))
       .then(() => script("guest-access.js"))

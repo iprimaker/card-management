@@ -5950,22 +5950,23 @@
         return window.CARD_DB.shareURL(url);
       }
       async function publicPageURL(requiredScope) {
+        const user = current(), g = generation;
+        if (!user || host.maintenance()) return null;
         await settingsCheck;
-        if (
-          !settingsLoaded ||
-          !owner ||
-          owner !== current() ||
-          host.maintenance()
-        )
-          return null;
-        return confirmedScopes.some(
-          (scope) =>
-            (!requiredScope || scope === requiredScope) &&
-            (!Array.isArray(confirmedFilters[scope]) ||
-              confirmedFilters[scope].length),
-        )
-          ? shareURL()
-          : null;
+        if (g !== generation || user !== current() || busy || savingSettings || mutations.length) return null;
+        try {
+          // Read only: never issue or restore a link from image generation.
+          const { data, error } = await host.client().rpc("card_album_share_settings", {});
+          if (error || g !== generation || user !== current() || host.maintenance() ||
+              busy || savingSettings || mutations.length || data?.has_link !== true ||
+              !/^[0-9a-f]{64}$/.test(data.token || "") || !Array.isArray(data.scopes)) return null;
+          const filters = data.series_filters || {};
+          if (!data.scopes.some(scope => scope in labels && (!requiredScope || scope === requiredScope) &&
+              (!Array.isArray(filters[scope]) || filters[scope].length > 0))) return null;
+          const url = new URL("./?view=shared", host.base());
+          url.hash = data.token;
+          return window.CARD_DB.shareURL(url);
+        } catch { return null; }
       }
       function update() {
         dialog.querySelectorAll("[data-share-scope]").forEach((b) => {
@@ -10788,7 +10789,7 @@
       routes = window.CARD_DB;
     section(list, "アプリ情報");
     row(list, "アプリ更新版", "v180");
-    row(list, "ビルド識別子", "v180-r25");
+    row(list, "ビルド識別子", window.CARD_BUILD || "未確認");
     section(list, "利用環境");
     const ua = navigator.userAgent || "";
     const os = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iOS / iPadOS" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "未確認";
