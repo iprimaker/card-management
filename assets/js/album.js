@@ -2053,8 +2053,13 @@
       const series = [
         ...new Set(albumCards().flatMap((c) => values(c.series))),
       ];
+      const beforeOA5 = Date.now() < Date.parse("2026-12-03T00:00:00+09:00");
       const latest = series
-        .filter((s) => seriesRank(s) >= 0)
+        .filter((s) => {
+          const rank = seriesRank(s);
+          return rank >= 0 &&
+            (!(game === "aipri" && aipriFamily === "おねがい" && beforeOA5) || rank <= 4);
+        })
         .sort((a, b) => seriesRank(b) - seriesRank(a))[0];
       if (latest) filters.series = latest;
     }
@@ -5950,23 +5955,22 @@
         return window.CARD_DB.shareURL(url);
       }
       async function publicPageURL(requiredScope) {
-        const user = current(), g = generation;
-        if (!user || host.maintenance()) return null;
         await settingsCheck;
-        if (g !== generation || user !== current() || busy || savingSettings || mutations.length) return null;
-        try {
-          // Read only: never issue or restore a link from image generation.
-          const { data, error } = await host.client().rpc("card_album_share_settings", {});
-          if (error || g !== generation || user !== current() || host.maintenance() ||
-              busy || savingSettings || mutations.length || data?.has_link !== true ||
-              !/^[0-9a-f]{64}$/.test(data.token || "") || !Array.isArray(data.scopes)) return null;
-          const filters = data.series_filters || {};
-          if (!data.scopes.some(scope => scope in labels && (!requiredScope || scope === requiredScope) &&
-              (!Array.isArray(filters[scope]) || filters[scope].length > 0))) return null;
-          const url = new URL("./?view=shared", host.base());
-          url.hash = data.token;
-          return window.CARD_DB.shareURL(url);
-        } catch { return null; }
+        if (
+          !settingsLoaded ||
+          !owner ||
+          owner !== current() ||
+          host.maintenance()
+        )
+          return null;
+        return confirmedScopes.some(
+          (scope) =>
+            (!requiredScope || scope === requiredScope) &&
+            (!Array.isArray(confirmedFilters[scope]) ||
+              confirmedFilters[scope].length),
+        )
+          ? shareURL()
+          : null;
       }
       function update() {
         dialog.querySelectorAll("[data-share-scope]").forEach((b) => {
@@ -7547,7 +7551,17 @@
                           : -1;
           return rank(b) - rank(a) || a.localeCompare(b, "ja");
         });
-        if (latest) series = labels[0] || "";
+        if (latest) {
+          const beforeOA5 = Date.now() < Date.parse("2026-12-03T00:00:00+09:00");
+          const eligibleRank = (label) => {
+            const match = String(label).normalize("NFKC").match(/^おねがい\s*(\d+)\s*(?:弾|だん)/);
+            return match ? Number(match[1]) : -1;
+          };
+          series = family === "onegai" && beforeOA5
+            ? labels.filter((label) => eligibleRank(label) >= 0 && eligibleRank(label) <= 4)
+                .sort((a, b) => eligibleRank(b) - eligibleRank(a))[0] || ""
+            : labels[0] || "";
+        }
         series = window.CARD_MULTI_FILTER.retain(series, labels);
         options("verse-series", labels, series, "すべて");
         options("verse-collection-series", labels, collectionSeries, "すべて");
@@ -7752,12 +7766,19 @@
         return `<span class="verse-partial ${complete ? "is-parts-complete" : ""}" aria-label="パーツ所持 ${count}／${c.part_ids.length}">${complete ? "パーツコンプ" : "パーツ一部獲得"}</span>`;
       }
       function syncUpdateText() {
-        const date = catalog?.updated_at ? new Date(catalog.updated_at) : null;
-        $("verse-sync").textContent =
-          "コーデ情報の更新" +
-          (date && !Number.isNaN(date.getTime())
-            ? "：" + date.toLocaleString("ja-JP")
-            : "");
+        const button = $("verse-sync");
+        if (button.disabled) {
+          button.textContent = "コーデ情報を確認中";
+          return;
+        }
+        const snapshot = window.CARD_VERSE_CATALOG.peek(family);
+        const updated = Date.parse(snapshot?.updated_at);
+        const confirmed = Date.parse(snapshot?.server_time);
+        button.textContent = Number.isFinite(updated)
+          ? `コーデ情報の更新：${new Date(updated).toLocaleString("ja-JP")}`
+          : Number.isFinite(confirmed)
+            ? `コーデ情報の更新：${new Date(confirmed).toLocaleString("ja-JP")}（確認日時）`
+            : "コーデ情報の更新";
       }
       let paginationMarkup = "";
       function renderPages(count) {
@@ -8727,23 +8748,31 @@
       let refreshing = false,
         lastRefresh = 0;
       $("verse-sync").onclick = async () => {
-        if (
-          refreshing ||
-          !currentUser() ||
-          host.maintenance() ||
-          Date.now() - lastRefresh < 10000
-        )
+        if (refreshing || !currentUser() || !host.client() || host.maintenance()) return;
+        if (lastRefresh && Date.now() - lastRefresh < 10000) {
+          host.toast("少し待ってから更新してください");
           return;
+        }
         refreshing = true;
         lastRefresh = Date.now();
+        const uid = currentUser(), view = viewGeneration, targetFamily = family;
+        const current = () => uid === currentUser() && view === viewGeneration &&
+          targetFamily === family && !panel.hidden && !host.maintenance();
         $("verse-sync").disabled = true;
-        $("verse-sync").textContent = "コーデ情報を確認中…";
+        syncUpdateText();
         try {
-          await readCatalog(true);
+          // Do not adopt a response for a screen the user has already left.
+          const data = await window.CARD_VERSE_CATALOG.load(host.client(), {
+            family: targetFamily, force: true,
+          });
+          if (!current()) return;
+          adoptCatalog(data);
+          checkedAt = Date.now();
           fillFilters();
           render();
+          host.toast("最新のコーデ情報を確認しました");
         } catch (caughtError) {
-          host.toast(caughtError, "error");
+          if (current()) host.toast("コーデ情報を取得できませんでした。時間をおいてお試しください", "error");
         } finally {
           refreshing = false;
           $("verse-sync").disabled = false;
@@ -10789,7 +10818,7 @@
       routes = window.CARD_DB;
     section(list, "アプリ情報");
     row(list, "アプリ更新版", "v180");
-    row(list, "ビルド識別子", window.CARD_BUILD || "未確認");
+    row(list, "ビルド識別子", "v180-r17");
     section(list, "利用環境");
     const ua = navigator.userAgent || "";
     const os = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iOS / iPadOS" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "未確認";
