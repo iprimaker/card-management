@@ -343,7 +343,7 @@ const CARD_ERROR_OPERATIONS_V180 = [
           Number.isInteger(status) && status >= 0 && status <= 599 ? status : 0,
         upstream: up,
         exception,
-        version: "v180-r4",
+        version: "v181",
         target_database: context.target || "unknown",
       };
       const dedup = JSON.stringify([who.database, who.scope, record]);

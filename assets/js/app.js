@@ -1,4 +1,4 @@
-window.CARD_BUILD = "v180-r4";
+window.CARD_BUILD = "v181";
 window.CARD_LIST_QUANTITY = (n, busy) => {
   const disabled = busy ? ' disabled' : '';
   if (!n) return `<button type="button" class="ownership-button" data-list-delta="1" aria-pressed="false"${disabled}>持ってない ＋</button>`;
