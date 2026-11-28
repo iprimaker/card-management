@@ -1,4 +1,4 @@
-window.CARD_BUILD = "v180-r29";
+window.CARD_BUILD = "v180-r4";
 window.CARD_LIST_QUANTITY = (n, busy) => {
   const disabled = busy ? ' disabled' : '';
   if (!n) return `<button type="button" class="ownership-button" data-list-delta="1" aria-pressed="false"${disabled}>持ってない ＋</button>`;
@@ -15,9 +15,9 @@ window.APP_CONFIG = Object.freeze({
   const bundleURL = new URL(document.currentScript.src);
   const assetVersions = {
     "account-tools.js": "e7c3a105e4cd",
-    "album.js": "1626c7ab0822",
+    "album.js": "6995a09a5e3f",
     "archive.js": "1289f018016a",
-    "common.js": "348c5c7aa1ce",
+    "common.js": "648d6a4a4663",
     "contact.js": "9136d5256fda",
     "image-export.js": "34ee6f668ccf",
     "image-share.js": "1e101e155b66",
@@ -25,7 +25,7 @@ window.APP_CONFIG = Object.freeze({
     "login.js": "d66508302aa8",
     "public.js": "ca821069d6d2",
     "qr-encoder.js": "081f298a0ce2",
-    "qr-tools.js": "602bb6f3182c",
+    "qr-tools.js": "bcc43b9ba4ec",
     "qr.js": "6c663015921d",
     "supabase.js": "546c8475d523",
     "album.css": "16595753c5e5",
@@ -57,25 +57,36 @@ window.APP_CONFIG = Object.freeze({
   const modules = Object.create(null);
   const files = new Map();
   const loaded = new Map();
-  function loadFile(file) {
-    if (!files.has(file)) {
-      const pending = new Promise((resolve, reject) => {
-        const node = document.createElement("script");
-        node.src = new URL(file + "?v=" + assetVersions[file], bundleURL).href;
+  function loadAsset(createNode, message) {
+    function attempt() {
+      return new Promise((resolve, reject) => {
+        const node = createNode();
         node.onload = resolve;
         node.onerror = () => {
           node.remove();
-          reject(
-            Error(
-              "機能を読み込めませんでした。通信状態を確認して、もう一度お試しください。",
-            ),
-          );
+          reject(Error(message));
         };
         document.head.append(node);
-      }).catch((error) => {
-        files.delete(file);
-        throw error;
       });
+    }
+    return attempt().catch(async (error) => {
+      if (navigator.onLine === false) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      if (navigator.onLine === false) throw error;
+      return attempt();
+    });
+  }
+  function loadFile(file) {
+    if (!files.has(file)) {
+      const pending = loadAsset(() => {
+        const node = document.createElement("script");
+        node.src = new URL(file + "?v=" + assetVersions[file], bundleURL).href;
+        return node;
+      }, "機能を読み込めませんでした。通信状態を確認して、もう一度お試しください。")
+        .catch((error) => {
+          files.delete(file);
+          throw error;
+        });
       files.set(file, pending);
     }
     return files.get(file);
@@ -127,7 +138,7 @@ window.APP_CONFIG = Object.freeze({
       : ["browse", "shared"].includes(requestedPage)
         ? "shared"
         : "album";
-  const stylesReady = new Promise((resolve, reject) => {
+  const stylesReady = loadAsset(() => {
     const link = document.createElement("link");
     link.id = "card-styles";
     link.rel = "stylesheet";
@@ -135,13 +146,8 @@ window.APP_CONFIG = Object.freeze({
       "../css/" + route + ".css?v=" + assetVersions[route + ".css"],
       bundleURL,
     ).href;
-    link.onload = resolve;
-    link.onerror = () =>
-      reject(
-        Error("表示ファイルを読み込めませんでした。再読み込みしてください。"),
-      );
-    document.head.append(link);
-  });
+    return link;
+  }, "表示ファイルを読み込めませんでした。再読み込みしてください。");
   const vendorReady = Promise.all([
     loadFile("supabase.js"),
     loadFile("db-shards.js"),

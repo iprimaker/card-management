@@ -199,6 +199,17 @@ const CARD_ERROR_OPERATIONS_V180 = [
   ]);
   let perMinute = 0,
     minute = 0;
+  function transportException(error, signal) {
+    if (signal?.aborted) {
+      return signal.reason?.name === "TimeoutError" ? "TimeoutError" : "AbortError";
+    }
+    if (/^Request was aborted \(/i.test(error?.hint || "") ||
+        /^AbortError:/i.test(error?.message || "")) return "AbortError";
+    if (/^TimeoutError:/i.test(error?.message || "")) return "TimeoutError";
+    if (/^TypeError: (?:Failed to fetch|Load failed|NetworkError|Network request failed)/i.test(error?.message || ""))
+      return "TypeError";
+    return "";
+  }
   const receiptPattern = /\bE-[A-F0-9]{24}\b/;
   function credentials(error) {
     return (
@@ -332,7 +343,7 @@ const CARD_ERROR_OPERATIONS_V180 = [
           Number.isInteger(status) && status >= 0 && status <= 599 ? status : 0,
         upstream: up,
         exception,
-        version: "v180",
+        version: "v180-r4",
         target_database: context.target || "unknown",
       };
       const dedup = JSON.stringify([who.database, who.scope, record]);
@@ -443,7 +454,7 @@ const CARD_ERROR_OPERATIONS_V180 = [
       bearer = "";
     try {
       url = new URL(
-        typeof input === "string" ? input : input.url,
+        typeof input === "string" || input instanceof URL ? input : input.url,
         location.href,
       );
       if (
@@ -528,8 +539,10 @@ const CARD_ERROR_OPERATIONS_V180 = [
       }
       return response;
     } catch (error) {
-      if (error?.name !== "AbortError")
-        report(error, {
+      const signal = options.signal ?? (input instanceof Request ? input.signal : null);
+      const name = transportException(error, signal) || error?.name;
+      if (name !== "AbortError")
+        report({ name, code: error?.code }, {
           operation,
           stage: "request",
           target: target(url),
@@ -568,11 +581,16 @@ const CARD_ERROR_OPERATIONS_V180 = [
       (flight ||= Promise.resolve(query).then((result) => {
         if (
           !result?.error ||
+          query.signal?.reason?.message === "CardAlbumSuperseded" ||
           credentials(result.error) ||
           result.error.message === "CARD_ALBUM_MAINTENANCE"
         )
           return result;
-        const receipt = report(result.error, {
+        const name = result.status === 0
+          ? transportException(result.error, query.signal)
+          : "";
+        const receipt = report(name ? { ...result.error, name } : result.error, {
+          status: result.status,
           operation,
           stage: "response",
           target: target(new URL(origin)),

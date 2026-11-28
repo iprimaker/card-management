@@ -114,23 +114,33 @@
           filters.card = filters.coordinate = "all";
         }
         sync();
-        if (!u) return;
-        if (loading) return loading;
-        loading = (async () => {
+        const client = db();
+        if (!u || !client) return;
+        if (loading?.user === u && loading.client === client) return loading.promise;
+        const task = { user: u, client, promise: null };
+        loading = task;
+        task.promise = (async () => {
           const all = [];
+          const current = () => loading === task && uid() === u && db() === client;
           for (let offset = 0; ; offset += 500) {
-            const r = await db().rpc("card_qr_list", { p_offset: offset });
+            if (!current()) return;
+            const r = await window.CARD_READ_RETRY(
+              () => client.rpc("card_qr_list", { p_offset: offset }),
+              current,
+            );
             if (r.error) throw r.error;
             if (!Array.isArray(r.data)) throw Error("QR情報を読み込めませんでした");
             all.push(...r.data);
             if (r.data.length < 500) break;
           }
-          if (uid() !== u) return;
+          if (!current()) return;
           rows = new Map(all.map((r) => [r.kind + ":" + r.target_id, r.payload]));
           sync();
           document.dispatchEvent(new Event("private-qr-changed"));
-        })().finally(() => (loading = null));
-        return loading;
+        })().finally(() => {
+          if (loading === task) loading = null;
+        });
+        return task.promise;
       }
       function button(kind, id, name, group = [], family = "") {
         const t = { kind, id: String(id), name, group, family };

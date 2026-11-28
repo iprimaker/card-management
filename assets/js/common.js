@@ -2,6 +2,17 @@
 (() => {
   const { modules, loadModule, ensureQRBundle, ensureQREncoder } =
     window.CARD_RUNTIME;
+  // Only call this for reads that are safe to repeat.
+  window.CARD_READ_RETRY = async (read, active = () => true) => {
+    const result = await read();
+    const transient = result?.error && (
+      [0, 502, 503, 504, 520].includes(result.status) ||
+      /^(PGRST00[012]|08[0-9A-Z]{3}|57P0[123])$/.test(result.error.code || "")
+    );
+    if (!transient || navigator.onLine === false || !active()) return result;
+    await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 300));
+    return navigator.onLine !== false && active() ? read() : result;
+  };
   modules["card-visibility.js"] = function (sourceURL) {
     (() => {
       let snapshot = null,
@@ -127,7 +138,7 @@
       }
       async function rpc(name) {
         const controller = new AbortController(),
-          timeout = setTimeout(() => controller.abort(), 10000);
+          timeout = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 10000);
         try {
           let request = client.rpc(name);
           if (typeof request.abortSignal === "function")
@@ -145,7 +156,10 @@
         flight = (async () => {
           if (offline())
             throw Error("通信状態を確認して再読み込みしてください。");
-          const statusResult = await rpc("card_visibility_public_status");
+          const statusResult = await window.CARD_READ_RETRY(
+            () => rpc("card_visibility_public_status"),
+            () => !document.hidden,
+          );
           // Never turn an unavailable status check into an expensive full-catalog read.
           if (statusResult.error || !statusResult.data?.fingerprint)
             throw Error(
@@ -266,7 +280,7 @@
         if (flight) return flight;
         flight = (async () => {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 8000);
+          const timer = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 8000);
           try {
             const config = (window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig);
             const response = await nativeFetch(
@@ -494,28 +508,37 @@
       let request;
       const nativeFetch = window.fetch?.bind(window);
       async function refresh() {
-        if (document.hidden || request || !nativeFetch) return;
+        if (document.hidden || navigator.onLine === false || request || !nativeFetch)
+          return;
         const config = (window.CARD_DB.catalogConfig || window.CARD_DB.primaryConfig);
         if (!config?.supabaseUrl || !config?.supabaseKey) return;
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 10000);
         request = (async () => {
           try {
-            const response = await nativeFetch(
-              config.supabaseUrl.replace(/\/$/, "") +
-                "/rest/v1/rpc/card_album_maintenance_warning_schedule",
-              {
-                method: "POST",
-                headers: {
-                  apikey: config.supabaseKey,
-                  "Content-Type": "application/json",
-                },
-                body: "{}",
-                cache: "no-store",
-                signal: controller.signal,
-              },
-            );
-            if (!response.ok) return;
+            const { response } = await window.CARD_READ_RETRY(async () => {
+              try {
+                const response = await nativeFetch(
+                  config.supabaseUrl.replace(/\/$/, "") +
+                    "/rest/v1/rpc/card_album_maintenance_warning_schedule",
+                  {
+                    method: "POST",
+                    headers: {
+                      apikey: config.supabaseKey,
+                      "Content-Type": "application/json",
+                    },
+                    body: "{}",
+                    cache: "no-store",
+                    signal: controller.signal,
+                  },
+                );
+                return { response, status: response.status, error: !response.ok };
+              } catch (error) {
+                if (error?.name !== "TypeError") throw error;
+                return { error, status: 0 };
+              }
+            }, () => !controller.signal.aborted && !document.hidden);
+            if (!response?.ok) return;
             const data = await response.json();
             if (data && typeof data.enabled === "boolean") update(data);
           } catch {
@@ -3718,9 +3741,9 @@
           loaded_families: loaded.map(([name]) => name),
         };
       }
-      async function request(client, family, version) {
+      async function requestOnce(family, version) {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 10000);
+        const timer = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 10000);
         try {
           let call = window.CARD_DB.catalogClient().rpc("card_verse_catalog_family_cached", {
             p_family: family,
@@ -3728,8 +3751,14 @@
           });
           if (typeof call.abortSignal === "function")
             call = call.abortSignal(controller.signal);
-          const { data, error } = await call;
-          if (error) throw error;
+          const { data, error, status } = await call;
+          if (error)
+            throw {
+              ...error,
+              message: error.message,
+              status,
+              aborted: controller.signal.aborted,
+            };
           if (!data)
             throw Error(
               "コーデ情報を取得できませんでした。時間をおいて再度お試しください。",
@@ -3737,6 +3766,20 @@
           return data;
         } finally {
           clearTimeout(timer);
+        }
+      }
+      async function request(family, version) {
+        try {
+          return await requestOnce(family, version);
+        } catch (error) {
+          const transient =
+            [502, 503, 504, 520].includes(error?.status) ||
+            /^(PGRST00[012]|08[0-9A-Z]{3}|57P0[123])$/.test(error?.code || "") ||
+            (error?.status === 0 && !error.aborted);
+          if (!transient || navigator.onLine === false) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 300));
+          if (navigator.onLine === false) throw error;
+          return requestOnce(family, version);
         }
       }
       async function load(client, { family, force = false } = {}) {
@@ -3750,13 +3793,12 @@
             throw Error("通信状態を確認して再度お試しください。");
           const requestedAt = Date.now();
           let data = await request(
-            client,
             family,
             entry.snapshot?.version || null,
           );
           if (data.omitted) {
             if (!entry.snapshot || entry.snapshot.version !== data.version)
-              data = await request(client, family, null);
+              data = await request(family, null);
             else data = { ...entry.snapshot, ...data, omitted: false };
           }
           if (!valid(data, family))
@@ -3889,7 +3931,7 @@
                 if (!force && Date.now() < freshUntil) return state;
                 pending = (async () => {
                   const controller = new AbortController();
-                  const timeout = setTimeout(() => controller.abort(), 10000);
+                  const timeout = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 10000);
                   try {
                     const config = window.APP_CONFIG;
                     const response = await nativeFetch(

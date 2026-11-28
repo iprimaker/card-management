@@ -1033,7 +1033,7 @@
     async function signupIssueRPC(issue) {
       const key = await signupIssueKey();
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 12000);
+      const timeout = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 12000);
       try {
         let request = db.rpc("card_album_reservation_v1", {
           p_key: key,
@@ -1065,10 +1065,23 @@
         if (mode === "signup") renderSignupStep("id");
       }
     }
+    let signupReservationRead = null;
+    function readSignupReservation() {
+      const client = db;
+      if (signupReservationRead?.client === client)
+        return signupReservationRead.promise;
+      const request = { client, promise: null };
+      request.promise = signupIssueRPC(false).finally(() => {
+        if (signupReservationRead === request) signupReservationRead = null;
+      });
+      signupReservationRead = request;
+      return request.promise;
+    }
     async function checkSignupIssue() {
-      if (!db || invitationPage || session || signupIssueBusy) return;
+      if (!db || mode !== "signup" || invitationPage || session || signupIssueBusy)
+        return;
       if (signupIssueFlight) return signupIssueFlight;
-      signupIssueFlight = signupIssueRPC(false)
+      signupIssueFlight = readSignupReservation()
         .then((data) => {
           applySignupIssueState(data);
           return data;
@@ -1321,10 +1334,10 @@
       }
       signupRegistrationFlight = (async () => {
         const controller = new AbortController(),
-          timeout = setTimeout(() => controller.abort(), 10000);
+          timeout = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 10000);
         try {
           if (mode === "signup" && !session && !signupReservation) {
-            const recovered = await signupIssueRPC(false);
+            const recovered = await readSignupReservation();
             applySignupIssueState(recovered);
             if (recovered.state === "unissued") {
               const target = await window.CARD_DB.registrationTarget();
@@ -1429,7 +1442,7 @@
             "この招待URLは利用できません。使用済み、期限切れ、または無効なURLです。",
           );
         const controller = new AbortController(),
-          timer = setTimeout(() => controller.abort(), 20000);
+          timer = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 20000);
         let result;
         try {
           let request = db.rpc("card_album_invitation_claim", {
@@ -1517,6 +1530,7 @@
     }
 
     let ownershipRequest = null;
+    let ownershipMutation = 0;
     let ownershipCheckedAt = 0,
       ownershipLoadedUser = null;
     function loadOwnership(force = false) {
@@ -1532,8 +1546,8 @@
         return Promise.resolve();
       const request = { uid, promise: null };
       request.promise = readOwnership()
-        .then(() => {
-          if (uid === session?.user.id && ownershipReady) {
+        .then((loaded) => {
+          if (loaded && uid === session?.user.id && ownershipReady) {
             ownershipLoadedUser = uid;
             ownershipCheckedAt = Date.now();
           }
@@ -1547,15 +1561,21 @@
     async function readOwnership() {
       const generation = ++loadGeneration,
         uid = session?.user.id;
-      ownershipReady = false;
-      owned = new Set();
-      ownedCounts = new Map();
+      if (!ownershipReady || ownershipLoadedUser !== uid) {
+        ownershipReady = false;
+        owned = new Set();
+        ownedCounts = new Map();
+      }
       if (!uid) return;
+      const client = db;
+      const mutation = ownershipMutation;
       let all = [],
         offset = 0;
       try {
         while (true) {
-          const { data, error } = await db
+          if (client !== db || uid !== session?.user.id || generation !== loadGeneration)
+            return;
+          const { data, error } = await client
             .from("card_ownership")
             .select("card_id,quantity")
             .eq("user_id", uid)
@@ -1566,14 +1586,16 @@
           if (data.length < 1000) break;
           offset += 1000;
         }
-        if (generation !== loadGeneration || uid !== session?.user.id) return;
+        if (client !== db || generation !== loadGeneration || uid !== session?.user.id || mutation !== ownershipMutation) return;
         ownedCounts = new Map(
           all.map((r) => [r.card_id, Number(r.quantity) || 1]),
         );
         owned = new Set(ownedCounts.keys());
         ownershipReady = true;
+        if (game) render();
+        return true;
       } catch (e) {
-        if (generation === loadGeneration)
+        if (client === db && uid === session?.user.id && generation === loadGeneration)
           toast(
             "所持データを読み込めません。Supabaseの設定・SQLを確認してください。",
           );
@@ -1588,6 +1610,7 @@
       if (
         !db ||
         !session ||
+        navigator.onLine === false ||
         (!logout &&
           (document.hidden ||
             accountPresenceLoggingOut ||
@@ -1607,7 +1630,7 @@
           )
             return;
           const controller = new AbortController(),
-            timer = setTimeout(() => controller.abort(), 4000);
+            timer = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 4000);
           const requestToken = session?.access_token;
           try {
             let request = client.rpc("card_account_presence_touch", {
@@ -1618,7 +1641,6 @@
               request = request.abortSignal(controller.signal);
             const result = await request;
             if (result.error) {
-              accountPresenceSent = 0;
               const invalidSession =
                 result.status === 403 &&
                 result.error.code === "42501" &&
@@ -1641,7 +1663,7 @@
               }
             }
           } catch {
-            accountPresenceSent = 0;
+            // Keep the normal interval after a failed background update.
           } finally {
             clearTimeout(timer);
           }
@@ -1651,7 +1673,7 @@
     async function recordConfirmedLogout(previous, all = true) {
       if (!previous?.access_token) return;
       const controller = new AbortController(),
-        timer = setTimeout(() => controller.abort(), 3000);
+        timer = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 3000);
       try {
         await fetch(
           new URL(
@@ -2176,29 +2198,40 @@
       character = (row) => row.character,
     ) {
       if (!order || order === "official") return rows;
-      const compare = (a, b) =>
-        String(a || "").localeCompare(String(b || ""), "ja", { numeric: true });
-      return [...rows].sort((a, b) => {
-        if (order === "character") {
-          const key = (row) =>
-            (Array.isArray(character(row))
-              ? character(row).join(" ／ ")
-              : String(character(row) || "")
-            )
-              .normalize("NFKC")
-              .trim();
-          const first = key(a),
-            second = key(b);
-          if (!first || !second)
-            return Number(!first) - Number(!second) || compare(a.code, b.code);
-          return compare(first, second) || compare(a.code, b.code);
-        }
-        if (order === "quantity")
-          return quantity(b) - quantity(a) || compare(a.code, b.code);
-        if (order === "name")
-          return compare(a.name, b.name) || compare(a.code, b.code);
-        return compare(a.code, b.code);
-      });
+      const collator = new Intl.Collator("ja", { numeric: true });
+      const compareText = (a, b) =>
+        collator.compare(String(a || ""), String(b || ""));
+      const compareCode = (a, b) => compareText(a.code, b.code);
+
+      if (order === "character") {
+        return rows
+          .map((row) => {
+            const characterValue = character(row);
+            const key = (Array.isArray(characterValue)
+              ? characterValue.join(" ／ ")
+              : String(characterValue || "")
+            ).normalize("NFKC").trim();
+            return { row, key };
+          })
+          .sort((a, b) =>
+            Number(!a.key) - Number(!b.key) ||
+            compareText(a.key, b.key) ||
+            compareCode(a.row, b.row),
+          )
+          .map(({ row }) => row);
+      }
+      if (order === "quantity") {
+        return rows
+          .map((row) => ({ row, count: quantity(row) }))
+          .sort((a, b) => b.count - a.count || compareCode(a.row, b.row))
+          .map(({ row }) => row);
+      }
+      if (order === "name") {
+        return [...rows].sort(
+          (a, b) => compareText(a.name, b.name) || compareCode(a, b),
+        );
+      }
+      return [...rows].sort(compareCode);
     }
 
     function filtered(includeOwnership = true, local = null) {
@@ -2443,8 +2476,10 @@
       const all = albumCards(),
         got = all.filter((c) => owned.has(c.id)).length,
         rate = all.length ? (got / all.length) * 100 : 0,
-        list = filtered(),
         base = filtered(false),
+        list = ownershipFilter === "all"
+          ? base
+          : base.filter((card) => owned.has(card.id) === (ownershipFilter === "yes")),
         baseGot = base.filter((c) => owned.has(c.id)).length;
       $("filter-summary").textContent =
         Object.values(filters).filter(Boolean).length +
@@ -2489,18 +2524,16 @@
       page = Math.min(page, pageCount);
       $("page-size").value = String(pageSize);
       renderPageNumbers(pageCount);
-      const visibleIDs = list
-        .slice((page - 1) * size, page * size)
-        .map((card) => card.id);
-      const existingIDs = [...$("cards").querySelectorAll("[data-toggle]")].map(
-        (button) => button.dataset.toggle,
-      );
+      const visible = list.slice((page - 1) * size, page * size);
+      const cards = $("cards");
+      const existing = keepCardNodes === true
+        ? cards.querySelectorAll("[data-toggle]")
+        : null;
       const reuseCards =
-        keepCardNodes === true &&
-        JSON.stringify(visibleIDs) === JSON.stringify(existingIDs);
+        existing?.length === visible.length &&
+        visible.every((card, index) => existing[index].dataset.toggle === card.id);
       if (!reuseCards)
-        $("cards").innerHTML = list
-          .slice((page - 1) * size, page * size)
+        cards.innerHTML = visible
           .map(
             (c) =>
               `<article data-card-layout="rows" class="card card-list-quantity ${owned.has(c.id) ? "owned" : ""}">${favoriteButton(c)}<button type="button" class="card-trigger card-image-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-image-frame">${window.CARD_IMAGE_TRANSFORM.wrap(`<img data-card-image src="${esc(c.front)}" loading="lazy" decoding="async" alt="${esc(name(c))}">`, c.frontTransform)}${quantityOf(c.id) >= 2 ? '<span class="card-duplicate-tag">重複あり</span>' : ""}${window.CARD_QR?.badge("card", c.id) || ""}</span></button><div class="card-code-row"><button type="button" class="card-code-link" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="code">${esc(c.code)}</span></button>${window.CARD_RARITY_LABEL(displayRarity(c))}</div><button type="button" class="card-trigger card-text-trigger" data-detail="${esc(c.id)}" aria-label="${esc(name(c))}の詳細"><span class="card-meta"><span>${esc(c.character || "")}</span></span>${c.game === "aikatsu" && c.variant === "パラレル" ? window.CARD_RARITY_LABEL("パラレル", "parallel-tag") : ""}<span class="card-name">${esc(name(c))}</span>${game === "aipri" ? `<span class="card-song">♪ ${esc(c.songs?.join(" ／ ") || "曲名未取得")}</span>` : ""}</button>${listQuantityMarkup(c.id)}</article>`,
@@ -2583,6 +2616,7 @@
       const predicted = clear
         ? 0
         : Math.min(1000000, Math.max(0, before + delta));
+      ownershipMutation++;
       saving.add(id);
       setLocalQuantity(id, predicted);
       render(true);
@@ -2877,6 +2911,7 @@
       return new Set([
         "card_ownership",
         "card_favorites",
+        "card_trade_requests",
         "card_album_ids",
         "card_personal_metadata",
         "card_verse_ownership",
@@ -2904,13 +2939,22 @@
         if (editing) showLoginRequired();
         return accountLoginResponse();
       }
+      const headers = new Headers(
+        options.headers ?? (input instanceof Request ? input.headers : undefined),
+      );
+      const authorization = headers.get("Authorization");
+      if (
+        !authorization ||
+        authorization === "Bearer " + window.APP_CONFIG.supabaseKey
+      )
+        return accountLoginResponse();
       const uid = session.user.id,
         epoch = accountRequestEpoch,
         token = session.access_token;
       const controller = new AbortController();
       const callerSignal =
         options.signal || (input instanceof Request ? input.signal : null);
-      const abort = () => controller.abort();
+      const abort = () => controller.abort(callerSignal.reason);
       if (callerSignal?.aborted) abort();
       else callerSignal?.addEventListener("abort", abort, { once: true });
       accountRequests.add(controller);
@@ -2918,7 +2962,7 @@
       try {
         await window.CARD_MAINTENANCE.check();
         if (controller.signal.aborted)
-          throw new DOMException("通信を中断しました", "AbortError");
+          throw controller.signal.reason;
         if (epoch !== accountRequestEpoch || session?.user?.id !== uid)
           return accountLoginResponse();
         response = await window.CARD_MAINTENANCE.fetch(input, {
@@ -3367,7 +3411,7 @@
       $("signup-message").textContent = "";
       renderSignupRegistrationAvailability();
       try {
-        const before = await signupIssueRPC(false);
+        const before = await readSignupReservation();
         applySignupIssueState(before);
         if (before.state !== "unissued") return;
         await refreshSignupRegistrationStatus({ force: true });
@@ -3386,7 +3430,7 @@
       } catch (error) {
         // A timeout does not tell us whether the database committed. Read by the same key.
         try {
-          applySignupIssueState(await signupIssueRPC(false));
+          applySignupIssueState(await readSignupReservation());
         } catch {}
         if (signupIssueState === "unissued")
           $("signup-message").textContent = window.CARD_ERROR.message(error);
@@ -7315,7 +7359,7 @@
       function renderRelatedSearch(hasResults) {
         const ticket = ++relatedSequence;
         clearTimeout(relatedTimer);
-        relatedController?.abort();
+        relatedController?.abort(new DOMException("CardAlbumSuperseded", "AbortError"));
         const hint = $("verse-related-search");
         hint.hidden = true;
         const needle = compact(query),
@@ -7358,15 +7402,21 @@
         relatedTimer = setTimeout(async () => {
           const controller = new AbortController();
           relatedController = controller;
-          const timeout = setTimeout(() => controller.abort(), 10000);
+          const timeout = setTimeout(() => controller.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 10000);
           try {
-            let call = window.CARD_DB.catalogClient().rpc("card_verse_catalog_related_count", {
-              p_family: target,
-              p_query: query,
-            });
-            if (typeof call.abortSignal === "function")
-              call = call.abortSignal(controller.signal);
-            const { data, error } = await call;
+            const search = query;
+            const { data, error } = await window.CARD_READ_RETRY(
+              () => {
+                let call = window.CARD_DB.catalogClient().rpc("card_verse_catalog_related_count", {
+                  p_family: target,
+                  p_query: search,
+                });
+                if (typeof call.abortSignal === "function")
+                  call = call.abortSignal(controller.signal);
+                return call;
+              },
+              () => !controller.signal.aborted && ticket === relatedSequence && !panel.hidden,
+            );
             if (
               error ||
               !Number.isInteger(data?.count) ||
@@ -7380,6 +7430,7 @@
           } catch {
           } finally {
             clearTimeout(timeout);
+            if (relatedController === controller) relatedController = null;
           }
         }, 300);
       }
@@ -7389,6 +7440,11 @@
         const selectedGroup = local?.group ?? group;
         const selectedRarity = local?.rarity ?? primagiRarity;
         const selectedOwnership = local?.ownership ?? ownershipView;
+        const compatibility = family === "primagi"
+          ? window.CARD_MULTI_FILTER.values(
+              local?.compatibility ?? primagiVerseCompatibility,
+            )
+          : [];
         const rows = pool().filter(
           (c) =>
             (family !== "primagi" ||
@@ -7397,13 +7453,8 @@
                 c.rarity.split(" ／ "),
                 selectedRarity,
               )) &&
-            (family !== "primagi" ||
-              !window.CARD_MULTI_FILTER.values(
-                local?.compatibility ?? primagiVerseCompatibility,
-              ).length ||
-              window.CARD_MULTI_FILTER.values(
-                local?.compatibility ?? primagiVerseCompatibility,
-              ).some((value) =>
+            (!compatibility.length ||
+              compatibility.some((value) =>
                 window.CARD_PRIMAGI_VERSE_COMPAT.matches(c, parts, value),
               )) &&
             (!(local ? local.favorite === "only" : favoriteOnly) ||
@@ -10865,7 +10916,7 @@
         rpc: "card_visibility_public_status",
       },
     ];
-    const timer = setTimeout(() => localController.abort(), 8000);
+    const timer = setTimeout(() => localController.abort(new DOMException("CardAlbumDeadline", "TimeoutError")), 8000);
     try {
       await Promise.all(
         probes.map(async (probe) => {
